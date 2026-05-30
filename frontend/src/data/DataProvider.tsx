@@ -4,6 +4,7 @@ import { recordHumanReviewDecision } from './humanReviewDecision'
 import { getInitialMockData } from './mockApi'
 import { buildReviewSupport } from './reviewSupport'
 import { completeScanWorkflow, getSourceConnectionMessage, startScanWorkflow, type StartScanOptions } from './scanWorkflow'
+import { loadServerData, reviewServerFinding, startServerScan, testServerSourceConnection } from './serverApi'
 import type {
   Finding,
   ReviewInput,
@@ -13,16 +14,64 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState(getInitialMockData)
   const [toast, setToast] = useState<string | null>(null)
   const scanTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const serverAvailable = useRef(false)
 
   useEffect(() => {
+    let active = true
+    const fallback = getInitialMockData()
+
+    loadServerData(fallback)
+      .then((serverData) => {
+        if (!active) {
+          return
+        }
+
+        serverAvailable.current = true
+        setData(serverData)
+      })
+      .catch(() => {
+        serverAvailable.current = false
+      })
+
     return () => {
+      active = false
+
       if (scanTimer.current) {
         clearTimeout(scanTimer.current)
       }
     }
   }, [])
 
-  function startScan(options: StartScanOptions) {
+  async function startScan(options: StartScanOptions) {
+    if (serverAvailable.current) {
+      try {
+        const result = await startServerScan(options)
+
+        if (scanTimer.current) {
+          clearTimeout(scanTimer.current)
+        }
+
+        setData((current) => ({
+          ...current,
+          meta: result.meta,
+          scan: result.data,
+        }))
+        setToast(`${options.scanType === 'full' ? 'Full' : 'Delta'} scan started on the project server.`)
+        scanTimer.current = setTimeout(() => {
+          refreshServerData(`${options.scanType === 'full' ? 'Full' : 'Delta'} scan completed.`)
+          scanTimer.current = null
+        }, options.scanType === 'full' ? 2400 : 2000)
+        return
+      } catch (error) {
+        serverAvailable.current = false
+        setToast(error instanceof Error ? error.message : 'Project server unavailable; using local mock workflow.')
+      }
+    }
+
+    startLocalScan(options)
+  }
+
+  function startLocalScan(options: StartScanOptions) {
     const result = startScanWorkflow(data, {
       ...options,
       actorId: 'user_demo_admin',
@@ -53,12 +102,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }, result.completionDelayMs)
   }
 
-  function testSourceConnection(sourceId: string) {
+  async function testSourceConnection(sourceId: string) {
+    if (serverAvailable.current) {
+      try {
+        const result = await testServerSourceConnection(sourceId)
+        const diagnostics = result.data.diagnostics?.map((item) => item.message).filter(Boolean).join(' ')
+        setToast(`${result.data.name ?? sourceId} connection: ${result.data.connectionStatus}.${diagnostics ? ` ${diagnostics}` : ''}`)
+        return
+      } catch (error) {
+        serverAvailable.current = false
+        setToast(error instanceof Error ? error.message : 'Project server unavailable; using local source check.')
+      }
+    }
+
     const source = data.sources.find((candidate) => candidate.sourceId === sourceId)
     setToast(getSourceConnectionMessage(source, data.governanceConfig))
   }
 
-  function reviewFinding(input: ReviewInput) {
+  async function reviewFinding(input: ReviewInput) {
+    if (serverAvailable.current) {
+      try {
+        await reviewServerFinding(input)
+        await refreshServerData('Review decision recorded. Deletion remains simulated.')
+        return
+      } catch (error) {
+        serverAvailable.current = false
+        setToast(error instanceof Error ? error.message : 'Project server unavailable; using local review workflow.')
+      }
+    }
+
     const occurredAt = new Date().toISOString()
     const finding = getFinding(input.findingId)
     const reviewSupport = finding
@@ -138,4 +210,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
       {children}
     </DataContext.Provider>
   )
+
+  async function refreshServerData(successToast: string) {
+    const nextData = await loadServerData(getInitialMockData())
+    serverAvailable.current = true
+    setData(nextData)
+    setToast(successToast)
+  }
 }

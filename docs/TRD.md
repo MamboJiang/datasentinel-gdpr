@@ -2,9 +2,9 @@
 
 ## Current Technical Scope
 
-This repository is initialized for documentation, collaboration, contract-first parallel delivery, and a controlled remote frontend preview. The approved technical baseline is the tolerant REST contract in `contracts/openapi.yaml`, its split schemas in `contracts/schemas/`, mock fixtures in `contracts/mocks/`, and the static frontend preview documented in `docs/DEPLOYMENT.md`.
+This repository is initialized for documentation, collaboration, contract-first parallel delivery, and a controlled remote frontend plus P0 API preview. The approved technical baseline is the tolerant REST contract in `contracts/openapi.yaml`, its split schemas in `contracts/schemas/`, mock fixtures in `contracts/mocks/`, the local Python API server, and the deployment path documented in `docs/DEPLOYMENT.md`.
 
-No backend runtime, database, queue, external API integration, authentication, authorization, production file-source connection, or deletion-capable deployment path is approved yet.
+No database, queue, external API integration, authentication, authorization, production file-source connection, or deletion-capable deployment path is approved yet. The approved backend runtime is limited to the stdlib Python P0 API server behind Caddy.
 
 ## Technical Principles
 
@@ -234,15 +234,29 @@ Technical constraints:
 
 ## Remote Preview Deployment Technical Slice
 
-The approved deployment implementation is a static frontend preview on `agent-us`, served by the existing Caddy service from `/srv/datasentinel/frontend/current`. It is documented in `docs/design/remote-preview-deployment.md` and `docs/DEPLOYMENT.md`.
+The approved deployment implementation is a frontend preview plus loopback P0 API server on `agent-us`. Caddy serves the Vite build from `/srv/datasentinel/frontend/current` and reverse-proxies `/api/*` to the Python API server. It is documented in `docs/design/remote-preview-deployment.md`, `docs/design/agent-us-api-server-integration.md`, and `docs/DEPLOYMENT.md`.
 
 Technical constraints:
 
 - The preview serves only the Vite production build and uses browser-route fallback to `index.html`.
-- The preview does not run a backend API, database, queue, worker, OAuth flow, Microsoft Graph connector, tenant integration, AI service, or deletion integration.
-- The preview remains fixture-backed through existing contract mocks and must not expose raw sensitive values.
+- The API server returns contract-compatible envelopes from existing mocks and in-memory scan/review state.
+- The preview does not run a database, queue, worker, OAuth flow, Microsoft Graph connector, tenant integration, AI service, production source connector, or deletion integration.
+- The preview remains fixture-backed or in-memory and must not expose raw sensitive values.
 - Caddy configuration changes must be validated before reload and must have a rollback path through a saved Caddyfile backup and release symlink.
-- Remote validation must check `/` and at least one internal route such as `/dashboard`.
+- Remote validation must check `/`, at least one internal route such as `/dashboard`, and `/api/health`.
+
+## Agent-us API Server Technical Slice
+
+The approved first server integration is a stdlib Python HTTP server with no added runtime dependency. It exposes the P0 OpenAPI paths, returns `data`/`meta` envelopes, uses `application/problem+json` for rejected commands, and keeps scan/review mutations in memory.
+
+Technical constraints:
+
+- The frontend calls `/api` first and falls back to local mock workflow when the server is unavailable.
+- Vite proxies `/api` to `127.0.0.1:8000` in development.
+- Caddy proxies `/api/*` to the loopback API process on `agent-us`.
+- Source connection checks may validate controlled mock and local demo sources but must not call production Microsoft Graph or external tenant APIs.
+- Scan and review commands must preserve no-raw-content, no-legal-conclusion, and no-real-deletion boundaries.
+- Python `http.server` is accepted only for this controlled P0 preview because official docs identify it as a basic server not recommended for production.
 
 ## Contract Baseline
 

@@ -263,9 +263,25 @@ The design points are accepted when:
 The remote preview deployment is accepted when:
 
 - The design note `docs/design/remote-preview-deployment.md` defines problem, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
-- `docs/DEPLOYMENT.md` records the `agent-us` static preview layout, Caddy route, validation commands, and rollback steps.
+- `docs/design/agent-us-api-server-integration.md` defines the P0 API server integration, state machine, impact surface, rollback path, and primitive acceptance criteria.
+- `docs/DEPLOYMENT.md` records the `agent-us` frontend layout, API route, Caddy route, validation commands, and rollback steps.
 - `npm run test` and `npm run build` pass before deployment.
 - The remote host serves the frontend through Caddy on port 80 from `/srv/datasentinel/frontend/current`.
+- The remote host proxies `/api/*` through Caddy to a loopback P0 API server.
 - Direct requests for `https://founder-force.uk/` and `https://founder-force.uk/dashboard` return DataSentinel frontend HTML after DNS points to `agent-us`.
-- The preview remains mock-backed and adds no backend API, production Microsoft Graph, OAuth, tenant, AI, database, queue, or deletion service.
-- The previous Caddyfile is saved before modification, and the release symlink allows asset rollback.
+- Direct requests for `https://founder-force.uk/api/health` return a contract health envelope after DNS points to `agent-us` and the API service is running.
+- The preview remains mock-compatible or in-memory and adds no production Microsoft Graph, OAuth, tenant, AI, database, queue, production source connector, or deletion service.
+- The previous Caddyfile is saved before modification, the release symlink allows asset rollback, and the API service can be stopped independently.
+
+## Agent-us API Server Integration Acceptance
+
+The frontend-backend integration is accepted when:
+
+- The backend source package exposes `GET /api/health`, `GET /api/sources`, scan, finding, review, audit, metrics, evaluation, governance, permissions, and review-support paths from the existing P0 contract.
+- Successful backend responses use the standard envelope and rejected commands use `application/problem+json`.
+- The frontend requests `/api` first and falls back to the local mock workflow when the backend is unavailable.
+- Vite development mode proxies `/api` to the local Python API server without hard-coding a public host.
+- `POST /api/scans/full` accepts the controlled `mock_ready` source and rejects not-ready sources without adding audit events.
+- `POST /api/findings/{findingId}/review` records a review, updates finding state, adds an audit event, updates metrics, and keeps `deletionExecuted = false`.
+- No raw source content, legal conclusion, production connector, OAuth, Microsoft Graph, database, queue, AI service, or deletion execution is introduced.
+- Python backend unit tests, frontend tests, frontend lint, and frontend build pass for the touched surfaces.

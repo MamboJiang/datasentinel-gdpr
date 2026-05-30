@@ -41,13 +41,14 @@ Allow frontend, backend, product, and QA workstreams to move in parallel while s
 - The frontend production build passes before deployment.
 - The `agent-us` preview serves the static build through Caddy on port 80.
 - Browser-routed paths such as `/dashboard` fall back to the frontend app.
-- The preview remains mock-backed and introduces no backend API, production source connector, OAuth flow, tenant integration, or deletion service.
+- The preview may proxy `/api/*` to the loopback P0 API server, but must not introduce production source connectors, OAuth flows, tenant integration, database persistence, queue workers, AI services, or deletion services.
 
 ### Gate 2: Backend Contract Ready
 
 - Backend exposes every P0 endpoint in the OpenAPI contract.
 - Backend returns the response envelope and problem details format.
 - Backend accepts `X-Actor-Id` for demo role simulation.
+- The first `agent-us` server implementation may keep scan and review mutations in memory while preserving contract-compatible envelopes and no-deletion boundaries.
 
 ### Gate 3: First Vertical Slice
 

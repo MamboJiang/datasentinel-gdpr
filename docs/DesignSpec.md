@@ -68,6 +68,8 @@ The post-source backend planning sequence is documented in `docs/design/backend-
 - Audit view reflects workflow state changes and human decisions.
 - Delta scan presentation reflects changed-file-only processing against a prior full-scan baseline.
 
+The frontend should request the project server through `/api` when available and continue rendering the P0 mock workflow when the backend is unavailable. The fallback is a resilience behavior, not a second contract; both paths must preserve the same envelope, state, and no-deletion boundaries.
+
 ## Full Scan Start Interaction
 
 The full-scan start interaction connects Source Connector and Admin Dashboard surfaces:

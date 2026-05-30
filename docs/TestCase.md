@@ -34,6 +34,17 @@
 | BEPLAN-005 | Review contract compatibility | The planning documents use existing P0 endpoints and mock payload shapes without requiring a contract version bump. |
 | BEPLAN-006 | Review primitive acceptance | The planning documents define observable acceptance criteria for each backend workflow stage. |
 
+## Backend API Server Checks
+
+| ID | Scenario | Expected Result |
+| --- | --- | --- |
+| BEAPI-001 | Call `GET /api/health` | The server returns `data.ok = true`, contract metadata, and `X-Contract-Version = 0.1.0`. |
+| BEAPI-002 | Call `GET /api/sources` | The response returns the mock-compatible source list including `source_001`. |
+| BEAPI-003 | Start a full scan for `source_001` | The server returns `202`, a running scan envelope, `meta.partial = true`, and no raw source content. |
+| BEAPI-004 | Start a full scan for a not-ready source | The server returns `application/problem+json` and does not create a new audit event. |
+| BEAPI-005 | Record a valid review decision | The server returns `201`, updates finding status, creates a review audit event, and keeps `deletionExecuted = false`. |
+| BEAPI-006 | Load the frontend with API unavailable | The frontend renders from local mocks without crashing. |
+
 ## Full Scan Start Checks
 
 | ID | Scenario | Expected Result |
@@ -219,8 +230,9 @@
 | DEPLOY-001 | Build frontend for remote preview | `npm run build` completes successfully before upload. |
 | DEPLOY-002 | Visit `https://founder-force.uk/` | Caddy returns the DataSentinel frontend HTML from the active release after DNS points to `agent-us`. |
 | DEPLOY-003 | Visit `https://founder-force.uk/dashboard` directly | Caddy falls back to `index.html`, and the frontend can render the dashboard route after DNS points to `agent-us`. |
-| DEPLOY-004 | Review remote service boundary | The preview exposes only static frontend assets and does not start backend, OAuth, Microsoft Graph, tenant, AI, or deletion services. |
-| DEPLOY-005 | Review rollback path | A saved Caddyfile backup and release symlink make rollback possible without changing product code. |
+| DEPLOY-004 | Call `https://founder-force.uk/api/health` | Caddy proxies to the loopback P0 API server and returns a contract health envelope. |
+| DEPLOY-005 | Review remote service boundary | The preview exposes only static frontend assets plus the P0 in-memory API and does not start OAuth, Microsoft Graph, tenant, AI, database, queue, production connector, or deletion services. |
+| DEPLOY-006 | Review rollback path | A saved Caddyfile backup, release symlink, and removable API service make rollback possible without changing product code. |
 
 ## Future Behavior Test Themes
 

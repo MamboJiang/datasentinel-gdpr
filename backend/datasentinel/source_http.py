@@ -1,0 +1,242 @@
+"""HTTP routing for the DataSentinel local API server."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+from urllib.parse import parse_qs, urlparse
+
+from .demo_state import DemoState
+from .envelope import envelope, problem, response
+from .source_api import SourceApi
+from .source_connection import ConnectionPolicy, SourceConnectionService
+from .source_store import SourceStore
+
+
+class SourceHttpApp:
+    def __init__(self, source_api: SourceApi | None = None, demo_state: DemoState | None = None) -> None:
+        self.source_api = source_api or SourceApi()
+        self.demo_state = demo_state or DemoState(self.source_api.store)
+
+    @classmethod
+    def with_roots(cls, allowed_roots: list[Path | str]) -> "SourceHttpApp":
+        store = SourceStore.with_roots(allowed_roots)
+        policy = ConnectionPolicy.with_roots(allowed_roots)
+        source_api = SourceApi(SourceConnectionService(store, policy), store)
+        return cls(source_api, DemoState(store))
+
+    def handle(
+        self,
+        method: str,
+        path: str,
+        trace_id: str = "trace_demo_backend",
+        body: str | bytes | None = None,
+        content_type: str | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        parsed = urlparse(path)
+        route = _normalise_path(parsed.path)
+        query = parse_qs(parsed.query)
+        method = method.upper()
+
+        if method == "OPTIONS":
+            return response(204, {}, trace_id)
+
+        try:
+            return self._route(method, route, query, trace_id, body, content_type, headers or {})
+        except Exception as error:
+            return response(
+                500,
+                problem(
+                    status=500,
+                    title="Backend route failed",
+                    detail=str(error),
+                    instance=parsed.path,
+                    trace_id=trace_id,
+                    code="internal-error",
+                ),
+                trace_id,
+                content_type="application/problem+json",
+            )
+
+    def _route(
+        self,
+        method: str,
+        route: str,
+        query: dict[str, list[str]],
+        trace_id: str,
+        body: str | bytes | None,
+        content_type: str | None,
+        headers: dict[str, str],
+    ) -> dict[str, Any]:
+        if method == "GET" and route == "/health":
+            return self.demo_state.health(trace_id)
+
+        if method == "GET" and route == "/sources":
+            return self.source_api.list_sources(trace_id)
+
+        if method == "POST" and route == "/sources":
+            payload_response = self._json_body(body, content_type, route, trace_id)
+            if "body" in payload_response:
+                return payload_response
+            return self.source_api.create_source(payload_response["payload"], trace_id)
+
+        source_connect = _match(route, "/sources/", "/connect-test")
+        if method == "POST" and source_connect:
+            return self.source_api.test_connection(source_connect, trace_id, f"/api{route}")
+
+        if method == "POST" and route in {"/scans/full", "/scans/delta"}:
+            payload_response = self._json_body(body, content_type, route, trace_id)
+            if "body" in payload_response:
+                return payload_response
+            scan_type = "delta" if route.endswith("/delta") else "full"
+            return self.demo_state.start_scan(scan_type, payload_response["payload"], trace_id, f"/api{route}")
+
+        scan_summary = _match(route, "/scans/", "/summary")
+        if method == "GET" and scan_summary:
+            return self.demo_state.get_scan_summary(trace_id)
+
+        scan_id = _match(route, "/scans/")
+        if method == "GET" and scan_id:
+            return self.demo_state.get_scan(scan_id, trace_id, f"/api{route}")
+
+        if method == "GET" and route == "/findings":
+            return self.demo_state.list_findings(trace_id)
+
+        review_support = _match(route, "/findings/", "/review-support")
+        if method == "GET" and review_support:
+            return self.demo_state.finding_review_support(review_support, trace_id, f"/api{route}")
+
+        review_finding = _match(route, "/findings/", "/review")
+        if method == "POST" and review_finding:
+            payload_response = self._json_body(body, content_type, route, trace_id)
+            if "body" in payload_response:
+                return payload_response
+            payload = {**payload_response["payload"], "findingId": review_finding}
+            return self.demo_state.review_finding(review_finding, payload, trace_id, f"/api{route}")
+
+        finding_id = _match(route, "/findings/")
+        if method == "GET" and finding_id:
+            return self.demo_state.get_finding(finding_id, trace_id, f"/api{route}")
+
+        if method == "GET" and route == "/audit/events":
+            return self.demo_state.audit_event_list(trace_id)
+
+        if method == "GET" and route == "/admin/metrics":
+            return self.demo_state.admin_metrics(trace_id)
+
+        if method == "GET" and route == "/evaluation/runs/latest":
+            return self.demo_state.latest_evaluation(trace_id)
+
+        if method == "GET" and route == "/governance/config":
+            return self.demo_state.governance(trace_id)
+
+        if method == "GET" and route == "/governance/policy-packs/active":
+            return self.demo_state.active_policy_pack(trace_id)
+
+        if method == "POST" and route == "/governance/changes/preview":
+            payload_response = self._json_body(body, content_type, route, trace_id)
+            if "body" in payload_response:
+                return payload_response
+            return self.demo_state.governance_preview(trace_id)
+
+        if method == "GET" and route == "/users/me/permissions":
+            return self.demo_state.permissions(trace_id)
+
+        return response(
+            404,
+            problem(
+                status=404,
+                title="Route not found",
+                detail="The requested API route is not available.",
+                instance=f"/api{route}",
+                trace_id=trace_id,
+                code="not-found",
+            ),
+            trace_id,
+            content_type="application/problem+json",
+        )
+
+    def _json_body(
+        self,
+        body: str | bytes | None,
+        content_type: str | None,
+        route: str,
+        trace_id: str,
+    ) -> dict[str, Any]:
+        if content_type and "application/json" not in content_type:
+            return response(
+                415,
+                problem(
+                    status=415,
+                    title="Unsupported media type",
+                    detail="POST requests require application/json.",
+                    instance=f"/api{route}",
+                    trace_id=trace_id,
+                    code="unsupported-media-type",
+                ),
+                trace_id,
+                content_type="application/problem+json",
+            )
+
+        raw = body.decode("utf-8") if isinstance(body, bytes) else (body or "{}")
+
+        try:
+            payload = json.loads(raw or "{}")
+        except json.JSONDecodeError:
+            return response(
+                400,
+                problem(
+                    status=400,
+                    title="Malformed JSON",
+                    detail="Request body must be valid JSON.",
+                    instance=f"/api{route}",
+                    trace_id=trace_id,
+                    code="malformed-json",
+                ),
+                trace_id,
+                content_type="application/problem+json",
+            )
+
+        if not isinstance(payload, dict):
+            return response(
+                422,
+                problem(
+                    status=422,
+                    title="Request validation failed",
+                    detail="Request body must be a JSON object.",
+                    instance=f"/api{route}",
+                    trace_id=trace_id,
+                    code="validation-error",
+                    errors=[{"pointer": "#", "detail": "Request body must be a JSON object."}],
+                ),
+                trace_id,
+                content_type="application/problem+json",
+            )
+
+        return {"payload": payload}
+
+
+def build_default_app() -> SourceHttpApp:
+    return SourceHttpApp()
+
+
+def _normalise_path(path: str) -> str:
+    route = path[:-1] if len(path) > 1 and path.endswith("/") else path
+    return route[4:] if route.startswith("/api") else route
+
+
+def _match(route: str, prefix: str, suffix: str = "") -> str | None:
+    if not route.startswith(prefix):
+        return None
+
+    if suffix and not route.endswith(suffix):
+        return None
+
+    value = route[len(prefix):]
+
+    if suffix:
+        value = value[:-len(suffix)]
+
+    return value.strip("/") or None
