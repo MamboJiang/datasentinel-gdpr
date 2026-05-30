@@ -72,7 +72,7 @@ export const proofPoints: ProofPoint[] = [
 export const workflowSteps: WorkflowStep[] = [
   {
     title: 'Controlled source',
-    description: 'The P0 demo starts from a referenced organizer sample source or mock-backed fixture.',
+    description: 'The workspace starts from a configured source, with the public reference dataset available for local validation.',
   },
   {
     title: 'Full scan',
@@ -150,12 +150,12 @@ export const contractSections: ContractSection[] = [
 ]
 
 export const evaluationMetrics = [
-  { label: 'Precision', value: '0.941' },
-  { label: 'Recall', value: '0.842' },
-  { label: 'F1', value: '0.889' },
-  { label: 'Model calls', value: '0' },
-  { label: 'Estimated cost', value: '$0.00' },
-  { label: 'Reproducibility', value: '1.0' },
+  { label: 'Precision', value: 'After scan' },
+  { label: 'Recall', value: 'After scan' },
+  { label: 'F1', value: 'After scan' },
+  { label: 'Model calls', value: 'Tracked' },
+  { label: 'Estimated cost', value: 'Tracked' },
+  { label: 'Reproducibility', value: 'Tracked' },
 ]
 
 export const sampleFamilies = [
@@ -187,7 +187,7 @@ export const safetyBoundaries: ContractSection[] = [
   },
   {
     title: 'No production tenant integration',
-    description: 'The prototype does not connect to production Microsoft Graph, OAuth, tenant systems, parser, OCR, queue, database, AI, or deletion services.',
+    description: 'Prelaunch sign-in is separate from Microsoft Graph, tenant inventory, parser, OCR, queue, AI, or deletion services.',
     icon: LockKeyhole,
   },
   {

@@ -3,9 +3,9 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button, PageHeader, SectionHeader, StatusBadge } from '../components/ui'
 import { humanize } from '../components/formatters'
+import { useAuth } from '../data/AuthContext'
 import { useData } from '../data/useData'
 import {
-  accountSimulation,
   changelogItems,
   documentationMap,
   feedbackCategories,
@@ -18,28 +18,31 @@ import './SupportPages.css'
 
 export function AccountPage() {
   const { permissionBoundary, meta } = useData()
+  const { session } = useAuth()
+  const user = session.user
 
   return (
     <>
       <PageHeader
-        eyebrow="Account simulation"
+        eyebrow="Account"
         title="Account settings"
-        description="Inspect the seeded demo actor used by the P0 console. This is not production authentication."
+        description="Inspect the signed-in prelaunch account and the separate workflow permission boundary."
       />
 
       <div className="support-grid">
         <section className="panel">
-          <SectionHeader title="Actor" description="Static demo identity for review and permission-boundary simulation." />
+          <SectionHeader title="Signed-in user" description="Provider identity is used for session access only." />
           <dl className="definition-list">
-            <div><dt>Name</dt><dd>{accountSimulation.name}</dd></div>
-            <div><dt>Email</dt><dd>{accountSimulation.email}</dd></div>
-            <div><dt>Actor ID</dt><dd>{permissionBoundary.actorId || accountSimulation.actorId}</dd></div>
+            <div><dt>Name</dt><dd>{user?.displayName ?? 'Not signed in'}</dd></div>
+            <div><dt>Email</dt><dd>{user?.email ?? 'Email unavailable'}</dd></div>
+            <div><dt>Provider</dt><dd>{user?.provider ? humanize(user.provider) : 'Unknown'}</dd></div>
+            <div><dt>Session user ID</dt><dd>{user?.userId ?? 'Unavailable'}</dd></div>
             <div><dt>Contract</dt><dd>{meta.contractVersion}</dd></div>
           </dl>
         </section>
 
         <section className="panel">
-          <SectionHeader title="Workspace" description="The current workspace is mock-backed and local to the prototype." />
+          <SectionHeader title="Workspace" description="The current workspace is the active prelaunch privacy operations workspace." />
           <dl className="definition-list">
             <div><dt>Name</dt><dd>{workspaceSimulation.name}</dd></div>
             <div><dt>Plan</dt><dd>{workspaceSimulation.plan}</dd></div>
@@ -206,18 +209,18 @@ export function PlatformStatusPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Mock-backed status"
+        eyebrow="Runtime status"
         title="Platform status"
-        description="Local health indicators for the prototype runtime. This is not production monitoring."
+        description="Health indicators for the prelaunch runtime. This is not production monitoring."
       />
       <div className="support-grid support-grid-three">
         <article className="support-card">
           <strong>Frontend runtime</strong>
-          <p>Vite app loaded and rendering from local mock state.</p>
+          <p>Vite app loaded and ready to request the project API.</p>
           <StatusBadge value="completed" />
         </article>
         <article className="support-card">
-          <strong>Mock contract</strong>
+          <strong>API contract</strong>
           <p>Contract {meta.contractVersion} · trace {meta.traceId}</p>
           <StatusBadge value={meta.partial ? 'warning' : 'completed'} />
         </article>
@@ -256,7 +259,7 @@ export function PlanPage() {
       <PageHeader
         eyebrow="Prototype boundary"
         title="Prototype plan"
-        description="The account menu exposes plan context without enabling billing, procurement, or production onboarding."
+        description="The account menu exposes plan context without enabling billing, procurement, or production tenant onboarding."
       />
       <section className="panel">
         <div className="support-list">
@@ -275,12 +278,14 @@ export function PlanPage() {
 }
 
 export function SessionBoundaryPage() {
+  const { logout, session } = useAuth()
+
   return (
     <>
       <PageHeader
-        eyebrow="Session simulation"
+        eyebrow="Session"
         title="Session boundary"
-        description="P0 uses a seeded actor instead of production authentication."
+        description="Sign out clears the DataSentinel session cookie. Provider revocation remains managed by Google or GitHub."
       />
       <section className="panel">
         <div className="support-list">
@@ -294,6 +299,7 @@ export function SessionBoundaryPage() {
           ))}
         </div>
         <div className="support-actions">
+          {session.authenticated ? <Button onClick={() => void logout()} variant="secondary">Log out</Button> : null}
           <Link className="button button-secondary" to="/">Open homepage</Link>
           <Link className="button button-primary" to="/dashboard">Return to dashboard</Link>
         </div>

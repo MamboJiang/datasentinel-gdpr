@@ -6,6 +6,56 @@ info:
 servers:
   - url: /api
 paths:
+  /auth/providers:
+    get:
+      operationId: listAuthProviders
+      responses:
+        "200":
+          description: Configured login providers without secrets.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/common.yaml#/AuthProviderListEnvelope"
+  /auth/login/{provider}:
+    get:
+      operationId: startAuthLogin
+      parameters:
+        - $ref: "#/components/parameters/AuthProvider"
+      responses:
+        "302":
+          description: Redirect to the selected OAuth provider.
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/callback/{provider}:
+    get:
+      operationId: completeAuthCallback
+      parameters:
+        - $ref: "#/components/parameters/AuthProvider"
+      responses:
+        "302":
+          description: Redirect back to the frontend after session creation or failure.
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/session:
+    get:
+      operationId: getAuthSession
+      responses:
+        "200":
+          description: Current first-party session state.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/common.yaml#/AuthSessionEnvelope"
+  /auth/logout:
+    post:
+      operationId: logoutAuthSession
+      responses:
+        "200":
+          description: Session revoked.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/common.yaml#/AuthSessionEnvelope"
   /health:
     get:
       operationId: getHealth
@@ -291,6 +341,13 @@ paths:
                 $ref: "./schemas/governance.yaml#/PermissionBoundaryEnvelope"
 components:
   parameters:
+    AuthProvider:
+      name: provider
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: [google, github]
     IdempotencyKey:
       name: Idempotency-Key
       in: header

@@ -1,0 +1,78 @@
+.signin-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background:
+    linear-gradient(135deg, rgba(25, 92, 75, 0.08), transparent 42%),
+    var(--bg);
+}
+
+.signin-panel {
+  width: min(520px, 100%);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, .12);
+  padding: 32px;
+}
+
+.signin-mark {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--green-soft);
+  color: var(--green);
+  margin-bottom: 18px;
+}
+
+.signin-panel h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.signin-panel p {
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.signin-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.signin-button {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.signin-button:hover:not(:disabled) {
+  border-color: var(--blue);
+}
+
+.signin-button:disabled {
+  cursor: not-allowed;
+  color: var(--text-muted);
+  background: var(--surface-subtle);
+}
+
+.signin-notice {
+  margin-top: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text-muted);
+  background: var(--surface-subtle);
+}

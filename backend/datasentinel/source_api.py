@@ -59,7 +59,11 @@ class SourceApi:
 
     def test_connection(self, source_id: str, trace_id: str, path: str | None = None) -> dict[str, Any]:
         try:
-            return response(200, self.connection_envelope(source_id, trace_id), trace_id)
+            payload = self.connection_envelope(source_id, trace_id)
+            data = payload["data"]
+            if data.get("reachable") and data.get("connectionStatus") == "connected":
+                self.store.add({key: value for key, value in data.items() if key not in {"reachable", "connectionStatus", "capabilities", "diagnostics"}} | {"status": "connected"})
+            return response(200, payload, trace_id)
         except ConnectionIssue as issue:
             return response(
                 issue.status,

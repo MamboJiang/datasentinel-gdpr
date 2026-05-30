@@ -12,17 +12,11 @@ import {
   UserRound,
 } from 'lucide-react'
 
-export const accountSimulation = {
-  actorId: 'user_anna',
-  email: 'anna.schneider@example.com',
-  name: 'Anna Schneider',
-}
-
 export const workspaceSimulation = {
   description: 'Privacy operations workspace',
   id: 'datasentinel-gdpr',
   name: 'DataSentinel GDPR',
-  plan: 'Demo',
+  plan: 'Prelaunch',
 }
 
 export type UtilityRoute = {
@@ -35,7 +29,7 @@ export type UtilityRoute = {
 
 export const utilityRoutes: UtilityRoute[] = [
   {
-    description: 'Review the simulated actor, workspace, roles, and permission boundary.',
+    description: 'Review the signed-in account, workspace, roles, and permission boundary.',
     icon: UserRound,
     label: 'Account settings',
     path: '/account',
@@ -77,7 +71,7 @@ export const utilityRoutes: UtilityRoute[] = [
     title: 'Docs',
   },
   {
-    description: 'View the mock-backed platform status surface.',
+    description: 'View the prelaunch platform status surface.',
     icon: ShieldCheck,
     label: 'Platform status',
     path: '/status',
@@ -91,7 +85,7 @@ export const utilityRoutes: UtilityRoute[] = [
     title: 'Prototype Plan',
   },
   {
-    description: 'Review the simulated sign-out boundary.',
+    description: 'Review and clear the current DataSentinel session.',
     icon: LogOut,
     label: 'Log Out',
     path: '/session',
@@ -104,7 +98,7 @@ export const utilityPageTitles = Object.fromEntries(utilityRoutes.map((route) =>
 export const helpTopics = [
   {
     title: 'Start from a controlled source',
-    description: 'Use Dashboard or Sources to start the allowed full scan for the mock-ready organizer sample source.',
+    description: 'Use Dashboard or Sources to start a scan after a source is configured.',
     path: '/sources',
   },
   {
@@ -144,6 +138,10 @@ export const documentationMap = [
 
 export const changelogItems = [
   {
+    title: 'Google and GitHub sign-in',
+    description: 'The console now uses a backend-owned prelaunch session before showing internal workflow data.',
+  },
+  {
     title: 'Local language preference',
     description: 'The account menu now stores an EU language preference and localizes core UI copy through frontend dictionaries.',
   },
@@ -153,7 +151,7 @@ export const changelogItems = [
   },
   {
     title: 'Homepage contract coverage',
-    description: 'The public homepage explains workflow, sample source, evaluation, governance, and safe prototype boundaries.',
+    description: 'The public homepage explains workflow, source setup, evaluation, governance, and safe prototype boundaries.',
   },
   {
     title: 'Delta scan representation',
@@ -162,15 +160,16 @@ export const changelogItems = [
 ]
 
 export const sessionBoundaries = [
-  'No production authentication session is created or destroyed in P0.',
-  'The visible actor remains a seeded demo actor for review and permission-boundary simulation.',
-  'Log out records no external event and does not revoke any real tenant, OAuth, or Microsoft Graph access.',
+  'Log out clears the DataSentinel first-party session cookie.',
+  'Provider access tokens are not exposed to the browser.',
+  'Log out does not revoke Google or GitHub consent; users manage provider access in the provider account settings.',
+  'Authentication does not grant real deletion, tenant, source connector, or production authorization powers.',
 ]
 
 export const planBoundaries = [
   'Billing and subscription upgrades are not implemented in the prototype.',
   'Production tenant onboarding is deferred.',
-  'The current workspace stays mock-backed and safe by default.',
+  'The current workspace keeps deletion disabled and source boundaries explicit.',
 ]
 
 export const feedbackCategories = ['Workflow issue', 'Evidence clarity', 'Permission boundary', 'Visual bug', 'Documentation gap']

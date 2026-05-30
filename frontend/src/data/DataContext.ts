@@ -14,6 +14,7 @@ import type {
   Source,
 } from '../types'
 import type { StartScanOptions } from './scanWorkflow'
+import type { CreateSourceInput } from './serverApi'
 
 export type DataContextValue = {
   sources: Source[]
@@ -29,6 +30,7 @@ export type DataContextValue = {
   toast: string | null
   getFinding: (findingId: string) => Finding | undefined
   getReviewSupport: (findingId: string) => ReviewSupport
+  createSource: (input: CreateSourceInput) => void
   startScan: (options: StartScanOptions) => void
   testSourceConnection: (sourceId: string) => void
   reviewFinding: (input: ReviewInput) => void

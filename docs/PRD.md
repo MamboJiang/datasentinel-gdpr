@@ -27,6 +27,7 @@ Provide a prototype workflow that shows how an organization can discover GDPR-re
 - Governance-configuration concept for policy packs, organization model, permissions, review support, and change previews.
 - User-control concept for visible allowed actions, denied actions, and reason requirements.
 - Optional AI-assist concept for redacted, deterministic evidence that needs context support after OCR and grep-style rules.
+- Prelaunch account concept for Google and GitHub login through backend-owned OAuth, first-party sessions, visible user profile, and logout.
 
 ## Backend Planning Sequence After Sample Source Connection
 
@@ -88,6 +89,19 @@ The optional AI slice configures OpenRouter for review-support context when dete
 - Avoid legal advice, full GDPR-compliance claims, deletion instructions, raw source content, and unredacted personal data.
 
 The detailed design note is `docs/design/openrouter-ai-processing.md`.
+
+## Prelaunch Account System Slice
+
+The account slice replaces the seeded visible actor as the primary user entry point. It must:
+
+- Let a user sign in with Google or GitHub when provider credentials are configured.
+- Keep provider secrets, access tokens, refresh tokens, auth state, and PKCE verifier out of frontend payloads.
+- Use a backend-created HttpOnly first-party session cookie for the console.
+- Show provider setup status when login providers are not configured.
+- Continue exposing review permission boundaries after login; authentication does not grant real deletion or production tenant access.
+- Support logout by invalidating the first-party session.
+
+The detailed design note is `docs/design/prelaunch-account-system.md`.
 
 ## Context and Risk Judgment Slice
 
@@ -249,7 +263,7 @@ These surfaces must consume the tolerant contract defined in `docs/API_CONTRACT.
 
 - Production Microsoft 365 integration.
 - Real deletion of remote files.
-- Authentication and authorization implementation.
+- Enterprise SSO, SCIM, production RBAC, and production tenant authorization beyond prelaunch Google/GitHub sign-in.
 - Production persistent storage selection beyond the local SQLite P0 state file.
 - AI model or vendor selection.
 - User interface implementation.

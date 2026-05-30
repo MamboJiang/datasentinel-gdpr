@@ -2,7 +2,8 @@ import { Languages, Monitor, Moon, MoreHorizontal, PanelLeftClose, PanelLeftOpen
 import type { LucideIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { accountSimulation, utilityRoutes } from '../data/sessionSimulation'
+import { useAuth } from '../data/AuthContext'
+import { utilityRoutes } from '../data/sessionSimulation'
 import { isLanguagePreferenceCode, languagePreferenceOptions, useI18n } from '../i18n'
 import './AccountMenu.css'
 
@@ -44,8 +45,16 @@ export function AccountMenu({
   sidebarCollapsed: boolean
 }) {
   const { language, setLanguage, t } = useI18n()
+  const { session } = useAuth()
   const [themeMode, setThemeMode] = useState<ThemeMode>(getStoredThemeMode)
   const selectedLanguage = languagePreferenceOptions.find(({ code }) => code === language) ?? languagePreferenceOptions[0]
+  const account = session.user ?? {
+    displayName: 'Not signed in',
+    email: null,
+    provider: 'google',
+    userId: '',
+  }
+  const accountInitials = getInitials(account.displayName)
 
   useEffect(() => {
     const root = document.documentElement
@@ -71,8 +80,8 @@ export function AccountMenu({
           <section className="account-popover" id="account-menu-panel" role="dialog" aria-label={t('Account menu')}>
             <div className="account-popover-header">
               <div>
-                <strong>{accountSimulation.name}</strong>
-                <span>{accountSimulation.email}</span>
+                <strong>{account.displayName}</strong>
+                <span>{account.email ?? t('Email unavailable')}</span>
               </div>
               {settingsRoute ? (
                 <Link className="account-settings" to={settingsRoute.path} aria-label={t(settingsRoute.label)} onClick={onClose}>
@@ -163,10 +172,10 @@ export function AccountMenu({
           }}
           type="button"
         >
-          <span className="account-avatar" aria-hidden="true">AS</span>
+          <span className="account-avatar" aria-hidden="true">{accountInitials}</span>
           <span>
-            <strong>{accountSimulation.name}</strong>
-            <small>{accountSimulation.email}</small>
+            <strong>{account.displayName}</strong>
+            <small>{account.email ?? t('Email unavailable')}</small>
           </span>
         </button>
         <button
@@ -196,4 +205,13 @@ export function AccountMenu({
       </div>
     </div>
   )
+}
+
+function getInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'DS'
 }

@@ -105,6 +105,11 @@
         "label": "Organizer GDPR data samples",
         "status": "mock_ready",
         "referenceUrl": "https://github.com/a-klumpp/GDPR-data-samples"
+      },
+      {
+        "sourceType": "local_repo",
+        "label": "Allowed local directory",
+        "status": "connected"
       }
     ],
     "changeControls": {

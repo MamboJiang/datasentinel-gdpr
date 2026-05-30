@@ -1,24 +1,27 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { DataContext } from './DataContext'
+import { getEmptyData } from './emptyData'
 import { recordHumanReviewDecision } from './humanReviewDecision'
 import { getInitialMockData } from './mockApi'
 import { buildReviewSupport } from './reviewSupport'
 import { completeScanWorkflow, getSourceConnectionMessage, startScanWorkflow, type StartScanOptions } from './scanWorkflow'
-import { loadServerData, reviewServerFinding, startServerScan, testServerSourceConnection } from './serverApi'
+import { createServerSource, loadServerData, reviewServerFinding, startServerScan, testServerSourceConnection, type CreateSourceInput } from './serverApi'
 import type {
   Finding,
   ReviewInput,
 } from '../types'
 
+const localMocksEnabled = import.meta.env.VITE_DATASENTINEL_ENABLE_LOCAL_MOCKS === 'true'
+
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState(getInitialMockData)
+  const [data, setData] = useState(localMocksEnabled ? getInitialMockData : getEmptyData)
   const [toast, setToast] = useState<string | null>(null)
   const scanTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const serverAvailable = useRef(false)
 
   useEffect(() => {
     let active = true
-    const fallback = getInitialMockData()
+    const fallback = localMocksEnabled ? getInitialMockData() : getEmptyData()
 
     loadServerData(fallback)
       .then((serverData) => {
@@ -31,6 +34,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         serverAvailable.current = false
+        if (localMocksEnabled) {
+          setData(fallback)
+        }
       })
 
     return () => {
@@ -119,6 +125,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setToast(getSourceConnectionMessage(source, data.governanceConfig))
   }
 
+  async function createSource(input: CreateSourceInput) {
+    if (!serverAvailable.current) {
+      setToast('Project server unavailable; source registration requires the API server.')
+      return
+    }
+
+    try {
+      const result = await createServerSource(input)
+      setData((current) => ({
+        ...current,
+        meta: result.meta,
+        sources: [
+          ...current.sources.filter((source) => source.sourceId !== result.data.sourceId),
+          result.data,
+        ],
+      }))
+      setToast(`${result.data.name} registered. Test the connection before scanning.`)
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : 'Source registration failed.')
+    }
+  }
+
   async function reviewFinding(input: ReviewInput) {
     if (serverAvailable.current) {
       try {
@@ -201,6 +229,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         toast,
         getFinding,
         getReviewSupport,
+        createSource,
         startScan,
         testSourceConnection,
         reviewFinding,
@@ -212,7 +241,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   )
 
   async function refreshServerData(successToast: string) {
-    const nextData = await loadServerData(getInitialMockData())
+    const nextData = await loadServerData(localMocksEnabled ? getInitialMockData() : getEmptyData())
     serverAvailable.current = true
     setData(nextData)
     setToast(successToast)

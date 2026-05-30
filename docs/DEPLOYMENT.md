@@ -41,6 +41,38 @@ For a persistent preview, run the server command under the host's service manage
 
 The server can still run in memory for local debugging by omitting `--db-path`. `DATASENTINEL_DB_PATH` may also provide the database path when service-manager configuration is cleaner than command-line arguments.
 
+## Prelaunch Account Configuration
+
+Google and GitHub sign-in are optional locally and required only when `DATASENTINEL_AUTH_REQUIRED=true`.
+
+Local/server `.env.local` values:
+
+```bash
+DATASENTINEL_AUTH_REQUIRED=true
+DATASENTINEL_AUTH_REDIRECT_BASE_URL=https://founder-force.uk
+DATASENTINEL_FRONTEND_RETURN_URL=https://founder-force.uk/dashboard
+DATASENTINEL_SESSION_SECRET=<host secret>
+DATASENTINEL_COOKIE_SECURE=true
+DATASENTINEL_ENABLE_DEMO_FIXTURES=false
+GOOGLE_CLIENT_ID=<google oauth client id>
+GOOGLE_CLIENT_SECRET=<google oauth client secret>
+GITHUB_CLIENT_ID=<github oauth client id>
+GITHUB_CLIENT_SECRET=<github oauth client secret>
+```
+
+Register provider callbacks as:
+
+- Google: `https://founder-force.uk/api/auth/callback/google`
+- GitHub: `https://founder-force.uk/api/auth/callback/github`
+
+The provider credentials authenticate users only. They must not be reused for source connectors, Microsoft Graph, tenant inventory, deletion, or authorization policy.
+
+Start the API with one or more local roots that users may register as sources:
+
+```bash
+python3 -m backend.datasentinel.source_server --host 127.0.0.1 --port 8000 --db-path /srv/datasentinel/data/datasentinel.sqlite3 --allowed-root /srv/datasentinel/sources
+```
+
 ## OpenRouter AI Configuration
 
 OpenRouter assistive AI is optional and must be configured only through ignored environment files or host secret management. Never commit a real API key.

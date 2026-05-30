@@ -73,7 +73,7 @@ class DemoState:
     def get_scan(self, scan_id: str, trace_id: str, path: str) -> dict[str, Any]:
         self._finish_scan_if_ready()
 
-        if scan_id not in {self.scan["scanId"], self._completed_template["scanId"], "scan_001"}:
+        if scan_id not in {self.scan["scanId"], self._completed_template["scanId"], "scan_001", "current"}:
             return self._not_found("Scan not found", path, trace_id, "#/scanId")
 
         return response(200, envelope(self.scan, trace_id, partial=self.scan["status"] == "running"), trace_id)
@@ -259,7 +259,10 @@ class DemoState:
             (item for item in self.governance_config["sourceAdapters"] if item.get("sourceType") == source.get("sourceType")),
             None,
         )
-        return source.get("status") == "mock_ready" and adapter and adapter.get("status") == "mock_ready"
+        return bool(adapter) and (
+            source.get("status") == "mock_ready" and adapter.get("status") == "mock_ready"
+            or source.get("sourceType") == "local_repo" and source.get("status") == "connected" and adapter.get("status") == "connected"
+        )
 
     def _has_completed_baseline(self, source_id: str, baseline_scan_id: Any) -> bool:
         return self.scan["status"] == "completed" and self.scan["sourceId"] == source_id and (
