@@ -1,0 +1,32 @@
+.support-section { margin-top: 15px; }
+.support-grid { display: grid; gap: 15px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.support-grid-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.support-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); display: block; min-height: 170px; padding: 18px; }
+.support-card strong, .support-card p, .support-card span { display: block; }
+.support-card strong { font-size: .88rem; }
+.support-card p { color: var(--text-soft); font-size: .76rem; line-height: 1.55; margin-top: 10px; }
+.support-card span { align-items: center; color: var(--blue); display: inline-flex; font-size: .72rem; font-weight: 700; gap: 5px; margin-top: 18px; }
+.support-card .badge { margin-top: 16px; }
+.support-form-panel { max-width: 780px; }
+.support-form { display: grid; gap: 15px; }
+.support-form .form-field select,
+.support-form .form-field textarea { background: var(--surface); border: 1px solid var(--border-strong); border-radius: 6px; color: var(--text); padding: 10px; width: 100%; }
+.support-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.support-success { align-items: center; background: var(--green-soft); border: 1px solid #cde8d4; border-radius: 7px; color: var(--green); display: flex; font-size: .73rem; gap: 8px; padding: 10px 12px; }
+.support-list { display: grid; gap: 0; }
+.support-row { align-items: flex-start; border-top: 1px solid var(--border); display: grid; gap: 12px; grid-template-columns: 20px minmax(0, 1fr) auto; padding: 14px 0; }
+.support-row:first-child { border-top: 0; padding-top: 0; }
+.support-row:last-child { padding-bottom: 0; }
+.support-row svg { color: var(--blue); margin-top: 1px; }
+.support-row strong { display: block; font-size: .78rem; }
+.support-row p { color: var(--text-soft); font-size: .72rem; line-height: 1.5; margin-top: 5px; }
+.support-row code { color: var(--text-muted); display: block; font-family: "SFMono-Regular", Consolas, monospace; font-size: .66rem; margin-top: 7px; overflow-wrap: anywhere; }
+
+@media (max-width: 1120px) {
+  .support-grid, .support-grid-three { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .support-row { grid-template-columns: 20px minmax(0, 1fr); }
+  .support-row > .badge { grid-column: 2; justify-self: start; }
+}

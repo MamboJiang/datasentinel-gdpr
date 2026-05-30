@@ -1,4 +1,6 @@
 import { buildAuditRecordingSummary } from './auditEventRecording'
+import { refreshReviewAggregation } from './adminMetricsAggregation'
+import { refreshEvaluationReviewContext } from './scanEvaluation'
 import type {
   AdminMetrics,
   AuditEvent,
@@ -31,8 +33,10 @@ export function updateReviewDecisionMetrics({
   const metricKey = decisionMetricKey[decision]
   const closesOwnerBacklog = decision !== 'reassign_owner'
   const reviewDecisionCount = (metrics.reviewDecisionCount ?? 0) + 1
-
-  return {
+  const auditRecordedEvents = auditEvents.filter((event) => event.scanId === scanId).length
+  const auditLinkedFindingEvents = auditEvents.filter((event) => event.scanId === scanId && event.findingId).length
+  const auditReviewDecisionEvents = auditEvents.filter((event) => event.scanId === scanId && event.eventType === 'review_recorded').length
+  const nextMetrics: AdminMetrics = {
     ...metrics,
     [metricKey]: Number(metrics[metricKey] ?? 0) + 1,
     evaluation,
@@ -42,9 +46,22 @@ export function updateReviewDecisionMetrics({
       : metrics.openReviewBacklog,
     reviewDecisionCount,
     reviewThroughputPerDay: Number(((metrics.reviewThroughputPerDay ?? 0) + 1).toFixed(1)),
-    auditRecordedEvents: auditEvents.filter((event) => event.scanId === scanId).length,
-    auditLinkedFindingEvents: auditEvents.filter((event) => event.scanId === scanId && event.findingId).length,
-    auditReviewDecisionEvents: auditEvents.filter((event) => event.scanId === scanId && event.eventType === 'review_recorded').length,
+    auditRecordedEvents,
+    auditLinkedFindingEvents,
+    auditReviewDecisionEvents,
+  }
+  const nextEvaluation = refreshEvaluationReviewContext(evaluation, nextMetrics)
+
+  return {
+    ...nextMetrics,
+    evaluation: nextEvaluation,
+    aggregation: refreshReviewAggregation({
+      auditLinkedFindingEvents,
+      auditRecordedEvents,
+      auditReviewDecisionEvents,
+      evaluation: nextEvaluation,
+      metrics: nextMetrics,
+    }),
   }
 }
 

@@ -139,6 +139,33 @@ Scan:
         warnings:
           type: array
           items: { type: string }
+    signalDetection:
+      type: object
+      additionalProperties: true
+      properties:
+        status: { type: string }
+        detectorRulesVersion: { type: string }
+        detectorRulesHash: { type: string }
+        evidenceRequirements:
+          type: array
+          items: { type: string }
+        evaluatedEvidenceCandidates: { type: integer, minimum: 0 }
+        detectedSignals: { type: integer, minimum: 0 }
+        redactedSignals: { type: integer, minimum: 0 }
+        findingsWithSignals: { type: integer, minimum: 0 }
+        rawContentExposed: { type: boolean }
+        signalTypeCounts:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              type: { type: string }
+              signals: { type: integer, minimum: 0 }
+              evidenceRequirement: { type: string }
+        warnings:
+          type: array
+          items: { type: string }
     contextRisk:
       type: object
       additionalProperties: true
@@ -238,6 +265,33 @@ Scan:
         reviewDecisionEvents: { type: integer, minimum: 0 }
         systemEvents: { type: integer, minimum: 0 }
         humanEvents: { type: integer, minimum: 0 }
+        rawContentExposed: { type: boolean }
+        legalConclusionProvided: { type: boolean }
+        deletionExecuted: { type: boolean }
+        warnings:
+          type: array
+          items: { type: string }
+    deltaScan:
+      type: object
+      additionalProperties: true
+      properties:
+        status: { type: string }
+        baselineScanId: { type: string }
+        baselineSourceSnapshotId: { type: string }
+        baselineInventoryFingerprint: { type: string }
+        baselineTotalFiles: { type: integer, minimum: 0 }
+        baselineFindingCount: { type: integer, minimum: 0 }
+        deltaFingerprint: { type: string }
+        changedFiles: { type: integer, minimum: 0 }
+        newFiles: { type: integer, minimum: 0 }
+        modifiedFiles: { type: integer, minimum: 0 }
+        unchangedFiles: { type: integer, minimum: 0 }
+        missingFiles: { type: integer, minimum: 0 }
+        processedChangedFiles: { type: integer, minimum: 0 }
+        carriedForwardFiles: { type: integer, minimum: 0 }
+        reopenedFindings: { type: integer, minimum: 0 }
+        unchangedFindingsCarriedForward: { type: integer, minimum: 0 }
+        missingFilesTreatedAsDeleted: { type: boolean }
         rawContentExposed: { type: boolean }
         legalConclusionProvided: { type: boolean }
         deletionExecuted: { type: boolean }

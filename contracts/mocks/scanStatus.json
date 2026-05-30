@@ -39,7 +39,9 @@
       {
         "stage": "detecting_signals",
         "status": "completed",
-        "processedFiles": 64
+        "processedFiles": 38,
+        "totalFiles": 64,
+        "warnings": []
       },
       {
         "stage": "judging_context_risk",
@@ -75,6 +77,19 @@
         "processedFiles": 39,
         "totalFiles": 39,
         "warnings": []
+      },
+      {
+        "stage": "generating_evaluation_metrics",
+        "status": "computed",
+        "processedFiles": 42,
+        "totalFiles": 42,
+        "warnings": [
+          "1 predicted positive file needs false-positive review.",
+          "3 golden dataset positives are not detected in this P0 run.",
+          "4 files need recoverable extraction review.",
+          "2 files use unsupported formats in this P0 fixture.",
+          "2 files are marked for future OCR instead of paid P0 processing."
+        ]
       }
     ],
     "fileInventory": {
@@ -162,6 +177,65 @@
         "2 files use unsupported formats in this P0 fixture.",
         "2 files are marked for future OCR instead of paid P0 processing."
       ]
+    },
+    "signalDetection": {
+      "status": "completed",
+      "detectorRulesVersion": "deterministic-p0-v1",
+      "detectorRulesHash": "sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_signal_detection_completed",
+      "evidenceRequirements": ["redacted_snippet", "detector_signal", "owner_assignment", "policy_version"],
+      "evaluatedEvidenceCandidates": 64,
+      "detectedSignals": 38,
+      "redactedSignals": 38,
+      "findingsWithSignals": 17,
+      "rawContentExposed": false,
+      "signalTypeCounts": [
+        {
+          "type": "access_role",
+          "signals": 3,
+          "evidenceRequirement": "detector_signal"
+        },
+        {
+          "type": "billing_address",
+          "signals": 4,
+          "evidenceRequirement": "detector_signal"
+        },
+        {
+          "type": "employee_id",
+          "signals": 7,
+          "evidenceRequirement": "detector_signal"
+        },
+        {
+          "type": "feedback_comment",
+          "signals": 3,
+          "evidenceRequirement": "detector_signal"
+        },
+        {
+          "type": "free_text_personal_data",
+          "signals": 3,
+          "evidenceRequirement": "detector_signal"
+        },
+        {
+          "type": "iban_like",
+          "signals": 4,
+          "evidenceRequirement": "detector_signal"
+        },
+        {
+          "type": "reimbursement_data",
+          "signals": 4,
+          "evidenceRequirement": "detector_signal"
+        },
+        {
+          "type": "signature",
+          "signals": 4,
+          "evidenceRequirement": "detector_signal"
+        },
+        {
+          "type": "email",
+          "signals": 6,
+          "evidenceRequirement": "detector_signal"
+        }
+      ],
+      "warnings": []
     },
     "contextRisk": {
       "status": "completed",

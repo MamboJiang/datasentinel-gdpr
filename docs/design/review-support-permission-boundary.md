@@ -4,7 +4,7 @@
 
 After finding assembly, DataSentinel needs to tell a human reviewer what they can do, what they cannot do, what evidence must be checked, and which policy-pack version governs the decision. This stage must connect the assembled finding, owner routing, active governance model, and actor permission boundary before any review command is submitted.
 
-The separate local Atlas markdown referenced by the user was not present in this repository or the searched `/Users/y.h/Documents` directory at implementation time. This design therefore applies the Atlas-derived continuity requirements already recorded in `docs/design/source-inventory-content-extraction.md`, `docs/design/context-risk-judgment.md`, `docs/design/owner-routing-assignment.md`, and `docs/design/finding-assembly-evidence-card.md`, plus the adaptive governance contract.
+This design applies the repository Atlas reference in `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md`, deterministic signal-detection continuity from `docs/design/deterministic-signal-detection.md`, and the adaptive governance contract.
 
 ## Scope
 
@@ -33,7 +33,7 @@ Excluded:
 
 | ID | Requirement |
 | --- | --- |
-| REVIEW-REQ-001 | Preserve continuity from source inventory, extraction, context/risk, owner routing, and finding assembly before preparing review support. |
+| REVIEW-REQ-001 | Preserve continuity from source inventory, extraction, deterministic signal detection, context/risk, owner routing, and finding assembly before preparing review support. |
 | REVIEW-REQ-002 | Show permissions before action, including allowed actions, denied actions, and denial reasons. |
 | REVIEW-REQ-003 | Require a human actor and reason for every review decision. |
 | REVIEW-REQ-004 | Provide checklist, transfer, and escalation support from policy-pack and organization-model concepts instead of hard-coded legal conclusions. |

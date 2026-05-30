@@ -4,7 +4,7 @@
 
 After owner routing, DataSentinel needs a visible assembly stage that turns redacted detector signals, context/risk output, owner assignment, policy context, and audit history into contract-compatible finding rows and evidence-card detail views. The stage must prove continuity from earlier workflow steps without becoming a production scanner, legal-advice engine, or deletion mechanism.
 
-The separate local Atlas markdown referenced by the user was not present in this repository or the searched parent document directory at implementation time. This design therefore applies the Atlas-derived continuity requirements already recorded in `docs/design/context-risk-judgment.md` and `docs/design/owner-routing-assignment.md`, plus the governance contract.
+This design applies the repository Atlas reference in `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md`, deterministic signal-detection continuity from `docs/design/deterministic-signal-detection.md`, and the governance contract.
 
 ## Scope
 
@@ -42,7 +42,7 @@ References:
 
 | ID | Requirement |
 | --- | --- |
-| FINDASM-REQ-001 | Finding assembly must run only after redacted signals, context/risk judgment, and owner assignment exist. |
+| FINDASM-REQ-001 | Finding assembly must run only after deterministic redacted signals, context/risk judgment, and owner assignment exist. |
 | FINDASM-REQ-002 | Each assembled finding must have at least one redacted evidence signal and an evidence card. |
 | FINDASM-REQ-003 | Evidence cards must show evidence, policy context, owner routing, retention status, action boundaries, and audit history without raw source content. |
 | FINDASM-REQ-004 | Assembly output must preserve policy-pack version, source snapshot, and deterministic assembly fingerprint for audit and evaluation. |

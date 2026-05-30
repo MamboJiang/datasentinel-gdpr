@@ -4,7 +4,7 @@
 
 After content extraction and deterministic signal detection, DataSentinel needs a visible stage that turns redacted evidence candidates into context, risk, retention-review signals, and human-review guidance. The stage must help reviewers prioritize accountable work without becoming a legal-advice engine or an automatic deletion mechanism.
 
-This P0 slice is a deterministic, fixture-backed workflow connected to the existing scan lifecycle. It follows the previous source-inventory and content-extraction slice and the local Atlas-derived requirements referenced by `docs/design/source-inventory-content-extraction.md`.
+This P0 slice is a deterministic, fixture-backed workflow connected to the existing scan lifecycle. It follows source inventory, content extraction, deterministic signal detection, and the repository Atlas reference in `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md`.
 
 ## Scope
 
@@ -12,7 +12,7 @@ In scope:
 
 - A scan-level `contextRisk` summary exposed as an optional field on the existing scan payload.
 - A pipeline stage after `detecting_signals` and before scan completion.
-- Deterministic context and risk counts derived from redacted evidence candidates, sample-family metadata, and active policy-pack guidance.
+- Deterministic context and risk counts derived from redacted signal counts, sample-family metadata, modified-time context, and active policy-pack guidance.
 - Policy-pack version, risk-rule fingerprint, retention-review counts, and human-review boundary status.
 - Dashboard visibility for context/risk status without exposing raw source content.
 - Evaluation linkage through a context-risk rules hash and zero paid-service cost.
@@ -43,7 +43,7 @@ References:
 | ID | Requirement |
 | --- | --- |
 | CTXRISK-REQ-001 | Context/risk judgment must run only after evidence candidates exist; it cannot invent findings without detector evidence. |
-| CTXRISK-REQ-002 | Context classification must use source family, redacted evidence candidates, and active policy-pack guidance rather than raw file bodies. |
+| CTXRISK-REQ-002 | Context classification must use source family, redacted signal/evidence candidates, modified-time context, and active policy-pack guidance rather than raw file bodies. |
 | CTXRISK-REQ-003 | Risk output must include evidence and policy rationale but must not make a legal conclusion. |
 | CTXRISK-REQ-004 | Retention status must be neutral or review-required when metadata is insufficient; automated deletion is not allowed. |
 | CTXRISK-REQ-005 | The active policy-pack version must be attached to the judgment output for audit and reproducibility. |
@@ -67,7 +67,7 @@ References:
 | State | Event | Guard | Next State | Side Effect |
 | --- | --- | --- | --- | --- |
 | Extracting content | Extraction summarized | Redacted evidence candidates are counted | Detecting signals | Detector stage receives only internal evidence candidates |
-| Detecting signals | Signals detected | Snippets are redacted and fingerprinted | Judging context risk | Build context/risk input from counts, source family, and policy pack |
+| Detecting signals | Signals detected | Snippets are redacted and detector rules hash is available | Judging context risk | Build context/risk input from signal counts, source family, modified-time context, and policy pack |
 | Detecting signals | No signals found | File was scanned successfully | No finding | Count scanned file without risk output |
 | Judging context risk | Policy pack active | Guidance can be applied | Context risk judged | Attach policy-pack version and risk-rule fingerprint |
 | Judging context risk | Guidance incomplete | Tolerant fallback is allowed | Context risk judged with neutral values | Mark unknown context/risk as neutral, not fatal |
@@ -96,7 +96,7 @@ Admin metrics may include optional context/risk counters. Evaluation may include
 
 ## Privacy and Security Boundaries
 
-- The stage receives redacted evidence candidate counts and detector output references, not raw source content.
+- The stage receives redacted signal/evidence candidate counts and detector output references, not raw source content.
 - Public payloads must not expose raw extracted text, file bodies, page images, unredacted personal data, salts, or secret classifier configuration.
 - Risk explanation is operational review guidance, not legal advice.
 - `legalConclusionProvided` must remain `false` in P0.

@@ -27,6 +27,7 @@ In scope:
 - Start a simulated full scan from the default organizer sample source when it is `mock_ready`.
 - Start a simulated full scan from the Sources page only when the chosen source is scan-ready.
 - Keep the request model aligned with the contract by using an explicit `sourceId`.
+- Require current actor context, idempotency context when available, source readability/readiness, and the active policy-pack version before creating scan state.
 - Update scan status, progress, admin metrics, audit events, and evaluation summary in the mock data layer.
 - Add behavior tests for source readiness, default source selection, running scan state, completion state, metrics, audit events, and denied start attempts.
 
@@ -51,7 +52,7 @@ Out of scope:
 
 | State | Event | Guard | Next State | Side Effect |
 | --- | --- | --- | --- | --- |
-| Source listed | Full scan requested | Source exists and status is `mock_ready` | Full scan running | Create scan record, set partial metrics, record `full_scan_started` audit event |
+| Source listed | Full scan requested | Source exists, current actor is present, idempotency context is stable, active policy pack is known, and status is `mock_ready` | Full scan running | Create scan record, attach policy context, set partial metrics, record `full_scan_started` audit event |
 | Source listed | Full scan requested | Source missing or not scan-ready | Source listed | Reject start in UI/mock layer and show a neutral denial message |
 | Full scan running | Duplicate full scan requested | Same scan is already running | Full scan running | Do not create a conflicting scan record |
 | Full scan running | Simulated completion reached | Scan was not replaced by another scan | Full scan completed | Set progress to 1, set duration and throughput, record `full_scan_completed`, refresh evaluation summary |
@@ -80,7 +81,7 @@ Revert the workflow helper, page wiring, test files, and Vitest dependency. The 
 
 - The Dashboard start action targets the default organizer sample source by `sourceId`.
 - The Sources table starts a full scan for the clicked source, not always the first source.
-- Only `mock_ready` sources can start the P0 full scan simulation.
+- Only readable or P0 `mock_ready` sources can start the full scan simulation, and the start command includes current actor, active policy-pack context, and idempotency context when available.
 - Starting a full scan creates a running scan with progress, scanned-file count, flagged-file count, scanned volume, and a scan-start audit event.
 - Completing the simulated full scan updates progress to 100%, duration, throughput, scanned totals, evaluation scan ID, and a scan-completion audit event.
 - A not-ready source cannot create a scan or audit event.

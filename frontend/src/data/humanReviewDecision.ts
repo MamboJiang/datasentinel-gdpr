@@ -129,6 +129,13 @@ export function recordHumanReviewDecision(
     reviewSupport.policyPackVersion,
     supportRulesFingerprint,
   )
+  const metrics = updateReviewDecisionMetrics({
+    auditEvents: nextAuditEvents,
+    decision: input.decision,
+    evaluation,
+    metrics: current.metrics,
+    scanId: current.scan.scanId,
+  })
 
   return {
     accepted: true,
@@ -149,14 +156,8 @@ export function recordHumanReviewDecision(
         ]),
       ),
       auditEvents: nextAuditEvents,
-      metrics: updateReviewDecisionMetrics({
-        auditEvents: nextAuditEvents,
-        decision: input.decision,
-        evaluation,
-        metrics: current.metrics,
-        scanId: current.scan.scanId,
-      }),
-      evaluation,
+      metrics,
+      evaluation: metrics.evaluation ?? evaluation,
     },
     duplicate: false,
     review,

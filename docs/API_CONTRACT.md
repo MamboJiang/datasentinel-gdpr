@@ -145,6 +145,7 @@ Start guard:
 - P0 accepts full-scan start for the controlled `mock_ready` organizer sample source.
 - A source that is missing, unreadable, or not scan-ready must not create a scan record; backend implementations should return `application/problem+json`, and mock UI implementations should show a neutral denial message.
 - Accepted scan starts should be idempotent when `Idempotency-Key` is present.
+- `POST /api/scans/delta` requires `sourceId` and a completed selected-source baseline; when `baselineScanId` is provided it must match an available baseline. Missing, running, not-ready, or mismatched baselines must not create scan, audit, finding, metric, or evaluation state changes.
 
 `queued -> running -> completed`
 
@@ -161,10 +162,13 @@ Retry path:
 Internal P0 stage visibility:
 
 - `source_ready -> inventorying_files -> extracting_content -> detecting_signals -> judging_context_risk -> assigning_owner -> assembling_findings -> preparing_review_support -> recording_audit_events -> completed`
+- Delta scans may insert `comparing_delta_baseline` after `source_ready` and before `inventorying_files`.
 - Inventory, extraction, context/risk, owner-assignment, finding-assembly, review-support, and audit-recording stages are exposed as optional scan summaries, not as public endpoints.
 - Running scans may return `meta.partial = true` with recoverable inventory or extraction warnings.
 - Public scan payloads must not expose raw extracted text, full source content, page images, or unredacted personal data.
 - `rawContentExposed = false` is the required P0 value when extraction status is visible.
+- Signal detection output may include `signalDetection` with detector rules version/hash, active evidence requirements, evaluated evidence-candidate count, detected/redacted signal count, findings-with-signals count, signal-type counts, warnings, and `rawContentExposed = false`.
+- Deterministic signal detection is evidence generation only; public payloads must not expose raw extracted text, unredacted snippets, detector secrets, legal conclusions, or deletion execution.
 - `contextRisk.legalConclusionProvided = false` is the required P0 value when context/risk status is visible.
 - Context/risk output must include policy-pack version and must use neutral values when policy guidance is missing or unknown.
 - Owner assignment output must include policy-pack version, organization-model version, owner-resolution strategy, assignment-rule fingerprint, and routed counts when visible.
@@ -175,6 +179,10 @@ Internal P0 stage visibility:
 - Review support output must include policy-pack version, organization-model version, visible allowed actions, visible denied actions, required reason fields, checklist items, transfer options, and escalation options when available.
 - Review support must not expose raw source content, unredacted personal data, hidden permission data, legal conclusions, or deletion execution.
 - Audit recording output must include policy-pack version, audit rules fingerprint, event counts, scan-linked count, finding-linked count, review-decision count, human/system counts, `rawContentExposed = false`, `legalConclusionProvided = false`, and `deletionExecuted = false` when visible.
+- Delta scan output may include `deltaScan` with baseline scan ID, source snapshot, inventory fingerprint, baseline totals, delta fingerprint, changed/new/modified/unchanged/missing counts, carried-forward counts, reopened finding counts, warnings, `missingFilesTreatedAsDeleted = false`, `rawContentExposed = false`, `legalConclusionProvided = false`, and `deletionExecuted = false`.
+- Missing files in a delta scan are source inventory changes only; public payloads must not imply DataSentinel deletion or proof of erasure.
+- Admin metrics may include optional `aggregation` with status, input-stage basis, scan coverage, risk queue, owner backlog, review outcomes, audit evidence, delta counts, evaluation linkage, cost fields, and safety-boundary booleans. Aggregation is derived from prior workflow summaries and must not expose raw source content, legal conclusions, hidden permission data, or deletion execution.
+- Evaluation may include optional `signalDetectionRulesHash`, `evaluationRulesHash`, and `qualityBasis` fields with golden dataset identity, input-stage basis, confusion matrix, scenario metrics, review-throughput context, risk-progress context, warnings, and safety-boundary booleans. Evaluation is generated from prior workflow summaries and must not expose raw source content, legal conclusions, hidden permission data, or deletion execution.
 
 ### Finding Status
 
@@ -267,7 +275,11 @@ Frontend agents should begin with:
 
 Mocks are contract fixtures. They are not production seed data.
 
-Scan mocks may include optional `fileInventory`, `contentExtraction`, `contextRisk`, `ownerAssignment`, `findingAssembly`, `reviewSupport`, and `pipelineStages` fields. These fields summarize internal processing and are safe for public UI because they expose counts, hashes, methods, policy-pack version, organization-model version, warnings, and redaction boundaries rather than raw source content.
+Scan mocks may include optional `fileInventory`, `contentExtraction`, `signalDetection`, `contextRisk`, `ownerAssignment`, `findingAssembly`, `reviewSupport`, and `pipelineStages` fields. These fields summarize internal processing and are safe for public UI because they expose counts, hashes, methods, policy-pack version, organization-model version, warnings, and redaction boundaries rather than raw source content.
+
+Admin metrics mocks may include optional `detectedSignals`, `redactedSignals`, `findingsWithSignals`, and `aggregation`, and evaluation mocks may include optional `signalDetectionRulesHash` and `adminMetricsRulesHash`. These fields are forward-compatible management evidence for the signal-detection and admin-metrics aggregation stages.
+
+Evaluation mocks may include optional `evaluationRulesHash` and `qualityBasis`. These fields are forward-compatible measurement evidence for the evaluation-metrics generation stage.
 
 ## Breaking Changes
 

@@ -2,24 +2,30 @@ import type {
   ContentExtractionSummary,
   ContextRiskSummary,
   AuditRecordingSummary,
+  DeltaScanSummary,
+  EvaluationSummary,
   FindingAssemblySummary,
   FileInventorySummary,
   OwnerAssignmentSummary,
   ReviewSupportSummary,
+  SignalDetectionSummary,
   ScanPipelineStage,
 } from '../types'
 
 export function createPipelineStages(
   fileInventory: FileInventorySummary,
   contentExtraction: ContentExtractionSummary,
+  signalDetection: SignalDetectionSummary,
   contextRisk: ContextRiskSummary,
   ownerAssignment: OwnerAssignmentSummary,
   findingAssembly: FindingAssemblySummary,
   reviewSupport: ReviewSupportSummary,
   auditRecording: AuditRecordingSummary,
   completed: boolean,
+  deltaScan?: DeltaScanSummary,
+  evaluation?: EvaluationSummary,
 ): ScanPipelineStage[] {
-  return [
+  const stages: ScanPipelineStage[] = [
     {
       stage: 'source_ready',
       status: 'completed',
@@ -40,8 +46,10 @@ export function createPipelineStages(
     },
     {
       stage: 'detecting_signals',
-      status: completed ? 'completed' : 'pending',
-      processedFiles: completed ? contentExtraction.redactedEvidenceCandidates : 0,
+      status: signalDetection.status,
+      processedFiles: signalDetection.redactedSignals,
+      totalFiles: completed ? signalDetection.evaluatedEvidenceCandidates : undefined,
+      warnings: signalDetection.warnings,
     },
     {
       stage: 'judging_context_risk',
@@ -78,5 +86,28 @@ export function createPipelineStages(
       totalFiles: completed ? auditRecording.recordedEventCount : undefined,
       warnings: auditRecording.warnings,
     },
+    {
+      stage: 'generating_evaluation_metrics',
+      status: completed ? evaluation?.qualityBasis?.status ?? 'computed' : 'pending',
+      processedFiles: completed ? evaluation?.qualityBasis?.confusionMatrix.evaluatedFiles : 0,
+      totalFiles: completed ? fileInventory.totalCandidateFiles : undefined,
+      warnings: evaluation?.qualityBasis?.warnings ?? [],
+    },
+  ]
+
+  if (!deltaScan) {
+    return stages
+  }
+
+  return [
+    stages[0],
+    {
+      stage: 'comparing_delta_baseline',
+      status: deltaScan.status,
+      processedFiles: deltaScan.processedChangedFiles,
+      totalFiles: deltaScan.changedFiles,
+      warnings: deltaScan.warnings,
+    },
+    ...stages.slice(1),
   ]
 }

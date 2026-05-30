@@ -1,47 +1,33 @@
 import {
   Activity,
   Bell,
-  BookOpen,
   Check,
   ChevronsUpDown,
   Database,
   FileSearch,
   Gauge,
-  Home,
   LayoutDashboard,
-  LifeBuoy,
-  LogOut,
   Menu,
-  Monitor,
-  Moon,
-  MoreHorizontal,
-  PanelLeftClose,
-  PanelLeftOpen,
-  PencilLine,
   Plus,
   Search,
   Settings2,
   ShieldCheck,
-  SmilePlus,
-  Sun,
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { AccountMenu } from './AccountMenu'
+import {
+  SIDEBAR_COLLAPSED_WIDTH,
+  SIDEBAR_DEFAULT_WIDTH,
+  SidebarResizeHandle,
+} from './SidebarResizeHandle'
 import { useData } from '../data/useData'
-
-const accountName = 'Anna Schneider'
-const accountEmail = 'anna.schneider@example.com'
-const workspaceName = 'DataSentinel GDPR'
+import { utilityPageTitles, workspaceSimulation } from '../data/sessionSimulation'
 
 const workspaces = [
-  {
-    id: 'datasentinel-gdpr',
-    name: workspaceName,
-    description: 'Privacy operations workspace',
-    plan: 'Demo',
-  },
+  workspaceSimulation,
 ]
 
 type NavigationItem = {
@@ -60,21 +46,12 @@ const navigation: NavigationItem[] = [
   { to: '/governance', label: 'Governance', icon: Settings2 },
 ]
 
-const accountLinks = [
-  { label: 'Feedback', icon: SmilePlus },
-  { label: 'Home Page', icon: Home },
-  { label: 'Changelog', icon: PencilLine },
-  { label: 'Help', icon: LifeBuoy },
-  { label: 'Docs', icon: BookOpen },
-  { label: 'Log Out', icon: LogOut },
-]
-
 function getPageTitle(pathname: string) {
   if (pathname.startsWith('/findings/')) {
     return 'Finding Detail'
   }
 
-  return navigation.find(({ to, end }) => (end ? pathname === to : pathname.startsWith(to)))?.label ?? 'DataSentinel'
+  return navigation.find(({ to, end }) => (end ? pathname === to : pathname.startsWith(to)))?.label ?? utilityPageTitles[pathname] ?? 'DataSentinel'
 }
 
 export function AppShell() {
@@ -82,6 +59,7 @@ export function AppShell() {
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT_WIDTH)
   const [workspaceOpen, setWorkspaceOpen] = useState(false)
   const [workspaceQuery, setWorkspaceQuery] = useState('')
   const [accountOpen, setAccountOpen] = useState(false)
@@ -89,6 +67,8 @@ export function AppShell() {
   const pageTitle = getPageTitle(location.pathname)
   const visibleWorkspaces = workspaces.filter(({ name }) => name.toLowerCase().includes(workspaceQuery.toLowerCase()))
   const visibleNavigation = navigation.filter(({ label }) => label.toLowerCase().includes(navQuery.toLowerCase()))
+  const activeSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth
+  const shellStyle = { '--sidebar-width': `${activeSidebarWidth}px` } as CSSProperties
 
   function closeWorkspaceSwitcher() {
     setWorkspaceOpen(false)
@@ -131,7 +111,7 @@ export function AppShell() {
   }, [accountOpen])
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" style={shellStyle}>
       <aside className={`sidebar ${mobileOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <div className="workspace-header">
           <button
@@ -152,10 +132,10 @@ export function AppShell() {
           >
             <span className="workspace-avatar" aria-hidden="true">DS</span>
             <span className="workspace-trigger-copy">
-              <strong>{workspaceName}</strong>
+              <strong>{workspaceSimulation.name}</strong>
               <span>Privacy workspace</span>
             </span>
-            <span className="workspace-plan">Demo</span>
+            <span className="workspace-plan">{workspaceSimulation.plan}</span>
             <ChevronsUpDown aria-hidden="true" size={16} />
           </button>
           <button className="sidebar-close" type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)}>
@@ -230,96 +210,36 @@ export function AppShell() {
           {visibleNavigation.length === 0 ? <span className="nav-empty">No navigation matches</span> : null}
         </nav>
 
-        <div className="account-dock">
-          {accountOpen ? (
-            <>
-              <button className="account-backdrop" type="button" aria-label="Close account menu" onClick={closeAccountMenu} />
-              <section className="account-popover" id="account-menu-panel" role="dialog" aria-label="Account menu">
-                <div className="account-popover-header">
-                  <div>
-                    <strong>{accountName}</strong>
-                    <span>{accountEmail}</span>
-                  </div>
-                  <button className="account-settings" type="button" aria-label="Account settings">
-                    <Settings2 aria-hidden="true" size={20} />
-                  </button>
-                </div>
+        <AccountMenu
+          accountOpen={accountOpen}
+          onClose={closeAccountMenu}
+          onCloseWorkspace={closeWorkspaceSwitcher}
+          onToggle={() => setAccountOpen((isOpen) => !isOpen)}
+          onToggleSidebar={() => {
+            closeWorkspaceSwitcher()
+            closeAccountMenu()
+            setSidebarCollapsed((isCollapsed) => !isCollapsed)
+          }}
+          sidebarCollapsed={sidebarCollapsed}
+        />
+        <SidebarResizeHandle
+          collapsed={sidebarCollapsed}
+          onInteractionStart={() => {
+            closeWorkspaceSwitcher()
+            closeAccountMenu()
+          }}
+          onResize={({ collapsed, width }) => {
+            setSidebarCollapsed(collapsed)
 
-                <div className="account-menu-list">
-                  <button className="account-menu-row" type="button">
-                    <span>Theme</span>
-                    <span className="theme-control" aria-label="Theme options">
-                      <Monitor aria-hidden="true" size={18} />
-                      <Sun aria-hidden="true" size={18} />
-                      <Moon aria-hidden="true" size={18} />
-                    </span>
-                  </button>
-                  {accountLinks.map(({ label, icon: Icon }) => (
-                    <button className="account-menu-row" key={label} type="button">
-                      <span>{label}</span>
-                      <Icon aria-hidden="true" size={19} />
-                    </button>
-                  ))}
-                </div>
-
-                <button className="upgrade-button" type="button">Upgrade to Pro</button>
-
-                <div className="platform-status">
-                  <span>Platform Status</span>
-                  <strong>All systems normal.</strong>
-                  <i aria-hidden="true" />
-                </div>
-              </section>
-            </>
-          ) : null}
-
-          <div className="account-footer">
-            <button
-              aria-controls="account-menu-panel"
-              aria-expanded={accountOpen}
-              aria-haspopup="dialog"
-              className="account-trigger"
-              onClick={() => {
-                closeWorkspaceSwitcher()
-                setAccountOpen((isOpen) => !isOpen)
-              }}
-              type="button"
-            >
-              <span className="account-avatar" aria-hidden="true">AS</span>
-              <span>
-                <strong>{accountName}</strong>
-                <small>{accountEmail}</small>
-              </span>
-            </button>
-            <button
-              className="account-icon-button"
-              type="button"
-              aria-label="Open account menu"
-              onClick={() => {
-                closeWorkspaceSwitcher()
-                setAccountOpen((isOpen) => !isOpen)
-              }}
-            >
-              <MoreHorizontal aria-hidden="true" size={18} />
-            </button>
-            <button
-              className="account-icon-button sidebar-toggle-button"
-              type="button"
-              aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              aria-pressed={sidebarCollapsed}
-              onClick={() => {
-                closeWorkspaceSwitcher()
-                closeAccountMenu()
-                setSidebarCollapsed((isCollapsed) => !isCollapsed)
-              }}
-            >
-              {sidebarCollapsed ? <PanelLeftOpen aria-hidden="true" size={18} /> : <PanelLeftClose aria-hidden="true" size={18} />}
-            </button>
-          </div>
-        </div>
+            if (!collapsed) {
+              setSidebarWidth(width)
+            }
+          }}
+          width={sidebarWidth}
+        />
       </aside>
 
-      <div className={`content-shell ${sidebarCollapsed ? 'content-shell-collapsed' : ''}`}>
+      <div className="content-shell">
         <header className="topbar">
           <button className="mobile-menu" type="button" aria-label="Open navigation" onClick={() => setMobileOpen(true)}>
             <Menu aria-hidden="true" size={20} />

@@ -84,12 +84,27 @@ Technical constraints:
 
 ## Context and Risk Judgment Technical Slice
 
+## Deterministic Signal Detection Technical Slice
+
+The approved signal-detection implementation is a deterministic frontend mock workflow slice connected to the existing extraction lifecycle. It keeps the public API endpoint set unchanged and adds only optional scan, metrics, and evaluation fields that tolerant clients may ignore.
+
+Technical constraints:
+
+- Deterministic signal detection is an explicit workflow boundary after `extracting_content`; it is not context/risk judgment, owner routing, legal review, or deletion handling.
+- The stage consumes internal extracted text/evidence candidates, detector rules version/hash, and active policy-pack evidence requirements.
+- The stage exposes `signalDetection` as a scan summary with detector rules version/hash, evidence requirements, evaluated evidence-candidate count, detected/redacted signal count, findings-with-signals count, signal-type counts, warnings, and `rawContentExposed = false`.
+- Public payloads must not expose raw extracted text, full file content, page images, detector secrets, or unredacted personal data.
+- Evaluation must preserve a signal-detection rules hash, deterministic reproducibility, zero model calls, and zero estimated paid-service cost.
+- Production NER, OCR, parser, Microsoft Graph, OAuth, directory, notification, ticketing, and deletion integrations are not added in this slice.
+
+## Context and Risk Judgment Technical Slice
+
 The approved context/risk implementation is a deterministic frontend mock workflow slice connected to the existing extraction and signal-detection lifecycle. It keeps the public API endpoint set unchanged and adds only optional scan, metrics, policy-pack, and evaluation fields that tolerant clients may ignore.
 
 Technical constraints:
 
 - Context/risk judgment is an explicit workflow boundary after `detecting_signals`; it is not owner routing, legal review, or deletion handling.
-- The stage consumes redacted evidence candidate counts, sample-family metadata, and active policy-pack guidance.
+- The stage consumes redacted signal/evidence candidate counts, sample-family metadata, modified-time context, and active policy-pack guidance.
 - The stage exposes `contextRisk` as a scan summary with policy-pack version, risk-rule fingerprint, context counts, risk counts, retention-review count, human-review count, warnings, and `legalConclusionProvided = false`.
 - Missing policy guidance must produce neutral or unknown output instead of raw-content fallback or legal conclusions.
 - Dashboard presentation must keep raw source text, file bodies, page images, unredacted personal data, and legal advice out of the UI.
@@ -170,6 +185,52 @@ Technical constraints:
 - Dashboard and audit presentation must keep raw source text, file bodies, page images, unredacted personal data, hidden permission data, legal advice, and deletion execution out of the UI.
 - Evaluation must preserve an audit-recording rules hash, deterministic reproducibility, zero model calls, and zero estimated paid-service cost.
 - Production event stores, SIEM pipelines, WORM storage, cryptographic signing, authorization providers, Microsoft Graph, OAuth, directory, notification, ticketing, and deletion integrations are not added in this slice.
+
+## Incremental Delta Scan Technical Slice
+
+The approved incremental delta implementation is a deterministic frontend mock workflow slice connected to the completed full-scan baseline. It keeps the public API endpoint set unchanged and adds only optional scan, metrics, and evaluation fields that tolerant clients may ignore.
+
+Technical constraints:
+
+- Delta scan is an explicit workflow boundary after audit recording and before later evaluation reporting; it is not a production connector or deletion mechanism.
+- The stage requires a completed selected-source baseline and rejects missing, running, not-ready, or mismatched baselines before changing state.
+- The stage exposes `deltaScan` as a scan summary with baseline scan ID, source snapshot, inventory fingerprint, baseline totals, delta fingerprint, changed/new/modified/unchanged/missing counts, carried-forward counts, reopened finding counts, warnings, and safety-boundary booleans.
+- The pipeline may expose `comparing_delta_baseline` before changed-file inventory and extraction.
+- Completed changed findings still flow through context/risk, owner routing, finding assembly, review support, audit recording, metrics, and evaluation.
+- Missing files are represented as source inventory changes only; `deletionExecuted` and `missingFilesTreatedAsDeleted` remain `false`.
+- Dashboard and Sources presentation must keep raw source text, file bodies, page images, unredacted personal data, hidden permission data, legal advice, and deletion execution out of the UI.
+- Evaluation must preserve a delta rules hash, deterministic reproducibility, throughput, zero model calls, and zero estimated paid-service cost.
+- Microsoft Graph delta query is documented as a future connector candidate only; no production Graph, OAuth, tenant, webhook, token storage, parser, OCR, AI, queue, database, ticketing, notification, retention-label, or deletion integration is added.
+
+## Admin Metrics Aggregation Technical Slice
+
+The approved admin-metrics implementation is a deterministic frontend mock workflow slice connected to full scan, delta scan, review support, human review decisions, audit recording, and evaluation. It keeps the public endpoint set unchanged and adds only optional metrics and evaluation fields that tolerant clients may ignore.
+
+Technical constraints:
+
+- Admin metrics aggregation is an explicit workflow boundary after audit recording and before evaluation reporting; it is not a production analytics store, BI layer, legal reporting system, or deletion executor.
+- The stage consumes scan coverage, inventory, extraction, context/risk, owner assignment, finding assembly, review support, audit recording, delta, human review, and evaluation summaries.
+- The stage exposes an optional `AdminMetrics.aggregation` summary with status, input-stage basis, scan coverage, risk queue, owner backlog, review outcomes, audit evidence, delta counts, evaluation linkage, resource cost, and safety-boundary booleans.
+- Running scans must set aggregation status to partial and carry upstream warnings.
+- Completed scans must preserve the admin-metrics rules fingerprint in evaluation as `adminMetricsRulesHash`.
+- Accepted review decisions update outcome, backlog, throughput, audit, and evaluation-linked aggregation exactly once; rejected and duplicate commands must not create duplicate metric increments.
+- Dashboard presentation must keep raw source text, file bodies, page images, unredacted personal data, hidden permission data, legal advice, and deletion execution out of the UI.
+- The implementation uses existing React, TypeScript, and Vitest only; no database, queue, analytics service, Microsoft Graph, OAuth, Purview, OCR, AI, or paid dependency is added.
+
+## Evaluation Metrics Generation Technical Slice
+
+The approved evaluation implementation is a deterministic frontend mock workflow slice connected to full scan, delta scan, admin metrics, human review decisions, and audit recording. It keeps the public endpoint set unchanged and adds only optional evaluation fields that tolerant clients may ignore.
+
+Technical constraints:
+
+- Evaluation generation is an explicit workflow boundary after admin metrics aggregation; it is not a production ML experiment tracker, BI store, legal report, or deletion proof.
+- The stage consumes inventory, extraction, context/risk, owner assignment, finding assembly, review support, audit recording, delta, admin metrics, human-review outcome, and scan timing summaries.
+- The stage exposes optional evaluation quality basis with golden dataset identity, input-stage basis, confusion matrix, scenario metrics, review throughput, risk-progress fields, safety boundaries, warnings, and an evaluation-rules fingerprint.
+- Completed scans must compute precision, recall, F1, reproducibility, throughput, and resource-intensity fields from deterministic P0 formulas rather than disconnected constants.
+- Accepted review decisions refresh review-throughput and risk-progress evaluation context exactly once; rejected and duplicate commands must not change evaluation state.
+- Completed delta scans must evaluate changed files and preserve baseline, carried-forward, missing-file, no-raw-content, no-legal-conclusion, no-deletion, zero-model-call, and zero-cost boundaries.
+- The Evaluation page must keep raw source text, file bodies, page images, unredacted personal data, hidden permission data, legal advice, and deletion execution out of the UI.
+- The implementation uses existing React, TypeScript, and Vitest only; no scikit-learn, MLflow, database, queue, analytics service, Microsoft Graph, OAuth, Purview, OCR, AI, or paid dependency is added in P0.
 
 ## Remote Preview Deployment Technical Slice
 

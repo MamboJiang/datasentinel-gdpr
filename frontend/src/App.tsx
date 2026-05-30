@@ -9,6 +9,16 @@ import { FindingsPage } from './pages/FindingsPage'
 import { GovernancePage } from './pages/GovernancePage'
 import { HomePage } from './pages/HomePage'
 import { SourcesPage } from './pages/SourcesPage'
+import {
+  AccountPage,
+  ChangelogPage,
+  DocsPage,
+  FeedbackPage,
+  HelpPage,
+  PlanPage,
+  PlatformStatusPage,
+  SessionBoundaryPage,
+} from './pages/SupportPages'
 
 function App() {
   return (
@@ -24,6 +34,14 @@ function App() {
             <Route path="audit" element={<AuditPage />} />
             <Route path="evaluation" element={<EvaluationPage />} />
             <Route path="governance" element={<GovernancePage />} />
+            <Route path="account" element={<AccountPage />} />
+            <Route path="feedback" element={<FeedbackPage />} />
+            <Route path="changelog" element={<ChangelogPage />} />
+            <Route path="help" element={<HelpPage />} />
+            <Route path="docs" element={<DocsPage />} />
+            <Route path="status" element={<PlatformStatusPage />} />
+            <Route path="plan" element={<PlanPage />} />
+            <Route path="session" element={<SessionBoundaryPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

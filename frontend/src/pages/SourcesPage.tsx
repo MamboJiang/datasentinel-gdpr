@@ -1,6 +1,6 @@
-import { CheckCircle2, Database, Plus, ScanSearch } from 'lucide-react'
+import { CheckCircle2, Database, Plus, RotateCw, ScanSearch } from 'lucide-react'
 import { useData } from '../data/useData'
-import { isSourceScanReady } from '../data/scanWorkflow'
+import { canStartDeltaScan, isSourceScanReady } from '../data/scanWorkflow'
 import { humanize } from '../components/formatters'
 import { Button, PageHeader, StatusBadge } from '../components/ui'
 
@@ -38,6 +38,7 @@ export function SourcesPage() {
             <tbody>
               {sources.map((source) => {
                 const scanReady = isSourceScanReady(source, governanceConfig)
+                const deltaReady = scanReady && !scanIsRunning && canStartDeltaScan(scan, source.sourceId)
 
                 return (
                   <tr key={source.sourceId}>
@@ -63,7 +64,16 @@ export function SourcesPage() {
                           type="button"
                           onClick={() => startScan({ scanType: 'full', sourceId: source.sourceId })}
                         >
-                          <ScanSearch aria-hidden="true" size={16} /> Scan
+                          <ScanSearch aria-hidden="true" size={16} /> Full scan
+                        </button>
+                        <button
+                          className="button button-ghost"
+                          disabled={!deltaReady}
+                          title={deltaReady ? undefined : 'Delta scan requires a completed full-scan baseline'}
+                          type="button"
+                          onClick={() => startScan({ baselineScanId: scan.deltaScan?.baselineScanId ?? scan.scanId, scanType: 'delta', sourceId: source.sourceId })}
+                        >
+                          <RotateCw aria-hidden="true" size={16} /> Delta scan
                         </button>
                       </div>
                     </td>

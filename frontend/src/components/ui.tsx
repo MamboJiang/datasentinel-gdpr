@@ -76,6 +76,7 @@ export function StatusBadge({ value }: { value?: string | null }) {
     {
       completed: 'positive',
       connected: 'positive',
+      computed: 'positive',
       mock_ready: 'positive',
       retained: 'positive',
       running: 'info',

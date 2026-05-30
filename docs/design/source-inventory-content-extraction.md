@@ -4,13 +4,14 @@
 
 After a controlled source starts a full scan, DataSentinel needs an observable step that turns source metadata into file candidates and content extraction outcomes. The step must be useful for GDPR discovery without becoming a second repository of raw sensitive content.
 
-This document defines the P0 implementation slice for source inventory and content extraction. It follows the existing source -> scan -> finding -> review -> audit -> delta -> evaluation loop and the external guidance in `GDPR Enterprise Expert Atlas` dated 2026-05-30.
+This document defines the P0 implementation slice for source inventory and content extraction. It follows the existing source -> scan -> finding -> review -> audit -> delta -> evaluation loop and the repository Atlas reference in `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md`.
 
 ## Scope
 
 In scope:
 
 - Deterministic sample-source file inventory summaries.
+- Internal file inventory items with path, size, modified timestamp, sample family, permission snapshot, readability status, and stable file fingerprint.
 - Deterministic content extraction summaries for text, metadata, table, and deferred OCR handling.
 - Redacted evidence-candidate counts only, not raw extracted text.
 - Scan-stage visibility through the existing scan, metrics, audit, and evaluation surfaces.
@@ -40,7 +41,7 @@ Out of scope:
 | ID | Requirement |
 | --- | --- |
 | INVEXT-REQ-001 | Build a file inventory baseline before findings are assembled. |
-| INVEXT-REQ-002 | Preserve file fingerprints and source snapshot identity for reproducibility and delta scans. |
+| INVEXT-REQ-002 | Preserve file path, size, modified timestamp, sample family, source snapshot identity, and file fingerprints internally for reproducibility and delta scans. |
 | INVEXT-REQ-003 | Extract only enough content-derived evidence to support redacted evidence candidates. |
 | INVEXT-REQ-004 | Keep raw extracted text inside an internal boundary and expose `rawContentExposed = false` in P0. |
 | INVEXT-REQ-005 | Represent unsupported or unreadable files as warnings when recoverable. |
@@ -80,6 +81,8 @@ The public contract does not gain a new endpoint. The scan payload may include o
 - `fileInventory`: candidate counts, fingerprints, family distribution, skipped files, and source snapshot ID.
 - `contentExtraction`: extraction status, method counts, warning counts, redacted evidence candidate count, and `rawContentExposed`.
 
+Internal inventory items use the minimum shape `filePath`, `sizeBytes`, `modifiedAt`, `sampleFamily`, `fileFingerprint`, `readabilityStatus`, and `permissionSnapshotId`. Public P0 scan payloads expose aggregate counts and fingerprints, not the raw internal extracted text.
+
 The admin metrics payload may include optional inventory and extraction counters. Clients must continue to ignore unknown fields.
 
 ## Privacy and Security Boundaries
@@ -109,6 +112,7 @@ If this slice creates UI or contract noise, remove the optional scan and metrics
 ## Primitive Acceptance Criteria
 
 - Starting a full scan creates visible file-inventory and content-extraction summaries for the selected source.
+- Internal inventory has file path, size, modified timestamp, sample family, fingerprint, and readability status for each candidate file.
 - Running scans mark partial data and show recoverable warnings without creating raw-content exposure.
 - Completing the scan marks inventory and extraction stages complete and preserves deterministic evaluation with zero model calls.
 - Optional fields remain compatible with the existing `ScanEnvelope` and `AdminMetricsEnvelope`.

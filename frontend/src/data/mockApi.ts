@@ -13,8 +13,10 @@ import {
   collectFindingTimelineEvents,
   deduplicateAuditEvents,
 } from './auditEventRecording'
+import { buildAdminMetricsAggregation } from './adminMetricsAggregation'
 import { assembleFindings } from './findingAssembly'
 import { buildReviewSupport, buildReviewSupportSummary } from './reviewSupport'
+import { updateEvaluation } from './scanEvaluation'
 import type {
   AdminMetrics,
   AuditEvent,
@@ -66,7 +68,9 @@ export function getInitialMockData(): MockData {
 
   if (
     data.scan.status !== 'completed'
+    || !data.scan.fileInventory
     || !data.scan.contentExtraction
+    || !data.scan.signalDetection
     || !data.scan.contextRisk
     || !data.scan.ownerAssignment
   ) {
@@ -113,6 +117,43 @@ export function getInitialMockData(): MockData {
     policyPackVersion: data.governanceConfig.activePolicyPack.version,
     scanId: data.scan.scanId,
     state: 'completed',
+  })
+  const aggregation = buildAdminMetricsAggregation({
+    auditRecording,
+    contentExtraction: data.scan.contentExtraction,
+    contextRisk: data.scan.contextRisk,
+    currentMetrics: data.metrics,
+    deltaScan: data.scan.deltaScan,
+    evaluation: data.evaluation,
+    fileInventory: data.scan.fileInventory,
+    findingAssembly: assembly.summary,
+    flaggedFiles: data.scan.flaggedFiles ?? data.metrics.flaggedFiles,
+    lastScanTimeSeconds: data.metrics.lastScanTimeSeconds ?? null,
+    ownerAssignment: data.scan.ownerAssignment,
+    reviewSupport: reviewSupportSummary,
+    scannedFiles: data.scan.scannedFiles ?? data.metrics.totalScannedFiles,
+    scannedGb: data.metrics.totalScannedGb ?? 0,
+    scanId: data.scan.scanId,
+    scanProgress: data.scan.progress,
+    scanType: data.scan.scanType,
+    signalDetection: data.scan.signalDetection,
+    sourceId: data.scan.sourceId,
+    state: 'completed',
+    throughputFilesPerSecond: data.scan.throughputFilesPerSecond ?? null,
+  })
+  const evaluation = updateEvaluation({
+    auditRecording,
+    completedScan: data.scan,
+    contentExtraction: data.scan.contentExtraction,
+    contextRisk: data.scan.contextRisk,
+    currentMetrics: data.metrics,
+    current: data.evaluation,
+    deltaScan: data.scan.deltaScan,
+    fileInventory: data.scan.fileInventory,
+    findingAssembly: assembly.summary,
+    ownerAssignment: data.scan.ownerAssignment,
+    reviewSupport: reviewSupportSummary,
+    signalDetection: data.scan.signalDetection,
   })
   const existingStages = data.scan.pipelineStages ?? []
   const pipelineStages = [
@@ -173,12 +214,9 @@ export function getInitialMockData(): MockData {
       auditRecordedEvents: auditRecording.recordedEventCount,
       auditLinkedFindingEvents: auditRecording.linkedFindingEvents,
       auditReviewDecisionEvents: auditRecording.reviewDecisionEvents,
+      evaluation,
+      aggregation,
     },
-    evaluation: {
-      ...data.evaluation,
-      findingAssemblyRulesHash: assembly.summary.assemblyRulesFingerprint,
-      reviewSupportRulesHash: reviewSupportSummary.supportRulesFingerprint,
-      auditRecordingRulesHash: auditRecording.auditRulesFingerprint,
-    },
+    evaluation,
   }
 }

@@ -38,9 +38,9 @@ describe('review support and permission boundary workflow', () => {
     const summary = completed.scan.reviewSupport
 
     expect(completed.scan.pipelineStages?.map((stage) => stage.stage).slice(-3)).toEqual([
-      'assembling_findings',
       'preparing_review_support',
       'recording_audit_events',
+      'generating_evaluation_metrics',
     ])
     expect(summary).toMatchObject({
       status: 'completed',

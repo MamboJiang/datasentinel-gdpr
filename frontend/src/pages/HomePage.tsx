@@ -1,56 +1,38 @@
-import { Activity, ArrowRight, Database, FileSearch, GitBranch, Scale, ShieldCheck, UserCheck } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { ArrowRight, ExternalLink } from 'lucide-react'
+import { useEffect, useRef, type MouseEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import {
+  consoleSurfaces,
+  contractSections,
+  evaluationMetrics,
+  proofPoints,
+  safetyBoundaries,
+  sampleFamilies,
+  workflowSteps,
+} from './homePageContent'
 import './HomePage.css'
 import './HomePage.sections.css'
 import './HomePage.responsive.css'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const proofPoints = [
-  {
-    title: 'Discover',
-    description: 'Find GDPR-relevant files in controlled sources.',
-    icon: Database,
-    tone: 'red',
-  },
-  {
-    title: 'Explain',
-    description: 'Show masked evidence and detector confidence.',
-    icon: FileSearch,
-    tone: 'blue',
-  },
-  {
-    title: 'Route',
-    description: 'Assign findings to accountable owners.',
-    icon: GitBranch,
-    tone: 'green',
-  },
-  {
-    title: 'Review',
-    description: 'Require a human decision and reason.',
-    icon: UserCheck,
-    tone: 'amber',
-  },
-  {
-    title: 'Audit',
-    description: 'Record workflow events for traceability.',
-    icon: Activity,
-    tone: 'ink',
-  },
-]
-
-const workflowSteps = [
-  'Controlled sample source is scanned without exposing raw file bodies.',
-  'Evidence is reduced to masked snippets, page labels, and risk context.',
-  'Findings move to the right owner, queue, or escalation path.',
-  'Every review decision captures the actor, reason, and resulting state.',
-]
-
 export function HomePage() {
   const rootRef = useRef<HTMLDivElement>(null)
+
+  function handleSectionLink(event: MouseEvent<HTMLAnchorElement>, sectionId: string) {
+    const section = document.getElementById(sectionId)
+
+    if (!section) {
+      return
+    }
+
+    event.preventDefault()
+    window.history.replaceState(null, '', `#${sectionId}`)
+    section.scrollIntoView({ behavior: 'auto', block: 'start' })
+    window.setTimeout(() => section.focus({ preventScroll: true }), 0)
+  }
 
   useEffect(() => {
     const root = rootRef.current
@@ -152,8 +134,10 @@ export function HomePage() {
   return (
     <div className="landing-page" ref={rootRef}>
       <div className="landing-announcement">
-        <span>DataSentinel P0 prototype is ready for GDPR evidence review.</span>
-        <a href="#workflow">See the workflow <ArrowRight aria-hidden="true" size={14} /></a>
+        <span>DataSentinel P0 is mock-backed, redacted, and human-reviewed.</span>
+        <a href="#safety" onClick={(event) => handleSectionLink(event, 'safety')}>
+          Review boundaries <ArrowRight aria-hidden="true" size={14} />
+        </a>
       </div>
 
       <header className="landing-nav-shell">
@@ -164,15 +148,16 @@ export function HomePage() {
           <span>DataSentinel</span>
         </Link>
         <nav className="landing-nav" aria-label="Homepage navigation">
-          <a href="#workflow">Workflow</a>
-          <a href="#governance">Governance</a>
-          <a href="#evaluation">Evaluation</a>
+          <a href="#problem" onClick={(event) => handleSectionLink(event, 'problem')}>Problem</a>
+          <a href="#workflow" onClick={(event) => handleSectionLink(event, 'workflow')}>Workflow</a>
+          <a href="#sample" onClick={(event) => handleSectionLink(event, 'sample')}>Sample</a>
+          <a href="#safety" onClick={(event) => handleSectionLink(event, 'safety')}>Safety</a>
         </nav>
         <Link className="landing-nav-cta" to="/dashboard">Open dashboard</Link>
       </header>
 
       <main>
-        <section className="landing-hero" id="overview">
+        <section className="landing-hero" id="overview" tabIndex={-1}>
           <div className="landing-hero-scene" aria-hidden="true">
             <div className="landing-scene-grid" />
             <div className="landing-file-card landing-parallax-slow">
@@ -186,7 +171,7 @@ export function HomePage() {
             </div>
             <div className="landing-route-card landing-parallax-medium">
               <span>Owner route</span>
-              <strong>Anna Schneider</strong>
+              <strong>Finance Master of Data</strong>
               <div>
                 <i /> <b /> <i />
               </div>
@@ -202,12 +187,15 @@ export function HomePage() {
 
           <div className="landing-hero-copy">
             <h1>DataSentinel</h1>
-            <p>GDPR data discovery with evidence, owner routing, human review, and audit trails.</p>
+            <p>
+              Evidence-backed GDPR-relevant data discovery that routes findings to accountable owners, requires human review,
+              and records audit-ready workflow evidence.
+            </p>
             <div className="landing-hero-actions">
               <Link className="landing-primary" to="/dashboard">
                 Open dashboard <ArrowRight aria-hidden="true" size={17} />
               </Link>
-              <a className="landing-secondary" href="#workflow">Review workflow</a>
+              <a className="landing-secondary" href="#workflow" onClick={(event) => handleSectionLink(event, 'workflow')}>Review workflow</a>
             </div>
           </div>
 
@@ -223,74 +211,140 @@ export function HomePage() {
           ))}
         </section>
 
-        <section className="landing-section landing-workflow" id="workflow">
+        <section className="landing-section landing-problem" id="problem" tabIndex={-1}>
+          <div className="landing-section-copy landing-reveal">
+            <h2>Detection is only the opening move.</h2>
+            <p>
+              Personal data can be scattered across distributed file stores. Manual auditing does not scale, and a plain
+              PII hit list cannot explain evidence, ownership, review decisions, auditability, or measurable quality.
+            </p>
+          </div>
+          <div className="landing-contract-grid">
+            {contractSections.map(({ title, description, icon: Icon }) => (
+              <article className="landing-contract-card landing-reveal" key={title}>
+                <Icon aria-hidden="true" size={24} />
+                <strong>{title}</strong>
+                <p>{description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="landing-section landing-workflow" id="workflow" tabIndex={-1}>
           <div className="landing-section-copy landing-reveal">
             <h2>From source files to accountable review.</h2>
             <p>
-              DataSentinel is not an automatic deletion tool. It turns controlled scans into evidence-backed findings,
-              routes them to accountable people, and records the human decision path.
+              DataSentinel is not a generic PII scanner or an automatic deletion tool. Detection starts a governed loop that
+              keeps redaction, ownership, review support, permission boundaries, audit, delta scans, and evaluation visible.
             </p>
           </div>
           <div className="landing-workflow-layout">
             <div className="landing-workflow-visual landing-reveal" aria-hidden="true">
-              <div className="landing-workflow-node">Scan</div>
+              <div className="landing-workflow-node">Source</div>
               <div className="landing-workflow-line" />
-              <div className="landing-workflow-node">Evidence</div>
+              <div className="landing-workflow-node">Signals</div>
+              <div className="landing-workflow-line" />
+              <div className="landing-workflow-node">Risk</div>
               <div className="landing-workflow-line" />
               <div className="landing-workflow-node">Owner</div>
               <div className="landing-workflow-line" />
               <div className="landing-workflow-node">Review</div>
+              <div className="landing-workflow-line" />
+              <div className="landing-workflow-node">Audit</div>
             </div>
             <div className="landing-workflow-steps">
               {workflowSteps.map((step, index) => (
-                <article className="landing-workflow-step" key={step}>
+                <article className="landing-workflow-step" key={step.title}>
                   <span>{String(index + 1).padStart(2, '0')}</span>
-                  <p>{step}</p>
+                  <div>
+                    <strong>{step.title}</strong>
+                    <p>{step.description}</p>
+                  </div>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="landing-section landing-governance" id="governance">
-          <div className="landing-governance-copy landing-reveal">
-            <h2>Governance stays explicit.</h2>
+        <section className="landing-section landing-sample" id="sample" tabIndex={-1}>
+          <div className="landing-section-copy landing-reveal">
+            <h2>Controlled sample source, not live enterprise data.</h2>
             <p>
-              Policy packs, permission boundaries, reviewer guidance, and escalation choices stay visible instead of
-              being hidden inside scanner logic.
+              The default demo references the organizer repository a-klumpp/GDPR-data-samples and uses controlled sample
+              or mock-backed behavior. The sample PDFs are referenced, not vendored into this project.
             </p>
           </div>
-          <div className="landing-governance-grid">
-            <article className="landing-governance-item landing-reveal">
-              <ShieldCheck aria-hidden="true" size={24} />
-              <strong>Masked by default</strong>
-              <p>Evidence snippets are redacted before they reach reviewer-facing surfaces.</p>
+          <div className="landing-sample-layout">
+            <article className="landing-sample-card landing-reveal">
+              <span>Reference source</span>
+              <strong>Organizer GDPR Data Samples</strong>
+              <a href="https://github.com/a-klumpp/GDPR-data-samples" rel="noreferrer" target="_blank">
+                Open repository reference <ExternalLink aria-hidden="true" size={14} />
+              </a>
             </article>
-            <article className="landing-governance-item landing-reveal">
-              <Scale aria-hidden="true" size={24} />
-              <strong>No legal shortcuts</strong>
-              <p>The workflow supports human decisions without claiming automated compliance.</p>
-            </article>
-            <article className="landing-governance-item landing-reveal">
-              <UserCheck aria-hidden="true" size={24} />
-              <strong>Accountable ownership</strong>
-              <p>Every assigned finding has an owner, a reason path, and an audit event trail.</p>
-            </article>
+            <div className="landing-sample-families landing-reveal" aria-label="Sample families">
+              {sampleFamilies.map((family) => <span key={family}>{family}</span>)}
+            </div>
           </div>
         </section>
 
-        <section className="landing-section landing-evaluation" id="evaluation">
+        <section className="landing-section landing-governance" id="governance" tabIndex={-1}>
+          <div className="landing-governance-copy landing-reveal">
+            <h2>Governance stays explicit.</h2>
+            <p>
+              Policy packs, organization models, permission boundaries, reviewer guidance, and escalation choices stay visible
+              instead of being hidden inside scanner logic.
+            </p>
+          </div>
+          <div className="landing-console-preview">
+            <div className="landing-console-list landing-reveal" aria-label="Internal console surfaces">
+              {consoleSurfaces.map((surface) => <span key={surface}>{surface}</span>)}
+            </div>
+            <div className="landing-console-copy landing-reveal">
+              <strong>Inspect the internal workspace simulation.</strong>
+              <p>
+                The console starts at /dashboard and keeps homepage navigation separate from the internal shell.
+              </p>
+              <Link className="landing-primary" to="/dashboard">
+                Open dashboard <ArrowRight aria-hidden="true" size={17} />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-section landing-evaluation" id="evaluation" tabIndex={-1}>
           <div className="landing-evaluation-board landing-reveal">
             <div>
               <h2>Measured, not guessed.</h2>
-              <p>Evaluation keeps precision, recall, reproducibility, throughput, and resource intensity in view.</p>
+              <p>
+                Evaluation keeps accuracy, reproducibility, throughput, and resource intensity in view. Mock-backed values are
+                prototype evidence, not production certification.
+              </p>
             </div>
             <dl>
-              <div><dt>Precision</dt><dd>0.91</dd></div>
-              <div><dt>Recall</dt><dd>0.86</dd></div>
-              <div><dt>F1</dt><dd>0.88</dd></div>
-              <div><dt>Cost</dt><dd>$0.00</dd></div>
+              {evaluationMetrics.map((metric) => (
+                <div key={metric.label}><dt>{metric.label}</dt><dd>{metric.value}</dd></div>
+              ))}
             </dl>
+          </div>
+        </section>
+
+        <section className="landing-section landing-safety" id="safety" tabIndex={-1}>
+          <div className="landing-section-copy landing-reveal">
+            <h2>Safe prototype boundaries stay visible.</h2>
+            <p>
+              The public homepage and internal console avoid raw sensitive content, legal advice, full-compliance claims,
+              automatic deletion, and production integration promises.
+            </p>
+          </div>
+          <div className="landing-safety-grid">
+            {safetyBoundaries.map(({ title, description, icon: Icon }) => (
+              <article className="landing-safety-card landing-reveal" key={title}>
+                <Icon aria-hidden="true" size={24} />
+                <strong>{title}</strong>
+                <p>{description}</p>
+              </article>
+            ))}
           </div>
         </section>
 

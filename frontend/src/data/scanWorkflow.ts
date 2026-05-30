@@ -7,6 +7,7 @@ import {
 } from './auditEventRecording'
 import { buildContentExtractionSummary } from './contentExtraction'
 import { buildContextRiskSummary } from './contextRisk'
+import { buildDeltaScanSummary, completeDeltaScanSummary, getDeltaScanBaseline } from './deltaScan'
 import { assembleFindings, buildFindingAssemblySummary, createFindingAssemblyAuditEvent } from './findingAssembly'
 import { buildFileInventorySummary } from './fileInventory'
 import { buildOwnerAssignmentSummary } from './ownerRouting'
@@ -14,6 +15,7 @@ import { buildReviewSupport, buildReviewSupportSummary } from './reviewSupport'
 import { createOwnerAssignmentAuditEvent, createScanAuditEvent } from './scanAudit'
 import { updateEvaluation } from './scanEvaluation'
 import { formatScanType } from './scanLabels'
+import { buildSignalDetectionSummary } from './signalDetection'
 import {
   getDefaultFullScanSource,
   isSourceScanReady,
@@ -22,45 +24,19 @@ import {
   type StartScanOptions,
 } from './scanProfiles'
 import { createPipelineStages } from './scanStages'
+import { buildCompletedScanMetrics, buildRunningScanMetrics } from './scanWorkflowMetrics'
 import {
-  calculateScannedGb,
   clearPartialMeta,
   createPartialMeta,
   getSourceConnectionMessage,
   normalizeScanType,
 } from './scanWorkflowUtils'
+import type { CompleteScanInput, StartScanInput, StartScanResult } from './scanWorkflowTypes'
 import type { Scan } from '../types'
 
+export { canStartDeltaScan } from './deltaScan'
 export { getDefaultFullScanSource, getSourceConnectionMessage, isSourceScanReady }
 export type { ScanType, StartScanOptions }
-
-type StartScanInput = StartScanOptions & {
-  actorId: string
-  auditEventId: string
-  occurredAt: string
-}
-
-type CompleteScanInput = {
-  auditEventId: string
-  occurredAt: string
-  scanId: string
-}
-
-type StartScanAccepted = {
-  accepted: true
-  completionDelayMs: number
-  data: MockData
-  scanId: string
-  toast: string
-}
-
-type StartScanRejected = {
-  accepted: false
-  data: MockData
-  toast: string
-}
-
-export type StartScanResult = StartScanAccepted | StartScanRejected
 
 const demoReviewActorId = 'user_anna'
 
@@ -86,6 +62,25 @@ export function startScanWorkflow(current: MockData, input: StartScanInput): Sta
   }
 
   const profile = scanProfiles[input.scanType]
+  const deltaBaseline = input.scanType === 'delta'
+    ? getDeltaScanBaseline(current.scan, source.sourceId)
+    : null
+
+  if (input.scanType === 'delta' && !deltaBaseline) {
+    return {
+      accepted: false,
+      data: current,
+      toast: `Delta scan requires a completed full-scan baseline for ${source.name}.`,
+    }
+  }
+
+  if (input.scanType === 'delta' && input.baselineScanId && input.baselineScanId !== deltaBaseline?.baselineScanId) {
+    return {
+      accepted: false,
+      data: current,
+      toast: `Delta scan baseline ${input.baselineScanId} is not available for ${source.name}.`,
+    }
+  }
 
   if (current.scan.status === 'running' && current.scan.sourceId === source.sourceId && current.scan.scanType === input.scanType) {
     return {
@@ -95,8 +90,17 @@ export function startScanWorkflow(current: MockData, input: StartScanInput): Sta
     }
   }
 
+  const deltaScan = deltaBaseline
+    ? buildDeltaScanSummary({ baseline: deltaBaseline, profile, state: 'running' })
+    : undefined
   const fileInventory = buildFileInventorySummary(source, profile, 'running')
   const contentExtraction = buildContentExtractionSummary(input.scanType, fileInventory, 'running')
+  const signalDetection = buildSignalDetectionSummary(
+    fileInventory,
+    contentExtraction,
+    current.governanceConfig,
+    'pending',
+  )
   const contextRisk = buildContextRiskSummary(
     input.scanType,
     fileInventory,
@@ -168,14 +172,16 @@ export function startScanWorkflow(current: MockData, input: StartScanInput): Sta
     durationMs: null,
     throughputFilesPerSecond: null,
     reproducibilityFingerprint: null,
-    pipelineStages: createPipelineStages(fileInventory, contentExtraction, contextRisk, ownerAssignment, findingAssembly, reviewSupport, auditRecording, false),
+    pipelineStages: createPipelineStages(fileInventory, contentExtraction, signalDetection, contextRisk, ownerAssignment, findingAssembly, reviewSupport, auditRecording, false, deltaScan),
     fileInventory,
     contentExtraction,
+    signalDetection,
     contextRisk,
     ownerAssignment,
     findingAssembly,
     reviewSupport,
     auditRecording,
+    deltaScan,
   }
 
   return {
@@ -184,39 +190,22 @@ export function startScanWorkflow(current: MockData, input: StartScanInput): Sta
     data: {
       ...current,
       scan: runningScan,
-      metrics: {
-        ...current.metrics,
-        totalScannedFiles: profile.scannedFiles,
-        flaggedFiles: profile.flaggedFiles,
-        totalScannedGb: calculateScannedGb(profile.totalBytes, profile.progress),
-        scanProgress: profile.progress,
-        lastScanTimeSeconds: null,
-        inventoryCandidateFiles: fileInventory.totalCandidateFiles,
-        fingerprintedFiles: fileInventory.fingerprintedFiles,
-        extractedFiles: contentExtraction.successfulFiles,
-        extractionWarnings: contentExtraction.warningFiles,
-        redactedEvidenceCandidates: contentExtraction.redactedEvidenceCandidates,
-        contextClassifiedFindings: contextRisk.contextClassifiedFindings,
-        riskAssessedFindings: contextRisk.riskAssessedFindings,
-        humanReviewRequiredFindings: contextRisk.humanReviewRequiredFindings,
-        ownerRoutedFindings: ownerAssignment.assignedFindings,
-        assignedFindings: ownerAssignment.assignedFindings,
-        directOwnerAssignments: ownerAssignment.directOwnerAssignments,
-        masterOfDataAssignments: ownerAssignment.masterOfDataAssignments,
-        escalationAssignments: ownerAssignment.escalationAssignments,
-        assembledFindings: findingAssembly.assembledFindings,
-        evidenceCards: findingAssembly.evidenceCards,
-        reviewSupportedFindings: reviewSupport.supportedFindings,
-        deniedReviewActions: reviewSupport.deniedActionCount,
-        reviewChecklistItems: reviewSupport.checklistItemCount,
-        reviewTransferOptions: reviewSupport.transferOptionCount,
-        reviewEscalationOptions: reviewSupport.escalationOptionCount,
-        auditRecordedEvents: auditRecording.recordedEventCount,
-        auditLinkedFindingEvents: auditRecording.linkedFindingEvents,
-        auditReviewDecisionEvents: auditRecording.reviewDecisionEvents,
-      },
+      metrics: buildRunningScanMetrics({
+        auditRecording,
+        contentExtraction,
+        contextRisk,
+        currentMetrics: current.metrics,
+        deltaScan,
+        fileInventory,
+        findingAssembly,
+        ownerAssignment,
+        profile,
+        reviewSupport,
+        signalDetection,
+      }),
       auditEvents: nextAuditEvents,
       meta: createPartialMeta(current.meta, [
+        ...(deltaScan?.warnings ?? []),
         ...fileInventory.warnings,
         ...contentExtraction.warnings,
       ]),
@@ -246,20 +235,15 @@ export function completeScanWorkflow(current: MockData, input: CompleteScanInput
     'completed',
   )
   const contentExtraction = buildContentExtractionSummary(scanType, fileInventory, 'completed')
-  const contextRisk = buildContextRiskSummary(
-    scanType,
+  const signalDetection = buildSignalDetectionSummary(
     fileInventory,
     contentExtraction,
     current.governanceConfig,
     'completed',
   )
-  const ownerAssignment = buildOwnerAssignmentSummary(
-    scanType,
-    fallbackSource,
-    contextRisk,
-    current.governanceConfig,
-    'completed',
-  )
+  const contextRisk = buildContextRiskSummary(scanType, fileInventory, contentExtraction, current.governanceConfig, 'completed')
+  const ownerAssignment = buildOwnerAssignmentSummary(scanType, fallbackSource, contextRisk, current.governanceConfig, 'completed')
+  const deltaScan = completeDeltaScanSummary(current.scan, profile)
   const baseCompletedScan: Scan = {
     ...current.scan,
     status: 'completed',
@@ -269,11 +253,13 @@ export function completeScanWorkflow(current: MockData, input: CompleteScanInput
     flaggedFiles: profile.completedFlaggedFiles,
     durationMs: profile.durationMs,
     throughputFilesPerSecond: profile.throughputFilesPerSecond,
-    reproducibilityFingerprint: 'sha256:demo_findings',
+    reproducibilityFingerprint: scanType === 'delta' ? 'sha256:demo_delta_findings' : 'sha256:demo_findings',
     fileInventory,
     contentExtraction,
+    signalDetection,
     contextRisk,
     ownerAssignment,
+    deltaScan,
   }
   const assembly = assembleFindings({
     contentExtraction,
@@ -340,14 +326,30 @@ export function completeScanWorkflow(current: MockData, input: CompleteScanInput
     scanId: baseCompletedScan.scanId,
     state: 'completed',
   })
-  const completedScan: Scan = {
+  const scanWithSummaries: Scan = {
     ...baseCompletedScan,
-    pipelineStages: createPipelineStages(fileInventory, contentExtraction, contextRisk, ownerAssignment, assembly.summary, reviewSupport, auditRecording, true),
     findingAssembly: assembly.summary,
     reviewSupport,
     auditRecording,
   }
-  const evaluation = updateEvaluation(current.evaluation, completedScan, fileInventory, contentExtraction, contextRisk, ownerAssignment, assembly.summary, reviewSupport, auditRecording)
+  const evaluation = updateEvaluation({
+    auditRecording,
+    completedScan: scanWithSummaries,
+    contentExtraction,
+    contextRisk,
+    currentMetrics: current.metrics,
+    current: current.evaluation,
+    deltaScan,
+    fileInventory,
+    findingAssembly: assembly.summary,
+    ownerAssignment,
+    reviewSupport,
+    signalDetection,
+  })
+  const completedScan: Scan = {
+    ...scanWithSummaries,
+    pipelineStages: createPipelineStages(fileInventory, contentExtraction, signalDetection, contextRisk, ownerAssignment, assembly.summary, reviewSupport, auditRecording, true, deltaScan, evaluation),
+  }
 
   return {
     ...current,
@@ -357,40 +359,20 @@ export function completeScanWorkflow(current: MockData, input: CompleteScanInput
     findingDetails: assembly.findingDetails,
     permissionBoundary,
     reviewSupport: findingReviewSupport,
-    metrics: {
-      ...current.metrics,
-      totalScannedFiles: profile.totalFiles,
-      flaggedFiles: profile.completedFlaggedFiles,
-      totalScannedGb: calculateScannedGb(profile.totalBytes, 1),
-      scanProgress: 1,
-      lastScanTimeSeconds: profile.durationMs / 1000,
-      inventoryCandidateFiles: fileInventory.totalCandidateFiles,
-      fingerprintedFiles: fileInventory.fingerprintedFiles,
-      extractedFiles: contentExtraction.successfulFiles,
-      extractionWarnings: contentExtraction.warningFiles,
-      redactedEvidenceCandidates: contentExtraction.redactedEvidenceCandidates,
-      contextClassifiedFindings: contextRisk.contextClassifiedFindings,
-      riskAssessedFindings: contextRisk.riskAssessedFindings,
-      highRiskFindings: contextRisk.highRiskFindings,
-      retentionOverdueFiles: contextRisk.retentionReviewFiles,
-      humanReviewRequiredFindings: contextRisk.humanReviewRequiredFindings,
-      ownerRoutedFindings: ownerAssignment.assignedFindings,
-      assignedFindings: ownerAssignment.assignedFindings,
-      directOwnerAssignments: ownerAssignment.directOwnerAssignments,
-      masterOfDataAssignments: ownerAssignment.masterOfDataAssignments,
-      escalationAssignments: ownerAssignment.escalationAssignments,
-      assembledFindings: assembly.summary.assembledFindings,
-      evidenceCards: assembly.summary.evidenceCards,
-      reviewSupportedFindings: reviewSupport.supportedFindings,
-      deniedReviewActions: reviewSupport.deniedActionCount,
-      reviewChecklistItems: reviewSupport.checklistItemCount,
-      reviewTransferOptions: reviewSupport.transferOptionCount,
-      reviewEscalationOptions: reviewSupport.escalationOptionCount,
-      auditRecordedEvents: auditRecording.recordedEventCount,
-      auditLinkedFindingEvents: auditRecording.linkedFindingEvents,
-      auditReviewDecisionEvents: auditRecording.reviewDecisionEvents,
+    metrics: buildCompletedScanMetrics({
+      auditRecording,
+      contentExtraction,
+      contextRisk,
+      currentMetrics: current.metrics,
+      deltaScan,
       evaluation,
-    },
+      fileInventory,
+      findingAssembly: assembly.summary,
+      ownerAssignment,
+      profile,
+      reviewSupport,
+      signalDetection,
+    }),
     evaluation,
     auditEvents: nextAuditEvents,
     meta: clearPartialMeta(current.meta),

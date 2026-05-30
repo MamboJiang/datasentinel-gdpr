@@ -1,0 +1,79 @@
+[data-theme="dark"] {
+  color: #f4f6f8;
+  background: #111315;
+  --bg: #111315;
+  --surface: #181b1f;
+  --surface-subtle: #20242a;
+  --surface-blue: #17233d;
+  --text: #f4f6f8;
+  --text-soft: #c1c7d0;
+  --text-muted: #8c96a3;
+  --border: #303640;
+  --border-strong: #46505c;
+  --blue: #8ab4ff;
+  --blue-deep: #adcaff;
+  --blue-soft: #17233d;
+  --green: #81c995;
+  --green-soft: #18351f;
+  --amber: #fdd663;
+  --amber-soft: #3d2f10;
+  --red: #f28b82;
+  --red-soft: #3d1f1d;
+}
+
+[data-theme="dark"] .sidebar,
+[data-theme="dark"] .topbar,
+[data-theme="dark"] .panel,
+[data-theme="dark"] .metric-card,
+[data-theme="dark"] .account-popover,
+[data-theme="dark"] .workspace-popover,
+[data-theme="dark"] .dialog-card,
+[data-theme="dark"] .file-editor,
+[data-theme="dark"] .document-page,
+[data-theme="dark"] .support-card {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .workspace-trigger:hover,
+[data-theme="dark"] .workspace-trigger[aria-expanded="true"],
+[data-theme="dark"] .account-trigger:hover,
+[data-theme="dark"] .account-trigger[aria-expanded="true"],
+[data-theme="dark"] .account-menu-row:hover,
+[data-theme="dark"] .account-settings:hover,
+[data-theme="dark"] .account-icon-button:hover,
+[data-theme="dark"] .platform-status:hover,
+[data-theme="dark"] .nav-link:hover,
+[data-theme="dark"] .nav-link-active,
+[data-theme="dark"] .finding-list-item:hover {
+  background: var(--surface-subtle);
+  color: var(--text);
+}
+
+[data-theme="dark"] .theme-control,
+[data-theme="dark"] .sidebar-search,
+[data-theme="dark"] .workspace-search kbd,
+[data-theme="dark"] .sidebar-search kbd,
+[data-theme="dark"] .file-avatar,
+[data-theme="dark"] .summary-icon,
+[data-theme="dark"] .audit-icon,
+[data-theme="dark"] .timeline-marker,
+[data-theme="dark"] .owner-avatar,
+[data-theme="dark"] .signal-card,
+[data-theme="dark"] .guidance-list article,
+[data-theme="dark"] .adapter-list article,
+[data-theme="dark"] .scan-facts div,
+[data-theme="dark"] .resource-grid div {
+  background: var(--surface-subtle);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .document-review-pane,
+[data-theme="dark"] th,
+[data-theme="dark"] tbody tr:hover {
+  background: #14171b;
+}
+
+[data-theme="dark"] .theme-option[aria-pressed="true"] {
+  background: #2a3546;
+}

@@ -7,12 +7,16 @@ EvaluationSummary:
     datasetHash: { type: string }
     scannerVersion: { type: string }
     detectorRulesHash: { type: string }
+    signalDetectionRulesHash: { type: string }
     contextRiskRulesHash: { type: string }
     ownerAssignmentRulesHash: { type: string }
     findingAssemblyRulesHash: { type: string }
     reviewSupportRulesHash: { type: string }
     auditRecordingRulesHash: { type: string }
+    adminMetricsRulesHash: { type: string }
     reviewDecisionRulesHash: { type: string }
+    deltaScanRulesHash: { type: string }
+    evaluationRulesHash: { type: string }
     configHash: { type: string }
     findingFingerprint: { type: string }
     precision: { type: [number, "null"], minimum: 0, maximum: 1 }
@@ -23,6 +27,66 @@ EvaluationSummary:
     resourceIntensity:
       type: object
       additionalProperties: true
+      properties:
+        peakMemoryMb: { type: number, minimum: 0 }
+        cpuSeconds: { type: number, minimum: 0 }
+        modelCalls: { type: integer, minimum: 0 }
+        estimatedCostUsd: { type: number, minimum: 0 }
+        estimatedCostPerThousandFilesUsd: { type: number, minimum: 0 }
+        paidServiceUsed: { type: boolean }
+    qualityBasis:
+      type: object
+      additionalProperties: true
+      properties:
+        status: { type: string }
+        datasetId: { type: string }
+        goldenDatasetVersion: { type: string }
+        sourceSnapshotId: { type: string }
+        evaluationRulesHash: { type: string }
+        inputStages:
+          type: array
+          items: { type: string }
+        confusionMatrix:
+          type: object
+          additionalProperties: true
+          properties:
+            truePositives: { type: integer, minimum: 0 }
+            falsePositives: { type: integer, minimum: 0 }
+            falseNegatives: { type: integer, minimum: 0 }
+            trueNegatives: { type: integer, minimum: 0 }
+            predictedPositiveFiles: { type: integer, minimum: 0 }
+            actualPositiveFiles: { type: integer, minimum: 0 }
+            evaluatedFiles: { type: integer, minimum: 0 }
+        scenarioMetrics:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              sourceFamily: { type: string }
+              contextCategory: { type: string }
+              precision: { type: [number, "null"], minimum: 0, maximum: 1 }
+              recall: { type: [number, "null"], minimum: 0, maximum: 1 }
+              f1: { type: [number, "null"], minimum: 0, maximum: 1 }
+              predictedPositiveFiles: { type: integer, minimum: 0 }
+              actualPositiveFiles: { type: integer, minimum: 0 }
+              truePositives: { type: integer, minimum: 0 }
+              falsePositives: { type: integer, minimum: 0 }
+              falseNegatives: { type: integer, minimum: 0 }
+              unsupportedFiles: { type: integer, minimum: 0 }
+              ocrDeferredFiles: { type: integer, minimum: 0 }
+        review:
+          type: object
+          additionalProperties: true
+        riskReduction:
+          type: object
+          additionalProperties: true
+        safetyBoundaries:
+          type: object
+          additionalProperties: true
+        warnings:
+          type: array
+          items: { type: string }
 AdminMetrics:
   type: object
   required: [totalScannedFiles, flaggedFiles, scanProgress, openReviewBacklog]
@@ -41,6 +105,9 @@ AdminMetrics:
     extractedFiles: { type: integer, minimum: 0 }
     extractionWarnings: { type: integer, minimum: 0 }
     redactedEvidenceCandidates: { type: integer, minimum: 0 }
+    detectedSignals: { type: integer, minimum: 0 }
+    redactedSignals: { type: integer, minimum: 0 }
+    findingsWithSignals: { type: integer, minimum: 0 }
     contextClassifiedFindings: { type: integer, minimum: 0 }
     riskAssessedFindings: { type: integer, minimum: 0 }
     humanReviewRequiredFindings: { type: integer, minimum: 0 }
@@ -59,6 +126,15 @@ AdminMetrics:
     auditRecordedEvents: { type: integer, minimum: 0 }
     auditLinkedFindingEvents: { type: integer, minimum: 0 }
     auditReviewDecisionEvents: { type: integer, minimum: 0 }
+    deltaBaselineFiles: { type: integer, minimum: 0 }
+    deltaChangedFiles: { type: integer, minimum: 0 }
+    deltaNewFiles: { type: integer, minimum: 0 }
+    deltaModifiedFiles: { type: integer, minimum: 0 }
+    deltaUnchangedFiles: { type: integer, minimum: 0 }
+    deltaMissingFiles: { type: integer, minimum: 0 }
+    deltaProcessedChangedFiles: { type: integer, minimum: 0 }
+    deltaReopenedFindings: { type: integer, minimum: 0 }
+    deltaCarriedForwardFindings: { type: integer, minimum: 0 }
     reviewDecisionCount: { type: integer, minimum: 0 }
     deletionCandidateDecisions: { type: integer, minimum: 0 }
     retainedDecisions: { type: integer, minimum: 0 }
@@ -73,6 +149,47 @@ AdminMetrics:
     governance:
       type: object
       additionalProperties: true
+    aggregation:
+      type: object
+      additionalProperties: true
+      properties:
+        status: { type: string }
+        scanId: { type: string }
+        scanType: { type: string }
+        sourceId: { type: string }
+        policyPackVersion: { type: string }
+        rulesFingerprint: { type: string }
+        inputStages:
+          type: array
+          items: { type: string }
+        partial: { type: boolean }
+        scanCoverage:
+          type: object
+          additionalProperties: true
+        risk:
+          type: object
+          additionalProperties: true
+        ownerBacklog:
+          type: object
+          additionalProperties: true
+        outcomes:
+          type: object
+          additionalProperties: true
+        audit:
+          type: object
+          additionalProperties: true
+        delta:
+          type: object
+          additionalProperties: true
+        evaluationLinked: { type: boolean }
+        rawContentExposed: { type: boolean }
+        legalConclusionProvided: { type: boolean }
+        deletionExecuted: { type: boolean }
+        modelCalls: { type: integer, minimum: 0 }
+        estimatedCostUsd: { type: number, minimum: 0 }
+        warnings:
+          type: array
+          items: { type: string }
     evaluation: { $ref: "#/EvaluationSummary" }
 AdminMetricsEnvelope:
   type: object

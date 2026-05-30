@@ -29,7 +29,10 @@
 
   .landing-feature-rail,
   .landing-workflow-layout,
-  .landing-governance-grid,
+  .landing-contract-grid,
+  .landing-sample-layout,
+  .landing-console-preview,
+  .landing-safety-grid,
   .landing-evaluation-board {
     grid-template-columns: 1fr;
   }
@@ -110,6 +113,23 @@
   .landing-workflow-visual {
     min-height: 320px;
     padding: 24px;
+  }
+
+  .landing-workflow-step {
+    gap: 14px;
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .landing-contract-card,
+  .landing-safety-card {
+    min-height: auto;
+    padding: 20px;
+  }
+
+  .landing-sample-families span,
+  .landing-console-list span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
 
   .landing-evaluation-board dl {

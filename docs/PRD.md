@@ -74,7 +74,22 @@ The detailed design note is `docs/design/source-inventory-content-extraction.md`
 
 ## Context and Risk Judgment Slice
 
-The next implementation slice connects extracted evidence candidates and deterministic signal detection to context/risk judgment. It must:
+## Deterministic Signal Detection Slice
+
+The next implementation slice connects content extraction to redacted detector evidence. It must:
+
+- Add an explicit signal-detection stage after content extraction and before context/risk judgment.
+- Use extracted text only inside the internal processing boundary.
+- Preserve detector rules version/hash, active policy-pack evidence requirements, evaluated evidence-candidate count, redacted signal count, findings-with-signals count, and signal-type counts.
+- Expose redacted evidence signals for finding cards without raw extracted text, file bodies, page images, or unredacted personal data.
+- Keep deterministic processing, model calls, and estimated paid-service cost at zero for P0.
+- Leave risk scoring, owner routing, and human review decisions in their downstream stages.
+
+The detailed design note is `docs/design/deterministic-signal-detection.md`.
+
+## Context and Risk Judgment Slice
+
+The next implementation slice connects redacted signal detection to context/risk judgment. It must:
 
 - Add a visible context/risk stage after signal detection and before scan completion.
 - Use active policy-pack guidance, sample-family metadata, and redacted evidence candidate counts.
@@ -156,6 +171,47 @@ The next implementation slice connects previous workflow events into one account
 - Keep raw source content, unredacted personal data, hidden permission data, legal conclusions, deletion execution, production storage, production connector, and paid-service dependencies out of P0.
 
 The detailed design note is `docs/design/audit-event-recording.md`.
+
+## Incremental Delta Scan Slice
+
+The next implementation slice connects the completed full-scan baseline to ongoing changed-file-only discovery. It must:
+
+- Start a delta scan only when the selected source has a completed baseline with scan ID, source snapshot, inventory fingerprint, file count, and finding count.
+- Reject missing, running, not-ready, or mismatched baselines without changing scan, audit, finding, metric, or evaluation state.
+- Represent changed, new, modified, unchanged, and missing source files separately.
+- Carry unchanged baseline files forward instead of treating them as newly scanned findings.
+- Treat missing source files as inventory changes, not DataSentinel deletion or proof of erasure.
+- Pass changed findings through context/risk, owner routing, finding assembly, review support, audit recording, metrics, and evaluation.
+- Preserve no raw-content, no legal-conclusion, no deletion-execution, zero model call, and zero estimated paid-service cost boundaries.
+
+The detailed design note is `docs/design/incremental-delta-scan-workflow.md`.
+
+## Admin Metrics Aggregation Slice
+
+The next implementation slice connects full scan, delta scan, finding assembly, review support, human decisions, audit recording, and evaluation into management indicators. It must:
+
+- Aggregate scan coverage, risk queue, owner backlog, review throughput, review outcomes, audit evidence, evaluation linkage, and resource cost from prior workflow summaries.
+- Expose partial metrics while a scan is running and completed metrics after full or delta scan completion.
+- Preserve the changed-file, carried-forward, missing-file, and no-deletion boundaries from delta scans.
+- Update outcome and backlog metrics exactly once for accepted human review decisions.
+- Reject denied or incomplete scan/review commands without changing metrics.
+- Attach an admin-metrics rules fingerprint for evaluation reproducibility.
+- Keep raw source content, unredacted personal data, legal conclusions, production analytics infrastructure, real deletion, model calls, and paid-service cost out of P0.
+
+The detailed design note is `docs/design/admin-metrics-aggregation.md`.
+
+## Evaluation Metrics Generation Slice
+
+The next implementation slice connects prior workflow outputs to measurable evaluation evidence. It must:
+
+- Generate precision, recall, F1, reproducibility, throughput, resource intensity, scenario-level metrics, review-throughput context, and risk-progress fields from prior stage summaries and a controlled golden dataset definition.
+- Keep every metric traceable to dataset hash, scanner version, detector rules, config hash, policy-pack version, upstream stage fingerprints, admin-metrics fingerprint, and finding fingerprint.
+- Show false positives, false negatives, unsupported files, and OCR-deferred files as measurable quality context instead of hiding scanner limitations.
+- Refresh review-throughput and risk-progress fields when accepted human-review decisions are recorded, while rejected or duplicate commands leave evaluation unchanged.
+- Generate changed-file evaluation for delta scans without implying missing files were deleted by DataSentinel.
+- Keep raw source content, unredacted personal data, legal conclusions, production evaluation infrastructure, real deletion, model calls, and paid-service cost out of P0.
+
+The detailed design note is `docs/design/evaluation-metrics-generation.md`.
 
 ## P0 Screens and API Consumers
 

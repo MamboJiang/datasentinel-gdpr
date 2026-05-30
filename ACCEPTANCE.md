@@ -32,12 +32,22 @@ Frontend-backend parallel development may start when:
 - `docs/GOVERNANCE_CONFIG.md` defines policy packs, organization model, permission boundaries, review support, and enterprise change scenarios.
 - `docs/GDPR_SAMPLE_REFERENCES.md` records how the organizer sample repository is used without vendoring PDFs.
 
+## Frontend Surface Contract Readiness
+
+Frontend surface work is ready for final implementation and QA planning when:
+
+- `docs/FRONTEND_CONSOLE_CONTRACT.md` defines the internal console functional contract across app shell, dashboard, sources, scan pipeline, findings, finding detail, file review, review support, human review, audit, evaluation, governance, permissions, states, privacy boundaries, and responsive/accessibility obligations.
+- `docs/WEBSITE_HOMEPAGE_CONTRACT.md` defines the public homepage content contract across product thesis, workflow highlights, sample source, evidence/redaction, owner routing, human review, audit, evaluation, governance, safety boundaries, calls to action, reduced motion, and responsive/accessibility obligations.
+- Both frontend surface contracts avoid prescribing visual design, component implementation, final art direction, framework internals, or unapproved dependencies.
+- Both frontend surface contracts remain compatible with `docs/API_CONTRACT.md`, `contracts/openapi.yaml`, `contracts/mocks/`, `docs/DesignSpec.md`, and the current P0 acceptance criteria.
+- Both frontend surface contracts keep repository and user-facing content English-only, keep deletion simulated, avoid legal-advice or full-compliance claims, and avoid production Microsoft Graph, OAuth, tenant, AI, parser, OCR, database, queue, or deletion commitments.
+
 ## Backend Post-Source Planning Readiness
 
 Backend work after sample source connection is ready to break into scoped tasks when:
 
 - `docs/design/backend-post-source-execution-plan.md` and `docs/design/backend-post-source-stage-details.md` define the planned stages from full scan through evaluation metrics.
-- The planning documents cover scan orchestration, inventory and extraction, deterministic detection, context and risk planning, owner routing, finding assembly, review support, human review, audit logging, delta scan planning, admin metrics, and evaluation.
+- The planning documents cover scan orchestration, inventory and extraction, deterministic signal detection, context and risk planning, owner routing, finding assembly, review support, human review, audit logging, delta scan planning, admin metrics, and evaluation.
 - The planning documents define state transitions, guard conditions, side effects, failure paths, partial-data behavior, and rollback path.
 - The planning documents map the organizer sample families to evidence, context, owner-routing, and review planning assumptions without making legal conclusions.
 - The planning documents stay compatible with `docs/API_CONTRACT.md`, `contracts/openapi.yaml`, and existing mock fixtures without requiring a contract version bump.
@@ -50,6 +60,8 @@ The first implementation milestone is accepted when:
 
 - The root route `/` shows a public project homepage that introduces DataSentinel and links to the internal dashboard route at `/dashboard`.
 - The frontend app shell shows only the current page title plus notifications in the top bar, keeps workspace switching in the top-left sidebar control, exposes logged-in account controls from the bottom-left sidebar account menu, and lets users collapse or expand the sidebar.
+- On desktop, the sidebar can be resized with a pointer or keyboard-accessible separator, collapses when dragged below the configured threshold, caps expansion at the configured maximum width, and keeps the content area aligned without overlap.
+- Account menu actions open local utility routes or local UI states for account settings, theme, feedback, homepage, changelog, help, docs, platform status, prototype plan, and session boundary without adding production authentication, billing, support, monitoring, tenant, or external feedback integration.
 - A full scan can be started on a controlled sample source.
 - Starting a full scan uses an explicit `sourceId`, is allowed only for the controlled `mock_ready` sample source in P0, and records scan-start and scan-completion audit events in the mock workflow.
 - The Dashboard groups scanned files, flagged files, scanned volume, progress, scan time, review backlog, high-risk count, retention review count, and owner routing into clear scan, review, and pipeline summaries.
@@ -58,7 +70,7 @@ The first implementation milestone is accepted when:
 - A reviewer can open a redacted file review surface from a finding detail view and focus the relevant sensitive evidence location without exposing raw sensitive values.
 - A human reviewer can record delete candidate, keep with reason, false positive, reassign, or escalate decisions.
 - Every review decision creates an audit event with actor, timestamp, reason, and resulting status.
-- A delta scan can represent changed-file-only processing.
+- A delta scan can run as a changed-file-only workflow against a completed full-scan baseline.
 - Evaluation metrics show precision, recall, F1, reproducibility, throughput, and resource intensity.
 - Deletion remains simulated.
 
@@ -80,11 +92,25 @@ The source-inventory and content-extraction stage is accepted when:
 
 - The design note `docs/design/source-inventory-content-extraction.md` defines scope, state transitions, failure paths, rollback path, research basis, and primitive acceptance criteria.
 - Starting a full scan produces visible file-inventory and content-extraction summaries for the selected controlled source without adding a public extraction endpoint.
+- Internal inventory records include file path, size, modified timestamp, sample family, readability status, and file fingerprint for each candidate file.
 - Running scans mark partial data with recoverable warnings and do not expose raw extracted text, file bodies, page images, or unredacted personal data.
 - Completed scans show candidate files, fingerprinted files, extracted files, redacted evidence candidates, warning counts, duration, throughput, and evaluation resource intensity.
 - Unsupported or OCR-deferred files are counted as recoverable warnings instead of silently failing or blocking the scan.
 - The implementation uses deterministic fixture-backed processing with zero model calls and zero estimated paid-service cost.
 - Automated behavior tests cover running, completed, partial-warning, no-raw-content, unsupported-file warning, and not-ready-source paths.
+
+## Deterministic Signal Detection Acceptance
+
+The deterministic signal-detection stage is accepted when:
+
+- The design note `docs/design/deterministic-signal-detection.md` defines scope, state transitions, failure paths, rollback path, Atlas-derived requirements, research basis, and primitive acceptance criteria.
+- A full scan pipeline exposes `detecting_signals` after `extracting_content` and before `judging_context_risk`.
+- Running scans show signal detection as pending until extraction completes.
+- Completed scans expose a `signalDetection` summary with detector rules version/hash, active evidence requirements, evaluated evidence candidates, detected signals, redacted signals, findings-with-signals, signal-type counts, warnings, and `rawContentExposed = false`.
+- Finding details expose only redacted signal snippets with detector, confidence, and location when available; no raw extracted text, file bodies, page images, detector secrets, or unredacted personal data crosses public payloads.
+- Admin metrics expose signal counts, and evaluation preserves a signal-detection rules hash plus deterministic reproducibility, zero model calls, and zero estimated paid-service cost.
+- Not-ready sources cannot create scan, inventory, extraction, signal-detection, finding, audit, metric, or evaluation state changes.
+- Automated behavior tests cover running, completed, redaction boundary, rules hash, metrics, evaluation traceability, and not-ready-source paths.
 
 ## Context and Risk Judgment Acceptance
 
@@ -94,7 +120,7 @@ The context-and-risk judgment stage is accepted when:
 - A full scan pipeline exposes `judging_context_risk` after `detecting_signals` and before completion.
 - Running scans show context/risk judgment as pending until extraction and signal detection complete.
 - Completed scans expose a `contextRisk` summary with policy-pack version, risk-rule fingerprint, assessed evidence count, context and risk counts, retention-review count, human-review count, and `legalConclusionProvided = false`.
-- The stage consumes redacted evidence candidates, sample-family metadata, and active policy-pack guidance without exposing raw source content or unredacted personal data.
+- The stage consumes redacted signal/evidence candidates, sample-family metadata, modified-time context, and active policy-pack guidance without exposing raw source content or unredacted personal data.
 - The Dashboard shows context/risk status, policy version, high-risk count, retention-review count, and human-review count without presenting legal conclusions.
 - Evaluation preserves a context-risk rules hash, deterministic reproducibility, zero model calls, and zero estimated paid-service cost.
 - Not-ready sources cannot create scan, inventory, extraction, context/risk, or audit state changes.
@@ -178,6 +204,47 @@ The audit-event recording stage is accepted when:
 - Human-entered audit text is sanitized for obvious emails, IBAN-like values, long numbers, and control characters before it appears in public audit payloads.
 - The implementation keeps deterministic reproducibility, zero model calls, zero estimated paid-service cost, and no production storage, connector, authorization, SIEM, or deletion integration.
 - Automated behavior tests cover lifecycle event recording, finding timeline inclusion, structured audit metadata, text sanitization, audit metrics, evaluation hash, no-raw-content boundary, and no-real-deletion boundary.
+
+## Incremental Delta Scan Acceptance
+
+The incremental delta-scan stage is accepted when:
+
+- The design note `docs/design/incremental-delta-scan-workflow.md` defines scope, state transitions, failure paths, rollback path, Atlas-derived requirements, research basis, and primitive acceptance criteria.
+- A delta scan can start only for a selected scan-ready source with a completed baseline; missing, running, not-ready, or mismatched baselines reject without scan, audit, finding, metric, or evaluation state changes.
+- Running delta scans expose `comparing_delta_baseline`, baseline identity, changed/new/modified/unchanged/missing counts, partial warnings, and `rawContentExposed = false`, `legalConclusionProvided = false`, and `deletionExecuted = false`.
+- Completed delta scans process only changed files, carry unchanged baseline files forward, and represent missing files as source inventory changes rather than DataSentinel deletion.
+- Completed delta findings use the delta scan ID and pass through context/risk, owner routing, finding assembly, review support, audit recording, metrics, and evaluation instead of using disconnected static rows.
+- Dashboard and Sources expose delta readiness from the selected source and show baseline/change counts when available.
+- Evaluation preserves a delta rules hash, deterministic reproducibility, throughput, zero model calls, and zero estimated paid-service cost.
+- Automated behavior tests cover accepted delta start, rejected baseline paths, completed changed-file processing, carried-forward counts, no-real-deletion boundary, audit, metrics, evaluation, and full-scan continuity.
+
+## Admin Metrics Aggregation Acceptance
+
+The aggregate admin-metrics stage is accepted when:
+
+- The design note `docs/design/admin-metrics-aggregation.md` defines scope, state transitions, failure paths, rollback path, Atlas-derived requirements, research basis, and primitive acceptance criteria.
+- Running scans expose partial aggregate metrics that identify upstream stage status across inventory, extraction, context/risk, owner assignment, finding assembly, review support, audit recording, and delta when present.
+- Completed scans expose aggregate management metrics for scan coverage, deterministic signal counts, risk queue, owner backlog, review throughput, review outcomes, audit evidence, evaluation linkage, and resource cost from prior stage summaries instead of disconnected constants.
+- Completed delta scans preserve changed-file, carried-forward, missing-file, no-raw-content, no-legal-conclusion, and no-deletion boundaries in the aggregate metrics.
+- Accepted review decisions update owner backlog, outcome counters, audit counts, throughput inputs, and evaluation-linked aggregation exactly once.
+- Rejected scan or review attempts leave metric, audit, source, finding, and evaluation state unchanged.
+- Aggregated metrics keep `rawContentExposed = false`, `legalConclusionProvided = false`, `deletionExecuted = false`, `modelCalls = 0`, and `estimatedCostUsd = 0` in P0.
+- Evaluation preserves an admin-metrics rules hash for deterministic reproducibility.
+- Dashboard shows management indicators for owner completion, risk queue, audit evidence, metric basis, and cost without exposing raw source content or legal conclusions.
+- Automated behavior tests cover running aggregation, completed aggregation, delta aggregation, accepted review metric updates, rejected path identity, safety boundaries, and cost boundaries.
+
+## Evaluation Metrics Generation Acceptance
+
+The evaluation-metrics generation stage is accepted when:
+
+- The design note `docs/design/evaluation-metrics-generation.md` defines scope, state transitions, failure paths, rollback path, Atlas-derived requirements, research basis, and primitive acceptance criteria.
+- Completed full scans generate precision, recall, F1, reproducibility, throughput, resource intensity, confusion-matrix counts, scenario-level metrics, review-throughput context, and risk-progress fields from prior workflow summaries and a controlled golden dataset definition.
+- Completed delta scans generate changed-file evaluation while preserving baseline, carried-forward, missing-file, no-raw-content, no-legal-conclusion, no-deletion, zero-model-call, and zero-cost boundaries.
+- Evaluation exposes an evaluation-rules fingerprint plus dataset, detector/signal-detection, config, policy-pack, context/risk, owner-assignment, finding-assembly, review-support, audit-recording, admin-metrics, delta, and finding fingerprints for deterministic reproduction.
+- Accepted human-review decisions refresh review-throughput and risk-progress fields exactly once without changing scan-quality precision, recall, or F1.
+- Rejected scan or review commands leave evaluation, metric, audit, source, and finding state unchanged.
+- The Evaluation page renders scan quality, confusion matrix, scenario metrics, resource intensity, reproducibility, and safety boundaries without raw source content or legal conclusions.
+- Automated behavior tests cover full-scan generation, delta generation, review refresh, rejected-path identity, metric formula bounds, safety boundaries, and cost boundaries.
 
 ## Adaptive Governance Acceptance
 

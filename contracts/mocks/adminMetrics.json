@@ -13,6 +13,9 @@
     "extractedFiles": 38,
     "extractionWarnings": 4,
     "redactedEvidenceCandidates": 64,
+    "detectedSignals": 38,
+    "redactedSignals": 38,
+    "findingsWithSignals": 17,
     "contextClassifiedFindings": 17,
     "riskAssessedFindings": 17,
     "humanReviewRequiredFindings": 17,
@@ -49,23 +52,222 @@
     "evaluation": {
       "evaluationRunId": "eval_001",
       "scanId": "scan_001",
-      "precision": 0.91,
-      "recall": 0.84,
-      "f1": 0.875,
+      "precision": 0.941,
+      "recall": 0.842,
+      "f1": 0.889,
       "reproducibility": 1,
       "throughputFilesPerSecond": 1.1,
+      "detectorRulesHash": "sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_signal_detection_completed",
+      "signalDetectionRulesHash": "sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_signal_detection_completed",
       "contextRiskRulesHash": "sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed",
       "ownerAssignmentRulesHash": "sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed",
       "findingAssemblyRulesHash": "sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed",
       "reviewSupportRulesHash": "sha256:2026.05-demo_2026.05-demo_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_user_anna_review_support_completed",
       "reviewDecisionRulesHash": "sha256:2026.05-demo_review_decision_fixture_v1",
+      "adminMetricsRulesHash": "sha256:admin_metrics_v1_scan_001_full_completed_sha256:scan_001_inventory_completed_sha256:snapshot_source_001_scan_001_extraction_completed_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_signal_detection_completed_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_sha256:2026.05-demo_2026.05-demo_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_user_anna_review_support_completed_sha256:2026.05-demo_scan_001_completed_39_audit_recording_v1_no_delta",
+      "evaluationRulesHash": "sha256:evaluation_metrics_v1_scan_001_full_gdpr-samples-p0-v1_sha256:scan_001_inventory_completed_sha256:snapshot_source_001_scan_001_extraction_completed_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_signal_detection_completed_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_sha256:2026.05-demo_2026.05-demo_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_user_anna_review_support_completed_sha256:2026.05-demo_scan_001_completed_39_audit_recording_v1_sha256:admin_metrics_v1_scan_001_full_completed_sha256:scan_001_inventory_completed_sha256:snapshot_source_001_scan_001_extraction_completed_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_signal_detection_completed_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_sha256:2026.05-demo_2026.05-demo_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_user_anna_review_support_completed_sha256:2026.05-demo_scan_001_completed_39_audit_recording_v1_no_delta_no_delta_sha256:demo_findings_16_1_3_22",
       "resourceIntensity": {
-        "peakMemoryMb": 410,
+        "peakMemoryMb": 411,
         "cpuSeconds": 18.4,
         "modelCalls": 0,
-        "estimatedCostUsd": 0
+        "estimatedCostUsd": 0,
+        "estimatedCostPerThousandFilesUsd": 0,
+        "paidServiceUsed": false
+      },
+      "qualityBasis": {
+        "status": "computed",
+        "datasetId": "https://github.com/a-klumpp/GDPR-data-samples",
+        "goldenDatasetVersion": "gdpr-samples-p0-v1",
+        "sourceSnapshotId": "snapshot_source_001_scan_001",
+        "evaluationRulesHash": "sha256:evaluation_metrics_v1_scan_001_full_gdpr-samples-p0-v1_sha256:scan_001_inventory_completed_sha256:snapshot_source_001_scan_001_extraction_completed_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_signal_detection_completed_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_sha256:2026.05-demo_2026.05-demo_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_user_anna_review_support_completed_sha256:2026.05-demo_scan_001_completed_39_audit_recording_v1_sha256:admin_metrics_v1_scan_001_full_completed_sha256:scan_001_inventory_completed_sha256:snapshot_source_001_scan_001_extraction_completed_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_signal_detection_completed_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_sha256:2026.05-demo_2026.05-demo_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_user_anna_review_support_completed_sha256:2026.05-demo_scan_001_completed_39_audit_recording_v1_no_delta_no_delta_sha256:demo_findings_16_1_3_22",
+        "inputStages": [
+          "file_inventory:completed",
+          "content_extraction:completed",
+          "signal_detection:completed",
+          "context_risk:completed",
+          "owner_assignment:completed",
+          "finding_assembly:completed",
+          "review_support:completed",
+          "audit_recording:completed",
+          "admin_metrics:completed"
+        ],
+        "confusionMatrix": {
+          "truePositives": 16,
+          "falsePositives": 1,
+          "falseNegatives": 3,
+          "trueNegatives": 22,
+          "predictedPositiveFiles": 17,
+          "actualPositiveFiles": 19,
+          "evaluatedFiles": 42
+        },
+        "scenarioMetrics": [
+          {
+            "sourceFamily": "Expense_Report",
+            "contextCategory": "expense_report",
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "predictedPositiveFiles": 4,
+            "actualPositiveFiles": 4,
+            "truePositives": 4,
+            "falsePositives": 0,
+            "falseNegatives": 0,
+            "unsupportedFiles": 1,
+            "ocrDeferredFiles": 1
+          },
+          {
+            "sourceFamily": "IT_Access_Request",
+            "contextCategory": "it_access",
+            "precision": 1,
+            "recall": 0.75,
+            "f1": 0.857,
+            "predictedPositiveFiles": 3,
+            "actualPositiveFiles": 4,
+            "truePositives": 3,
+            "falsePositives": 0,
+            "falseNegatives": 1,
+            "unsupportedFiles": 1,
+            "ocrDeferredFiles": 1
+          },
+          {
+            "sourceFamily": "Incident_Report",
+            "contextCategory": "incident_report",
+            "precision": 0.667,
+            "recall": 0.667,
+            "f1": 0.667,
+            "predictedPositiveFiles": 3,
+            "actualPositiveFiles": 3,
+            "truePositives": 2,
+            "falsePositives": 1,
+            "falseNegatives": 1,
+            "unsupportedFiles": 0,
+            "ocrDeferredFiles": 0
+          },
+          {
+            "sourceFamily": "Supplier_Onboarding",
+            "contextCategory": "supplier_onboarding",
+            "precision": 1,
+            "recall": 0.8,
+            "f1": 0.889,
+            "predictedPositiveFiles": 4,
+            "actualPositiveFiles": 5,
+            "truePositives": 4,
+            "falsePositives": 0,
+            "falseNegatives": 1,
+            "unsupportedFiles": 0,
+            "ocrDeferredFiles": 0
+          },
+          {
+            "sourceFamily": "Training_Evaluation",
+            "contextCategory": "training_evaluation",
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "predictedPositiveFiles": 3,
+            "actualPositiveFiles": 3,
+            "truePositives": 3,
+            "falsePositives": 0,
+            "falseNegatives": 0,
+            "unsupportedFiles": 0,
+            "ocrDeferredFiles": 0
+          }
+        ],
+        "review": {
+          "reviewDecisionCount": 6,
+          "falsePositiveCorrections": 1,
+          "openReviewBacklog": 11,
+          "reviewThroughputPerDay": 4.2,
+          "ownerTaskCompletionRate": 0.353
+        },
+        "riskReduction": {
+          "basis": "review_decision_progress_not_deletion",
+          "baselineHighRiskFindings": 5,
+          "reviewedHighRiskFindings": 5,
+          "remainingHighRiskFindings": 0,
+          "riskReductionRate": 1,
+          "deletionExecuted": false
+        },
+        "safetyBoundaries": {
+          "rawContentExposed": false,
+          "legalConclusionProvided": false,
+          "deletionExecuted": false,
+          "modelCalls": 0,
+          "estimatedCostUsd": 0
+        },
+        "warnings": [
+          "1 predicted positive file needs false-positive review.",
+          "3 golden dataset positives are not detected in this P0 run.",
+          "4 files need recoverable extraction review.",
+          "2 files use unsupported formats in this P0 fixture.",
+          "2 files are marked for future OCR instead of paid P0 processing."
+        ]
       },
       "auditRecordingRulesHash": "sha256:2026.05-demo_scan_001_completed_39_audit_recording_v1"
+    },
+    "aggregation": {
+      "status": "completed",
+      "scanId": "scan_001",
+      "scanType": "full",
+      "sourceId": "source_001",
+      "policyPackVersion": "2026.05-demo",
+      "rulesFingerprint": "sha256:admin_metrics_v1_scan_001_full_completed_sha256:scan_001_inventory_completed_sha256:snapshot_source_001_scan_001_extraction_completed_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_signal_detection_completed_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_sha256:2026.05-demo_2026.05-demo_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_user_anna_review_support_completed_sha256:2026.05-demo_scan_001_completed_39_audit_recording_v1_no_delta",
+      "inputStages": [
+        "file_inventory:completed",
+        "content_extraction:completed",
+        "signal_detection:completed",
+        "context_risk:completed",
+        "owner_assignment:completed",
+        "finding_assembly:completed",
+        "review_support:completed",
+        "audit_recording:completed"
+      ],
+      "partial": false,
+      "scanCoverage": {
+        "scannedFiles": 42,
+        "candidateFiles": 42,
+        "flaggedFiles": 17,
+        "scanProgress": 1,
+        "scannedGb": 0.038,
+        "scanTimeSeconds": 38.2,
+        "throughputFilesPerSecond": 1.1
+      },
+      "risk": {
+        "riskAssessedFindings": 17,
+        "highRiskFindings": 5,
+        "retentionReviewFiles": 7,
+        "humanReviewRequiredFindings": 17
+      },
+      "ownerBacklog": {
+        "openReviewBacklog": 11,
+        "reviewableFindings": 17,
+        "reviewDecisionCount": 6,
+        "ownerTaskCompletionRate": 0.353,
+        "reviewThroughputPerDay": 4.2,
+        "medianReviewTimeHours": 5.1
+      },
+      "outcomes": {
+        "deletionCandidateDecisions": 2,
+        "retainedDecisions": 2,
+        "falsePositiveDecisions": 1,
+        "reassignedDecisions": 0,
+        "escalatedDecisions": 1
+      },
+      "audit": {
+        "recordedEvents": 39,
+        "linkedFindingEvents": 35,
+        "reviewDecisionEvents": 1
+      },
+      "evaluationLinked": true,
+      "rawContentExposed": false,
+      "legalConclusionProvided": false,
+      "deletionExecuted": false,
+      "modelCalls": 0,
+      "estimatedCostUsd": 0,
+      "warnings": [
+        "4 files need recoverable extraction review.",
+        "2 files use unsupported formats in this P0 fixture.",
+        "2 files are marked for future OCR instead of paid P0 processing."
+      ]
     },
     "auditRecordedEvents": 39,
     "auditLinkedFindingEvents": 35,

@@ -27,6 +27,11 @@
 .scan-footer { align-items: center; display: flex; gap: 12px; justify-content: space-between; margin-top: 17px; }
 .scan-boundary-note { align-items: center; background: var(--green-soft); border: 1px solid #cde8d4; border-radius: 7px; color: var(--green); display: flex; font-size: .7rem; gap: 8px; min-height: 36px; padding: 8px 10px; }
 .scan-boundary-note svg { flex-shrink: 0; }
+.delta-summary { border-top: 1px solid var(--border); display: grid; gap: 1px; grid-template-columns: repeat(6, minmax(0, 1fr)); margin-top: 17px; overflow: hidden; }
+.delta-summary div { background: #fbfcfe; min-width: 0; padding: 11px 12px; }
+.delta-summary span, .delta-summary strong { display: block; overflow-wrap: anywhere; }
+.delta-summary span { color: var(--text-muted); font-size: .67rem; }
+.delta-summary strong { color: var(--text); font-size: .78rem; margin-top: 4px; }
 .review-focus-list { display: grid; gap: 13px; }
 .review-focus-row { align-items: flex-start; display: flex; gap: 10px; }
 .review-focus-row svg { color: var(--blue); flex-shrink: 0; margin-top: 2px; }
@@ -56,6 +61,7 @@
 .list-item-main span { color: var(--text-soft); font-size: .68rem; margin-top: 4px; }
 @media (max-width: 1320px) {
   .scan-summary-row { grid-template-columns: 1fr; }
+  .delta-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 1120px) {
@@ -67,6 +73,8 @@
   .scan-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .scan-facts div:nth-child(3) { border-left: 0; border-top: 1px solid var(--border); }
   .scan-facts div:nth-child(4) { border-top: 1px solid var(--border); }
+  .evaluation-basis-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .scenario-row { align-items: stretch; grid-template-columns: 1fr; }
 }
 
 @media (max-width: 620px) {
@@ -75,6 +83,8 @@
   .metric-card strong { font-size: 1.45rem; }
   .scan-footer { align-items: stretch; flex-direction: column; }
   .scan-footer .button { width: 100%; }
+  .delta-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .evaluation-basis-grid, .scenario-row dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pipeline-row { align-items: flex-start; flex-direction: column; gap: 8px; }
   .pipeline-meta { justify-content: space-between; width: 100%; }
 }

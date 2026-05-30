@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useData } from '../data/useData'
-import { getDefaultFullScanSource, isSourceScanReady } from '../data/scanWorkflow'
+import { canStartDeltaScan, getDefaultFullScanSource, isSourceScanReady } from '../data/scanWorkflow'
 import { formatBytes, formatDate, humanize } from '../components/formatters'
 import {
   Button,
@@ -32,14 +32,22 @@ export function DashboardPage() {
   const defaultFullScanSource = getDefaultFullScanSource(sources, governanceConfig)
   const currentScanSource = sources.find((source) => source.sourceId === scan.sourceId)
   const scanIsRunning = scan.status === 'running'
-  const canRunDelta = Boolean(currentScanSource && isSourceScanReady(currentScanSource, governanceConfig) && !scanIsRunning && scan.status === 'completed')
+  const canRunDelta = Boolean(
+    currentScanSource
+    && isSourceScanReady(currentScanSource, governanceConfig)
+    && !scanIsRunning
+    && canStartDeltaScan(scan, currentScanSource.sourceId),
+  )
   const inventory = scan.fileInventory
   const extraction = scan.contentExtraction
+  const signalDetection = scan.signalDetection
   const contextRisk = scan.contextRisk
   const ownerAssignment = scan.ownerAssignment
   const findingAssembly = scan.findingAssembly
   const reviewSupport = scan.reviewSupport
   const auditRecording = scan.auditRecording
+  const deltaScan = scan.deltaScan
+  const aggregation = metrics.aggregation
   const pipelineStages = scan.pipelineStages ?? []
   const processedFiles = scan.scannedFiles ?? 0
   const totalFiles = scan.totalFiles ?? 0
@@ -50,6 +58,12 @@ export function DashboardPage() {
   const ownerRoutedCount = ownerAssignment?.assignedFindings ?? metrics.assignedFindings ?? metrics.ownerRoutedFindings ?? 0
   const unownedCount = ownerAssignment?.unownedFindings ?? 0
   const scanTypeLabel = scan.scanType === 'delta' ? 'Changed files scan' : 'All files scan'
+  const ownerTaskCompletion = aggregation
+    ? `${Math.round(aggregation.ownerBacklog.ownerTaskCompletionRate * 100)}%`
+    : '—'
+  const metricStageBasis = aggregation
+    ? `${aggregation.inputStages.length} stages · ${aggregation.status}`
+    : 'Not available'
 
   return (
     <>
@@ -106,11 +120,21 @@ export function DashboardPage() {
               disabled={!canRunDelta}
               icon={RotateCw}
               variant="secondary"
-              onClick={() => currentScanSource ? startScan({ scanType: 'delta', sourceId: currentScanSource.sourceId }) : undefined}
+              onClick={() => currentScanSource ? startScan({ baselineScanId: scan.deltaScan?.baselineScanId ?? scan.scanId, scanType: 'delta', sourceId: currentScanSource.sourceId }) : undefined}
             >
               Scan changed files
             </Button>
           </div>
+          {deltaScan ? (
+            <div className="delta-summary" aria-label="Delta scan summary">
+              <div><span>Baseline</span><strong>{deltaScan.baselineScanId}</strong></div>
+              <div><span>Changed</span><strong>{deltaScan.changedFiles}</strong></div>
+              <div><span>New</span><strong>{deltaScan.newFiles}</strong></div>
+              <div><span>Modified</span><strong>{deltaScan.modifiedFiles}</strong></div>
+              <div><span>Unchanged</span><strong>{deltaScan.unchangedFiles}</strong></div>
+              <div><span>Missing</span><strong>{deltaScan.missingFiles}</strong></div>
+            </div>
+          ) : null}
         </section>
 
         <section className="panel review-focus-panel">
@@ -133,6 +157,13 @@ export function DashboardPage() {
               <div>
                 <strong>{metrics.reviewDecisionCount ?? 0} review decisions recorded</strong>
                 <span>{metrics.retainedDecisions ?? 0} retained · {metrics.deletionCandidateDecisions ?? 0} deletion candidates · {metrics.escalatedDecisions ?? 0} escalated</span>
+              </div>
+            </div>
+            <div className="review-focus-row">
+              <Gauge aria-hidden="true" size={17} />
+              <div>
+                <strong>{ownerTaskCompletion} owner task completion</strong>
+                <span>{aggregation?.ownerBacklog.reviewThroughputPerDay ?? metrics.reviewThroughputPerDay ?? 0} decisions/day · {aggregation?.estimatedCostUsd ?? 0} USD estimated service cost</span>
               </div>
             </div>
             <div className="review-focus-row">
@@ -168,12 +199,22 @@ export function DashboardPage() {
         {inventory && extraction ? (
           <div className="pipeline-footnote">
             <Files aria-hidden="true" size={16} />
-            <span>{inventory.totalCandidateFiles} candidates · {extraction.redactedEvidenceCandidates} redacted evidence candidates · {findingAssembly?.evidenceCards ?? 0} evidence cards · {reviewSupport?.supportedFindings ?? 0} review supports · {auditRecording?.recordedEventCount ?? metrics.auditRecordedEvents ?? 0} audit events · policy {contextRisk?.policyPackVersion ?? 'unknown'}</span>
+            <span>{inventory.totalCandidateFiles} candidates · {extraction.redactedEvidenceCandidates} redacted evidence candidates · {signalDetection?.redactedSignals ?? 0} redacted signals · {deltaScan ? `${deltaScan.carriedForwardFiles} carried forward · ` : ''}{findingAssembly?.evidenceCards ?? 0} evidence cards · {reviewSupport?.supportedFindings ?? 0} review supports · {auditRecording?.recordedEventCount ?? metrics.auditRecordedEvents ?? 0} audit events · metrics {aggregation?.status ?? 'unknown'} · policy {contextRisk?.policyPackVersion ?? 'unknown'}</span>
           </div>
         ) : null}
       </section>
 
       <div className="dashboard-grid lower-grid">
+        <section className="panel">
+          <SectionHeader title="Management indicators" action={<TextLink to="/evaluation">Open evaluation</TextLink>} />
+          <dl className="definition-list">
+            <div><dt>Metric basis</dt><dd>{metricStageBasis}</dd></div>
+            <div><dt>Risk queue</dt><dd>{aggregation?.risk.highRiskFindings ?? highRiskCount} high risk · {aggregation?.risk.retentionReviewFiles ?? retentionReviewCount} retention reviews</dd></div>
+            <div><dt>Owner backlog</dt><dd>{aggregation?.ownerBacklog.openReviewBacklog ?? metrics.openReviewBacklog} open · {ownerTaskCompletion} completed</dd></div>
+            <div><dt>Audit evidence</dt><dd>{aggregation?.audit.recordedEvents ?? metrics.auditRecordedEvents ?? 0} events · deletion executed: {aggregation?.deletionExecuted ? 'yes' : 'no'}</dd></div>
+          </dl>
+        </section>
+
         <section className="panel">
           <SectionHeader title="Priority findings" action={<TextLink to="/findings">View all</TextLink>} />
           <div className="compact-list">

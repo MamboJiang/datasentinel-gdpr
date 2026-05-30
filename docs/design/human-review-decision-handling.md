@@ -4,7 +4,7 @@
 
 After review support is prepared, DataSentinel needs to accept a human review decision as an accountable workflow command. The command must connect the assembled evidence card, owner assignment, active policy pack, review-support checklist, actor permission boundary, audit trail, metrics, and evaluation data without executing real deletion or turning policy guidance into legal advice.
 
-The local `GDPR Enterprise Expert Atlas` dated 2026-05-30 frames DataSentinel as a responsible deletion control tower: AI and deterministic rules provide evidence, while humans remain accountable for final decisions. This slice implements that boundary for P0 mock workflows.
+The repository Atlas reference in `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md` frames DataSentinel as a responsible deletion control tower: AI and deterministic rules provide evidence, while humans remain accountable for final decisions. This slice implements that boundary for P0 mock workflows.
 
 ## Scope
 

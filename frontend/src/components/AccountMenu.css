@@ -1,0 +1,44 @@
+.account-dock { border-top: 1px solid var(--border); margin-top: auto; padding-top: 10px; position: relative; }
+.account-backdrop { background: transparent; border: 0; inset: 0; padding: 0; position: fixed; z-index: 55; }
+.account-popover { background: #ffffff; border: 1px solid var(--border); border-radius: 8px; bottom: 48px; box-shadow: 0 14px 34px rgba(15, 23, 42, .14); left: 0; overflow: hidden; position: absolute; width: min(286px, calc(100vw - 18px)); z-index: 60; }
+.account-popover-header { align-items: center; border-bottom: 1px solid var(--border); display: flex; gap: 10px; justify-content: space-between; padding: 8px 10px; }
+.account-popover-header strong, .account-popover-header span { display: block; }
+.account-popover-header strong { font-size: .82rem; font-weight: 650; letter-spacing: 0; }
+.account-popover-header span { color: var(--text-soft); font-size: .64rem; margin-top: 2px; }
+.account-settings, .account-icon-button { align-items: center; background: transparent; border: 0; border-radius: 7px; color: var(--text-soft); display: flex; height: 34px; justify-content: center; width: 34px; }
+.account-settings { height: 24px; width: 24px; }
+.account-settings svg { height: 14px; width: 14px; }
+.account-settings:hover, .account-icon-button:hover { background: #f2f2f2; color: var(--text); }
+.account-menu-list { border-bottom: 1px solid var(--border); display: grid; padding: 5px 6px; }
+.account-menu-row { align-items: center; background: transparent; border: 0; border-radius: 6px; color: var(--text); display: flex; font-size: .69rem; justify-content: space-between; min-height: 27px; padding: 0 7px; text-align: left; width: 100%; }
+.account-menu-row:hover { background: #f7f7f7; }
+.account-menu-row svg { color: var(--text-soft); height: 14px; width: 14px; }
+.account-theme-row:hover { background: transparent; }
+.theme-control { align-items: center; background: #ffffff; border: 1px solid var(--border); border-radius: 999px; box-shadow: 0 2px 8px rgba(15, 23, 42, .08); display: inline-flex; gap: 7px; padding: 3px 7px; }
+.theme-control svg { height: 12px; width: 12px; }
+.theme-option { align-items: center; background: transparent; border: 0; border-radius: 999px; color: var(--text-soft); display: flex; height: 18px; justify-content: center; padding: 0; width: 18px; }
+.theme-option[aria-pressed="true"] { background: #eef3fb; color: var(--text); }
+.upgrade-button { align-items: center; background: #171717; border: 0; border-radius: 7px; color: #ffffff; display: flex; font-size: .7rem; font-weight: 650; justify-content: center; margin: 6px 8px 7px; min-height: 29px; width: calc(100% - 16px); }
+.upgrade-button:hover { background: #000000; }
+.platform-status { border-top: 1px solid var(--border); display: block; padding: 8px 10px 9px; position: relative; }
+.platform-status:hover { background: #f7f7f7; }
+.platform-status span, .platform-status strong { display: block; }
+.platform-status span { color: var(--text-soft); font-size: .6rem; }
+.platform-status strong { font-size: .68rem; font-weight: 520; margin-top: 3px; }
+.platform-status i { background: var(--blue); border-radius: 50%; height: 7px; position: absolute; right: 11px; top: 50%; transform: translateY(-50%); width: 7px; }
+.account-footer { align-items: center; display: grid; gap: 4px; grid-template-columns: minmax(0, 1fr) 34px 34px; }
+.account-trigger { align-items: center; background: transparent; border: 0; border-radius: 8px; color: var(--text); display: flex; gap: 9px; min-width: 0; padding: 6px 7px; text-align: left; }
+.account-trigger:hover, .account-trigger[aria-expanded="true"] { background: #f0f0f0; }
+.account-avatar { align-items: center; background: #c2e7ff; border-radius: 50%; color: #001d35; display: flex; flex-shrink: 0; font-size: .7rem; font-weight: 750; height: 32px; justify-content: center; width: 32px; }
+.account-trigger span:nth-child(2) { min-width: 0; }
+.account-trigger strong, .account-trigger small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-trigger strong { font-size: .78rem; }
+.account-trigger small { color: var(--text-soft); font-size: .64rem; margin-top: 2px; }
+.sidebar-toggle-button[aria-pressed="true"] { background: #f0f0f0; color: var(--text); }
+
+@media (min-width: 861px) {
+  .sidebar-collapsed .account-footer { grid-template-columns: 34px; justify-content: center; }
+  .sidebar-collapsed .account-trigger { justify-content: center; padding: 6px 0; }
+  .sidebar-collapsed .account-trigger > span:nth-child(2),
+  .sidebar-collapsed .account-icon-button[aria-label="Open account menu"] { display: none; }
+}

@@ -3,6 +3,8 @@ import type { GovernanceConfig, Source } from '../types'
 export type ScanType = 'full' | 'delta'
 
 export type StartScanOptions = {
+  baselineScanId?: string | null
+  modifiedSince?: string | null
   scanType: ScanType
   sourceId?: string
 }
@@ -15,6 +17,7 @@ export type ScanProfile = {
   progress: number
   scannedFiles: number
   scanId: string
+  scanType: ScanType
   throughputFilesPerSecond: number
   totalBytes: number
   totalFiles: number
@@ -29,6 +32,7 @@ export const scanProfiles: Record<ScanType, ScanProfile> = {
     progress: 0.34,
     scannedFiles: 14,
     scanId: 'scan_demo_full',
+    scanType: 'full',
     throughputFilesPerSecond: 1.1,
     totalBytes: 38210000,
     totalFiles: 42,
@@ -41,6 +45,7 @@ export const scanProfiles: Record<ScanType, ScanProfile> = {
     progress: 0.67,
     scannedFiles: 4,
     scanId: 'scan_demo_delta',
+    scanType: 'delta',
     throughputFilesPerSecond: 1.15,
     totalBytes: 6240000,
     totalFiles: 6,

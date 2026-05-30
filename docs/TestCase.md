@@ -58,6 +58,18 @@
 | INVEXT-006 | Verify resource and cost boundary | Evaluation resource intensity keeps model calls and estimated paid-service cost at zero. |
 | INVEXT-007 | Reject inventory for not-ready source | A not-ready source cannot create scan, inventory, extraction, or audit state changes. |
 
+## Deterministic Signal Detection Checks
+
+| ID | Scenario | Expected Result |
+| --- | --- | --- |
+| SIGNAL-001 | Start a full scan | The running scan includes `signalDetection.status = pending` and the `detecting_signals` stage after `extracting_content`. |
+| SIGNAL-002 | Complete a full scan | The completed scan includes detector rules version/hash, evidence requirements, evaluated evidence candidates, detected/redacted signal counts, findings-with-signals count, and signal-type counts. |
+| SIGNAL-003 | Verify redaction boundary | Finding details expose only redacted signal snippets and no public payload contains raw extracted text, full file bodies, page images, or unredacted personal data. |
+| SIGNAL-004 | Verify policy evidence requirements | `signalDetection.evidenceRequirements` matches the active policy pack evidence requirements when available. |
+| SIGNAL-005 | Verify evaluation traceability | Evaluation stores the signal-detection rules hash and includes `signal_detection:completed` in the quality-basis input stages. |
+| SIGNAL-006 | Verify resource and cost boundary | Signal detection keeps model calls and estimated paid-service cost at zero. |
+| SIGNAL-007 | Reject signal detection for not-ready source | A not-ready source cannot create scan, extraction, signal-detection, finding, audit, metric, or evaluation state changes. |
+
 ## Context and Risk Judgment Checks
 
 | ID | Scenario | Expected Result |
@@ -68,7 +80,7 @@
 | CTXRISK-004 | Verify legal boundary | `legalConclusionProvided` remains `false`, and UI-facing copy does not present the automated judgment as legal advice. |
 | CTXRISK-005 | Verify raw-content boundary | Context/risk warnings and summaries do not contain raw extracted text, file bodies, page images, or unredacted personal data. |
 | CTXRISK-006 | Verify resource and cost boundary | Context/risk judgment keeps model calls and estimated paid-service cost at zero. |
-| CTXRISK-007 | Reject context/risk for not-ready source | A not-ready source cannot create scan, inventory, extraction, context/risk, or audit state changes. |
+| CTXRISK-007 | Reject context/risk for not-ready source | A not-ready source cannot create scan, inventory, extraction, signal-detection, context/risk, or audit state changes. |
 
 ## Owner Routing and Assignment Checks
 
@@ -141,6 +153,45 @@
 | AUDIT-004 | Submit a review reason containing obvious sensitive values | Public audit reason text masks emails, IBAN-like values, long numbers, and control characters. |
 | AUDIT-005 | Submit denied, incomplete, stale, unknown, or duplicate commands | No duplicate audit events or audit metric increments are created. |
 | AUDIT-006 | Review deletion boundary | Audit events may record `delete_candidate`, but `deletionExecuted` remains `false` and no source-file, connector, retention-label, or access-control mutation occurs. |
+
+## Incremental Delta Scan Checks
+
+| ID | Scenario | Expected Result |
+| --- | --- | --- |
+| DELTA-001 | Start delta scan from completed full-scan baseline | The selected scan-ready source creates a running delta scan with baseline ID, source snapshot, inventory fingerprint, changed counts, partial warnings, and a `delta_scan_started` audit event. |
+| DELTA-002 | Start delta scan without completed baseline | No scan, audit, finding, metric, or evaluation state changes, and the user receives a neutral baseline-unavailable message. |
+| DELTA-003 | Start delta scan with mismatched explicit baseline | The command is rejected without state changes. |
+| DELTA-004 | Observe running delta pipeline | The pipeline exposes `comparing_delta_baseline` before changed-file inventory and extraction. |
+| DELTA-005 | Complete delta scan | Only changed files are processed, changed findings use the delta scan ID, unchanged files are carried forward, and missing files are represented as inventory changes. |
+| DELTA-006 | Verify no deletion boundary | `missingFilesTreatedAsDeleted` and `deletionExecuted` remain `false`, and no audit event executes real deletion. |
+| DELTA-007 | Verify downstream continuity | Completed delta output updates context/risk, owner routing, finding assembly, review support, audit recording, metrics, and evaluation together. |
+| DELTA-008 | Verify evaluation and cost boundary | Evaluation preserves a delta rules hash, deterministic reproducibility, throughput, zero model calls, and zero estimated paid-service cost. |
+
+## Admin Metrics Aggregation Checks
+
+| ID | Scenario | Expected Result |
+| --- | --- | --- |
+| METRICS-001 | Start a full scan | Running metrics include `aggregation.status = partial`, upstream input-stage statuses, scan coverage, risk, owner, audit, safety, and zero-cost fields. |
+| METRICS-002 | Complete a full scan | Completed metrics aggregate scan coverage, risk queue, owner backlog, review outcomes, audit evidence, evaluation linkage, and resource cost from prior stage summaries. |
+| METRICS-003 | Complete a delta scan | Delta aggregate metrics include baseline, changed, processed, carried-forward, and missing counts while keeping `missingFilesTreatedAsDeleted = false` and `deletionExecuted = false`. |
+| METRICS-004 | Submit an accepted review decision | Owner backlog, outcome counters, audit counts, throughput inputs, and evaluation-linked aggregation update exactly once. |
+| METRICS-005 | Reject scan or review command | Metrics remain unchanged together with source, finding, audit, and evaluation state. |
+| METRICS-006 | Verify safety and cost boundary | Aggregation keeps raw-content, legal-conclusion, deletion-execution, model-call, and estimated-cost boundaries visible and safe. |
+| METRICS-007 | Verify reproducibility | Evaluation stores `adminMetricsRulesHash` matching the metrics aggregation fingerprint. |
+| METRICS-008 | Review Dashboard management indicators | Dashboard displays owner completion, risk queue, audit evidence, metric basis, and cost without raw source content or legal conclusions. |
+
+## Evaluation Metrics Generation Checks
+
+| ID | Scenario | Expected Result |
+| --- | --- | --- |
+| EVALGEN-001 | Complete a full scan | Evaluation computes precision, recall, F1, reproducibility, throughput, resource intensity, confusion-matrix counts, scenario-level metrics, review-throughput context, risk-progress fields, and an evaluation-rules fingerprint. |
+| EVALGEN-002 | Verify upstream traceability | Evaluation preserves dataset hash, scanner version, detector rules, config hash, policy-pack version, context/risk, owner, finding, review-support, audit, admin-metrics, and finding fingerprints. |
+| EVALGEN-003 | Verify scenario-level quality | Scenario metrics expose per-family precision, recall, F1, false positives, false negatives, unsupported-file context, and OCR-deferred context where available. |
+| EVALGEN-004 | Complete a delta scan | Evaluation computes changed-file quality context and preserves baseline, carried-forward, missing-file, and no-deletion boundaries. |
+| EVALGEN-005 | Submit an accepted review decision | Review-throughput and risk-progress evaluation fields refresh exactly once while scan-quality precision, recall, and F1 remain stable. |
+| EVALGEN-006 | Reject scan or review command | Evaluation remains unchanged together with metric, audit, source, and finding state. |
+| EVALGEN-007 | Verify safety and cost boundary | Evaluation keeps raw-content, legal-conclusion, deletion-execution, model-call, estimated-cost, and paid-service boundaries visible and safe. |
+| EVALGEN-008 | Review Evaluation page | The page renders scan quality, confusion matrix, scenario metrics, resource intensity, reproducibility, and safety boundaries without raw source content or legal conclusions. |
 
 ## File Review Editor Checks
 

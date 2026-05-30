@@ -60,7 +60,8 @@ describe('audit event recording workflow', () => {
     const scanEvents = completed.auditEvents.filter((event) => event.scanId === 'scan_demo_full')
     const stageNames = completed.scan.pipelineStages?.map((stage) => stage.stage)
 
-    expect(stageNames?.at(-1)).toBe('recording_audit_events')
+    expect(stageNames).toContain('recording_audit_events')
+    expect(stageNames?.at(-1)).toBe('generating_evaluation_metrics')
     expect(completed.scan.auditRecording).toMatchObject({
       status: 'completed',
       recordedEventCount: 38,

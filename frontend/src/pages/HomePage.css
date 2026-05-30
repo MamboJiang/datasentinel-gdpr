@@ -342,3 +342,20 @@
 .landing-proof-green svg { color: var(--landing-green); }
 .landing-proof-amber svg { color: var(--landing-amber); }
 .landing-proof-ink svg { color: #5c4a86; }
+
+@media (min-width: 981px) and (max-width: 1320px) {
+  .landing-file-card {
+    left: 2vw;
+    width: 285px;
+  }
+
+  .landing-route-card {
+    right: 2vw;
+    width: 240px;
+  }
+
+  .landing-audit-card {
+    right: 3vw;
+    width: 220px;
+  }
+}

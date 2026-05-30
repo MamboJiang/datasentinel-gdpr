@@ -15,11 +15,13 @@ export type Scan = {
   pipelineStages?: ScanPipelineStage[]
   fileInventory?: FileInventorySummary
   contentExtraction?: ContentExtractionSummary
+  signalDetection?: SignalDetectionSummary
   contextRisk?: ContextRiskSummary
   ownerAssignment?: OwnerAssignmentSummary
   findingAssembly?: FindingAssemblySummary
   reviewSupport?: ReviewSupportSummary
   auditRecording?: AuditRecordingSummary
+  deltaScan?: DeltaScanSummary
 }
 
 export type ScanPipelineStage = {
@@ -28,6 +30,30 @@ export type ScanPipelineStage = {
   processedFiles?: number
   totalFiles?: number
   warnings?: string[]
+}
+
+export type DeltaScanSummary = {
+  status: string
+  baselineScanId: string
+  baselineSourceSnapshotId: string
+  baselineInventoryFingerprint: string
+  baselineTotalFiles: number
+  baselineFindingCount: number
+  deltaFingerprint: string
+  changedFiles: number
+  newFiles: number
+  modifiedFiles: number
+  unchangedFiles: number
+  missingFiles: number
+  processedChangedFiles: number
+  carriedForwardFiles: number
+  reopenedFindings: number
+  unchangedFindingsCarriedForward: number
+  missingFilesTreatedAsDeleted: boolean
+  rawContentExposed: boolean
+  legalConclusionProvided: boolean
+  deletionExecuted: boolean
+  warnings: string[]
 }
 
 export type FileInventoryFamily = {
@@ -68,6 +94,26 @@ export type ContentExtractionSummary = {
   redactedEvidenceCandidates: number
   rawContentExposed: boolean
   methods: ContentExtractionMethod[]
+  warnings: string[]
+}
+
+export type SignalTypeCount = {
+  type: string
+  signals: number
+  evidenceRequirement?: string
+}
+
+export type SignalDetectionSummary = {
+  status: string
+  detectorRulesVersion: string
+  detectorRulesHash: string
+  evidenceRequirements: string[]
+  evaluatedEvidenceCandidates: number
+  detectedSignals: number
+  redactedSignals: number
+  findingsWithSignals: number
+  rawContentExposed: boolean
+  signalTypeCounts: SignalTypeCount[]
   warnings: string[]
 }
 

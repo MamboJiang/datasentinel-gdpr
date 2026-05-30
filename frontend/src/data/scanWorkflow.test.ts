@@ -70,6 +70,15 @@ describe('scan workflow', () => {
       redactedEvidenceCandidates: 21,
       rawContentExposed: false,
     })
+    expect(result.data.scan.signalDetection).toMatchObject({
+      status: 'pending',
+      detectorRulesVersion: 'deterministic-p0-v1',
+      evaluatedEvidenceCandidates: 0,
+      detectedSignals: 0,
+      redactedSignals: 0,
+      findingsWithSignals: 0,
+      rawContentExposed: false,
+    })
     expect(result.data.scan.pipelineStages?.map((stage) => stage.stage)).toEqual([
       'source_ready',
       'inventorying_files',
@@ -80,6 +89,7 @@ describe('scan workflow', () => {
       'assembling_findings',
       'preparing_review_support',
       'recording_audit_events',
+      'generating_evaluation_metrics',
     ])
     expect(result.data.scan.auditRecording).toMatchObject({
       status: 'pending',
@@ -145,6 +155,9 @@ describe('scan workflow', () => {
       extractedFiles: 12,
       extractionWarnings: 2,
       redactedEvidenceCandidates: 21,
+      detectedSignals: 0,
+      redactedSignals: 0,
+      findingsWithSignals: 0,
       contextClassifiedFindings: 0,
       riskAssessedFindings: 0,
       humanReviewRequiredFindings: 0,

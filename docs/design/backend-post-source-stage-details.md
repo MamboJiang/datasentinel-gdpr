@@ -58,6 +58,8 @@ Exit criteria:
 
 Purpose: identify GDPR-relevant evidence candidates through deterministic detectors before any AI-assisted classification or explanation.
 
+Implemented P0 slice: `docs/design/deterministic-signal-detection.md` defines the deterministic scan-level signal-detection stage that follows content extraction and precedes context/risk judgment.
+
 Primary contract surface:
 
 - `GET /api/findings`
@@ -73,6 +75,7 @@ Outputs:
 
 - Detector signals with type, detector name, confidence, redacted snippet, and location when available.
 - Personal data type labels such as `email`, `employee_id`, `billing_address`, `iban_like`, `signature`, or `access_role`.
+- Optional scan-level `signalDetection` summary with detector rules version/hash, active evidence requirements, evaluated evidence-candidate count, detected/redacted signal count, findings-with-signals count, signal-type counts, warnings, and `rawContentExposed = false`.
 
 Exit criteria:
 
@@ -242,6 +245,8 @@ Exit criteria:
 
 Purpose: represent ongoing governance by scanning changed files after a baseline full scan.
 
+Implemented P0 slice: `docs/design/incremental-delta-scan-workflow.md` defines the deterministic baseline-aware delta-scan workflow that follows full-scan completion, audit recording, and evaluation readiness.
+
 Primary contract surface:
 
 - `POST /api/scans/delta`
@@ -267,6 +272,8 @@ Exit criteria:
 
 Purpose: make backend progress, risk, and backlog visible as product evidence.
 
+Implemented P0 slice: `docs/design/admin-metrics-aggregation.md` defines deterministic aggregate management metrics connected to full scan, delta scan, finding assembly, review support, human decisions, audit recording, and evaluation.
+
 Primary contract surface:
 
 - `GET /api/admin/metrics`
@@ -278,17 +285,21 @@ Inputs:
 
 Outputs:
 
-- Scanned files, flagged files, scanned volume, progress, scan time, review backlog, high-risk count, retention-overdue count, and throughput.
+- Scanned files, flagged files, scanned volume, progress, scan time, review backlog, high-risk count, retention-overdue count, throughput, owner task completion, review outcomes, audit evidence counts, delta counts, evaluation linkage, and resource-cost fields.
 
 Exit criteria:
 
 - Metrics can be partially available while a scan is running.
 - `meta.partial = true` and warnings explain incomplete metrics.
 - Admin metrics match the terms used in `ACCEPTANCE.md`.
+- Evaluation preserves `adminMetricsRulesHash`.
+- Rejected scan or review commands do not change metric state.
 
-## Step 12: Evaluation Run Planning
+## Step 12: Evaluation Metrics Generation
 
 Purpose: prove scan quality and operational cost are measurable.
+
+Implemented P0 slice: `docs/design/evaluation-metrics-generation.md` defines deterministic evaluation metrics connected to full scan, delta scan, admin metrics, audit recording, review outcomes, and the controlled golden dataset basis.
 
 Primary contract surface:
 
@@ -296,14 +307,16 @@ Primary contract surface:
 
 Inputs:
 
-- Dataset hash, scanner version, detector rules hash, config hash, policy-pack version, finding fingerprints, and ground-truth fixture or deterministic mock values for P0.
+- Dataset hash, scanner version, detector rules hash, config hash, policy-pack version, finding fingerprints, upstream stage fingerprints, admin-metrics fingerprint, human-review outcomes, delta summary when present, and ground-truth fixture values for P0.
 
 Outputs:
 
-- Precision, recall, F1, reproducibility, throughput, and resource intensity.
+- Precision, recall, F1, reproducibility, throughput, resource intensity, evaluation-rules fingerprint, confusion matrix, scenario-level metrics, review-throughput context, risk-progress context, and safety-boundary booleans.
 
 Exit criteria:
 
-- Evaluation can be shown even if the first implementation uses deterministic mock values.
-- Reproducibility ties back to dataset, detector rules, configuration, and policy-pack version.
-- Resource intensity is explicit about memory, CPU, model calls, and estimated cost.
+- Evaluation can be shown even if the first implementation uses deterministic golden-dataset values.
+- Reproducibility ties back to dataset, detector rules, configuration, policy-pack version, upstream stage fingerprints, admin-metrics fingerprint, and finding fingerprint.
+- Resource intensity is explicit about memory, CPU, model calls, estimated cost, and zero paid-service cost for P0.
+- Scenario-level metrics expose where false positives, false negatives, unsupported files, or OCR-deferred files affect trust.
+- Review-throughput and risk-progress context are human-accountable management indicators, not legal conclusions or proof of deletion.

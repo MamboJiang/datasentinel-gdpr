@@ -10,7 +10,7 @@ DataSentinel turns GDPR file cleanup from manual auditing into a measurable, own
 
 ## Core Loop
 
-Source connection -> full scan -> hybrid detection -> context classification -> owner routing -> human review -> audit trail -> delta scan -> evaluation metrics.
+Source connection -> full scan -> inventory/extraction -> deterministic signal detection -> context classification -> owner routing -> human review -> audit trail -> delta scan -> evaluation metrics.
 
 ## Target Users
 

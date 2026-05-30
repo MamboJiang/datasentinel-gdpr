@@ -59,6 +59,20 @@ describe('scan workflow completion', () => {
       redactedEvidenceCandidates: 64,
       rawContentExposed: false,
     })
+    expect(completed.scan.signalDetection).toMatchObject({
+      status: 'completed',
+      detectorRulesVersion: 'deterministic-p0-v1',
+      evaluatedEvidenceCandidates: 64,
+      detectedSignals: 38,
+      redactedSignals: 38,
+      findingsWithSignals: 17,
+      rawContentExposed: false,
+      warnings: [],
+    })
+    expect(completed.scan.signalDetection?.signalTypeCounts.find((signalType) => signalType.type === 'iban_like')).toMatchObject({
+      signals: 4,
+      evidenceRequirement: 'detector_signal',
+    })
     expect(completed.scan.pipelineStages?.find((stage) => stage.stage === 'judging_context_risk')).toMatchObject({
       stage: 'judging_context_risk',
       status: 'completed',
@@ -83,11 +97,17 @@ describe('scan workflow completion', () => {
       processedFiles: 17,
       totalFiles: 17,
     })
-    expect(completed.scan.pipelineStages?.at(-1)).toMatchObject({
+    expect(completed.scan.pipelineStages?.find((stage) => stage.stage === 'recording_audit_events')).toMatchObject({
       stage: 'recording_audit_events',
       status: 'completed',
       processedFiles: 38,
       totalFiles: 38,
+    })
+    expect(completed.scan.pipelineStages?.at(-1)).toMatchObject({
+      stage: 'generating_evaluation_metrics',
+      status: 'computed',
+      processedFiles: 42,
+      totalFiles: 42,
     })
     expect(completed.scan.auditRecording).toMatchObject({
       status: 'completed',
@@ -192,6 +212,9 @@ describe('scan workflow completion', () => {
       extractedFiles: 38,
       extractionWarnings: 4,
       redactedEvidenceCandidates: 64,
+      detectedSignals: 38,
+      redactedSignals: 38,
+      findingsWithSignals: 17,
       contextClassifiedFindings: 17,
       riskAssessedFindings: 17,
       highRiskFindings: 5,
@@ -216,18 +239,65 @@ describe('scan workflow completion', () => {
     expect(completed.evaluation).toMatchObject({
       scanId: 'scan_demo_full',
       configHash: 'sha256:scan_demo_full_inventory_completed',
-      detectorRulesHash: 'sha256:snapshot_source_001_scan_demo_full_extraction_completed',
+      detectorRulesHash: 'sha256:2026.05-demo_sha256:snapshot_source_001_scan_demo_full_extraction_completed_signal_detection_completed',
+      signalDetectionRulesHash: 'sha256:2026.05-demo_sha256:snapshot_source_001_scan_demo_full_extraction_completed_signal_detection_completed',
       contextRiskRulesHash: 'sha256:2026.05-demo_sha256:snapshot_source_001_scan_demo_full_extraction_completed_context_risk_completed',
       ownerAssignmentRulesHash: 'sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_demo_full_extraction_completed_context_risk_completed_owner_assignment_completed',
       findingAssemblyRulesHash: 'sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_demo_full_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_demo_full_extraction_completed_finding_assembly_completed',
       reviewSupportRulesHash: 'sha256:2026.05-demo_2026.05-demo_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_demo_full_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_demo_full_extraction_completed_finding_assembly_completed_user_anna_review_support_completed',
       auditRecordingRulesHash: 'sha256:2026.05-demo_scan_demo_full_completed_38_audit_recording_v1',
+      precision: 0.941,
+      recall: 0.842,
+      f1: 0.889,
       reproducibility: 1,
       throughputFilesPerSecond: 1.1,
+    })
+    expect(completed.evaluation.evaluationRulesHash).toContain('evaluation_metrics_v1')
+    expect(completed.evaluation.qualityBasis).toMatchObject({
+      status: 'computed',
+      goldenDatasetVersion: 'gdpr-samples-p0-v1',
+      inputStages: [
+        'file_inventory:completed',
+        'content_extraction:completed',
+        'signal_detection:completed',
+        'context_risk:completed',
+        'owner_assignment:completed',
+        'finding_assembly:completed',
+        'review_support:completed',
+        'audit_recording:completed',
+        'admin_metrics:completed',
+      ],
+      confusionMatrix: {
+        truePositives: 16,
+        falsePositives: 1,
+        falseNegatives: 3,
+        trueNegatives: 22,
+        predictedPositiveFiles: 17,
+        actualPositiveFiles: 19,
+        evaluatedFiles: 42,
+      },
+      safetyBoundaries: {
+        rawContentExposed: false,
+        legalConclusionProvided: false,
+        deletionExecuted: false,
+        modelCalls: 0,
+        estimatedCostUsd: 0,
+      },
+    })
+    expect(completed.evaluation.qualityBasis?.scenarioMetrics).toHaveLength(5)
+    expect(completed.evaluation.qualityBasis?.scenarioMetrics.find((scenario) => (
+      scenario.sourceFamily === 'Incident_Report'
+    ))).toMatchObject({
+      precision: 0.667,
+      recall: 0.667,
+      falsePositives: 1,
+      falseNegatives: 1,
     })
     expect(completed.evaluation.resourceIntensity).toMatchObject({
       modelCalls: 0,
       estimatedCostUsd: 0,
+      estimatedCostPerThousandFilesUsd: 0,
+      paidServiceUsed: false,
     })
     expect(completed.meta.partial).toBe(false)
     expect(completed.meta.warnings).toEqual([])

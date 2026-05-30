@@ -90,6 +90,16 @@ The inventory and extraction interaction extends the Dashboard latest-scan and p
 - Completed scan state marks inventory and extraction as complete while preserving duration, throughput, and deterministic evaluation readiness.
 - The UI must avoid presenting extraction warnings as legal conclusions or deletion instructions.
 
+## Deterministic Signal Detection Interaction
+
+The signal-detection interaction extends the Dashboard latest-scan and pipeline panels after content extraction:
+
+- Running scan state shows deterministic signal detection as pending until extraction is ready.
+- Completed scan state shows detector rules version/hash, evidence requirements, detected/redacted signal counts, findings-with-signals count, and signal-type counts.
+- The pipeline summary shows `detecting_signals` after `extracting_content` and before `judging_context_risk`.
+- Finding details continue to show redacted detector evidence with detector, confidence, snippet, and location when available.
+- The UI must avoid raw source content, unredacted personal data, detector secrets, legal conclusions, deletion instructions, or claims of GDPR compliance.
+
 ## Context and Risk Judgment Interaction
 
 The context/risk interaction extends the Dashboard review focus and pipeline summary after signal detection:
@@ -158,6 +168,41 @@ The audit-recording interaction connects visible workflow changes to an accounta
 - Accepted review decisions update the finding timeline, global audit list, audit-recording summary, audit metrics, and evaluation traceability together.
 - Human-entered audit reason text is sanitized before public display.
 - The UI must avoid legal conclusions, raw source content, unredacted personal data, hidden permission decisions, production log-management assumptions, and deletion execution.
+
+## Incremental Delta Scan Interaction
+
+The incremental delta-scan interaction connects a completed baseline to changed-file-only follow-up scanning:
+
+- Dashboard and Sources expose delta scan actions only when the selected source is scan-ready and a completed baseline can be represented.
+- A rejected delta start shows a neutral unavailable state and does not create scan, audit, finding, metric, or evaluation changes.
+- Running delta state shows `comparing_delta_baseline` before changed-file inventory and extraction.
+- Delta summary shows baseline scan ID, changed, new, modified, unchanged, and missing file counts when available.
+- Completed delta state shows changed-file findings with the delta scan ID while unchanged baseline files are carried forward.
+- Missing files are presented as source inventory changes, not DataSentinel deletion or proof of erasure.
+- The UI must avoid legal conclusions, raw source content, unredacted personal data, hidden permission decisions, production connector assumptions, and deletion execution.
+
+## Admin Metrics Aggregation Interaction
+
+The admin-metrics interaction turns prior workflow outputs into management indicators:
+
+- Running scans show aggregate metrics as partial and identify the upstream stage basis used for the numbers.
+- Completed scans show scan coverage, risk queue, owner backlog, review throughput, review outcomes, audit evidence, evaluation linkage, and resource cost as one management view.
+- Completed delta scans show changed, processed, carried-forward, and missing-file counts while preserving the no-deletion boundary.
+- Accepted review decisions update owner backlog, outcomes, audit counts, and throughput indicators without duplicating idempotent submissions.
+- The Dashboard shows owner task completion, risk queue, audit evidence, metric basis, and estimated service cost without exposing raw content or implying legal conclusions.
+- The UI must avoid raw source content, unredacted personal data, hidden permission decisions, production analytics assumptions, legal advice, and deletion execution.
+
+## Evaluation Metrics Generation Interaction
+
+The evaluation interaction turns prior workflow outputs into measurable quality evidence:
+
+- The pipeline summary shows `generating_evaluation_metrics` after `recording_audit_events`.
+- Completed scan state shows precision, recall, F1, reproducibility, throughput, resource intensity, confusion-matrix counts, scenario-level metrics, review-throughput context, and risk-progress fields.
+- Full-scan evaluation uses a controlled golden dataset definition and shows false-positive, false-negative, unsupported-file, and OCR-deferred-file context.
+- Delta evaluation shows changed-file quality context while preserving baseline, carried-forward, missing-file, and no-deletion boundaries.
+- Accepted review decisions refresh review-throughput and risk-progress evaluation context without changing scan-quality precision, recall, or F1.
+- The Evaluation page shows the dataset, upstream stage basis, rule fingerprints, resource and cost boundaries, and safety boundaries.
+- The UI must avoid raw source content, unredacted personal data, hidden permission decisions, production evaluation assumptions, legal advice, full-compliance claims, and deletion execution.
 
 ## File Review Editor Interaction
 

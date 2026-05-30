@@ -68,16 +68,16 @@ Detailed stage contracts are documented in `docs/design/backend-post-source-stag
 | --- | --- | --- |
 | 1 | Full scan orchestration | Create and observe a scan after a sample source is connected. |
 | 2 | Source inventory and extraction planning | Build file candidates without exposing raw content. |
-| 3 | Deterministic signal detection | Produce redacted evidence before risk or AI-assisted explanation. |
+| 3 | Deterministic signal detection | Produce redacted evidence before risk or AI-assisted explanation; the P0 implementation slice is documented in `docs/design/deterministic-signal-detection.md`. |
 | 4 | Context classification and risk planning | Explain context, risk, and retention from evidence and policy guidance; the P0 implementation slice is documented in `docs/design/context-risk-judgment.md`. |
 | 5 | Owner routing | Assign each finding to a direct owner, fallback owner, or escalation path. |
 | 6 | Finding assembly and evidence card | Compose contract-compatible list and detail responses; the P0 implementation slice is documented in `docs/design/finding-assembly-evidence-card.md`. |
 | 7 | Review support and permission boundary | Show allowed actions, denied actions, checklist, and reason requirements; the P0 implementation slice is documented in `docs/design/review-support-permission-boundary.md`. |
 | 8 | Human review command handling | Record accountable decisions without real deletion. |
 | 9 | Audit event logging | Preserve scan, assignment, and review history. |
-| 10 | Delta scan planning | Compare changed files against a prior full-scan baseline. |
-| 11 | Admin metrics aggregation | Expose progress, risk, backlog, volume, and time metrics. |
-| 12 | Evaluation run planning | Publish accuracy, reproducibility, throughput, and resource intensity. |
+| 10 | Delta scan planning | Compare changed files against a prior full-scan baseline; the P0 implementation slice is documented in `docs/design/incremental-delta-scan-workflow.md`. |
+| 11 | Admin metrics aggregation | Expose source coverage, risk, owner backlog, review outcomes, audit evidence, cost, and throughput metrics. |
+| 12 | Evaluation metrics generation | Publish accuracy, reproducibility, throughput, resource intensity, scenario quality, review throughput, and risk-progress context; the P0 implementation slice is documented in `docs/design/evaluation-metrics-generation.md`. |
 
 ## Sample Scenario Mapping
 
@@ -143,6 +143,7 @@ If the full post-source plan is too large for the first backend implementation:
 - A connected sample source can start a full scan without introducing a new public endpoint.
 - A scan status can expose progress, counts, and failure or partial warnings.
 - A finding cannot be created without redacted evidence.
+- Deterministic signal detection can expose detector rules hash, policy evidence requirements, redacted signal counts, and signal-type counts without raw content.
 - A finding can show context, risk, owner, policy-pack version, retention status, and audit timeline.
 - Owner routing can choose direct owner, Master of Data fallback, or escalation without silently dropping ownership.
 - Review support can show allowed actions, denied actions, required reasons, transfer options, and escalation options before submit.
@@ -150,7 +151,7 @@ If the full post-source plan is too large for the first backend implementation:
 - A delete decision is represented only as `delete_candidate` in P0.
 - Every review decision creates one audit event that preserves actor, timestamp, decision, reason, resulting status, and policy context.
 - A delta scan can compare changed files against a prior full-scan baseline.
-- Admin metrics can show scanned files, flagged files, scanned volume, progress, scan time, review backlog, high-risk count, and retention-overdue count.
-- Evaluation can show precision, recall, F1, reproducibility, throughput, and resource intensity.
+- Admin metrics can show scanned files, flagged files, scanned volume, progress, scan time, review backlog, high-risk count, retention-overdue count, owner task completion, review outcomes, audit evidence counts, delta counts, evaluation linkage, and resource cost.
+- Evaluation can show precision, recall, F1, reproducibility, throughput, resource intensity, scenario quality, review-throughput context, and risk-progress context.
 - Partial data is explicit through `meta.partial` and warnings rather than hidden or silently omitted.
 - The plan remains compatible with `contracts/openapi.yaml` and existing mock fixtures.

@@ -40,11 +40,11 @@ References:
 
 ## Atlas-Derived Continuity Requirements
 
-The separate local Atlas markdown was not present in this repository at implementation time. The requirements below are derived from the Atlas-derived continuity requirements already recorded in `docs/design/context-risk-judgment.md` and from the governance contract.
+The requirements below are derived from the repository Atlas reference in `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md`, `docs/design/deterministic-signal-detection.md`, `docs/design/context-risk-judgment.md`, and the governance contract.
 
 | ID | Requirement |
 | --- | --- |
-| OWNROUTE-REQ-001 | Owner routing must run only after evidence candidates and context/risk judgment exist; it cannot invent review work without detector evidence. |
+| OWNROUTE-REQ-001 | Owner routing must run only after deterministic signal detection and context/risk judgment exist; it cannot invent review work without detector evidence. |
 | OWNROUTE-REQ-002 | Owner routing must use source metadata, source Master of Data fallback, organization model, and policy-pack guidance rather than raw file bodies. |
 | OWNROUTE-REQ-003 | Every review-required finding must become direct-owner assigned, Master of Data assigned, or escalation routed; findings must never be silently unowned. |
 | OWNROUTE-REQ-004 | Assignment output must explain the routing strategy without making a legal conclusion or executing deletion. |
