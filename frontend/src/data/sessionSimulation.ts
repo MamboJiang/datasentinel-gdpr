@@ -25,6 +25,37 @@ export const workspaceSimulation = {
   plan: 'Demo',
 }
 
+export const defaultLanguagePreferenceCode = 'en'
+
+export const languagePreferenceOptions = [
+  { code: 'en', label: 'English' },
+  { code: 'bg', label: 'Bulgarian' },
+  { code: 'hr', label: 'Croatian' },
+  { code: 'cs', label: 'Czech' },
+  { code: 'da', label: 'Danish' },
+  { code: 'nl', label: 'Dutch' },
+  { code: 'et', label: 'Estonian' },
+  { code: 'fi', label: 'Finnish' },
+  { code: 'fr', label: 'French' },
+  { code: 'de', label: 'German' },
+  { code: 'el', label: 'Greek' },
+  { code: 'hu', label: 'Hungarian' },
+  { code: 'ga', label: 'Irish' },
+  { code: 'it', label: 'Italian' },
+  { code: 'lv', label: 'Latvian' },
+  { code: 'lt', label: 'Lithuanian' },
+  { code: 'mt', label: 'Maltese' },
+  { code: 'pl', label: 'Polish' },
+  { code: 'pt', label: 'Portuguese' },
+  { code: 'ro', label: 'Romanian' },
+  { code: 'sk', label: 'Slovak' },
+  { code: 'sl', label: 'Slovenian' },
+  { code: 'es', label: 'Spanish' },
+  { code: 'sv', label: 'Swedish' },
+] as const
+
+export type LanguagePreferenceCode = typeof languagePreferenceOptions[number]['code']
+
 export type UtilityRoute = {
   description: string
   icon: LucideIcon
@@ -143,6 +174,10 @@ export const documentationMap = [
 ]
 
 export const changelogItems = [
+  {
+    title: 'Local language preference',
+    description: 'The account menu now stores a local EU language preference while the P0 interface copy remains English-only.',
+  },
   {
     title: 'Account menu utility routes',
     description: 'Account settings, feedback, docs, help, status, plan, and session-boundary pages now open from the account menu.',

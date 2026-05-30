@@ -1,8 +1,14 @@
-import { Monitor, Moon, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Settings2, Sun } from 'lucide-react'
+import { Languages, Monitor, Moon, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Settings2, Sun } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { accountSimulation, utilityRoutes } from '../data/sessionSimulation'
+import {
+  accountSimulation,
+  defaultLanguagePreferenceCode,
+  languagePreferenceOptions,
+  type LanguagePreferenceCode,
+  utilityRoutes,
+} from '../data/sessionSimulation'
 import './AccountMenu.css'
 
 type ThemeMode = 'system' | 'light' | 'dark'
@@ -27,6 +33,19 @@ function getStoredThemeMode(): ThemeMode {
   return storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system' ? storedTheme : 'system'
 }
 
+function isLanguagePreferenceCode(value: string | null): value is LanguagePreferenceCode {
+  return languagePreferenceOptions.some(({ code }) => code === value)
+}
+
+function getStoredLanguagePreference(): LanguagePreferenceCode {
+  if (typeof window === 'undefined') {
+    return defaultLanguagePreferenceCode
+  }
+
+  const storedLanguage = window.localStorage.getItem('datasentinel-language-preference')
+  return isLanguagePreferenceCode(storedLanguage) ? storedLanguage : defaultLanguagePreferenceCode
+}
+
 export function AccountMenu({
   accountOpen,
   onClose,
@@ -43,6 +62,8 @@ export function AccountMenu({
   sidebarCollapsed: boolean
 }) {
   const [themeMode, setThemeMode] = useState<ThemeMode>(getStoredThemeMode)
+  const [languagePreference, setLanguagePreference] = useState<LanguagePreferenceCode>(getStoredLanguagePreference)
+  const selectedLanguage = languagePreferenceOptions.find(({ code }) => code === languagePreference) ?? languagePreferenceOptions[0]
 
   useEffect(() => {
     const root = document.documentElement
@@ -59,6 +80,13 @@ export function AccountMenu({
     systemMatcher.addEventListener('change', applyTheme)
     return () => systemMatcher.removeEventListener('change', applyTheme)
   }, [themeMode])
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.lang = 'en'
+    root.dataset.languagePreference = languagePreference
+    window.localStorage.setItem('datasentinel-language-preference', languagePreference)
+  }, [languagePreference])
 
   return (
     <div className="account-dock">
@@ -95,6 +123,32 @@ export function AccountMenu({
                     </button>
                   ))}
                 </span>
+              </div>
+
+              <div className="account-menu-row account-language-row">
+                <span className="language-copy">
+                  <span className="language-title">
+                    <Languages aria-hidden="true" size={15} />
+                    <span>Language</span>
+                  </span>
+                  <small>{selectedLanguage.label} selected</small>
+                </span>
+                <select
+                  aria-label="Language preference"
+                  className="language-select"
+                  onChange={(event) => {
+                    const nextLanguage = event.target.value
+
+                    if (isLanguagePreferenceCode(nextLanguage)) {
+                      setLanguagePreference(nextLanguage)
+                    }
+                  }}
+                  value={languagePreference}
+                >
+                  {languagePreferenceOptions.map(({ code, label }) => (
+                    <option key={code} value={code}>{label} ({code})</option>
+                  ))}
+                </select>
               </div>
 
               {menuRoutes.map(({ label, path, icon: Icon }) => (

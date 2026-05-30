@@ -8,7 +8,7 @@ The console is the internal workspace simulation for a GDPR-relevant discovery w
 
 ## Contract Sources
 
-The console must stay aligned with `ACCEPTANCE.md`, `docs/API_CONTRACT.md`, `contracts/openapi.yaml`, `contracts/mocks/`, `docs/PROJECT_CONTEXT.md`, `docs/PRD.md`, `docs/TRD.md`, `docs/DesignSpec.md`, `docs/TestCase.md`, `docs/GOVERNANCE_CONFIG.md`, `docs/EVALUATION.md`, `docs/SECURITY_NOTES.md`, and the design notes under `docs/design/` for scan start, inventory/extraction, deterministic signal detection, context risk, owner routing, finding assembly, review support, human review, audit recording, incremental delta scan, account-menu utility actions, sidebar resize/collapse, and file review.
+The console must stay aligned with `ACCEPTANCE.md`, `docs/API_CONTRACT.md`, `contracts/openapi.yaml`, `contracts/mocks/`, `docs/PROJECT_CONTEXT.md`, `docs/PRD.md`, `docs/TRD.md`, `docs/DesignSpec.md`, `docs/TestCase.md`, `docs/GOVERNANCE_CONFIG.md`, `docs/EVALUATION.md`, `docs/SECURITY_NOTES.md`, and the design notes under `docs/design/` for scan start, inventory/extraction, deterministic signal detection, context risk, owner routing, finding assembly, review support, human review, audit recording, incremental delta scan, account-menu utility actions, local language preference, sidebar resize/collapse, and file review.
 
 ## Scope
 
@@ -77,7 +77,7 @@ The public root route `/` belongs to the homepage. The internal console starts a
 
 ## App Shell Contract
 
-The internal shell must provide current page title, notifications or status indicators, top-left workspace context, bottom-left account controls, sidebar collapse/expand, desktop sidebar resize by pointer or keyboard separator, active-route indication, route navigation, keyboard-accessible menus, focus-safe close behavior, and responsive readability. Sidebar resize must collapse when dragged below the configured threshold and cap expansion at the configured maximum width. Account menu controls must either navigate to a concrete local utility route or perform a clearly local UI action. Theme switching may use local browser state. Feedback must remain local-only in P0. Log out, plan, and status controls must expose prototype boundaries instead of production authentication, billing, tenant, support, or monitoring behavior. The shell must not mix public homepage navigation into the internal workspace shell or hide account, workspace, or permission context.
+The internal shell must provide current page title, notifications or status indicators, top-left workspace context, bottom-left account controls, sidebar collapse/expand, desktop sidebar resize by pointer or keyboard separator, active-route indication, route navigation, keyboard-accessible menus, focus-safe close behavior, and responsive readability. Sidebar resize must collapse when dragged below the configured threshold and cap expansion at the configured maximum width. Account menu controls must either navigate to a concrete local utility route or perform a clearly local UI action. Theme switching and language preference may use local browser state. Language preference is a P0 selection control only; interface copy remains English-only until translated copy is approved. Feedback must remain local-only in P0. Log out, plan, and status controls must expose prototype boundaries instead of production authentication, billing, tenant, support, monitoring, or translation-service behavior. The shell must not mix public homepage navigation into the internal workspace shell or hide account, workspace, or permission context.
 
 ## Shared Data Contract
 
@@ -135,6 +135,7 @@ The console satisfies this contract when:
 - Unknown, empty, partial, loading, and error states are covered.
 - Role simulation does not leak cross-scope data.
 - Account menu actions are usable, documented as prototype-safe, and do not imply production authentication, billing, support, or monitoring integration.
+- Account menu language preference is keyboard-accessible, persists locally, and does not add translated copy or external translation calls in P0.
 - Desktop sidebar resize and drag-to-collapse work without overlapping the content area; mobile keeps the slide-in navigation behavior.
 - The console remains compatible with mock payloads and future backend envelopes.
 

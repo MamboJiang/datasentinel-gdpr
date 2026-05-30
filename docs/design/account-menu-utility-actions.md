@@ -12,7 +12,7 @@ The account menu exposed visible controls for theme, feedback, homepage navigati
 | Use modal-only panels | Keeps navigation unchanged. | Harder to deep-link, test, and document; can overload the app shell. |
 | Add internal utility routes plus local-only actions | Gives each button a testable behavior while keeping P0 mock-backed. | Adds small route surface that must remain clearly outside production auth, billing, and support integrations. |
 
-Chosen option: internal utility routes plus local-only theme and feedback behavior.
+Chosen option: internal utility routes plus local-only theme, language preference, and feedback behavior.
 
 ## State Machine
 
@@ -32,6 +32,13 @@ Chosen option: internal utility routes plus local-only theme and feedback behavi
 | System | Select light | Browser storage available | Light | `data-theme=light` and local theme mode are stored. |
 | System | Select dark | Browser storage available | Dark | `data-theme=dark` and local theme mode are stored. |
 | Light or Dark | Select system | Browser media query available | System | Theme resolves from `prefers-color-scheme`. |
+
+### Language Preference
+
+| State | Event | Guard | Next state | Side effects |
+| --- | --- | --- | --- | --- |
+| Default English preference | Select supported language | Code exists in local supported list | Preference selected | Language code is stored locally; interface copy remains English in P0. |
+| Preference selected | Reload app | Stored code remains supported | Preference restored | Menu selector shows the stored code. |
 
 ### Feedback
 
@@ -54,7 +61,7 @@ Chosen option: internal utility routes plus local-only theme and feedback behavi
 - Local theme state stored in browser localStorage.
 - Frontend console contract and P0 acceptance text.
 
-No API contract, backend endpoint, mock payload, production authentication, billing, Microsoft Graph, OAuth, tenant, or deletion behavior is added.
+No API contract, backend endpoint, mock payload, production authentication, billing, Microsoft Graph, OAuth, tenant, translation service, or deletion behavior is added.
 
 ## Rollback Path
 
@@ -64,6 +71,7 @@ Revert the account menu component extraction, remove utility routes from `App.ts
 
 - Account menu opens and closes by trigger, Escape, backdrop, and route selection.
 - Theme controls visibly select system, light, and dark modes without a backend call.
+- Language preference selects from EU language entries, persists locally, and keeps interface copy English-only in P0.
 - Feedback accepts a local note and confirms it was saved only for the prototype session.
 - Home Page opens `/`.
 - Account settings, changelog, help, docs, status, plan, and session boundary routes render in the internal shell.
