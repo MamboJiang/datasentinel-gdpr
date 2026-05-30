@@ -1,0 +1,251 @@
+openapi: 3.1.0
+info:
+  title: DataSentinel API
+  version: 0.1.0
+  summary: Contract-first API for the GDPR discovery prototype.
+servers:
+  - url: /api
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      responses:
+        "200":
+          description: Backend readiness.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/common.yaml#/HealthEnvelope"
+  /sources:
+    get:
+      operationId: listSources
+      responses:
+        "200":
+          description: Source list.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/source-scan.yaml#/SourceListEnvelope"
+    post:
+      operationId: createSource
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/source-scan.yaml#/CreateSourceRequest"
+      responses:
+        "201":
+          description: Created source.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/source-scan.yaml#/SourceEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /sources/{sourceId}/connect-test:
+    post:
+      operationId: testSourceConnection
+      parameters:
+        - $ref: "#/components/parameters/SourceId"
+      responses:
+        "200":
+          description: Connection test result.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/source-scan.yaml#/ConnectionTestEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /scans/full:
+    post:
+      operationId: startFullScan
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/source-scan.yaml#/StartFullScanRequest"
+      responses:
+        "202":
+          description: Full scan accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/source-scan.yaml#/ScanEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /scans/delta:
+    post:
+      operationId: startDeltaScan
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/source-scan.yaml#/StartDeltaScanRequest"
+      responses:
+        "202":
+          description: Delta scan accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/source-scan.yaml#/ScanEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /scans/{scanId}:
+    get:
+      operationId: getScan
+      parameters:
+        - $ref: "#/components/parameters/ScanId"
+      responses:
+        "200":
+          description: Scan status and progress.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/source-scan.yaml#/ScanEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /scans/{scanId}/summary:
+    get:
+      operationId: getScanSummary
+      parameters:
+        - $ref: "#/components/parameters/ScanId"
+      responses:
+        "200":
+          description: Scan KPI summary.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/metrics.yaml#/AdminMetricsEnvelope"
+  /findings:
+    get:
+      operationId: listFindings
+      parameters:
+        - name: scanId
+          in: query
+          schema: { type: string }
+        - name: ownerId
+          in: query
+          schema: { type: string }
+        - name: riskLevel
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Finding list.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/finding-review.yaml#/FindingListEnvelope"
+  /findings/{findingId}:
+    get:
+      operationId: getFinding
+      parameters:
+        - $ref: "#/components/parameters/FindingId"
+      responses:
+        "200":
+          description: Evidence card.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/finding-review.yaml#/FindingEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /findings/{findingId}/review:
+    post:
+      operationId: reviewFinding
+      parameters:
+        - $ref: "#/components/parameters/FindingId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/finding-review.yaml#/ReviewRequest"
+      responses:
+        "201":
+          description: Review decision recorded.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/finding-review.yaml#/ReviewEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /audit/events:
+    get:
+      operationId: listAuditEvents
+      parameters:
+        - name: scanId
+          in: query
+          schema: { type: string }
+        - name: findingId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Audit events.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/finding-review.yaml#/AuditEventListEnvelope"
+  /admin/metrics:
+    get:
+      operationId: getAdminMetrics
+      responses:
+        "200":
+          description: Admin dashboard metrics.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/metrics.yaml#/AdminMetricsEnvelope"
+  /evaluation/runs/latest:
+    get:
+      operationId: getLatestEvaluationRun
+      responses:
+        "200":
+          description: Latest evaluation run.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/metrics.yaml#/EvaluationEnvelope"
+components:
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema: { type: string }
+    SourceId:
+      name: sourceId
+      in: path
+      required: true
+      schema: { type: string }
+    ScanId:
+      name: scanId
+      in: path
+      required: true
+      schema: { type: string }
+    FindingId:
+      name: findingId
+      in: path
+      required: true
+      schema: { type: string }
+  responses:
+    Problem:
+      description: Problem details error.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "./schemas/common.yaml#/Problem"

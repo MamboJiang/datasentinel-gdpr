@@ -27,12 +27,24 @@ The future product experience should make GDPR data cleanup feel like an account
 - Keep every decision attributable to a human or system actor.
 - Make deletion, retention, and escalation reasons visible in the audit trail.
 - Separate risk explanation from legal conclusion.
+- Show scan quality metrics as first-class product evidence.
+- Render partial data gracefully when the API reports `meta.partial = true`.
+
+## P0 Information Architecture
+
+| Surface | Purpose |
+| --- | --- |
+| Source Connector | Select a controlled demo source and start full or delta scans. |
+| Admin Dashboard | Show official KPIs, scan progress, review backlog, and risk distribution. |
+| Findings Table | Show risk-ranked findings filtered by owner, scan, status, or risk level. |
+| Evidence Card | Show redacted evidence, signals, context, owner, retention status, and audit timeline. |
+| Review Panel | Let a human record a decision with a reason. |
+| Audit View | Show scan and review events. |
+| Evaluation Tab | Show accuracy, reproducibility, speed, and resource intensity. |
 
 ## Deferred Design Decisions
 
 - Visual design system.
-- Information architecture.
 - Interaction details.
 - Framework-specific components.
 - Data persistence model.
-

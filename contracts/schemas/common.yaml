@@ -1,0 +1,48 @@
+Meta:
+  type: object
+  required: [contractVersion, generatedAt, traceId, partial, warnings]
+  additionalProperties: true
+  properties:
+    contractVersion: { type: string, example: "0.1.0" }
+    generatedAt: { type: string, format: date-time }
+    traceId: { type: string }
+    partial: { type: boolean }
+    warnings:
+      type: array
+      items: { type: string }
+Pagination:
+  type: object
+  additionalProperties: true
+  properties:
+    limit: { type: integer, minimum: 1 }
+    offset: { type: integer, minimum: 0 }
+    total: { type: integer, minimum: 0 }
+    nextCursor: { type: [string, "null"] }
+Problem:
+  type: object
+  required: [type, title, status, detail, instance, traceId]
+  additionalProperties: true
+  properties:
+    type: { type: string, format: uri-reference }
+    title: { type: string }
+    status: { type: integer }
+    detail: { type: string }
+    instance: { type: string }
+    traceId: { type: string }
+    errors:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+HealthEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data:
+      type: object
+      required: [status]
+      additionalProperties: true
+      properties:
+        status: { type: string, example: "ok" }
+        serviceVersion: { type: string }
+    meta: { $ref: "#/Meta" }

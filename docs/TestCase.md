@@ -10,6 +10,17 @@
 | INIT-004 | Review GitHub visibility | The remote repository is public. |
 | INIT-005 | Review collaborators | Requested teammates are invited or already present as collaborators. |
 
+## Contract Readiness Checks
+
+| ID | Scenario | Expected Result |
+| --- | --- | --- |
+| CONTRACT-001 | Parse contract YAML files | `contracts/openapi.yaml` and files in `contracts/schemas/` parse as YAML. |
+| CONTRACT-002 | Parse mock payloads | Every file in `contracts/mocks/` parses as JSON. |
+| CONTRACT-003 | Compare contract docs and mocks | Mock payloads use the envelope, field names, and state values documented in `docs/API_CONTRACT.md`. |
+| CONTRACT-004 | Review tolerant compatibility rules | Unknown fields, optional fields, empty arrays, partial data, and unknown enum-like values have documented behavior. |
+| CONTRACT-005 | Review error contract | Errors are documented as `application/problem+json` with trace IDs. |
+| CONTRACT-006 | Review AI instructions | `AGENTS.md` and `.github/copilot-instructions.md` tell AI tools to follow the contract and avoid unapproved implementation. |
+
 ## Future Behavior Test Themes
 
 These are not implementation tests yet. They define the areas that future tests should cover:
@@ -20,4 +31,4 @@ These are not implementation tests yet. They define the areas that future tests 
 - Human-review decisions for delete, retain, mask, archive, and escalate.
 - Audit-event behavior for every visible state transition.
 - Delta-scan behavior for unchanged, changed, new, and deleted files.
-
+- Evaluation behavior for precision, recall, F1, reproducibility, throughput, and resource intensity.

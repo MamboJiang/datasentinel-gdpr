@@ -1,0 +1,55 @@
+{
+  "data": [
+    {
+      "findingId": "finding_001",
+      "scanId": "scan_001",
+      "fileName": "supplier_onboarding_2021.pdf",
+      "sourcePath": "/finance/shared/suppliers/supplier_onboarding_2021.pdf",
+      "riskLevel": "high",
+      "riskScore": 88,
+      "contextCategory": "supplier_onboarding",
+      "personalDataTypes": ["email", "billing_address", "iban_like", "signature"],
+      "retentionStatus": "overdue",
+      "recommendedAction": "escalate",
+      "status": "assigned",
+      "owner": {
+        "userId": "user_anna",
+        "displayName": "Anna Schneider",
+        "email": "anna.schneider@example.com",
+        "assignmentType": "master_of_data"
+      }
+    },
+    {
+      "findingId": "finding_002",
+      "scanId": "scan_001",
+      "fileName": "old_it_access_request_2020.pdf",
+      "sourcePath": "/it/access/old_it_access_request_2020.pdf",
+      "riskLevel": "high",
+      "riskScore": 84,
+      "contextCategory": "it_access",
+      "personalDataTypes": ["employee_id", "email", "access_role"],
+      "retentionStatus": "overdue",
+      "recommendedAction": "delete_candidate",
+      "status": "open",
+      "owner": {
+        "userId": "user_markus",
+        "displayName": "Markus Keller",
+        "email": "markus.keller@example.com",
+        "assignmentType": "direct_owner"
+      }
+    }
+  ],
+  "pagination": {
+    "limit": 25,
+    "offset": 0,
+    "total": 2,
+    "nextCursor": null
+  },
+  "meta": {
+    "contractVersion": "0.1.0",
+    "generatedAt": "2026-05-30T12:03:00Z",
+    "traceId": "trace_demo_findings",
+    "partial": false,
+    "warnings": []
+  }
+}

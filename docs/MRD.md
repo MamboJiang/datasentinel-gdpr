@@ -22,7 +22,10 @@ DataSentinel GDPR should provide an evidence-backed workflow that connects data 
 
 The intended product position is not a simple personal-data detector. The intended position is an accountable GDPR cleanup workflow that treats detection as the start of a governed decision process.
 
+## Evaluation Expectations
+
+The prototype should make scan quality visible. Buyers and evaluators should be able to see accuracy, reproducibility, speed, resource intensity, review backlog, and owner attribution rather than only a static list of flagged files.
+
 ## Initial Market Boundary
 
 The first prototype should focus on hackathon evaluation and controlled sample data. Enterprise deployment, licensing, procurement, and compliance certification are outside the current scope.
-

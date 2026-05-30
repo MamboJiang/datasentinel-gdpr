@@ -2,7 +2,9 @@
 
 ## Current Technical Scope
 
-This repository is initialized for documentation and collaboration. No runtime architecture, framework, dependency, database, or external API integration is approved yet.
+This repository is initialized for documentation, collaboration, and contract-first parallel delivery. The approved technical baseline is the tolerant REST contract in `contracts/openapi.yaml`, its split schemas in `contracts/schemas/`, and mock fixtures in `contracts/mocks/`.
+
+No frontend runtime, backend runtime, database, queue, external API integration, authentication, authorization, or deployment path is approved yet.
 
 ## Technical Principles
 
@@ -11,6 +13,8 @@ This repository is initialized for documentation and collaboration. No runtime a
 - Inject external collaborators into core logic instead of constructing them inside core modules.
 - Keep side effects at boundary layers.
 - Use behavior tests for user-observable contracts.
+- Keep frontend and backend aligned through `OpenAPI-first + mock-first + vertical-slice-first`.
+- Treat unknown fields and enum-like values as forward-compatible.
 
 ## Future Boundary Candidates
 
@@ -24,6 +28,16 @@ These are not approved implementation modules yet. They are candidate boundaries
 - Human review workflow boundary.
 - Audit event boundary.
 - Delta scan boundary.
+- Evaluation harness boundary.
+- Admin metrics boundary.
+
+## Contract Baseline
+
+- Base path: `/api`.
+- Envelope: `data`, `meta`, and optional `pagination`.
+- Error format: `application/problem+json`.
+- State machines: scan, finding review, and contract lifecycle are documented in `docs/API_CONTRACT.md` and `docs/design/frontend-backend-delivery-contract.md`.
+- Mocks are contract fixtures, not production seed data.
 
 ## External Research Required Before Implementation
 
@@ -42,4 +56,3 @@ The first implementation task has:
 - A documented impact surface.
 - A state machine if it introduces workflow, permissions, asynchronous work, or external protocols.
 - Targeted validation commands.
-

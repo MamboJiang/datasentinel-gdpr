@@ -1,0 +1,35 @@
+{
+  "data": [
+    {
+      "auditEventId": "audit_001",
+      "scanId": "scan_001",
+      "findingId": null,
+      "eventType": "scan_completed",
+      "actorId": "system",
+      "occurredAt": "2026-05-30T12:01:02Z",
+      "summary": "Full scan completed for Open GDPR Sample Repository."
+    },
+    {
+      "auditEventId": "audit_002",
+      "scanId": "scan_001",
+      "findingId": "finding_001",
+      "eventType": "review_recorded",
+      "actorId": "user_anna",
+      "occurredAt": "2026-05-30T12:05:20Z",
+      "summary": "Finding escalated to Finance owner because active supplier status is unclear."
+    }
+  ],
+  "pagination": {
+    "limit": 25,
+    "offset": 0,
+    "total": 2,
+    "nextCursor": null
+  },
+  "meta": {
+    "contractVersion": "0.1.0",
+    "generatedAt": "2026-05-30T12:06:00Z",
+    "traceId": "trace_demo_audit",
+    "partial": false,
+    "warnings": []
+  }
+}

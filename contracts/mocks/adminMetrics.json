@@ -1,0 +1,39 @@
+{
+  "data": {
+    "totalScannedFiles": 42,
+    "flaggedFiles": 17,
+    "totalScannedGb": 0.038,
+    "scanProgress": 1,
+    "lastScanTimeSeconds": 38.2,
+    "openReviewBacklog": 11,
+    "highRiskFindings": 5,
+    "retentionOverdueFiles": 7,
+    "findingsBySource": {
+      "onedrive": 8,
+      "sharepoint": 7,
+      "fileshare": 2
+    },
+    "evaluation": {
+      "evaluationRunId": "eval_001",
+      "scanId": "scan_001",
+      "precision": 0.91,
+      "recall": 0.84,
+      "f1": 0.875,
+      "reproducibility": 1,
+      "throughputFilesPerSecond": 1.1,
+      "resourceIntensity": {
+        "peakMemoryMb": 410,
+        "cpuSeconds": 18.4,
+        "modelCalls": 0,
+        "estimatedCostUsd": 0
+      }
+    }
+  },
+  "meta": {
+    "contractVersion": "0.1.0",
+    "generatedAt": "2026-05-30T12:00:00Z",
+    "traceId": "trace_demo_admin_metrics",
+    "partial": false,
+    "warnings": []
+  }
+}

@@ -1,0 +1,119 @@
+Owner:
+  type: object
+  required: [userId, displayName, assignmentType]
+  additionalProperties: true
+  properties:
+    userId: { type: string }
+    displayName: { type: string }
+    email: { type: [string, "null"], format: email }
+    assignmentType: { type: string, example: "master_of_data" }
+Signal:
+  type: object
+  required: [type, detector, confidence, snippet]
+  additionalProperties: true
+  properties:
+    type: { type: string }
+    detector: { type: string }
+    confidence: { type: number, minimum: 0, maximum: 1 }
+    snippet: { type: string }
+    page: { type: [integer, "null"] }
+AuditEvent:
+  type: object
+  required: [auditEventId, eventType, actorId, occurredAt]
+  additionalProperties: true
+  properties:
+    auditEventId: { type: string }
+    scanId: { type: [string, "null"] }
+    findingId: { type: [string, "null"] }
+    eventType: { type: string }
+    actorId: { type: string }
+    occurredAt: { type: string, format: date-time }
+    summary: { type: string }
+FindingSummary:
+  type: object
+  required: [findingId, fileName, riskLevel, riskScore, status]
+  additionalProperties: true
+  properties:
+    findingId: { type: string }
+    scanId: { type: string }
+    fileName: { type: string }
+    sourcePath: { type: string }
+    riskLevel: { type: string, example: "high" }
+    riskScore: { type: integer, minimum: 0, maximum: 100 }
+    contextCategory: { type: string, example: "supplier_onboarding" }
+    personalDataTypes:
+      type: array
+      items: { type: string }
+    retentionStatus: { type: string, example: "overdue" }
+    recommendedAction: { type: string, example: "escalate" }
+    status: { type: string, example: "open" }
+    owner: { $ref: "#/Owner" }
+Finding:
+  allOf:
+    - $ref: "#/FindingSummary"
+    - type: object
+      additionalProperties: true
+      properties:
+        file:
+          type: object
+          additionalProperties: true
+        signals:
+          type: array
+          items: { $ref: "#/Signal" }
+        riskExplanation: { type: string }
+        auditTimeline:
+          type: array
+          items: { $ref: "#/AuditEvent" }
+FindingEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/Finding" }
+    meta: { $ref: "./common.yaml#/Meta" }
+FindingListEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data:
+      type: array
+      items: { $ref: "#/FindingSummary" }
+    pagination: { $ref: "./common.yaml#/Pagination" }
+    meta: { $ref: "./common.yaml#/Meta" }
+ReviewRequest:
+  type: object
+  required: [decision, reason, actorId]
+  additionalProperties: true
+  properties:
+    decision: { type: string, example: "delete_candidate" }
+    reason: { type: string, minLength: 1 }
+    actorId: { type: string }
+    nextAction: { type: [string, "null"] }
+    retentionUntil: { type: [string, "null"], format: date }
+    reassignToUserId: { type: [string, "null"] }
+ReviewEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data:
+      type: object
+      required: [reviewId, findingId, decision, reason, actorId, createdAt]
+      additionalProperties: true
+      properties:
+        reviewId: { type: string }
+        findingId: { type: string }
+        decision: { type: string }
+        reason: { type: string }
+        actorId: { type: string }
+        createdAt: { type: string, format: date-time }
+        resultingStatus: { type: string }
+        auditEventId: { type: string }
+    meta: { $ref: "./common.yaml#/Meta" }
+AuditEventListEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data:
+      type: array
+      items: { $ref: "#/AuditEvent" }
+    pagination: { $ref: "./common.yaml#/Pagination" }
+    meta: { $ref: "./common.yaml#/Meta" }

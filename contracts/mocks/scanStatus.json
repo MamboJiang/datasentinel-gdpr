@@ -1,0 +1,23 @@
+{
+  "data": {
+    "scanId": "scan_001",
+    "sourceId": "source_001",
+    "scanType": "full",
+    "status": "completed",
+    "progress": 1,
+    "totalFiles": 42,
+    "scannedFiles": 42,
+    "flaggedFiles": 17,
+    "totalBytes": 38210000,
+    "durationMs": 38200,
+    "throughputFilesPerSecond": 1.1,
+    "reproducibilityFingerprint": "sha256:demo_findings"
+  },
+  "meta": {
+    "contractVersion": "0.1.0",
+    "generatedAt": "2026-05-30T12:02:00Z",
+    "traceId": "trace_demo_scan",
+    "partial": false,
+    "warnings": []
+  }
+}

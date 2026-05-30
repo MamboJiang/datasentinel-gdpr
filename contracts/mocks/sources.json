@@ -1,0 +1,27 @@
+{
+  "data": [
+    {
+      "sourceId": "source_001",
+      "name": "Open GDPR Sample Repository",
+      "sourceType": "local_repo",
+      "status": "connected",
+      "rootLabel": "samples/open-gdpr",
+      "masterOfDataUserId": "user_anna"
+    },
+    {
+      "sourceId": "source_002",
+      "name": "Mock SharePoint Finance",
+      "sourceType": "sharepoint_mock",
+      "status": "mocked",
+      "rootLabel": "SharePoint Finance",
+      "masterOfDataUserId": "user_anna"
+    }
+  ],
+  "meta": {
+    "contractVersion": "0.1.0",
+    "generatedAt": "2026-05-30T12:00:00Z",
+    "traceId": "trace_demo_sources",
+    "partial": false,
+    "warnings": []
+  }
+}

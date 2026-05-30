@@ -1,0 +1,43 @@
+EvaluationSummary:
+  type: object
+  additionalProperties: true
+  properties:
+    evaluationRunId: { type: string }
+    scanId: { type: string }
+    precision: { type: [number, "null"], minimum: 0, maximum: 1 }
+    recall: { type: [number, "null"], minimum: 0, maximum: 1 }
+    f1: { type: [number, "null"], minimum: 0, maximum: 1 }
+    reproducibility: { type: [number, "null"], minimum: 0, maximum: 1 }
+    throughputFilesPerSecond: { type: [number, "null"] }
+    resourceIntensity:
+      type: object
+      additionalProperties: true
+AdminMetrics:
+  type: object
+  required: [totalScannedFiles, flaggedFiles, scanProgress, openReviewBacklog]
+  additionalProperties: true
+  properties:
+    totalScannedFiles: { type: integer, minimum: 0 }
+    flaggedFiles: { type: integer, minimum: 0 }
+    totalScannedGb: { type: number, minimum: 0 }
+    scanProgress: { type: number, minimum: 0, maximum: 1 }
+    lastScanTimeSeconds: { type: [number, "null"] }
+    openReviewBacklog: { type: integer, minimum: 0 }
+    highRiskFindings: { type: integer, minimum: 0 }
+    retentionOverdueFiles: { type: integer, minimum: 0 }
+    findingsBySource:
+      type: object
+      additionalProperties: { type: integer }
+    evaluation: { $ref: "#/EvaluationSummary" }
+AdminMetricsEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/AdminMetrics" }
+    meta: { $ref: "./common.yaml#/Meta" }
+EvaluationEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/EvaluationSummary" }
+    meta: { $ref: "./common.yaml#/Meta" }

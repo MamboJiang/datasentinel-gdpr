@@ -1,0 +1,88 @@
+Source:
+  type: object
+  required: [sourceId, name, sourceType, status]
+  additionalProperties: true
+  properties:
+    sourceId: { type: string }
+    name: { type: string }
+    sourceType: { type: string, example: "local_repo" }
+    status: { type: string, example: "connected" }
+    rootLabel: { type: [string, "null"] }
+    masterOfDataUserId: { type: [string, "null"] }
+CreateSourceRequest:
+  type: object
+  required: [name, sourceType]
+  additionalProperties: true
+  properties:
+    name: { type: string }
+    sourceType: { type: string, example: "local_repo" }
+    config:
+      type: object
+      additionalProperties: true
+    masterOfDataUserId: { type: [string, "null"] }
+SourceEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/Source" }
+    meta: { $ref: "./common.yaml#/Meta" }
+SourceListEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data:
+      type: array
+      items: { $ref: "#/Source" }
+    meta: { $ref: "./common.yaml#/Meta" }
+ConnectionTestEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data:
+      type: object
+      required: [sourceId, reachable]
+      additionalProperties: true
+      properties:
+        sourceId: { type: string }
+        reachable: { type: boolean }
+        message: { type: string }
+    meta: { $ref: "./common.yaml#/Meta" }
+StartFullScanRequest:
+  type: object
+  required: [sourceId]
+  additionalProperties: true
+  properties:
+    sourceId: { type: string }
+    deterministicMode: { type: boolean, default: true }
+    runEvaluation: { type: boolean, default: true }
+StartDeltaScanRequest:
+  type: object
+  required: [sourceId]
+  additionalProperties: true
+  properties:
+    sourceId: { type: string }
+    modifiedSince: { type: [string, "null"], format: date-time }
+    baselineScanId: { type: [string, "null"] }
+Scan:
+  type: object
+  required: [scanId, sourceId, scanType, status, progress]
+  additionalProperties: true
+  properties:
+    scanId: { type: string }
+    sourceId: { type: string }
+    scanType: { type: string, example: "full" }
+    status: { type: string, example: "completed" }
+    progress: { type: number, minimum: 0, maximum: 1 }
+    totalFiles: { type: integer, minimum: 0 }
+    scannedFiles: { type: integer, minimum: 0 }
+    flaggedFiles: { type: integer, minimum: 0 }
+    totalBytes: { type: integer, minimum: 0 }
+    durationMs: { type: [integer, "null"], minimum: 0 }
+    throughputFilesPerSecond: { type: [number, "null"] }
+    reproducibilityFingerprint: { type: [string, "null"] }
+ScanEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/Scan" }
+    meta: { $ref: "./common.yaml#/Meta" }

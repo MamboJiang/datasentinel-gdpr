@@ -15,6 +15,7 @@ Organizations often store personal and GDPR-relevant data across fragmented file
 - Route findings to accountable owners.
 - Preserve an audit trail for deletion, retention, escalation, or exception decisions.
 - Support future full-scan and delta-scan governance loops.
+- Report measurable scanning quality through accuracy, reproducibility, speed, and resource intensity.
 
 ## Constraints
 
@@ -26,5 +27,4 @@ Organizations often store personal and GDPR-relevant data across fragmented file
 
 ## Done When
 
-The team has a reviewed prototype scope, accepted criteria, and a technical plan before implementation begins.
-
+The team has a reviewed prototype scope, accepted criteria, a tolerant frontend-backend delivery contract, and a technical plan before implementation begins.

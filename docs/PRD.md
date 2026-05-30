@@ -22,6 +22,20 @@ Provide a prototype workflow that shows how an organization can discover GDPR-re
 - Human-review concept with decision reasons.
 - Audit-log concept for evidence and outcomes.
 - Delta-scan concept for ongoing governance.
+- Admin-reporting concept for scanned files, flagged files, scanned volume, progress, scan time, backlog, and risk distribution.
+- Evaluation concept for accuracy, reproducibility, speed, and resource intensity.
+
+## P0 Screens and API Consumers
+
+- Source connector view.
+- Admin dashboard.
+- Findings table.
+- Evidence card.
+- Review action panel.
+- Audit timeline or report view.
+- Evaluation tab.
+
+These surfaces must consume the tolerant contract defined in `docs/API_CONTRACT.md` and `contracts/openapi.yaml`.
 
 ## Explicitly Deferred
 
@@ -37,5 +51,5 @@ Provide a prototype workflow that shows how an organization can discover GDPR-re
 - User-facing and repository text must be English.
 - Deletion must be human-accountable.
 - Sensitive snippets should be minimized or masked in any future UI.
+- Frontend and backend work must use the shared API contract and mock fixtures.
 - Requirements changes must update this document and `ACCEPTANCE.md`.
-

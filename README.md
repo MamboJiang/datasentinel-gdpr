@@ -15,6 +15,7 @@ Find risky personal-data records, explain why they matter, route them to the acc
 - Maintain English-language project documentation.
 - Keep acceptance criteria explicit and reviewable.
 - Prepare the repository for collaborative implementation.
+- Define a tolerant frontend-backend contract for parallel delivery.
 - Avoid speculative architecture, dependencies, or product features before they are accepted.
 
 ## Non-Goals
@@ -26,15 +27,27 @@ Find risky personal-data records, explain why they matter, route them to the acc
 
 ## Documents
 
+- [Project Context](docs/PROJECT_CONTEXT.md)
 - [Business Requirements](docs/BRD.md)
 - [Market Requirements](docs/MRD.md)
 - [Product Requirements](docs/PRD.md)
 - [Technical Requirements](docs/TRD.md)
 - [Design Specification](docs/DesignSpec.md)
 - [Test Cases](docs/TestCase.md)
+- [API Contract](docs/API_CONTRACT.md)
+- [Parallel Delivery Workflow](docs/DELIVERY_WORKFLOW.md)
+- [Evaluation Harness](docs/EVALUATION.md)
+- [Security Notes](docs/SECURITY_NOTES.md)
+- [Demo Script](docs/DEMO_SCRIPT.md)
 - [Acceptance Criteria](ACCEPTANCE.md)
+
+## Frontend-Backend Contract
+
+- Machine-readable API contract: [contracts/openapi.yaml](contracts/openapi.yaml)
+- Contract schemas: [contracts/schemas](contracts/schemas)
+- Mock payloads: [contracts/mocks](contracts/mocks)
+- AI agent instructions: [AGENTS.md](AGENTS.md)
 
 ## Collaboration
 
 All repository content, issues, pull requests, commit messages, and documentation should be written in English.
-

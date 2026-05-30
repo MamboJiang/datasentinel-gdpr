@@ -1,0 +1,62 @@
+{
+  "data": {
+    "findingId": "finding_001",
+    "scanId": "scan_001",
+    "fileName": "supplier_onboarding_2021.pdf",
+    "sourcePath": "/finance/shared/suppliers/supplier_onboarding_2021.pdf",
+    "riskLevel": "high",
+    "riskScore": 88,
+    "contextCategory": "supplier_onboarding",
+    "personalDataTypes": ["email", "billing_address", "iban_like", "signature"],
+    "retentionStatus": "overdue",
+    "recommendedAction": "escalate",
+    "status": "assigned",
+    "owner": {
+      "userId": "user_anna",
+      "displayName": "Anna Schneider",
+      "email": "anna.schneider@example.com",
+      "assignmentType": "master_of_data"
+    },
+    "file": {
+      "sourceName": "SharePoint Finance",
+      "sourceType": "sharepoint",
+      "lastModifiedAt": "2021-04-12T09:30:00Z",
+      "sizeBytes": 812000
+    },
+    "signals": [
+      {
+        "type": "iban_like",
+        "detector": "financial_identifier_pattern",
+        "confidence": 0.91,
+        "snippet": "IBAN: DE** **** **** ****",
+        "page": 1
+      },
+      {
+        "type": "email",
+        "detector": "email_regex",
+        "confidence": 0.99,
+        "snippet": "Contact: [REDACTED]@example.com",
+        "page": 1
+      }
+    ],
+    "riskExplanation": "The document appears to contain supplier payment information and personal contact details. Retention review is recommended because the file was last modified more than three years ago.",
+    "auditTimeline": [
+      {
+        "auditEventId": "audit_001",
+        "scanId": "scan_001",
+        "findingId": "finding_001",
+        "eventType": "finding_assigned",
+        "actorId": "system",
+        "occurredAt": "2026-05-30T12:02:00Z",
+        "summary": "Finding assigned to Master of Data fallback."
+      }
+    ]
+  },
+  "meta": {
+    "contractVersion": "0.1.0",
+    "generatedAt": "2026-05-30T12:04:00Z",
+    "traceId": "trace_demo_finding_detail",
+    "partial": false,
+    "warnings": []
+  }
+}
