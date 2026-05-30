@@ -1,0 +1,45 @@
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs
+*.log
+logs/
+
+# Dependencies and build outputs
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+.next/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Generated archives and temporary files
+*.zip
+*.tar
+*.tar.gz
+tmp/
+temp/
+
