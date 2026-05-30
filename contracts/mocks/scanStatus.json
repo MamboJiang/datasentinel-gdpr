@@ -4,6 +4,7 @@
     "sourceId": "source_001",
     "scanType": "full",
     "status": "completed",
+    "stage": "completed",
     "progress": 1,
     "totalFiles": 42,
     "scannedFiles": 42,
@@ -11,7 +12,279 @@
     "totalBytes": 38210000,
     "durationMs": 38200,
     "throughputFilesPerSecond": 1.1,
-    "reproducibilityFingerprint": "sha256:demo_findings"
+    "reproducibilityFingerprint": "sha256:demo_findings",
+    "pipelineStages": [
+      {
+        "stage": "source_ready",
+        "status": "completed"
+      },
+      {
+        "stage": "inventorying_files",
+        "status": "completed",
+        "processedFiles": 42,
+        "totalFiles": 42,
+        "warnings": []
+      },
+      {
+        "stage": "extracting_content",
+        "status": "completed",
+        "processedFiles": 42,
+        "totalFiles": 42,
+        "warnings": [
+          "4 files need recoverable extraction review.",
+          "2 files use unsupported formats in this P0 fixture.",
+          "2 files are marked for future OCR instead of paid P0 processing."
+        ]
+      },
+      {
+        "stage": "detecting_signals",
+        "status": "completed",
+        "processedFiles": 64
+      },
+      {
+        "stage": "judging_context_risk",
+        "status": "completed",
+        "processedFiles": 17,
+        "totalFiles": 64,
+        "warnings": []
+      },
+      {
+        "stage": "assigning_owner",
+        "status": "completed",
+        "processedFiles": 17,
+        "totalFiles": 17,
+        "warnings": []
+      },
+      {
+        "stage": "assembling_findings",
+        "status": "completed",
+        "processedFiles": 17,
+        "totalFiles": 17,
+        "warnings": []
+      },
+      {
+        "stage": "preparing_review_support",
+        "status": "completed",
+        "processedFiles": 17,
+        "totalFiles": 17,
+        "warnings": []
+      },
+      {
+        "stage": "recording_audit_events",
+        "status": "completed",
+        "processedFiles": 39,
+        "totalFiles": 39,
+        "warnings": []
+      }
+    ],
+    "fileInventory": {
+      "status": "completed",
+      "sourceSnapshotId": "snapshot_source_001_scan_001",
+      "inventoryFingerprint": "sha256:scan_001_inventory_completed",
+      "totalCandidateFiles": 42,
+      "fingerprintedFiles": 42,
+      "skippedFiles": 0,
+      "totalBytes": 38210000,
+      "permissionSnapshots": 42,
+      "sampleFamilies": [
+        {
+          "family": "Expense_Report",
+          "candidateFiles": 9,
+          "processedFiles": 9,
+          "flaggedFiles": 4,
+          "bytes": 8187857
+        },
+        {
+          "family": "IT_Access_Request",
+          "candidateFiles": 8,
+          "processedFiles": 8,
+          "flaggedFiles": 3,
+          "bytes": 7278095
+        },
+        {
+          "family": "Incident_Report",
+          "candidateFiles": 7,
+          "processedFiles": 7,
+          "flaggedFiles": 3,
+          "bytes": 6368333
+        },
+        {
+          "family": "Supplier_Onboarding",
+          "candidateFiles": 10,
+          "processedFiles": 10,
+          "flaggedFiles": 4,
+          "bytes": 9097619
+        },
+        {
+          "family": "Training_Evaluation",
+          "candidateFiles": 8,
+          "processedFiles": 8,
+          "flaggedFiles": 3,
+          "bytes": 7278096
+        }
+      ],
+      "warnings": []
+    },
+    "contentExtraction": {
+      "status": "completed",
+      "extractionFingerprint": "sha256:snapshot_source_001_scan_001_extraction_completed",
+      "processedFiles": 42,
+      "successfulFiles": 38,
+      "warningFiles": 4,
+      "unsupportedFiles": 2,
+      "ocrDeferredFiles": 2,
+      "redactedEvidenceCandidates": 64,
+      "rawContentExposed": false,
+      "methods": [
+        {
+          "method": "metadata",
+          "files": 42,
+          "status": "completed"
+        },
+        {
+          "method": "text_layer",
+          "files": 38,
+          "status": "completed"
+        },
+        {
+          "method": "structured_table",
+          "files": 9,
+          "status": "completed"
+        },
+        {
+          "method": "ocr_deferred",
+          "files": 2,
+          "status": "warning"
+        }
+      ],
+      "warnings": [
+        "4 files need recoverable extraction review.",
+        "2 files use unsupported formats in this P0 fixture.",
+        "2 files are marked for future OCR instead of paid P0 processing."
+      ]
+    },
+    "contextRisk": {
+      "status": "completed",
+      "policyPackVersion": "2026.05-demo",
+      "riskRulesFingerprint": "sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed",
+      "assessedEvidenceCandidates": 64,
+      "contextClassifiedFindings": 17,
+      "riskAssessedFindings": 17,
+      "highRiskFindings": 5,
+      "mediumRiskFindings": 9,
+      "lowRiskFindings": 3,
+      "retentionReviewFiles": 7,
+      "humanReviewRequiredFindings": 17,
+      "legalConclusionProvided": false,
+      "contextCategories": [
+        {
+          "contextCategory": "expense_report",
+          "sourceFamily": "Expense_Report",
+          "flaggedFiles": 4,
+          "evidenceCandidates": 15,
+          "riskGuidance": "Expense records need business-context review before retention decisions.",
+          "retentionRuleApplied": false
+        },
+        {
+          "contextCategory": "it_access",
+          "sourceFamily": "IT_Access_Request",
+          "flaggedFiles": 3,
+          "evidenceCandidates": 11,
+          "riskGuidance": "Identity and access-role evidence requires review before any action.",
+          "retentionRuleApplied": true
+        },
+        {
+          "contextCategory": "incident_report",
+          "sourceFamily": "Incident_Report",
+          "flaggedFiles": 3,
+          "evidenceCandidates": 11,
+          "riskGuidance": "Incident context can contain personal descriptions and needs owner review.",
+          "retentionRuleApplied": false
+        },
+        {
+          "contextCategory": "supplier_onboarding",
+          "sourceFamily": "Supplier_Onboarding",
+          "flaggedFiles": 4,
+          "evidenceCandidates": 15,
+          "riskGuidance": "Financial and signature identifiers require accountable human review.",
+          "retentionRuleApplied": true
+        },
+        {
+          "contextCategory": "training_evaluation",
+          "sourceFamily": "Training_Evaluation",
+          "flaggedFiles": 3,
+          "evidenceCandidates": 12,
+          "riskGuidance": "Training feedback can include employee opinions and needs accountable review.",
+          "retentionRuleApplied": false
+        }
+      ],
+      "warnings": []
+    },
+    "ownerAssignment": {
+      "status": "completed",
+      "policyPackVersion": "2026.05-demo",
+      "organizationModelVersion": "2026.05-demo",
+      "ownerResolutionStrategy": "direct_owner_then_master_of_data",
+      "assignmentRulesFingerprint": "sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed",
+      "humanReviewRequiredFindings": 17,
+      "assignedFindings": 17,
+      "directOwnerAssignments": 10,
+      "masterOfDataAssignments": 5,
+      "escalationAssignments": 2,
+      "unownedFindings": 0,
+      "transferOptionCount": 1,
+      "escalationOptionCount": 1,
+      "sourceOwnerAvailable": true,
+      "warnings": []
+    },
+    "findingAssembly": {
+      "status": "completed",
+      "policyPackVersion": "2026.05-demo",
+      "sourceSnapshotId": "snapshot_source_001_scan_001",
+      "assemblyRulesFingerprint": "sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed",
+      "assembledFindings": 17,
+      "evidenceCards": 17,
+      "evidenceSignals": 38,
+      "redactedEvidenceSnippets": 38,
+      "missingEvidenceCards": 0,
+      "deniedActionCount": 1,
+      "rawContentExposed": false,
+      "legalConclusionProvided": false,
+      "warnings": []
+    },
+    "reviewSupport": {
+      "status": "completed",
+      "policyPackVersion": "2026.05-demo",
+      "organizationModelVersion": "2026.05-demo",
+      "supportRulesFingerprint": "sha256:2026.05-demo_2026.05-demo_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_user_anna_review_support_completed",
+      "reviewableFindings": 17,
+      "supportedFindings": 17,
+      "allowedActionCount": 6,
+      "deniedActionCount": 2,
+      "availableDecisionCount": 5,
+      "reasonRequiredDecisionCount": 5,
+      "checklistItemCount": 5,
+      "transferOptionCount": 1,
+      "escalationOptionCount": 1,
+      "rawContentExposed": false,
+      "legalConclusionProvided": false,
+      "warnings": []
+    },
+    "auditRecording": {
+      "status": "completed",
+      "policyPackVersion": "2026.05-demo",
+      "auditRulesFingerprint": "sha256:2026.05-demo_scan_001_completed_39_audit_recording_v1",
+      "recordedEventCount": 39,
+      "linkedScanEvents": 2,
+      "linkedFindingEvents": 35,
+      "reviewDecisionEvents": 1,
+      "systemEvents": 37,
+      "humanEvents": 2,
+      "rawContentExposed": false,
+      "legalConclusionProvided": false,
+      "deletionExecuted": false,
+      "warnings": []
+    }
   },
   "meta": {
     "contractVersion": "0.1.0",

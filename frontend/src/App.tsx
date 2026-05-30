@@ -7,6 +7,7 @@ import { EvaluationPage } from './pages/EvaluationPage'
 import { FindingDetailPage } from './pages/FindingDetailPage'
 import { FindingsPage } from './pages/FindingsPage'
 import { GovernancePage } from './pages/GovernancePage'
+import { HomePage } from './pages/HomePage'
 import { SourcesPage } from './pages/SourcesPage'
 
 function App() {
@@ -14,8 +15,9 @@ function App() {
     <DataProvider>
       <BrowserRouter>
         <Routes>
+          <Route index element={<HomePage />} />
           <Route element={<AppShell />}>
-            <Route index element={<DashboardPage />} />
+            <Route path="dashboard" element={<DashboardPage />} />
             <Route path="sources" element={<SourcesPage />} />
             <Route path="findings" element={<FindingsPage />} />
             <Route path="findings/:findingId" element={<FindingDetailPage />} />

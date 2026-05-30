@@ -12,7 +12,7 @@ export function PageHeader({
 }: {
   eyebrow?: string
   title: string
-  description: string
+  description?: string
   actions?: ReactNode
 }) {
   return (
@@ -20,7 +20,7 @@ export function PageHeader({
       <div>
         {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
         <h1>{title}</h1>
-        <p className="page-description">{description}</p>
+        {description ? <p className="page-description">{description}</p> : null}
       </div>
       {actions ? <div className="page-actions">{actions}</div> : null}
     </header>
@@ -76,14 +76,17 @@ export function StatusBadge({ value }: { value?: string | null }) {
     {
       completed: 'positive',
       connected: 'positive',
+      mock_ready: 'positive',
       retained: 'positive',
       running: 'info',
       assigned: 'info',
       under_review: 'info',
       mocked: 'neutral',
       open: 'neutral',
+      pending: 'neutral',
       delete_candidate: 'warning',
       overdue: 'warning',
+      warning: 'warning',
       escalated: 'critical',
       failed: 'critical',
       false_positive: 'neutral',
@@ -114,7 +117,7 @@ export function MetricCard({
 }: {
   label: string
   value: string
-  helper: string
+  helper?: string
   icon: LucideIcon
   tone?: 'blue' | 'green' | 'amber' | 'red'
 }) {
@@ -125,7 +128,7 @@ export function MetricCard({
       </div>
       <p>{label}</p>
       <strong>{value}</strong>
-      <span>{helper}</span>
+      {helper ? <span>{helper}</span> : null}
     </article>
   )
 }
@@ -140,12 +143,12 @@ export function ProgressBar({ value }: { value: number }) {
   )
 }
 
-export function EmptyState({ title, description }: { title: string; description: string }) {
+export function EmptyState({ title, description }: { title: string; description?: string }) {
   return (
     <div className="empty-state">
       <Inbox aria-hidden="true" size={24} />
       <h3>{title}</h3>
-      <p>{description}</p>
+      {description ? <p>{description}</p> : null}
     </div>
   )
 }

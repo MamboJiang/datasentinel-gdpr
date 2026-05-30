@@ -41,6 +41,7 @@ Find risky personal-data records, explain why they matter, route them to the acc
 - [Demo Script](docs/DEMO_SCRIPT.md)
 - [Governance Configuration](docs/GOVERNANCE_CONFIG.md)
 - [Organizer Sample References](docs/GDPR_SAMPLE_REFERENCES.md)
+- [Deployment](docs/DEPLOYMENT.md)
 - [Acceptance Criteria](ACCEPTANCE.md)
 
 ## Frontend-Backend Contract

@@ -1,13 +1,140 @@
 {
   "data": [
     {
+      "auditEventId": "audit_000",
+      "scanId": "scan_001",
+      "findingId": null,
+      "eventType": "full_scan_started",
+      "actorId": "user_demo_admin",
+      "occurredAt": "2026-05-30T12:00:24Z",
+      "summary": "Full scan started for Open GDPR Sample Repository.",
+      "policyPackVersion": "2026.05-demo",
+      "actorType": "human",
+      "recordedAt": "2026-05-30T12:00:24Z",
+      "auditRecordVersion": "audit-event-v1",
+      "rawContentExposed": false,
+      "legalConclusionProvided": false,
+      "objectType": "scan",
+      "objectId": "scan_001",
+      "action": "start_scan",
+      "outcome": "accepted",
+      "stage": "extracting_content",
+      "sourceId": "source_001",
+      "previousState": "idle",
+      "resultingState": "running",
+      "evidenceReferences": [
+        {
+          "type": "source",
+          "id": "source_001",
+          "label": "Open GDPR Sample Repository"
+        },
+        {
+          "type": "policy_pack",
+          "id": "2026.05-demo"
+        }
+      ]
+    },
+    {
       "auditEventId": "audit_001",
       "scanId": "scan_001",
       "findingId": null,
-      "eventType": "scan_completed",
+      "eventType": "full_scan_completed",
       "actorId": "system",
       "occurredAt": "2026-05-30T12:01:02Z",
-      "summary": "Full scan completed for Open GDPR Sample Repository."
+      "summary": "Full scan completed for Open GDPR Sample Repository.",
+      "policyPackVersion": "2026.05-demo",
+      "actorType": "system",
+      "recordedAt": "2026-05-30T12:01:02Z",
+      "auditRecordVersion": "audit-event-v1",
+      "rawContentExposed": false,
+      "legalConclusionProvided": false,
+      "objectType": "scan",
+      "objectId": "scan_001",
+      "action": "complete_scan",
+      "outcome": "completed",
+      "stage": "completed",
+      "sourceId": "source_001",
+      "previousState": "running",
+      "resultingState": "completed",
+      "evidenceReferences": [
+        {
+          "type": "source",
+          "id": "source_001",
+          "label": "Open GDPR Sample Repository"
+        },
+        {
+          "type": "policy_pack",
+          "id": "2026.05-demo"
+        }
+      ]
+    },
+    {
+      "auditEventId": "audit_finding_assembly_001",
+      "scanId": "scan_001",
+      "findingId": null,
+      "eventType": "finding_assembly_completed",
+      "actorId": "system",
+      "occurredAt": "2026-05-30T12:01:01Z",
+      "summary": "Finding assembly produced 17 findings and 17 evidence cards with 0 missing cards.",
+      "policyPackVersion": "2026.05-demo",
+      "actorType": "system",
+      "recordedAt": "2026-05-30T12:01:01Z",
+      "auditRecordVersion": "audit-event-v1",
+      "rawContentExposed": false,
+      "legalConclusionProvided": false,
+      "objectType": "finding_assembly",
+      "objectId": "scan_001:finding_assembly",
+      "action": "record_finding_assembly",
+      "outcome": "completed",
+      "stage": "assembling_findings",
+      "previousState": "pending",
+      "resultingState": "completed",
+      "evidenceReferences": [
+        {
+          "type": "source_snapshot",
+          "id": "snapshot_source_001_scan_001"
+        },
+        {
+          "type": "rule_fingerprint",
+          "id": "sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed"
+        }
+      ]
+    },
+    {
+      "auditEventId": "audit_owner_assignment_001",
+      "scanId": "scan_001",
+      "findingId": null,
+      "eventType": "owner_assignment_completed",
+      "actorId": "system",
+      "occurredAt": "2026-05-30T12:01:01Z",
+      "summary": "Owner routing assigned 17 findings: 10 direct owner, 5 Master of Data fallback, 2 escalation route, 0 unowned.",
+      "policyPackVersion": "2026.05-demo",
+      "actorType": "system",
+      "recordedAt": "2026-05-30T12:01:01Z",
+      "auditRecordVersion": "audit-event-v1",
+      "rawContentExposed": false,
+      "legalConclusionProvided": false,
+      "objectType": "owner_assignment",
+      "objectId": "scan_001:owner_assignment",
+      "action": "record_owner_assignment",
+      "outcome": "completed",
+      "stage": "assigning_owner",
+      "previousState": "pending",
+      "resultingState": "completed",
+      "evidenceReferences": [
+        {
+          "type": "policy_pack",
+          "id": "2026.05-demo"
+        },
+        {
+          "type": "organization_model",
+          "id": "2026.05-demo"
+        },
+        {
+          "type": "rule_fingerprint",
+          "id": "sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed"
+        }
+      ]
     },
     {
       "auditEventId": "audit_002",
@@ -16,13 +143,55 @@
       "eventType": "review_recorded",
       "actorId": "user_anna",
       "occurredAt": "2026-05-30T12:05:20Z",
-      "summary": "Finding escalated to Finance owner because active supplier status is unclear."
+      "summary": "Finding escalated to DPO or Legal because active supplier status is unclear.",
+      "decision": "escalate",
+      "reason": "Active supplier status is unclear and needs DPO or Legal review before retention or deletion.",
+      "resultingStatus": "escalated",
+      "targetId": "legal_escalation",
+      "targetLabel": "Escalate to DPO or Legal",
+      "retentionUntil": null,
+      "deletionExecuted": false,
+      "policyPackVersion": "2026.05-demo",
+      "permissionBoundaryFingerprint": "sha256:user_anna_2026.05-demo_finding_001_permission_boundary",
+      "reviewSupportRulesFingerprint": "sha256:2026.05-demo_2026.05-demo_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_user_anna_review_support_completed",
+      "idempotencyKey": "idem_review_finding_001_escalate",
+      "actorType": "human",
+      "recordedAt": "2026-05-30T12:05:20Z",
+      "auditRecordVersion": "audit-event-v1",
+      "rawContentExposed": false,
+      "legalConclusionProvided": false,
+      "objectType": "review_decision",
+      "objectId": "finding_001",
+      "action": "record_review_decision",
+      "outcome": "escalated",
+      "stage": "recording_audit_events",
+      "previousState": "assigned",
+      "resultingState": "escalated",
+      "evidenceReferences": [
+        {
+          "type": "finding",
+          "id": "finding_001",
+          "label": "redacted evidence card"
+        },
+        {
+          "type": "policy_pack",
+          "id": "2026.05-demo"
+        },
+        {
+          "type": "permission_boundary",
+          "id": "sha256:user_anna_2026.05-demo_finding_001_permission_boundary"
+        },
+        {
+          "type": "review_support",
+          "id": "sha256:2026.05-demo_2026.05-demo_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_user_anna_review_support_completed"
+        }
+      ]
     }
   ],
   "pagination": {
     "limit": 25,
     "offset": 0,
-    "total": 2,
+    "total": 39,
     "nextCursor": null
   },
   "meta": {

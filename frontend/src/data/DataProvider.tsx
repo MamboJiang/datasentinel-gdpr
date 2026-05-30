@@ -1,30 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { DataContext } from './DataContext'
+import { recordHumanReviewDecision } from './humanReviewDecision'
 import { getInitialMockData } from './mockApi'
+import { buildReviewSupport } from './reviewSupport'
+import { completeScanWorkflow, getSourceConnectionMessage, startScanWorkflow, type StartScanOptions } from './scanWorkflow'
 import type {
-  AuditEvent,
   Finding,
-  FindingSummary,
-  ReviewDecision,
   ReviewInput,
-  Scan,
 } from '../types'
-
-const decisionStatus: Record<ReviewDecision, string> = {
-  delete_candidate: 'delete_candidate',
-  keep_with_reason: 'retained',
-  correct_false_positive: 'false_positive',
-  reassign_owner: 'assigned',
-  escalate: 'escalated',
-}
-
-const decisionLabel: Record<ReviewDecision, string> = {
-  delete_candidate: 'marked as a deletion candidate',
-  keep_with_reason: 'retained with a documented reason',
-  correct_false_positive: 'corrected as a false positive',
-  reassign_owner: 'reassigned for review',
-  escalate: 'escalated for additional review',
-}
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState(getInitialMockData)
@@ -39,142 +22,95 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  function startScan(scanType: 'full' | 'delta') {
+  function startScan(options: StartScanOptions) {
+    const result = startScanWorkflow(data, {
+      ...options,
+      actorId: 'user_demo_admin',
+      auditEventId: `audit_${Date.now()}`,
+      occurredAt: new Date().toISOString(),
+    })
+
+    if (!result.accepted) {
+      setToast(result.toast)
+      return
+    }
+
     if (scanTimer.current) {
       clearTimeout(scanTimer.current)
     }
 
-    const scanId = scanType === 'full' ? 'scan_demo_full' : 'scan_demo_delta'
-    const startedAt = new Date().toISOString()
-    const sourceName = data.sources[0]?.name ?? 'configured source'
-    const runningScan: Scan = {
-      scanId,
-      sourceId: data.sources[0]?.sourceId ?? 'source_001',
-      scanType,
-      status: 'running',
-      progress: scanType === 'full' ? 0.34 : 0.67,
-      totalFiles: scanType === 'full' ? 42 : 6,
-      scannedFiles: scanType === 'full' ? 14 : 4,
-      flaggedFiles: scanType === 'full' ? 5 : 2,
-      totalBytes: scanType === 'full' ? 38210000 : 6240000,
-      durationMs: null,
-      throughputFilesPerSecond: null,
-      reproducibilityFingerprint: null,
-    }
-
-    setData((current) => ({
-      ...current,
-      scan: runningScan,
-      metrics: {
-        ...current.metrics,
-        scanProgress: runningScan.progress,
-      },
-      auditEvents: [
-        {
-          auditEventId: `audit_${Date.now()}`,
-          scanId,
-          findingId: null,
-          eventType: `${scanType}_scan_started`,
-          actorId: 'user_demo_admin',
-          occurredAt: startedAt,
-          summary: `${scanType === 'full' ? 'Full' : 'Delta'} scan started for ${sourceName}.`,
-        },
-        ...current.auditEvents,
-      ],
-    }))
-    setToast(`${scanType === 'full' ? 'Full' : 'Delta'} scan started in simulated mode.`)
+    setData(result.data)
+    setToast(result.toast)
 
     scanTimer.current = setTimeout(() => {
-      const completedAt = new Date().toISOString()
-      setData((current) => {
-        const completedScan: Scan = {
-          ...current.scan,
-          status: 'completed',
-          progress: 1,
-          scannedFiles: current.scan.totalFiles,
-          durationMs: scanType === 'full' ? 38200 : 5200,
-          throughputFilesPerSecond: scanType === 'full' ? 1.1 : 1.15,
-          reproducibilityFingerprint: 'sha256:demo_findings',
-        }
-
-        return {
-          ...current,
-          scan: completedScan,
-          metrics: {
-            ...current.metrics,
-            scanProgress: 1,
-            lastScanTimeSeconds: scanType === 'full' ? 38.2 : 5.2,
-          },
-          auditEvents: [
-            {
-              auditEventId: `audit_${Date.now()}`,
-              scanId,
-              findingId: null,
-              eventType: `${scanType}_scan_completed`,
-              actorId: 'system',
-              occurredAt: completedAt,
-              summary: `${scanType === 'full' ? 'Full' : 'Delta'} scan completed for ${sourceName}.`,
-            },
-            ...current.auditEvents,
-          ],
-        }
-      })
-      setToast(`${scanType === 'full' ? 'Full' : 'Delta'} scan completed.`)
+      setData((current) => completeScanWorkflow(current, {
+        auditEventId: `audit_${Date.now()}`,
+        occurredAt: new Date().toISOString(),
+        scanId: result.scanId,
+      }))
+      setToast(`${options.scanType === 'full' ? 'Full' : 'Delta'} scan completed.`)
       scanTimer.current = null
-    }, 2200)
+    }, result.completionDelayMs)
+  }
+
+  function testSourceConnection(sourceId: string) {
+    const source = data.sources.find((candidate) => candidate.sourceId === sourceId)
+    setToast(getSourceConnectionMessage(source, data.governanceConfig))
   }
 
   function reviewFinding(input: ReviewInput) {
-    const resultingStatus = decisionStatus[input.decision]
     const occurredAt = new Date().toISOString()
-    const auditEvent: AuditEvent = {
+    const finding = getFinding(input.findingId)
+    const reviewSupport = finding
+      ? buildReviewSupport({
+          actorId: input.actorId,
+          finding,
+          governanceConfig: data.governanceConfig,
+          occurredAt,
+        })
+      : data.reviewSupport
+    const result = recordHumanReviewDecision(data, {
+      ...input,
       auditEventId: `audit_${Date.now()}`,
-      scanId: data.findings.find((finding) => finding.findingId === input.findingId)?.scanId ?? null,
-      findingId: input.findingId,
-      eventType: 'review_recorded',
-      actorId: input.actorId,
       occurredAt,
-      summary: `Finding ${decisionLabel[input.decision]}.`,
-      reason: input.reason,
-      resultingStatus,
+      reviewId: `review_${Date.now()}`,
+      reviewSupportRulesFingerprint: data.scan.reviewSupport?.supportRulesFingerprint,
+    }, reviewSupport)
+
+    if (!result.accepted) {
+      setToast(result.reason)
+      return
     }
 
-    function updateFinding<T extends FindingSummary>(finding: T): T {
-      if (finding.findingId !== input.findingId) {
-        return finding
-      }
-
-      return {
-        ...finding,
-        status: resultingStatus,
-      }
-    }
-
-    setData((current) => ({
-      ...current,
-      findings: current.findings.map(updateFinding),
-      findingDetail:
-        current.findingDetail.findingId === input.findingId
-          ? {
-              ...updateFinding(current.findingDetail),
-              auditTimeline: [auditEvent, ...(current.findingDetail.auditTimeline ?? [])],
-            }
-          : current.findingDetail,
-      auditEvents: [auditEvent, ...current.auditEvents],
-      metrics: {
-        ...current.metrics,
-        openReviewBacklog: Math.max(0, current.metrics.openReviewBacklog - 1),
-      },
-    }))
-    setToast('Review decision recorded. Deletion remains simulated.')
+    setData(result.data)
+    setToast(result.toast)
   }
 
   function getFinding(findingId: string): Finding | undefined {
+    if (data.findingDetails[findingId]) {
+      return data.findingDetails[findingId]
+    }
+
     if (data.findingDetail.findingId === findingId) {
       return data.findingDetail
     }
 
     return data.findings.find((finding) => finding.findingId === findingId)
+  }
+
+  function getReviewSupport(findingId: string) {
+    const finding = getFinding(findingId)
+
+    if (!finding) {
+      return data.reviewSupport
+    }
+
+    return buildReviewSupport({
+      actorId: data.permissionBoundary.actorId,
+      finding,
+      governanceConfig: data.governanceConfig,
+      occurredAt: data.meta.generatedAt,
+    })
   }
 
   return (
@@ -192,7 +128,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         meta: data.meta,
         toast,
         getFinding,
+        getReviewSupport,
         startScan,
+        testSourceConnection,
         reviewFinding,
         clearToast: () => setToast(null),
       }}

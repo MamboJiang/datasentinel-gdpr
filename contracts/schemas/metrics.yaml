@@ -4,6 +4,17 @@ EvaluationSummary:
   properties:
     evaluationRunId: { type: string }
     scanId: { type: string }
+    datasetHash: { type: string }
+    scannerVersion: { type: string }
+    detectorRulesHash: { type: string }
+    contextRiskRulesHash: { type: string }
+    ownerAssignmentRulesHash: { type: string }
+    findingAssemblyRulesHash: { type: string }
+    reviewSupportRulesHash: { type: string }
+    auditRecordingRulesHash: { type: string }
+    reviewDecisionRulesHash: { type: string }
+    configHash: { type: string }
+    findingFingerprint: { type: string }
     precision: { type: [number, "null"], minimum: 0, maximum: 1 }
     recall: { type: [number, "null"], minimum: 0, maximum: 1 }
     f1: { type: [number, "null"], minimum: 0, maximum: 1 }
@@ -25,6 +36,37 @@ AdminMetrics:
     openReviewBacklog: { type: integer, minimum: 0 }
     highRiskFindings: { type: integer, minimum: 0 }
     retentionOverdueFiles: { type: integer, minimum: 0 }
+    inventoryCandidateFiles: { type: integer, minimum: 0 }
+    fingerprintedFiles: { type: integer, minimum: 0 }
+    extractedFiles: { type: integer, minimum: 0 }
+    extractionWarnings: { type: integer, minimum: 0 }
+    redactedEvidenceCandidates: { type: integer, minimum: 0 }
+    contextClassifiedFindings: { type: integer, minimum: 0 }
+    riskAssessedFindings: { type: integer, minimum: 0 }
+    humanReviewRequiredFindings: { type: integer, minimum: 0 }
+    ownerRoutedFindings: { type: integer, minimum: 0 }
+    assignedFindings: { type: integer, minimum: 0 }
+    directOwnerAssignments: { type: integer, minimum: 0 }
+    masterOfDataAssignments: { type: integer, minimum: 0 }
+    escalationAssignments: { type: integer, minimum: 0 }
+    assembledFindings: { type: integer, minimum: 0 }
+    evidenceCards: { type: integer, minimum: 0 }
+    reviewSupportedFindings: { type: integer, minimum: 0 }
+    deniedReviewActions: { type: integer, minimum: 0 }
+    reviewChecklistItems: { type: integer, minimum: 0 }
+    reviewTransferOptions: { type: integer, minimum: 0 }
+    reviewEscalationOptions: { type: integer, minimum: 0 }
+    auditRecordedEvents: { type: integer, minimum: 0 }
+    auditLinkedFindingEvents: { type: integer, minimum: 0 }
+    auditReviewDecisionEvents: { type: integer, minimum: 0 }
+    reviewDecisionCount: { type: integer, minimum: 0 }
+    deletionCandidateDecisions: { type: integer, minimum: 0 }
+    retainedDecisions: { type: integer, minimum: 0 }
+    falsePositiveDecisions: { type: integer, minimum: 0 }
+    reassignedDecisions: { type: integer, minimum: 0 }
+    escalatedDecisions: { type: integer, minimum: 0 }
+    reviewThroughputPerDay: { type: number, minimum: 0 }
+    medianReviewTimeHours: { type: [number, "null"], minimum: 0 }
     findingsBySource:
       type: object
       additionalProperties: { type: integer }

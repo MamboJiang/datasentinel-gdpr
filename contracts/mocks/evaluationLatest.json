@@ -4,8 +4,13 @@
     "scanId": "scan_001",
     "datasetHash": "sha256:demo_dataset",
     "scannerVersion": "0.1.0",
-    "detectorRulesHash": "sha256:demo_rules",
-    "configHash": "sha256:demo_config",
+    "detectorRulesHash": "sha256:snapshot_source_001_scan_001_extraction_completed",
+    "contextRiskRulesHash": "sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed",
+    "ownerAssignmentRulesHash": "sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed",
+    "findingAssemblyRulesHash": "sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed",
+    "reviewSupportRulesHash": "sha256:2026.05-demo_2026.05-demo_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_user_anna_review_support_completed",
+    "reviewDecisionRulesHash": "sha256:2026.05-demo_review_decision_fixture_v1",
+    "configHash": "sha256:scan_001_inventory_completed",
     "findingFingerprint": "sha256:demo_findings",
     "precision": 0.91,
     "recall": 0.84,
@@ -17,7 +22,8 @@
       "cpuSeconds": 18.4,
       "modelCalls": 0,
       "estimatedCostUsd": 0
-    }
+    },
+    "auditRecordingRulesHash": "sha256:2026.05-demo_scan_001_completed_39_audit_recording_v1"
   },
   "meta": {
     "contractVersion": "0.1.0",

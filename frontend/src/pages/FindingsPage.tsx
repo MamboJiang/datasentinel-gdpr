@@ -25,7 +25,6 @@ export function FindingsPage() {
       <PageHeader
         eyebrow="Accountable review"
         title="Findings"
-        description="Review GDPR-relevant files with redacted evidence, contextual risk, and explicit ownership."
       />
 
       <section className="panel table-panel">
@@ -67,6 +66,7 @@ export function FindingsPage() {
               <thead>
                 <tr>
                   <th>Finding</th>
+                  <th>Evidence</th>
                   <th>Risk</th>
                   <th>Context</th>
                   <th>Retention</th>
@@ -83,17 +83,23 @@ export function FindingsPage() {
                         <div><strong>{finding.fileName}</strong><span>{finding.sourcePath}</span></div>
                       </Link>
                     </td>
+                    <td>{finding.evidenceSignalCount ?? finding.personalDataTypes?.length ?? 0} signals</td>
                     <td><RiskBadge riskLevel={finding.riskLevel} score={finding.riskScore} /></td>
                     <td>{finding.contextCategory ? humanize(finding.contextCategory) : 'Unknown'}</td>
                     <td><StatusBadge value={finding.retentionStatus} /></td>
-                    <td>{finding.owner?.displayName ?? 'Unassigned'}</td>
+                    <td>
+                      <div className="owner-cell">
+                        <strong>{finding.owner?.displayName ?? 'Unassigned'}</strong>
+                        <span>{finding.owner?.assignmentType ? humanize(finding.owner.assignmentType) : 'Unknown routing'}</span>
+                      </div>
+                    </td>
                     <td><StatusBadge value={finding.status} /></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        ) : <EmptyState title="No findings match these filters" description="Adjust the current search or status filters to broaden the results." />}
+        ) : <EmptyState title="No findings match these filters" />}
       </section>
     </>
   )

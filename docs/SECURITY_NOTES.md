@@ -11,6 +11,7 @@ The hackathon prototype must simulate deletion. It must not delete, quarantine, 
 - UI examples should show masked values, such as `[REDACTED]` or `DE** ****`.
 - Raw extracted text is not part of the public API contract.
 - Audit examples should include decision metadata, not raw sensitive content.
+- Human-entered audit reason text should be sanitized before public display; audit events must preserve accountability without becoming a new store of raw personal data.
 
 ## Role Simulation
 

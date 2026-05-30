@@ -13,6 +13,7 @@ import type {
   Scan,
   Source,
 } from '../types'
+import type { StartScanOptions } from './scanWorkflow'
 
 export type DataContextValue = {
   sources: Source[]
@@ -27,7 +28,9 @@ export type DataContextValue = {
   meta: Meta
   toast: string | null
   getFinding: (findingId: string) => Finding | undefined
-  startScan: (scanType: 'full' | 'delta') => void
+  getReviewSupport: (findingId: string) => ReviewSupport
+  startScan: (options: StartScanOptions) => void
+  testSourceConnection: (sourceId: string) => void
   reviewFinding: (input: ReviewInput) => void
   clearToast: () => void
 }

@@ -1,0 +1,124 @@
+@media (max-width: 980px) {
+  .landing-announcement {
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+
+  .landing-nav-shell {
+    padding: 0 22px;
+  }
+
+  .landing-nav {
+    display: none;
+  }
+
+  .landing-hero {
+    min-height: auto;
+    padding: 54px 22px 28px;
+  }
+
+  .landing-hero-copy h1 {
+    font-size: 4.2rem;
+  }
+
+  .landing-file-card,
+  .landing-route-card,
+  .landing-audit-card {
+    opacity: .18;
+  }
+
+  .landing-feature-rail,
+  .landing-workflow-layout,
+  .landing-governance-grid,
+  .landing-evaluation-board {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-feature-rail {
+    padding: 0 22px 48px;
+  }
+
+  .landing-section {
+    padding: 84px 22px;
+  }
+
+  .landing-evaluation-board {
+    padding: 28px;
+  }
+}
+
+@media (max-width: 620px) {
+  .landing-announcement {
+    font-size: .66rem;
+    gap: 14px;
+    height: 42px;
+    padding: 0 14px;
+  }
+
+  .landing-nav-shell {
+    height: 66px;
+  }
+
+  .landing-brand {
+    font-size: 1rem;
+  }
+
+  .landing-nav-cta {
+    font-size: .76rem;
+    min-height: 36px;
+    padding: 0 12px;
+  }
+
+  .landing-hero-copy {
+    text-align: left;
+  }
+
+  .landing-hero-copy h1 {
+    font-size: 3.2rem;
+  }
+
+  .landing-hero-copy p {
+    font-size: 1rem;
+    margin-top: 18px;
+  }
+
+  .landing-file-card,
+  .landing-route-card,
+  .landing-audit-card {
+    display: none;
+  }
+
+  .landing-hero-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .landing-feature-rail {
+    gap: 10px;
+  }
+
+  .landing-proof {
+    min-height: auto;
+    padding: 18px;
+  }
+
+  .landing-section h2,
+  .landing-final h2 {
+    font-size: 2.15rem;
+  }
+
+  .landing-workflow-visual {
+    min-height: 320px;
+    padding: 24px;
+  }
+
+  .landing-evaluation-board dl {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-final {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 24px;
+  }
+}

@@ -119,7 +119,7 @@ Errors use `application/problem+json`.
 | `GET` | `/api/sources` | List configured sources. |
 | `POST` | `/api/sources` | Create a local or mock source. |
 | `POST` | `/api/sources/{sourceId}/connect-test` | Validate source reachability. |
-| `POST` | `/api/scans/full` | Start a full scan. |
+| `POST` | `/api/scans/full` | Start a full scan for a connected or mock-ready source. |
 | `POST` | `/api/scans/delta` | Start a delta scan. |
 | `GET` | `/api/scans/{scanId}` | Read scan status and progress. |
 | `GET` | `/api/scans/{scanId}/summary` | Read KPI summary for one scan. |
@@ -139,6 +139,13 @@ Errors use `application/problem+json`.
 
 ### Scan Status
 
+Start guard:
+
+- `POST /api/scans/full` requires `sourceId`.
+- P0 accepts full-scan start for the controlled `mock_ready` organizer sample source.
+- A source that is missing, unreadable, or not scan-ready must not create a scan record; backend implementations should return `application/problem+json`, and mock UI implementations should show a neutral denial message.
+- Accepted scan starts should be idempotent when `Idempotency-Key` is present.
+
 `queued -> running -> completed`
 
 Failure paths:
@@ -150,6 +157,24 @@ Failure paths:
 Retry path:
 
 - `failed -> queued`
+
+Internal P0 stage visibility:
+
+- `source_ready -> inventorying_files -> extracting_content -> detecting_signals -> judging_context_risk -> assigning_owner -> assembling_findings -> preparing_review_support -> recording_audit_events -> completed`
+- Inventory, extraction, context/risk, owner-assignment, finding-assembly, review-support, and audit-recording stages are exposed as optional scan summaries, not as public endpoints.
+- Running scans may return `meta.partial = true` with recoverable inventory or extraction warnings.
+- Public scan payloads must not expose raw extracted text, full source content, page images, or unredacted personal data.
+- `rawContentExposed = false` is the required P0 value when extraction status is visible.
+- `contextRisk.legalConclusionProvided = false` is the required P0 value when context/risk status is visible.
+- Context/risk output must include policy-pack version and must use neutral values when policy guidance is missing or unknown.
+- Owner assignment output must include policy-pack version, organization-model version, owner-resolution strategy, assignment-rule fingerprint, and routed counts when visible.
+- Owner assignment must never silently leave review-required findings unowned; controlled P0 fixtures must expose `unownedFindings = 0`.
+- Finding assembly output must include policy-pack version, source snapshot, assembly-rule fingerprint, assembled finding count, evidence-card count, redacted signal count, missing-card count, denied-action count, `rawContentExposed = false`, and `legalConclusionProvided = false` when visible.
+- Finding rows may include optional `evidenceSignalCount` and `policyPackVersion`; clients must still render rows when those optional fields are absent.
+- Evidence cards must expose redacted signals, policy context, owner assignment, retention status, action boundary, and audit timeline without raw source content.
+- Review support output must include policy-pack version, organization-model version, visible allowed actions, visible denied actions, required reason fields, checklist items, transfer options, and escalation options when available.
+- Review support must not expose raw source content, unredacted personal data, hidden permission data, legal conclusions, or deletion execution.
+- Audit recording output must include policy-pack version, audit rules fingerprint, event counts, scan-linked count, finding-linked count, review-decision count, human/system counts, `rawContentExposed = false`, `legalConclusionProvided = false`, and `deletionExecuted = false` when visible.
 
 ### Finding Status
 
@@ -173,6 +198,30 @@ Allowed P0 decisions:
 - `escalate`
 
 Every review decision requires `reason`.
+
+Submit guards:
+
+- The submitted decision must be present in the actor's current review-support `availableDecisions`.
+- Required review-support checklist items must be acknowledged before submission.
+- `keep_with_reason` requires `retentionUntil` as the next retention review date.
+- `reassign_owner` requires a transfer target.
+- `escalate` requires an escalation queue.
+- Repeated submissions with the same idempotency context must not create duplicate audit events or metrics.
+- Denied or incomplete submissions must not create finding, audit, source, metric, or deletion state changes.
+- `delete_candidate` is a review status only in P0 and must return or record `deletionExecuted = false` when that boundary is represented.
+
+Accepted review responses may include optional `targetId`, `targetLabel`, `retentionUntil`, `idempotencyKey`, `policyPackVersion`, `permissionBoundaryFingerprint`, and `reviewSupportRulesFingerprint` fields. Audit events for accepted decisions should preserve the same policy and permission context when available.
+
+### Audit Events
+
+Required audit-event fields remain `auditEventId`, `eventType`, `actorId`, and `occurredAt`.
+
+Optional P0 audit-event fields may include:
+
+- `actorType`, `recordedAt`, `auditRecordVersion`, `objectType`, `objectId`, `action`, `outcome`, `stage`, `sourceId`, `previousState`, `resultingState`, `evidenceReferences`, `rawContentExposed`, and `legalConclusionProvided`.
+- Decision context such as `decision`, `reason`, `resultingStatus`, `targetId`, `targetLabel`, `retentionUntil`, `deletionExecuted`, `policyPackVersion`, `permissionBoundaryFingerprint`, `reviewSupportRulesFingerprint`, and `idempotencyKey`.
+
+Public audit payloads must not expose raw source content, unredacted personal data, credentials, hidden permission data, legal conclusions, or deletion execution. Human-entered audit text should be sanitized before becoming a public audit payload.
 
 ### Governance Policy Status
 
@@ -211,11 +260,14 @@ Frontend agents should begin with:
 - `contracts/mocks/governanceConfig.json`
 - `contracts/mocks/myFindings.json`
 - `contracts/mocks/permissionBoundary.json`
+- `contracts/mocks/reviewDecision.json`
 - `contracts/mocks/reviewSupport.json`
 - `contracts/mocks/scanStatus.json`
 - `contracts/mocks/sources.json`
 
 Mocks are contract fixtures. They are not production seed data.
+
+Scan mocks may include optional `fileInventory`, `contentExtraction`, `contextRisk`, `ownerAssignment`, `findingAssembly`, `reviewSupport`, and `pipelineStages` fields. These fields summarize internal processing and are safe for public UI because they expose counts, hashes, methods, policy-pack version, organization-model version, warnings, and redaction boundaries rather than raw source content.
 
 ## Breaking Changes
 

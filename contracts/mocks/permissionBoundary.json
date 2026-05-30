@@ -2,7 +2,7 @@
   "data": {
     "actorId": "user_anna",
     "roles": ["master_of_data", "reviewer"],
-    "allowedActions": ["view_assigned_findings", "keep_with_reason", "reassign_owner", "escalate"],
+    "allowedActions": ["view_assigned_findings", "delete_candidate", "keep_with_reason", "correct_false_positive", "reassign_owner", "escalate"],
     "deniedActions": [
       {
         "action": "activate_policy_pack",
@@ -13,7 +13,9 @@
         "reason": "Real deletion is disabled in the prototype."
       }
     ],
-    "visibleScopes": ["assigned_findings", "finance_org_unit"]
+    "visibleScopes": ["assigned_findings", "finance_org_unit"],
+    "boundaryFingerprint": "sha256:user_anna_2026.05-demo_finding_001_permission_boundary",
+    "evaluatedAt": "2026-05-30T12:08:00Z"
   },
   "meta": {
     "contractVersion": "0.1.0",

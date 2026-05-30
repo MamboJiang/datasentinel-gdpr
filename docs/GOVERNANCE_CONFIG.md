@@ -9,6 +9,7 @@ Related contract files:
 - `contracts/schemas/governance.yaml`
 - `contracts/mocks/governanceConfig.json`
 - `contracts/mocks/permissionBoundary.json`
+- `contracts/mocks/reviewDecision.json`
 - `contracts/mocks/reviewSupport.json`
 
 ## Principles
@@ -23,10 +24,11 @@ Related contract files:
 
 | Object | Purpose |
 | --- | --- |
-| `PolicyPack` | Versioned policy guidance, retention rules, evidence requirements, escalation paths, and allowed review decisions. |
-| `OrganizationModel` | Org units, owner resolution strategy, Master of Data fallback, and delegation rules. |
-| `PermissionBoundary` | Allowed actions, denied actions, denial reasons, and visible data scopes for the current actor. |
+| `PolicyPack` | Versioned policy guidance, retention rules, context/risk guidance, evidence requirements, escalation paths, and allowed review decisions. |
+| `OrganizationModel` | Org units, owner resolution strategy, Master of Data fallback, delegation rules, and delegation targets. |
+| `PermissionBoundary` | Allowed actions, denied actions, denial reasons, visible data scopes, boundary fingerprint, and evaluation timestamp for the current actor. |
 | `ReviewSupport` | Reviewer guidance, checklist, available decisions, required reason fields, transfer options, and escalation options. |
+| `ReviewDecision` | Human decision record with reason, checklist acknowledgement, target or retention context, resulting status, audit event, and no-real-deletion boundary. |
 | `SourceAdapterConfig` | Demo source, local source, mock SharePoint, and future connector readiness. |
 
 ## Policy Pack Shape
@@ -46,6 +48,16 @@ Related contract files:
       "guidance": "Review whether a business purpose still exists."
     }
   ],
+  "riskGuidance": [
+    {
+      "guidanceId": "risk_supplier_financial_identifiers",
+      "contextCategory": "supplier_onboarding",
+      "signalTypes": ["iban_like", "billing_address", "signature"],
+      "riskLevel": "high",
+      "scoreFloor": 80,
+      "reviewReason": "Financial and signature identifiers require accountable human review."
+    }
+  ],
   "reviewDecisions": ["delete_candidate", "keep_with_reason", "correct_false_positive", "reassign_owner", "escalate"]
 }
 ```
@@ -59,6 +71,17 @@ P0 exposes configuration for inspection and mock-driven UI. Production editing i
 - View org units and owner fallback model.
 - View permission boundaries.
 - Preview policy or org changes before activation.
+
+## Review Support Rules
+
+P0 review support is derived from:
+
+- The assembled finding and redacted evidence card.
+- Active `PolicyPack.reviewDecisions`, `evidenceRequirements`, and `escalationPaths`.
+- `OrganizationModel.delegationTargets` for controlled transfer choices.
+- The actor's visible `PermissionBoundary`.
+
+The default reviewer can see `delete_candidate`, `keep_with_reason`, `correct_false_positive`, `reassign_owner`, and `escalate` when those actions are allowed. Every decision requires a reason and required checklist acknowledgement. `keep_with_reason` also requires a retention review date. Real deletion remains represented only as denied `execute_real_deletion`; no P0 governance setting enables source-file deletion.
 
 ## Enterprise Change Scenarios
 

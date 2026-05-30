@@ -14,6 +14,54 @@
           "documentCategory": "supplier_onboarding",
           "reviewAfterDays": 1095,
           "guidance": "Review whether a business purpose still exists."
+        },
+        {
+          "ruleId": "retention_it_access_review_2y",
+          "documentCategory": "it_access",
+          "reviewAfterDays": 730,
+          "guidance": "Review whether access evidence is still needed for accountability."
+        }
+      ],
+      "riskGuidance": [
+        {
+          "guidanceId": "risk_supplier_financial_identifiers",
+          "contextCategory": "supplier_onboarding",
+          "signalTypes": ["iban_like", "billing_address", "signature"],
+          "riskLevel": "high",
+          "scoreFloor": 80,
+          "reviewReason": "Financial and signature identifiers require accountable human review."
+        },
+        {
+          "guidanceId": "risk_it_access_identifiers",
+          "contextCategory": "it_access",
+          "signalTypes": ["employee_id", "email", "access_role"],
+          "riskLevel": "high",
+          "scoreFloor": 80,
+          "reviewReason": "Identity and access-role evidence requires review before any action."
+        },
+        {
+          "guidanceId": "risk_incident_personal_context",
+          "contextCategory": "incident_report",
+          "signalTypes": ["email", "free_text_personal_data"],
+          "riskLevel": "medium",
+          "scoreFloor": 60,
+          "reviewReason": "Incident context can contain personal descriptions and needs owner review."
+        },
+        {
+          "guidanceId": "risk_expense_operational_records",
+          "contextCategory": "expense_report",
+          "signalTypes": ["email", "employee_id", "reimbursement_data"],
+          "riskLevel": "medium",
+          "scoreFloor": 55,
+          "reviewReason": "Expense records need business-context review before retention decisions."
+        },
+        {
+          "guidanceId": "risk_training_feedback",
+          "contextCategory": "training_evaluation",
+          "signalTypes": ["email", "feedback_comment"],
+          "riskLevel": "medium",
+          "scoreFloor": 55,
+          "reviewReason": "Training feedback can include employee opinions and needs accountable review."
         }
       ],
       "evidenceRequirements": ["redacted_snippet", "detector_signal", "owner_assignment", "policy_version"],
@@ -40,6 +88,14 @@
         {
           "ruleId": "delegate_within_org_unit",
           "description": "Review tasks can be transferred to another owner in the same org unit."
+        }
+      ],
+      "delegationTargets": [
+        {
+          "userId": "user_markus",
+          "displayName": "Markus Keller",
+          "orgUnitId": "finance",
+          "reason": "IT Operations owner available for controlled handoff."
         }
       ]
     },

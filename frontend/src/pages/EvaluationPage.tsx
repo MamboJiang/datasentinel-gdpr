@@ -15,19 +15,18 @@ export function EvaluationPage() {
       <PageHeader
         eyebrow="Measurable discovery"
         title="Evaluation"
-        description="Keep scanner quality, reproducibility, throughput, and resource intensity visible to reviewers."
       />
 
       <section className="metrics-grid evaluation-grid" aria-label="Evaluation metrics">
-        <MetricCard icon={Scale} label="Precision" value={percentage(evaluation.precision)} helper="True positives / predicted positives" tone="green" />
-        <MetricCard icon={Gauge} label="Recall" value={percentage(evaluation.recall)} helper="True positives / actual positives" />
-        <MetricCard icon={DatabaseZap} label="F1 score" value={percentage(evaluation.f1)} helper="Precision and recall balance" tone="green" />
-        <MetricCard icon={Repeat2} label="Reproducibility" value={percentage(evaluation.reproducibility)} helper="Stable finding fingerprints" tone="green" />
+        <MetricCard icon={Scale} label="Precision" value={percentage(evaluation.precision)} tone="green" />
+        <MetricCard icon={Gauge} label="Recall" value={percentage(evaluation.recall)} />
+        <MetricCard icon={DatabaseZap} label="F1 score" value={percentage(evaluation.f1)} tone="green" />
+        <MetricCard icon={Repeat2} label="Reproducibility" value={percentage(evaluation.reproducibility)} tone="green" />
       </section>
 
       <div className="dashboard-grid">
         <section className="panel">
-          <SectionHeader title="Resource intensity" description="Prototype execution footprint" />
+          <SectionHeader title="Resource intensity" />
           <div className="resource-grid">
             <div><MemoryStick aria-hidden="true" size={18} /><span>Peak memory</span><strong>{intensity.peakMemoryMb ?? '—'} MB</strong></div>
             <div><Cpu aria-hidden="true" size={18} /><span>CPU time</span><strong>{intensity.cpuSeconds ?? '—'} seconds</strong></div>
@@ -37,7 +36,7 @@ export function EvaluationPage() {
         </section>
 
         <section className="panel">
-          <SectionHeader title="Reproducibility record" description="Identifiers used to compare reruns" />
+          <SectionHeader title="Reproducibility record" />
           <dl className="definition-list hash-list">
             <div><dt>Evaluation run</dt><dd>{evaluation.evaluationRunId ?? 'Not available'}</dd></div>
             <div><dt>Scanner version</dt><dd>{evaluation.scannerVersion ?? 'Not available'}</dd></div>

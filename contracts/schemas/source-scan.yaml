@@ -76,6 +76,7 @@ Scan:
     sourceId: { type: string }
     scanType: { type: string, example: "full" }
     status: { type: string, example: "completed" }
+    stage: { type: string, example: "extracting_content" }
     progress: { type: number, minimum: 0, maximum: 1 }
     totalFiles: { type: integer, minimum: 0 }
     scannedFiles: { type: integer, minimum: 0 }
@@ -84,6 +85,165 @@ Scan:
     durationMs: { type: [integer, "null"], minimum: 0 }
     throughputFilesPerSecond: { type: [number, "null"] }
     reproducibilityFingerprint: { type: [string, "null"] }
+    pipelineStages:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+        properties:
+          stage: { type: string }
+          status: { type: string }
+          processedFiles: { type: integer, minimum: 0 }
+          totalFiles: { type: integer, minimum: 0 }
+          warnings:
+            type: array
+            items: { type: string }
+    fileInventory:
+      type: object
+      additionalProperties: true
+      properties:
+        status: { type: string }
+        sourceSnapshotId: { type: string }
+        inventoryFingerprint: { type: string }
+        totalCandidateFiles: { type: integer, minimum: 0 }
+        fingerprintedFiles: { type: integer, minimum: 0 }
+        skippedFiles: { type: integer, minimum: 0 }
+        totalBytes: { type: integer, minimum: 0 }
+        permissionSnapshots: { type: integer, minimum: 0 }
+        sampleFamilies:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        warnings:
+          type: array
+          items: { type: string }
+    contentExtraction:
+      type: object
+      additionalProperties: true
+      properties:
+        status: { type: string }
+        extractionFingerprint: { type: string }
+        processedFiles: { type: integer, minimum: 0 }
+        successfulFiles: { type: integer, minimum: 0 }
+        warningFiles: { type: integer, minimum: 0 }
+        unsupportedFiles: { type: integer, minimum: 0 }
+        ocrDeferredFiles: { type: integer, minimum: 0 }
+        redactedEvidenceCandidates: { type: integer, minimum: 0 }
+        rawContentExposed: { type: boolean }
+        methods:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        warnings:
+          type: array
+          items: { type: string }
+    contextRisk:
+      type: object
+      additionalProperties: true
+      properties:
+        status: { type: string }
+        policyPackVersion: { type: string }
+        riskRulesFingerprint: { type: string }
+        assessedEvidenceCandidates: { type: integer, minimum: 0 }
+        contextClassifiedFindings: { type: integer, minimum: 0 }
+        riskAssessedFindings: { type: integer, minimum: 0 }
+        highRiskFindings: { type: integer, minimum: 0 }
+        mediumRiskFindings: { type: integer, minimum: 0 }
+        lowRiskFindings: { type: integer, minimum: 0 }
+        retentionReviewFiles: { type: integer, minimum: 0 }
+        humanReviewRequiredFindings: { type: integer, minimum: 0 }
+        legalConclusionProvided: { type: boolean }
+        contextCategories:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        warnings:
+          type: array
+          items: { type: string }
+    ownerAssignment:
+      type: object
+      additionalProperties: true
+      properties:
+        status: { type: string }
+        policyPackVersion: { type: string }
+        organizationModelVersion: { type: string }
+        ownerResolutionStrategy: { type: string }
+        assignmentRulesFingerprint: { type: string }
+        humanReviewRequiredFindings: { type: integer, minimum: 0 }
+        assignedFindings: { type: integer, minimum: 0 }
+        directOwnerAssignments: { type: integer, minimum: 0 }
+        masterOfDataAssignments: { type: integer, minimum: 0 }
+        escalationAssignments: { type: integer, minimum: 0 }
+        unownedFindings: { type: integer, minimum: 0 }
+        transferOptionCount: { type: integer, minimum: 0 }
+        escalationOptionCount: { type: integer, minimum: 0 }
+        sourceOwnerAvailable: { type: boolean }
+        warnings:
+          type: array
+          items: { type: string }
+    findingAssembly:
+      type: object
+      additionalProperties: true
+      properties:
+        status: { type: string }
+        policyPackVersion: { type: string }
+        sourceSnapshotId: { type: string }
+        assemblyRulesFingerprint: { type: string }
+        assembledFindings: { type: integer, minimum: 0 }
+        evidenceCards: { type: integer, minimum: 0 }
+        evidenceSignals: { type: integer, minimum: 0 }
+        redactedEvidenceSnippets: { type: integer, minimum: 0 }
+        missingEvidenceCards: { type: integer, minimum: 0 }
+        deniedActionCount: { type: integer, minimum: 0 }
+        rawContentExposed: { type: boolean }
+        legalConclusionProvided: { type: boolean }
+        warnings:
+          type: array
+          items: { type: string }
+    reviewSupport:
+      type: object
+      additionalProperties: true
+      properties:
+        status: { type: string }
+        policyPackVersion: { type: string }
+        organizationModelVersion: { type: string }
+        supportRulesFingerprint: { type: string }
+        reviewableFindings: { type: integer, minimum: 0 }
+        supportedFindings: { type: integer, minimum: 0 }
+        allowedActionCount: { type: integer, minimum: 0 }
+        deniedActionCount: { type: integer, minimum: 0 }
+        availableDecisionCount: { type: integer, minimum: 0 }
+        reasonRequiredDecisionCount: { type: integer, minimum: 0 }
+        checklistItemCount: { type: integer, minimum: 0 }
+        transferOptionCount: { type: integer, minimum: 0 }
+        escalationOptionCount: { type: integer, minimum: 0 }
+        rawContentExposed: { type: boolean }
+        legalConclusionProvided: { type: boolean }
+        warnings:
+          type: array
+          items: { type: string }
+    auditRecording:
+      type: object
+      additionalProperties: true
+      properties:
+        status: { type: string }
+        policyPackVersion: { type: string }
+        auditRulesFingerprint: { type: string }
+        recordedEventCount: { type: integer, minimum: 0 }
+        linkedScanEvents: { type: integer, minimum: 0 }
+        linkedFindingEvents: { type: integer, minimum: 0 }
+        reviewDecisionEvents: { type: integer, minimum: 0 }
+        systemEvents: { type: integer, minimum: 0 }
+        humanEvents: { type: integer, minimum: 0 }
+        rawContentExposed: { type: boolean }
+        legalConclusionProvided: { type: boolean }
+        deletionExecuted: { type: boolean }
+        warnings:
+          type: array
+          items: { type: string }
 ScanEnvelope:
   type: object
   required: [data, meta]

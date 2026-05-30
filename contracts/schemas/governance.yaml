@@ -16,6 +16,11 @@ PolicyPack:
       items:
         type: object
         additionalProperties: true
+    riskGuidance:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
     evidenceRequirements:
       type: array
       items: { type: string }
@@ -45,6 +50,11 @@ OrganizationModel:
       items:
         type: object
         additionalProperties: true
+    delegationTargets:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
 PermissionBoundary:
   type: object
   required: [actorId, roles, allowedActions, deniedActions, visibleScopes]
@@ -69,6 +79,8 @@ PermissionBoundary:
     visibleScopes:
       type: array
       items: { type: string }
+    boundaryFingerprint: { type: string }
+    evaluatedAt: { type: string, format: date-time }
 ReviewSupport:
   type: object
   required: [findingId, actorId, policyPackVersion, availableDecisions, checklist]

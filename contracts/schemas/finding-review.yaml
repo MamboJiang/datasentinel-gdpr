@@ -7,6 +7,8 @@ Owner:
     displayName: { type: string }
     email: { type: [string, "null"], format: email }
     assignmentType: { type: string, example: "master_of_data" }
+    assignmentReason: { type: string }
+    assignmentSource: { type: string }
 Signal:
   type: object
   required: [type, detector, confidence, snippet]
@@ -17,6 +19,14 @@ Signal:
     confidence: { type: number, minimum: 0, maximum: 1 }
     snippet: { type: string }
     page: { type: [integer, "null"] }
+AuditEvidenceReference:
+  type: object
+  required: [type, id]
+  additionalProperties: true
+  properties:
+    type: { type: string }
+    id: { type: string }
+    label: { type: string }
 AuditEvent:
   type: object
   required: [auditEventId, eventType, actorId, occurredAt]
@@ -27,8 +37,35 @@ AuditEvent:
     findingId: { type: [string, "null"] }
     eventType: { type: string }
     actorId: { type: string }
+    actorType: { type: string, example: "human" }
     occurredAt: { type: string, format: date-time }
+    recordedAt: { type: string, format: date-time }
+    auditRecordVersion: { type: string }
+    objectType: { type: string, example: "review_decision" }
+    objectId: { type: string }
+    action: { type: string, example: "record_review_decision" }
+    outcome: { type: string, example: "delete_candidate" }
+    stage: { type: string, example: "recording_audit_events" }
+    sourceId: { type: string }
+    previousState: { type: [string, "null"] }
+    resultingState: { type: [string, "null"] }
     summary: { type: string }
+    evidenceReferences:
+      type: array
+      items: { $ref: "#/AuditEvidenceReference" }
+    decision: { type: string }
+    reason: { type: string }
+    resultingStatus: { type: string }
+    targetId: { type: string }
+    targetLabel: { type: string }
+    retentionUntil: { type: [string, "null"], format: date }
+    deletionExecuted: { type: boolean }
+    policyPackVersion: { type: string }
+    permissionBoundaryFingerprint: { type: string }
+    reviewSupportRulesFingerprint: { type: string }
+    idempotencyKey: { type: string }
+    rawContentExposed: { type: boolean }
+    legalConclusionProvided: { type: boolean }
 FindingSummary:
   type: object
   required: [findingId, fileName, riskLevel, riskScore, status]
@@ -46,6 +83,8 @@ FindingSummary:
       items: { type: string }
     retentionStatus: { type: string, example: "overdue" }
     recommendedAction: { type: string, example: "escalate" }
+    evidenceSignalCount: { type: integer, minimum: 0 }
+    policyPackVersion: { type: string }
     status: { type: string, example: "open" }
     owner: { $ref: "#/Owner" }
     policyContext:
@@ -101,23 +140,35 @@ ReviewRequest:
     nextAction: { type: [string, "null"] }
     retentionUntil: { type: [string, "null"], format: date }
     reassignToUserId: { type: [string, "null"] }
+    checklistItemIds:
+      type: array
+      items: { type: string }
+ReviewRecord:
+  type: object
+  required: [reviewId, findingId, decision, reason, actorId, createdAt]
+  additionalProperties: true
+  properties:
+    reviewId: { type: string }
+    findingId: { type: string }
+    decision: { type: string }
+    reason: { type: string }
+    actorId: { type: string }
+    createdAt: { type: string, format: date-time }
+    resultingStatus: { type: string }
+    auditEventId: { type: string }
+    targetId: { type: string }
+    targetLabel: { type: string }
+    retentionUntil: { type: [string, "null"], format: date }
+    deletionExecuted: { type: boolean }
+    policyPackVersion: { type: string }
+    permissionBoundaryFingerprint: { type: string }
+    reviewSupportRulesFingerprint: { type: string }
+    idempotencyKey: { type: string }
 ReviewEnvelope:
   type: object
   required: [data, meta]
   properties:
-    data:
-      type: object
-      required: [reviewId, findingId, decision, reason, actorId, createdAt]
-      additionalProperties: true
-      properties:
-        reviewId: { type: string }
-        findingId: { type: string }
-        decision: { type: string }
-        reason: { type: string }
-        actorId: { type: string }
-        createdAt: { type: string, format: date-time }
-        resultingStatus: { type: string }
-        auditEventId: { type: string }
+    data: { $ref: "#/ReviewRecord" }
     meta: { $ref: "./common.yaml#/Meta" }
 AuditEventListEnvelope:
   type: object

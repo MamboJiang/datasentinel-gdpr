@@ -3,12 +3,22 @@
     "findingId": "finding_001",
     "actorId": "user_anna",
     "policyPackVersion": "2026.05-demo",
-    "plainLanguageSummary": "This finding needs a human business-context decision. The system can show evidence and guidance, but it does not make a legal conclusion.",
+    "plainLanguageSummary": "This high finding is assigned to Lena Hoffmann. Use policy pack 2026.05-demo guidance, redacted evidence, owner context, and the visible permission boundary before recording a human decision. The system does not make a legal conclusion.",
     "availableDecisions": [
+      {
+        "decision": "delete_candidate",
+        "requiresReason": true,
+        "label": "Mark as deletion candidate"
+      },
       {
         "decision": "keep_with_reason",
         "requiresReason": true,
         "label": "Keep with business reason"
+      },
+      {
+        "decision": "correct_false_positive",
+        "requiresReason": true,
+        "label": "Correct false positive"
       },
       {
         "decision": "reassign_owner",
@@ -23,13 +33,28 @@
     ],
     "checklist": [
       {
-        "itemId": "business_purpose",
+        "itemId": "review_redacted_evidence",
+        "label": "Review the redacted evidence card and file anchor before deciding.",
+        "required": true
+      },
+      {
+        "itemId": "confirm_business_purpose",
         "label": "Confirm whether a current business purpose exists.",
         "required": true
       },
       {
-        "itemId": "legal_hold",
-        "label": "Check whether a legal hold or active dispute applies.",
+        "itemId": "confirm_permission_boundary",
+        "label": "Confirm the action is inside the displayed permission boundary.",
+        "required": true
+      },
+      {
+        "itemId": "confirm_retention_context",
+        "label": "Check retention context and any hold or exception before changing status.",
+        "required": true
+      },
+      {
+        "itemId": "consider_escalation_path",
+        "label": "Consider whether the DPO or Legal review path should handle this finding.",
         "required": true
       }
     ],
@@ -37,26 +62,32 @@
       {
         "userId": "user_markus",
         "displayName": "Markus Keller",
-        "reason": "IT Operations owner"
+        "reason": "IT Operations owner available for controlled handoff."
       }
     ],
     "escalationOptions": [
       {
-        "queueId": "queue_dpo",
-        "label": "DPO review queue"
+        "queueId": "legal_escalation",
+        "label": "Escalate to DPO or Legal"
       }
     ],
     "permissionBoundary": {
       "actorId": "user_anna",
       "roles": ["master_of_data", "reviewer"],
-      "allowedActions": ["keep_with_reason", "reassign_owner", "escalate"],
+      "allowedActions": ["view_assigned_findings", "delete_candidate", "keep_with_reason", "correct_false_positive", "reassign_owner", "escalate"],
       "deniedActions": [
+        {
+          "action": "activate_policy_pack",
+          "reason": "Governance admin role is required."
+        },
         {
           "action": "execute_real_deletion",
           "reason": "Real deletion is disabled in the prototype."
         }
       ],
-      "visibleScopes": ["assigned_findings", "finance_org_unit"]
+      "visibleScopes": ["assigned_findings", "finance_org_unit"],
+      "boundaryFingerprint": "sha256:user_anna_2026.05-demo_finding_001_permission_boundary",
+      "evaluatedAt": "2026-05-30T12:08:00Z"
     }
   },
   "meta": {

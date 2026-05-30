@@ -1,0 +1,27 @@
+{
+  "data": {
+    "reviewId": "review_001",
+    "findingId": "finding_001",
+    "decision": "escalate",
+    "reason": "Active supplier status is unclear and needs DPO or Legal review before retention or deletion.",
+    "actorId": "user_anna",
+    "createdAt": "2026-05-30T12:05:20Z",
+    "resultingStatus": "escalated",
+    "auditEventId": "audit_002",
+    "targetId": "legal_escalation",
+    "targetLabel": "Escalate to DPO or Legal",
+    "retentionUntil": null,
+    "deletionExecuted": false,
+    "policyPackVersion": "2026.05-demo",
+    "permissionBoundaryFingerprint": "sha256:user_anna_2026.05-demo_finding_001_permission_boundary",
+    "reviewSupportRulesFingerprint": "sha256:2026.05-demo_2026.05-demo_sha256:sha256:2026.05-demo_2026.05-demo_sha256:2026.05-demo_sha256:snapshot_source_001_scan_001_extraction_completed_context_risk_completed_owner_assignment_completed_sha256:snapshot_source_001_scan_001_extraction_completed_finding_assembly_completed_user_anna_review_support_completed",
+    "idempotencyKey": "idem_review_finding_001_escalate"
+  },
+  "meta": {
+    "contractVersion": "0.1.0",
+    "generatedAt": "2026-05-30T12:05:20Z",
+    "traceId": "trace_demo_review_decision",
+    "partial": false,
+    "warnings": []
+  }
+}

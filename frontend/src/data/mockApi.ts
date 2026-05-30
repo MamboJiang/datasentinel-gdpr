@@ -8,6 +8,13 @@ import permissionBoundaryEnvelope from '../../../contracts/mocks/permissionBound
 import reviewSupportEnvelope from '../../../contracts/mocks/reviewSupport.json'
 import scanEnvelope from '../../../contracts/mocks/scanStatus.json'
 import sourcesEnvelope from '../../../contracts/mocks/sources.json'
+import {
+  buildAuditRecordingSummary,
+  collectFindingTimelineEvents,
+  deduplicateAuditEvents,
+} from './auditEventRecording'
+import { assembleFindings } from './findingAssembly'
+import { buildReviewSupport, buildReviewSupportSummary } from './reviewSupport'
 import type {
   AdminMetrics,
   AuditEvent,
@@ -27,6 +34,7 @@ export type MockData = {
   scan: Scan
   findings: FindingSummary[]
   findingDetail: Finding
+  findingDetails: Record<string, Finding>
   auditEvents: AuditEvent[]
   metrics: AdminMetrics
   evaluation: EvaluationSummary
@@ -40,8 +48,11 @@ const fixtures: MockData = {
   sources: sourcesEnvelope.data,
   scan: scanEnvelope.data,
   findings: findingsEnvelope.data,
-  findingDetail: findingDetailEnvelope.data,
-  auditEvents: auditEventsEnvelope.data,
+  findingDetail: findingDetailEnvelope.data as Finding,
+  findingDetails: {
+    [findingDetailEnvelope.data.findingId]: findingDetailEnvelope.data as Finding,
+  },
+  auditEvents: auditEventsEnvelope.data as AuditEvent[],
   metrics: adminMetricsEnvelope.data,
   evaluation: evaluationEnvelope.data,
   governanceConfig: governanceConfigEnvelope.data,
@@ -51,5 +62,123 @@ const fixtures: MockData = {
 }
 
 export function getInitialMockData(): MockData {
-  return structuredClone(fixtures)
+  const data = structuredClone(fixtures)
+
+  if (
+    data.scan.status !== 'completed'
+    || !data.scan.contentExtraction
+    || !data.scan.contextRisk
+    || !data.scan.ownerAssignment
+  ) {
+    return data
+  }
+
+  const source = data.sources.find((candidate) => candidate.sourceId === data.scan.sourceId) ?? data.sources[0]
+
+  if (!source) {
+    return data
+  }
+
+  const assembly = assembleFindings({
+    contentExtraction: data.scan.contentExtraction,
+    contextRisk: data.scan.contextRisk,
+    governanceConfig: data.governanceConfig,
+    occurredAt: data.meta.generatedAt,
+    ownerAssignment: data.scan.ownerAssignment,
+    scan: data.scan,
+    source,
+    state: 'completed',
+  })
+  const findingDetail = assembly.findingDetails.finding_001 ?? Object.values(assembly.findingDetails)[0] ?? data.findingDetail
+  const reviewSupport = buildReviewSupport({
+    actorId: data.permissionBoundary.actorId,
+    finding: findingDetail,
+    governanceConfig: data.governanceConfig,
+    occurredAt: data.meta.generatedAt,
+  })
+  const permissionBoundary = reviewSupport.permissionBoundary ?? data.permissionBoundary
+  const reviewSupportSummary = buildReviewSupportSummary({
+    actorId: reviewSupport.actorId,
+    findingAssembly: assembly.summary,
+    governanceConfig: data.governanceConfig,
+    permissionBoundary,
+    state: 'completed',
+  })
+  const auditEvents = deduplicateAuditEvents([
+    ...data.auditEvents,
+    ...collectFindingTimelineEvents(assembly.findingDetails),
+  ])
+  const auditRecording = buildAuditRecordingSummary({
+    auditEvents,
+    policyPackVersion: data.governanceConfig.activePolicyPack.version,
+    scanId: data.scan.scanId,
+    state: 'completed',
+  })
+  const existingStages = data.scan.pipelineStages ?? []
+  const pipelineStages = [
+    ...existingStages,
+    ...(!existingStages.some((stage) => stage.stage === 'assembling_findings')
+      ? [{
+          stage: 'assembling_findings',
+          status: assembly.summary.status,
+          processedFiles: assembly.summary.assembledFindings,
+          totalFiles: data.scan.ownerAssignment.assignedFindings,
+          warnings: assembly.summary.warnings,
+        }]
+      : []),
+    ...(!existingStages.some((stage) => stage.stage === 'preparing_review_support')
+      ? [{
+          stage: 'preparing_review_support',
+          status: reviewSupportSummary.status,
+          processedFiles: reviewSupportSummary.supportedFindings,
+          totalFiles: assembly.summary.evidenceCards,
+          warnings: reviewSupportSummary.warnings,
+        }]
+      : []),
+    ...(!existingStages.some((stage) => stage.stage === 'recording_audit_events')
+      ? [{
+          stage: 'recording_audit_events',
+          status: auditRecording.status,
+          processedFiles: auditRecording.recordedEventCount,
+          totalFiles: auditRecording.recordedEventCount,
+          warnings: auditRecording.warnings,
+        }]
+      : []),
+  ]
+
+  return {
+    ...data,
+    scan: {
+      ...data.scan,
+      findingAssembly: assembly.summary,
+      reviewSupport: reviewSupportSummary,
+      pipelineStages,
+      auditRecording,
+    },
+    findings: assembly.findings,
+    findingDetail,
+    findingDetails: assembly.findingDetails,
+    auditEvents,
+    permissionBoundary,
+    reviewSupport,
+    metrics: {
+      ...data.metrics,
+      assembledFindings: assembly.summary.assembledFindings,
+      evidenceCards: assembly.summary.evidenceCards,
+      reviewSupportedFindings: reviewSupportSummary.supportedFindings,
+      deniedReviewActions: reviewSupportSummary.deniedActionCount,
+      reviewChecklistItems: reviewSupportSummary.checklistItemCount,
+      reviewTransferOptions: reviewSupportSummary.transferOptionCount,
+      reviewEscalationOptions: reviewSupportSummary.escalationOptionCount,
+      auditRecordedEvents: auditRecording.recordedEventCount,
+      auditLinkedFindingEvents: auditRecording.linkedFindingEvents,
+      auditReviewDecisionEvents: auditRecording.reviewDecisionEvents,
+    },
+    evaluation: {
+      ...data.evaluation,
+      findingAssemblyRulesHash: assembly.summary.assemblyRulesFingerprint,
+      reviewSupportRulesHash: reviewSupportSummary.supportRulesFingerprint,
+      auditRecordingRulesHash: auditRecording.auditRulesFingerprint,
+    },
+  }
 }

@@ -11,12 +11,16 @@
       "personalDataTypes": ["email", "billing_address", "iban_like", "signature"],
       "retentionStatus": "overdue",
       "recommendedAction": "escalate",
+      "evidenceSignalCount": 3,
+      "policyPackVersion": "2026.05-demo",
       "status": "assigned",
       "owner": {
         "userId": "user_anna",
         "displayName": "Anna Schneider",
         "email": "anna.schneider@example.com",
-        "assignmentType": "master_of_data"
+        "assignmentType": "master_of_data",
+        "assignmentReason": "Direct owner signal was unavailable; routed to source Master of Data.",
+        "assignmentSource": "source_master_of_data"
       }
     },
     {
@@ -30,19 +34,23 @@
       "personalDataTypes": ["employee_id", "email", "access_role"],
       "retentionStatus": "overdue",
       "recommendedAction": "delete_candidate",
+      "evidenceSignalCount": 2,
+      "policyPackVersion": "2026.05-demo",
       "status": "open",
       "owner": {
         "userId": "user_markus",
         "displayName": "Markus Keller",
         "email": "markus.keller@example.com",
-        "assignmentType": "direct_owner"
+        "assignmentType": "direct_owner",
+        "assignmentReason": "File ownership metadata matched the IT Operations owner.",
+        "assignmentSource": "file_owner_metadata"
       }
     }
   ],
   "pagination": {
     "limit": 25,
     "offset": 0,
-    "total": 2,
+    "total": 17,
     "nextCursor": null
   },
   "meta": {

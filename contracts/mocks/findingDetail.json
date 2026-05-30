@@ -7,9 +7,16 @@
     "riskLevel": "high",
     "riskScore": 88,
     "contextCategory": "supplier_onboarding",
-    "personalDataTypes": ["email", "billing_address", "iban_like", "signature"],
+    "personalDataTypes": [
+      "email",
+      "billing_address",
+      "iban_like",
+      "signature"
+    ],
     "retentionStatus": "overdue",
     "recommendedAction": "escalate",
+    "evidenceSignalCount": 3,
+    "policyPackVersion": "2026.05-demo",
     "status": "assigned",
     "policyContext": {
       "policyPackId": "policy_gdpr_demo",
@@ -20,7 +27,9 @@
       "userId": "user_anna",
       "displayName": "Anna Schneider",
       "email": "anna.schneider@example.com",
-      "assignmentType": "master_of_data"
+      "assignmentType": "master_of_data",
+      "assignmentReason": "Direct owner signal was unavailable; routed to source Master of Data.",
+      "assignmentSource": "source_master_of_data"
     },
     "file": {
       "sourceName": "SharePoint Finance",
@@ -33,19 +42,32 @@
         "type": "iban_like",
         "detector": "financial_identifier_pattern",
         "confidence": 0.91,
-        "snippet": "IBAN: DE** **** **** ****",
+        "snippet": "IBAN-like value: [REDACTED_FINANCIAL_ID]",
         "page": 1
       },
       {
         "type": "email",
         "detector": "email_regex",
         "confidence": 0.99,
-        "snippet": "Contact: [REDACTED]@example.com",
+        "snippet": "Contact: [REDACTED_EMAIL]",
         "page": 1
+      },
+      {
+        "type": "signature",
+        "detector": "signature_marker_detector",
+        "confidence": 0.8,
+        "snippet": "Signature block: [REDACTED_SIGNATURE]",
+        "page": 2
       }
     ],
     "riskExplanation": "The document appears to contain supplier payment information and personal contact details. Retention review is recommended because the file was last modified more than three years ago.",
-    "availableActions": ["keep_with_reason", "reassign_owner", "escalate"],
+    "availableActions": [
+      "delete_candidate",
+      "keep_with_reason",
+      "correct_false_positive",
+      "reassign_owner",
+      "escalate"
+    ],
     "deniedActions": [
       {
         "action": "execute_real_deletion",
@@ -60,7 +82,32 @@
         "eventType": "finding_assigned",
         "actorId": "system",
         "occurredAt": "2026-05-30T12:02:00Z",
-        "summary": "Finding assigned to Master of Data fallback."
+        "summary": "Finding assigned to Master of Data fallback.",
+        "actorType": "system",
+        "recordedAt": "2026-05-30T12:02:00Z",
+        "auditRecordVersion": "audit-event-v1",
+        "rawContentExposed": false,
+        "legalConclusionProvided": false,
+        "objectType": "finding",
+        "objectId": "finding_001",
+        "action": "assign_finding_owner",
+        "outcome": "assigned",
+        "stage": "assigning_owner",
+        "previousState": "assembled",
+        "resultingState": "assigned",
+        "policyPackVersion": "2026.05-demo",
+        "evidenceReferences": [
+          {
+            "type": "finding",
+            "id": "finding_001",
+            "label": "redacted evidence card"
+          },
+          {
+            "type": "owner",
+            "id": "user_anna",
+            "label": "master_of_data"
+          }
+        ]
       }
     ]
   },

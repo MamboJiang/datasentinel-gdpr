@@ -1,17 +1,18 @@
-import { CheckCircle2, Database, Plus, RadioTower, ScanSearch } from 'lucide-react'
+import { CheckCircle2, Database, Plus, ScanSearch } from 'lucide-react'
 import { useData } from '../data/useData'
+import { isSourceScanReady } from '../data/scanWorkflow'
 import { humanize } from '../components/formatters'
 import { Button, PageHeader, StatusBadge } from '../components/ui'
 
 export function SourcesPage() {
-  const { sources, startScan } = useData()
+  const { sources, scan, governanceConfig, startScan, testSourceConnection } = useData()
+  const scanIsRunning = scan.status === 'running'
 
   return (
     <>
       <PageHeader
         eyebrow="Discovery inputs"
         title="Sources"
-        description="Manage the controlled repositories used for contract-backed GDPR discovery."
         actions={<Button icon={Plus}>Add source</Button>}
       />
 
@@ -20,7 +21,6 @@ export function SourcesPage() {
           <div className="summary-icon"><Database aria-hidden="true" size={19} /></div>
           <div>
             <strong>{sources.length} configured sources</strong>
-            <span>Local and mocked connectors only in this prototype.</span>
           </div>
         </div>
         <div className="table-wrap">
@@ -36,38 +36,44 @@ export function SourcesPage() {
               </tr>
             </thead>
             <tbody>
-              {sources.map((source) => (
-                <tr key={source.sourceId}>
-                  <td>
-                    <div className="table-primary">
-                      <div className="file-avatar"><Database aria-hidden="true" size={16} /></div>
-                      <div><strong>{source.name}</strong><span>{source.sourceId}</span></div>
-                    </div>
-                  </td>
-                  <td>{humanize(source.sourceType)}</td>
-                  <td><StatusBadge value={source.status} /></td>
-                  <td>{source.rootLabel ?? 'Not available'}</td>
-                  <td>{source.masterOfDataUserId ?? 'Unassigned'}</td>
-                  <td>
-                    <div className="row-actions">
-                      <button type="button"><CheckCircle2 aria-hidden="true" size={16} /> Test connection</button>
-                      <button type="button" onClick={() => startScan('full')}><ScanSearch aria-hidden="true" size={16} /> Scan</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {sources.map((source) => {
+                const scanReady = isSourceScanReady(source, governanceConfig)
+
+                return (
+                  <tr key={source.sourceId}>
+                    <td>
+                      <div className="table-primary">
+                        <div className="file-avatar"><Database aria-hidden="true" size={16} /></div>
+                        <div><strong>{source.name}</strong><span>{source.sourceId}</span></div>
+                      </div>
+                    </td>
+                    <td>{humanize(source.sourceType)}</td>
+                    <td><StatusBadge value={source.status} /></td>
+                    <td>{source.rootLabel ?? 'Not available'}</td>
+                    <td>{source.masterOfDataUserId ?? 'Unassigned'}</td>
+                    <td>
+                      <div className="row-actions">
+                        <button className="button button-ghost" type="button" onClick={() => testSourceConnection(source.sourceId)}>
+                          <CheckCircle2 aria-hidden="true" size={16} /> Test connection
+                        </button>
+                        <button
+                          className="button button-ghost"
+                          disabled={!scanReady || scanIsRunning}
+                          title={scanReady ? undefined : 'Scan requires a mock-ready source'}
+                          type="button"
+                          onClick={() => startScan({ scanType: 'full', sourceId: source.sourceId })}
+                        >
+                          <ScanSearch aria-hidden="true" size={16} /> Scan
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
       </section>
-
-      <div className="info-panel">
-        <RadioTower aria-hidden="true" size={19} />
-        <div>
-          <strong>External integrations are intentionally deferred</strong>
-          <p>P0 does not connect to production Microsoft Graph, OAuth tenants, or remote deletion APIs.</p>
-        </div>
-      </div>
     </>
   )
 }

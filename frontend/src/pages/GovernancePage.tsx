@@ -12,7 +12,6 @@ export function GovernancePage() {
       <PageHeader
         eyebrow="Adaptive controls"
         title="Governance settings"
-        description="Inspect versioned policy guidance, organization routing, source readiness, and your visible permission boundary."
       />
 
       <section className="governance-hero">
@@ -27,7 +26,7 @@ export function GovernancePage() {
 
       <div className="dashboard-grid governance-grid">
         <section className="panel">
-          <SectionHeader title="Policy guidance" description="Versioned operational guidance, not a legal conclusion" />
+          <SectionHeader title="Policy guidance" />
           <dl className="definition-list">
             <div><dt>Jurisdictions</dt><dd>{(activePolicyPack.jurisdictionTags ?? []).join(', ') || 'Not available'}</dd></div>
             <div><dt>Evidence requirements</dt><dd>{activePolicyPack.evidenceRequirements?.length ?? 0}</dd></div>
@@ -48,7 +47,7 @@ export function GovernancePage() {
         </section>
 
         <section className="panel">
-          <SectionHeader title="Organization routing" description="Stable ownership model for accountable review" />
+          <SectionHeader title="Organization routing" />
           <dl className="definition-list">
             <div><dt>Model</dt><dd>{organizationModel.organizationModelId}</dd></div>
             <div><dt>Version</dt><dd>{organizationModel.version}</dd></div>
@@ -67,7 +66,7 @@ export function GovernancePage() {
 
       <div className="dashboard-grid governance-grid">
         <section className="panel">
-          <SectionHeader title="Your permission boundary" description={`Actor: ${permissionBoundary.actorId}`} />
+          <SectionHeader title="Your permission boundary" />
           <div className="permission-columns">
             <div>
               <h3><BadgeCheck aria-hidden="true" size={16} /> Allowed actions</h3>
@@ -85,7 +84,7 @@ export function GovernancePage() {
         </section>
 
         <section className="panel">
-          <SectionHeader title="Source adapters" description="Controlled demo inputs and connector readiness" />
+          <SectionHeader title="Source adapters" />
           <div className="adapter-list">
             {sourceAdapters.map((adapter) => (
               <article key={adapter.sourceType}>

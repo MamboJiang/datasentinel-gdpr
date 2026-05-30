@@ -36,6 +36,13 @@ Allow frontend, backend, product, and QA workstreams to move in parallel while s
 - Empty, loading, error, and partial data states are visible.
 - Unknown enum-like values do not crash rendering.
 
+### Gate 1.5: Remote Preview Ready
+
+- The frontend production build passes before deployment.
+- The `agent-us` preview serves the static build through Caddy on port 80.
+- Browser-routed paths such as `/dashboard` fall back to the frontend app.
+- The preview remains mock-backed and introduces no backend API, production source connector, OAuth flow, tenant integration, or deletion service.
+
 ### Gate 2: Backend Contract Ready
 
 - Backend exposes every P0 endpoint in the OpenAPI contract.
@@ -52,6 +59,8 @@ Allow frontend, backend, product, and QA workstreams to move in parallel while s
 - `GET /api/audit/events` includes the review event.
 - `GET /api/users/me/permissions` returns allowed and denied actions.
 - `GET /api/findings/{findingId}/review-support` returns checklist, transfer, and escalation support.
+- Accepted review decisions include reason, checklist acknowledgement, policy-pack version, permission context, resulting status, and no real deletion in P0.
+- `GET /api/audit/events` returns structured audit events with actor, action, object, state transition, evidence references, and no raw sensitive content.
 
 ### Gate 4: Evaluation and Demo Confidence
 
@@ -89,6 +98,7 @@ Validation:
 - Make scan and review actions idempotent when `Idempotency-Key` is present.
 - Keep real deletion out of P0.
 - Return policy-pack version and permission-boundary data when the contract includes it.
+- Reject denied, incomplete, stale, or unsupported review decisions before changing finding, audit, metric, source, or evaluation state.
 
 ## QA Agent Rules
 

@@ -9,7 +9,18 @@ export function AuditPage() {
   const [query, setQuery] = useState('')
 
   const visibleEvents = useMemo(() => {
-    return auditEvents.filter((event) => `${event.eventType} ${event.actorId} ${event.summary ?? ''} ${event.findingId ?? ''}`.toLowerCase().includes(query.toLowerCase()))
+    return auditEvents.filter((event) => [
+      event.eventType,
+      event.actorId,
+      event.actorType,
+      event.action,
+      event.outcome,
+      event.objectType,
+      event.objectId,
+      event.summary,
+      event.findingId,
+      event.scanId,
+    ].join(' ').toLowerCase().includes(query.toLowerCase()))
   }, [auditEvents, query])
 
   return (
@@ -17,7 +28,6 @@ export function AuditPage() {
       <PageHeader
         eyebrow="Accountability record"
         title="Audit trail"
-        description="Inspect attributable scan and review events without exposing raw sensitive content."
       />
 
       <section className="panel table-panel">
@@ -35,19 +45,21 @@ export function AuditPage() {
               <article className="audit-row" key={event.auditEventId}>
                 <div className="audit-icon"><Activity aria-hidden="true" size={17} /></div>
                 <div className="audit-main">
-                  <div><strong>{humanize(event.eventType)}</strong><StatusBadge value={event.resultingStatus} /></div>
+                  <div><strong>{humanize(event.action ?? event.eventType)}</strong><StatusBadge value={event.resultingStatus ?? event.outcome} /></div>
                   <p>{event.summary ?? 'No event summary is available.'}</p>
                   {event.reason ? <small>Reason: {event.reason}</small> : null}
+                  <small>{humanize(event.objectType ?? 'event')} · {event.objectId ?? event.findingId ?? event.scanId ?? 'system'} · {event.evidenceReferences?.length ?? 0} evidence refs</small>
                 </div>
                 <div className="audit-meta">
                   <strong>{event.actorId}</strong>
                   <span>{formatDate(event.occurredAt)}</span>
+                  <span>{humanize(event.actorType ?? 'unknown actor')}</span>
                   <span>{event.findingId ?? event.scanId ?? 'System event'}</span>
                 </div>
               </article>
             ))}
           </div>
-        ) : <EmptyState title="No audit events match this search" description="Adjust the current search to display additional workflow events." />}
+        ) : <EmptyState title="No audit events match this search" />}
       </section>
     </>
   )

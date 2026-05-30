@@ -1,9 +1,10 @@
-import { ArrowLeft, CalendarClock, FileText, Flag, ShieldAlert, UserRound, X } from 'lucide-react'
+import { ArrowLeft, CalendarClock, FileSearch, FileText, Flag, ShieldAlert, UserRound, X } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useData } from '../data/useData'
 import type { ReviewDecision } from '../types'
 import { formatBytes, formatDate, humanize } from '../components/formatters'
+import { FileReviewEditor } from '../components/FileReviewEditor'
 import {
   Button,
   EmptyState,
@@ -16,9 +17,11 @@ export function FindingDetailPage() {
   const { getFinding } = useData()
   const finding = getFinding(findingId)
   const [reviewOpen, setReviewOpen] = useState(false)
+  const [fileReviewOpen, setFileReviewOpen] = useState(false)
+  const [initialSignalIndex, setInitialSignalIndex] = useState(0)
 
   if (!finding) {
-    return <EmptyState title="Finding not available" description="This finding is missing from the current contract-backed fixture." />
+    return <EmptyState title="Finding not available" />
   }
 
   return (
@@ -32,6 +35,16 @@ export function FindingDetailPage() {
         </div>
         <div className="detail-actions">
           <RiskBadge riskLevel={finding.riskLevel} score={finding.riskScore} />
+          <Button
+            icon={FileSearch}
+            variant="secondary"
+            onClick={() => {
+              setInitialSignalIndex(0)
+              setFileReviewOpen(true)
+            }}
+          >
+            Open file
+          </Button>
           <Button icon={Flag} onClick={() => setReviewOpen(true)}>Record review</Button>
         </div>
       </header>
@@ -40,7 +53,7 @@ export function FindingDetailPage() {
         <div className="detail-main">
           <section className="panel">
             <div className="section-header">
-              <div><h2>Risk explanation</h2><p>Contextual guidance for human review</p></div>
+              <div><h2>Risk explanation</h2></div>
               <ShieldAlert aria-hidden="true" className="section-icon" size={20} />
             </div>
             <p className="explanation">{finding.riskExplanation ?? 'No explanation is available for this finding.'}</p>
@@ -51,12 +64,12 @@ export function FindingDetailPage() {
 
           <section className="panel">
             <div className="section-header">
-              <div><h2>Redacted evidence</h2><p>Detector signals are masked by default</p></div>
+              <div><h2>Redacted evidence</h2></div>
               <FileText aria-hidden="true" className="section-icon" size={20} />
             </div>
             <div className="signal-list">
-              {(finding.signals ?? []).map((signal) => (
-                <article className="signal-card" key={`${signal.type}-${signal.detector}`}>
+              {(finding.signals ?? []).map((signal, index) => (
+                <article className="signal-card" key={`${signal.type}-${signal.detector}-${index}`}>
                   <div className="signal-topline">
                     <strong>{humanize(signal.type)}</strong>
                     <span>{Math.round(signal.confidence * 100)}% confidence</span>
@@ -66,6 +79,16 @@ export function FindingDetailPage() {
                     <span>{humanize(signal.detector)}</span>
                     {signal.page ? <span>Page {signal.page}</span> : null}
                   </div>
+                  <button
+                    className="signal-open-button"
+                    type="button"
+                    onClick={() => {
+                      setInitialSignalIndex(index)
+                      setFileReviewOpen(true)
+                    }}
+                  >
+                    Open at evidence
+                  </button>
                 </article>
               ))}
             </div>
@@ -73,7 +96,7 @@ export function FindingDetailPage() {
 
           <section className="panel">
             <div className="section-header">
-              <div><h2>Audit timeline</h2><p>Visible, attributable workflow events</p></div>
+              <div><h2>Audit timeline</h2></div>
             </div>
             <div className="timeline">
               {(finding.auditTimeline ?? []).map((event) => (
@@ -109,6 +132,7 @@ export function FindingDetailPage() {
               <div><strong>{finding.owner?.displayName ?? 'Unassigned'}</strong><span>{finding.owner?.email ?? 'No email available'}</span></div>
             </div>
             <p className="assignment-label">{finding.owner?.assignmentType ? humanize(finding.owner.assignmentType) : 'Unknown assignment'}</p>
+            {finding.owner?.assignmentReason ? <p className="assignment-reason">{finding.owner.assignmentReason}</p> : null}
           </section>
 
           <section className="panel">
@@ -129,26 +153,63 @@ export function FindingDetailPage() {
               <div><dt>Guidance</dt><dd>{finding.policyContext?.policyConclusion ? humanize(finding.policyContext.policyConclusion) : 'Unknown'}</dd></div>
             </dl>
           </section>
+
+          <section className="panel">
+            <h2>Action boundary</h2>
+            <div className="action-list">
+              {(finding.availableActions ?? []).map((action) => (
+                <span className="action-pill action-allowed" key={action}>{humanize(action)}</span>
+              ))}
+              {(finding.deniedActions ?? []).map((denial) => (
+                <span className="action-pill action-denied" key={denial.action}>{humanize(denial.action)} denied: {denial.reason}</span>
+              ))}
+            </div>
+          </section>
         </aside>
       </div>
 
       {reviewOpen ? <ReviewDialog findingId={finding.findingId} onClose={() => setReviewOpen(false)} /> : null}
+      {fileReviewOpen ? (
+        <FileReviewEditor finding={finding} initialSignalIndex={initialSignalIndex} onClose={() => setFileReviewOpen(false)} />
+      ) : null}
     </>
   )
 }
 
 function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () => void }) {
-  const { reviewFinding, reviewSupport } = useData()
-  const decisions = reviewSupport.findingId === findingId ? reviewSupport.availableDecisions : []
+  const { getReviewSupport, reviewFinding } = useData()
+  const reviewSupport = getReviewSupport(findingId)
+  const decisions = reviewSupport.availableDecisions
   const [decision, setDecision] = useState<ReviewDecision>(decisions[0]?.decision ?? 'escalate')
   const [reason, setReason] = useState('')
   const [nextAction, setNextAction] = useState('')
+  const [retentionUntil, setRetentionUntil] = useState(getDefaultRetentionDate())
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({})
   const checklistComplete = reviewSupport.checklist.every((item) => !item.required || checkedItems[item.itemId])
+  const targetRequired = decision === 'reassign_owner' || decision === 'escalate'
+  const retentionRequired = decision === 'keep_with_reason'
+  const checkedChecklistIds = Object.entries(checkedItems)
+    .filter(([, checked]) => checked)
+    .map(([itemId]) => itemId)
+  const canSubmit =
+    decisions.length > 0
+    && checklistComplete
+    && reason.trim().length > 0
+    && (!targetRequired || nextAction.length > 0)
+    && (!retentionRequired || retentionUntil.length > 0)
 
   function submitReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    reviewFinding({ findingId, decision, reason, actorId: reviewSupport.actorId, nextAction })
+    reviewFinding({
+      findingId,
+      decision,
+      reason,
+      actorId: reviewSupport.actorId,
+      checklistItemIds: checkedChecklistIds,
+      nextAction,
+      reassignToUserId: decision === 'reassign_owner' ? nextAction : undefined,
+      retentionUntil: decision === 'keep_with_reason' ? retentionUntil : undefined,
+    })
     onClose()
   }
 
@@ -165,11 +226,16 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
         <form onSubmit={submitReview}>
           <div className="review-guidance">
             <strong>Policy guidance · {reviewSupport.policyPackVersion}</strong>
-            <p>{reviewSupport.plainLanguageSummary ?? 'A human reviewer must make the final decision.'}</p>
           </div>
           <label className="form-field">
             <span>Decision</span>
-            <select value={decision} onChange={(event) => setDecision(event.target.value as ReviewDecision)}>
+            <select
+              value={decision}
+              onChange={(event) => {
+                setDecision(event.target.value as ReviewDecision)
+                setNextAction('')
+              }}
+            >
               {decisions.map((option) => <option key={option.decision} value={option.decision}>{option.label ?? humanize(option.decision)}</option>)}
             </select>
           </label>
@@ -191,6 +257,12 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
               </select>
             </label>
           ) : null}
+          {decision === 'keep_with_reason' ? (
+            <label className="form-field">
+              <span>Retention review date</span>
+              <input required type="date" value={retentionUntil} onChange={(event) => setRetentionUntil(event.target.value)} />
+            </label>
+          ) : null}
           <label className="form-field">
             <span>Reason</span>
             <textarea required rows={4} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Document the accountable reason for this decision" />
@@ -206,7 +278,7 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
           </div>
           <div className="dialog-notice">
             <ShieldAlert aria-hidden="true" size={17} />
-            <span>Deletion is simulated in this prototype. No source file will be changed.</span>
+            <span>Source deletion disabled</span>
           </div>
           <div className="permission-summary">
             <strong>Your permission boundary</strong>
@@ -214,10 +286,17 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
           </div>
           <div className="dialog-actions">
             <Button variant="ghost" onClick={onClose}>Cancel</Button>
-            <Button disabled={!reason.trim() || !checklistComplete} type="submit">Record decision</Button>
+            <Button disabled={!canSubmit} type="submit">Record decision</Button>
           </div>
         </form>
       </section>
     </div>
   )
+}
+
+function getDefaultRetentionDate(): string {
+  const date = new Date()
+  date.setUTCFullYear(date.getUTCFullYear() + 1)
+
+  return date.toISOString().slice(0, 10)
 }
