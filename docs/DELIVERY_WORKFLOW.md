@@ -102,7 +102,7 @@ Validation:
 
 ## QA Agent Rules
 
-- Validate English-only tracked docs and fixtures.
+- Validate English-only developer-facing docs, contracts, mocks, and fixtures; user-facing interface copy may be localized through reviewed frontend dictionaries.
 - Compare OpenAPI fields, docs, and mocks.
 - Check that state transitions match `docs/API_CONTRACT.md`.
 - Confirm that every acceptance change is reflected in `ACCEPTANCE.md`.

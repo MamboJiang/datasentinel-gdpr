@@ -3,8 +3,10 @@ import { useData } from '../data/useData'
 import { canStartDeltaScan, isSourceScanReady } from '../data/scanWorkflow'
 import { humanize } from '../components/formatters'
 import { Button, PageHeader, StatusBadge } from '../components/ui'
+import { useI18n } from '../i18n'
 
 export function SourcesPage() {
+  const { t } = useI18n()
   const { sources, scan, governanceConfig, startScan, testSourceConnection } = useData()
   const scanIsRunning = scan.status === 'running'
 
@@ -20,19 +22,19 @@ export function SourcesPage() {
         <div className="table-summary">
           <div className="summary-icon"><Database aria-hidden="true" size={19} /></div>
           <div>
-            <strong>{sources.length} configured sources</strong>
+            <strong>{t('{{count}} configured sources', { count: sources.length })}</strong>
           </div>
         </div>
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Source</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Root label</th>
-                <th>Master of data</th>
-                <th><span className="sr-only">Actions</span></th>
+                <th>{t('Source')}</th>
+                <th>{t('Type')}</th>
+                <th>{t('Status')}</th>
+                <th>{t('Root label')}</th>
+                <th>{t('Master of data')}</th>
+                <th><span className="sr-only">{t('Actions')}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -50,30 +52,30 @@ export function SourcesPage() {
                     </td>
                     <td>{humanize(source.sourceType)}</td>
                     <td><StatusBadge value={source.status} /></td>
-                    <td>{source.rootLabel ?? 'Not available'}</td>
-                    <td>{source.masterOfDataUserId ?? 'Unassigned'}</td>
+                    <td>{source.rootLabel ?? t('Not available')}</td>
+                    <td>{source.masterOfDataUserId ?? t('Unassigned')}</td>
                     <td>
                       <div className="row-actions">
                         <button className="button button-ghost" type="button" onClick={() => testSourceConnection(source.sourceId)}>
-                          <CheckCircle2 aria-hidden="true" size={16} /> Test connection
+                          <CheckCircle2 aria-hidden="true" size={16} /> {t('Test connection')}
                         </button>
                         <button
                           className="button button-ghost"
                           disabled={!scanReady || scanIsRunning}
-                          title={scanReady ? undefined : 'Scan requires a mock-ready source'}
+                          title={scanReady ? undefined : t('Scan requires a mock-ready source')}
                           type="button"
                           onClick={() => startScan({ scanType: 'full', sourceId: source.sourceId })}
                         >
-                          <ScanSearch aria-hidden="true" size={16} /> Full scan
+                          <ScanSearch aria-hidden="true" size={16} /> {t('Full scan')}
                         </button>
                         <button
                           className="button button-ghost"
                           disabled={!deltaReady}
-                          title={deltaReady ? undefined : 'Delta scan requires a completed full-scan baseline'}
+                          title={deltaReady ? undefined : t('Delta scan requires a completed full-scan baseline')}
                           type="button"
                           onClick={() => startScan({ baselineScanId: scan.deltaScan?.baselineScanId ?? scan.scanId, scanType: 'delta', sourceId: source.sourceId })}
                         >
-                          <RotateCw aria-hidden="true" size={16} /> Delta scan
+                          <RotateCw aria-hidden="true" size={16} /> {t('Delta scan')}
                         </button>
                       </div>
                     </td>

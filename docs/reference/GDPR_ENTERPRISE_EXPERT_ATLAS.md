@@ -1,6 +1,6 @@
 # GDPR Enterprise Expert Atlas
 
-Repository edition derived from the local source file `/Users/y.h/Downloads/GDPR_Enterprise_Expert_Atlas.md`, generated on 2026-05-30. The source document was not copied verbatim because this repository must stay English-only.
+Repository edition derived from the local source file `/Users/y.h/Downloads/GDPR_Enterprise_Expert_Atlas.md`, generated on 2026-05-30. The source document was not copied verbatim because developer-facing repository documentation must stay English-only.
 
 ## Core Thesis
 

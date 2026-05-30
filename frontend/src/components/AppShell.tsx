@@ -25,6 +25,7 @@ import {
 } from './SidebarResizeHandle'
 import { useData } from '../data/useData'
 import { utilityPageTitles, workspaceSimulation } from '../data/sessionSimulation'
+import { useI18n } from '../i18n'
 
 const workspaces = [
   workspaceSimulation,
@@ -55,6 +56,7 @@ function getPageTitle(pathname: string) {
 }
 
 export function AppShell() {
+  const { t } = useI18n()
   const { toast, clearToast } = useData()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -64,9 +66,9 @@ export function AppShell() {
   const [workspaceQuery, setWorkspaceQuery] = useState('')
   const [accountOpen, setAccountOpen] = useState(false)
   const [navQuery, setNavQuery] = useState('')
-  const pageTitle = getPageTitle(location.pathname)
+  const pageTitle = t(getPageTitle(location.pathname))
   const visibleWorkspaces = workspaces.filter(({ name }) => name.toLowerCase().includes(workspaceQuery.toLowerCase()))
-  const visibleNavigation = navigation.filter(({ label }) => label.toLowerCase().includes(navQuery.toLowerCase()))
+  const visibleNavigation = navigation.filter(({ label }) => t(label).toLowerCase().includes(navQuery.toLowerCase()))
   const activeSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth
   const shellStyle = { '--sidebar-width': `${activeSidebarWidth}px` } as CSSProperties
 
@@ -133,54 +135,54 @@ export function AppShell() {
             <span className="workspace-avatar" aria-hidden="true">DS</span>
             <span className="workspace-trigger-copy">
               <strong>{workspaceSimulation.name}</strong>
-              <span>Privacy workspace</span>
+              <span>{t('Privacy workspace')}</span>
             </span>
             <span className="workspace-plan">{workspaceSimulation.plan}</span>
             <ChevronsUpDown aria-hidden="true" size={16} />
           </button>
-          <button className="sidebar-close" type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)}>
+          <button className="sidebar-close" type="button" aria-label={t('Close navigation')} onClick={() => setMobileOpen(false)}>
             <X aria-hidden="true" size={18} />
           </button>
         </div>
 
         {workspaceOpen ? (
           <>
-            <button className="workspace-backdrop" type="button" aria-label="Close workspace switcher" onClick={closeWorkspaceSwitcher} />
-            <section className="workspace-popover" id="workspace-switcher-panel" role="dialog" aria-label="Workspace switcher">
+            <button className="workspace-backdrop" type="button" aria-label={t('Close workspace switcher')} onClick={closeWorkspaceSwitcher} />
+            <section className="workspace-popover" id="workspace-switcher-panel" role="dialog" aria-label={t('Workspace switcher')}>
               <label className="workspace-search">
                 <Search aria-hidden="true" size={15} />
-                <span className="sr-only">Find workspace</span>
+                <span className="sr-only">{t('Find workspace')}</span>
                 <input
-                  aria-label="Find workspace"
+                  aria-label={t('Find workspace')}
                   autoFocus
                   onChange={(event) => setWorkspaceQuery(event.target.value)}
-                  placeholder="Find workspace..."
+                  placeholder={t('Find workspace...')}
                   type="search"
                   value={workspaceQuery}
                 />
                 <kbd>Esc</kbd>
               </label>
 
-              <div className="workspace-list" role="group" aria-label="Available workspaces">
+              <div className="workspace-list" role="group" aria-label={t('Available workspaces')}>
                 {visibleWorkspaces.map((workspace) => (
                   <button className="workspace-option workspace-option-active" key={workspace.id} onClick={closeWorkspaceSwitcher} type="button">
                     <span className="workspace-option-avatar" aria-hidden="true">DS</span>
                     <span>
                       <strong>{workspace.name}</strong>
-                      <small>{workspace.description}</small>
+                      <small>{t(workspace.description)}</small>
                     </span>
                     <span className="workspace-plan">{workspace.plan}</span>
                     <Check aria-hidden="true" size={15} />
                   </button>
                 ))}
-                {visibleWorkspaces.length === 0 ? <span className="workspace-no-results">No workspace matches</span> : null}
+                {visibleWorkspaces.length === 0 ? <span className="workspace-no-results">{t('No workspace matches')}</span> : null}
               </div>
 
               <button className="workspace-create" type="button" onClick={closeWorkspaceSwitcher}>
                 <Plus aria-hidden="true" size={17} />
                 <span>
-                  <strong>Create workspace</strong>
-                  <small>Collaborate with reviewers</small>
+                  <strong>{t('Create workspace')}</strong>
+                  <small>{t('Collaborate with reviewers')}</small>
                 </span>
               </button>
             </section>
@@ -189,12 +191,12 @@ export function AppShell() {
 
         <label className="sidebar-search">
           <Search aria-hidden="true" size={16} />
-          <span className="sr-only">Quick search</span>
-          <input aria-label="Quick search" onChange={(event) => setNavQuery(event.target.value)} placeholder="Quick search..." type="search" value={navQuery} />
+          <span className="sr-only">{t('Quick search')}</span>
+          <input aria-label={t('Quick search')} onChange={(event) => setNavQuery(event.target.value)} placeholder={t('Quick search...')} type="search" value={navQuery} />
           <kbd>⌘K</kbd>
         </label>
 
-        <nav aria-label="Primary navigation">
+        <nav aria-label={t('Primary navigation')}>
           {visibleNavigation.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
@@ -204,10 +206,10 @@ export function AppShell() {
               to={to}
             >
               <Icon aria-hidden="true" size={18} strokeWidth={2} />
-              <span>{label}</span>
+              <span>{t(label)}</span>
             </NavLink>
           ))}
-          {visibleNavigation.length === 0 ? <span className="nav-empty">No navigation matches</span> : null}
+          {visibleNavigation.length === 0 ? <span className="nav-empty">{t('No navigation matches')}</span> : null}
         </nav>
 
         <AccountMenu
@@ -241,11 +243,11 @@ export function AppShell() {
 
       <div className="content-shell">
         <header className="topbar">
-          <button className="mobile-menu" type="button" aria-label="Open navigation" onClick={() => setMobileOpen(true)}>
+          <button className="mobile-menu" type="button" aria-label={t('Open navigation')} onClick={() => setMobileOpen(true)}>
             <Menu aria-hidden="true" size={20} />
           </button>
           <strong className="topbar-title">{pageTitle}</strong>
-          <button className="topbar-notification" type="button" aria-label="Notifications">
+          <button className="topbar-notification" type="button" aria-label={t('Notifications')}>
             <Bell aria-hidden="true" size={18} />
             <span aria-hidden="true" />
           </button>
@@ -260,7 +262,7 @@ export function AppShell() {
         <div className="toast" role="status">
           <ShieldCheck aria-hidden="true" size={18} />
           <span>{toast}</span>
-          <button type="button" aria-label="Dismiss notification" onClick={clearToast}>
+          <button type="button" aria-label={t('Dismiss notification')} onClick={clearToast}>
             <X aria-hidden="true" size={16} />
           </button>
         </div>

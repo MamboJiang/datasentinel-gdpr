@@ -2,7 +2,7 @@
 
 ## Mission
 
-Help the team build DataSentinel as an English-only, contract-first, human-accountable GDPR data discovery prototype.
+Help the team build DataSentinel as a contract-first, human-accountable GDPR data discovery prototype with English-only developer-facing project materials and localizable user-facing interface copy.
 
 The product is not a generic PII scanner. It is a measurable workflow that discovers GDPR-relevant data, explains evidence, routes findings to accountable owners, supports human review, records audit events, and reports evaluation metrics.
 
@@ -20,7 +20,7 @@ If the change affects requirements, behavior, API shape, states, roles, permissi
 
 ## Non-Negotiables
 
-- Keep all repository content in English.
+- Keep developer-facing documentation, engineering instructions, code comments, contracts, mocks, and fixtures in English. User-facing interface copy may be localized through reviewed frontend dictionaries.
 - Do not implement automatic deletion.
 - Do not claim full GDPR compliance or provide legal advice.
 - Do not add production Microsoft Graph, OAuth, tenant, or deletion integrations in P0.

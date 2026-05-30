@@ -28,7 +28,7 @@ Out of scope:
 
 ## Non-Negotiable Boundaries
 
-- Repository and user-facing console text must be English.
+- Developer-facing repository documents, engineering instructions, and code comments must be English; user-facing console text may be localized through reviewed frontend dictionaries.
 - The console must not expose raw extracted text, full file bodies, page images, or unredacted personal data.
 - The console must not execute, imply, or visually celebrate real deletion.
 - `delete_candidate` is only a human review status in P0.
@@ -77,7 +77,7 @@ The public root route `/` belongs to the homepage. The internal console starts a
 
 ## App Shell Contract
 
-The internal shell must provide current page title, notifications or status indicators, top-left workspace context, bottom-left account controls, sidebar collapse/expand, desktop sidebar resize by pointer or keyboard separator, active-route indication, route navigation, keyboard-accessible menus, focus-safe close behavior, and responsive readability. Sidebar resize must collapse when dragged below the configured threshold and cap expansion at the configured maximum width. Account menu controls must either navigate to a concrete local utility route or perform a clearly local UI action. Theme switching and language preference may use local browser state. Language preference is a P0 selection control only; interface copy remains English-only until translated copy is approved. Feedback must remain local-only in P0. Log out, plan, and status controls must expose prototype boundaries instead of production authentication, billing, tenant, support, monitoring, or translation-service behavior. The shell must not mix public homepage navigation into the internal workspace shell or hide account, workspace, or permission context.
+The internal shell must provide current page title, notifications or status indicators, top-left workspace context, bottom-left account controls, sidebar collapse/expand, desktop sidebar resize by pointer or keyboard separator, active-route indication, route navigation, keyboard-accessible menus, focus-safe close behavior, and responsive readability. Sidebar resize must collapse when dragged below the configured threshold and cap expansion at the configured maximum width. Account menu controls must either navigate to a concrete local utility route or perform a clearly local UI action. Theme switching and language preference may use local browser state. Language preference uses static frontend dictionaries for user-facing UI copy; developer-facing docs, engineering notes, and code comments remain English-only. Feedback must remain local-only in P0. Log out, plan, and status controls must expose prototype boundaries instead of production authentication, billing, tenant, support, monitoring, or translation-service behavior. The shell must not mix public homepage navigation into the internal workspace shell or hide account, workspace, or permission context.
 
 ## Shared Data Contract
 
@@ -135,7 +135,7 @@ The console satisfies this contract when:
 - Unknown, empty, partial, loading, and error states are covered.
 - Role simulation does not leak cross-scope data.
 - Account menu actions are usable, documented as prototype-safe, and do not imply production authentication, billing, support, or monitoring integration.
-- Account menu language preference is keyboard-accessible, persists locally, and does not add translated copy or external translation calls in P0.
+- Account menu language preference is keyboard-accessible, persists locally, updates core user-facing UI copy from local dictionaries, and does not call external translation services in P0.
 - Desktop sidebar resize and drag-to-collapse work without overlapping the content area; mobile keeps the slide-in navigation behavior.
 - The console remains compatible with mock payloads and future backend envelopes.
 

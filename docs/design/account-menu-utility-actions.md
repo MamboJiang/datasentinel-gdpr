@@ -37,7 +37,7 @@ Chosen option: internal utility routes plus local-only theme, language preferenc
 
 | State | Event | Guard | Next state | Side effects |
 | --- | --- | --- | --- | --- |
-| Default English preference | Select supported language | Code exists in local supported list | Preference selected | Language code is stored locally; interface copy remains English in P0. |
+| Default English preference | Select supported language | Code exists in local supported list | Preference selected | Language code is stored locally; subscribed interface copy rerenders from the local dictionary. |
 | Preference selected | Reload app | Stored code remains supported | Preference restored | Menu selector shows the stored code. |
 
 ### Feedback
@@ -71,7 +71,7 @@ Revert the account menu component extraction, remove utility routes from `App.ts
 
 - Account menu opens and closes by trigger, Escape, backdrop, and route selection.
 - Theme controls visibly select system, light, and dark modes without a backend call.
-- Language preference selects from EU language entries, persists locally, and keeps interface copy English-only in P0.
+- Language preference selects from EU language entries, persists locally, and updates core user-facing interface copy from local dictionaries.
 - Feedback accepts a local note and confirms it was saved only for the prototype session.
 - Home Page opens `/`.
 - Account settings, changelog, help, docs, status, plan, and session boundary routes render in the internal shell.

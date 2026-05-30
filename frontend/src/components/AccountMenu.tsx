@@ -2,13 +2,8 @@ import { Languages, Monitor, Moon, MoreHorizontal, PanelLeftClose, PanelLeftOpen
 import type { LucideIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  accountSimulation,
-  defaultLanguagePreferenceCode,
-  languagePreferenceOptions,
-  type LanguagePreferenceCode,
-  utilityRoutes,
-} from '../data/sessionSimulation'
+import { accountSimulation, utilityRoutes } from '../data/sessionSimulation'
+import { isLanguagePreferenceCode, languagePreferenceOptions, useI18n } from '../i18n'
 import './AccountMenu.css'
 
 type ThemeMode = 'system' | 'light' | 'dark'
@@ -33,19 +28,6 @@ function getStoredThemeMode(): ThemeMode {
   return storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system' ? storedTheme : 'system'
 }
 
-function isLanguagePreferenceCode(value: string | null): value is LanguagePreferenceCode {
-  return languagePreferenceOptions.some(({ code }) => code === value)
-}
-
-function getStoredLanguagePreference(): LanguagePreferenceCode {
-  if (typeof window === 'undefined') {
-    return defaultLanguagePreferenceCode
-  }
-
-  const storedLanguage = window.localStorage.getItem('datasentinel-language-preference')
-  return isLanguagePreferenceCode(storedLanguage) ? storedLanguage : defaultLanguagePreferenceCode
-}
-
 export function AccountMenu({
   accountOpen,
   onClose,
@@ -61,9 +43,9 @@ export function AccountMenu({
   onToggleSidebar: () => void
   sidebarCollapsed: boolean
 }) {
+  const { language, setLanguage, t } = useI18n()
   const [themeMode, setThemeMode] = useState<ThemeMode>(getStoredThemeMode)
-  const [languagePreference, setLanguagePreference] = useState<LanguagePreferenceCode>(getStoredLanguagePreference)
-  const selectedLanguage = languagePreferenceOptions.find(({ code }) => code === languagePreference) ?? languagePreferenceOptions[0]
+  const selectedLanguage = languagePreferenceOptions.find(({ code }) => code === language) ?? languagePreferenceOptions[0]
 
   useEffect(() => {
     const root = document.documentElement
@@ -81,26 +63,19 @@ export function AccountMenu({
     return () => systemMatcher.removeEventListener('change', applyTheme)
   }, [themeMode])
 
-  useEffect(() => {
-    const root = document.documentElement
-    root.lang = 'en'
-    root.dataset.languagePreference = languagePreference
-    window.localStorage.setItem('datasentinel-language-preference', languagePreference)
-  }, [languagePreference])
-
   return (
     <div className="account-dock">
       {accountOpen ? (
         <>
-          <button className="account-backdrop" type="button" aria-label="Close account menu" onClick={onClose} />
-          <section className="account-popover" id="account-menu-panel" role="dialog" aria-label="Account menu">
+          <button className="account-backdrop" type="button" aria-label={t('Close account menu')} onClick={onClose} />
+          <section className="account-popover" id="account-menu-panel" role="dialog" aria-label={t('Account menu')}>
             <div className="account-popover-header">
               <div>
                 <strong>{accountSimulation.name}</strong>
                 <span>{accountSimulation.email}</span>
               </div>
               {settingsRoute ? (
-                <Link className="account-settings" to={settingsRoute.path} aria-label={settingsRoute.label} onClick={onClose}>
+                <Link className="account-settings" to={settingsRoute.path} aria-label={t(settingsRoute.label)} onClick={onClose}>
                   <Settings2 aria-hidden="true" size={20} />
                 </Link>
               ) : null}
@@ -108,11 +83,11 @@ export function AccountMenu({
 
             <div className="account-menu-list">
               <div className="account-menu-row account-theme-row">
-                <span>Theme</span>
-                <span className="theme-control" role="group" aria-label="Theme options">
+                <span>{t('Theme')}</span>
+                <span className="theme-control" role="group" aria-label={t('Theme options')}>
                   {themeOptions.map(({ icon: Icon, label, mode }) => (
                     <button
-                      aria-label={label}
+                      aria-label={t(label)}
                       aria-pressed={themeMode === mode}
                       className="theme-option"
                       key={mode}
@@ -129,31 +104,31 @@ export function AccountMenu({
                 <span className="language-copy">
                   <span className="language-title">
                     <Languages aria-hidden="true" size={15} />
-                    <span>Language</span>
+                    <span>{t('Language')}</span>
                   </span>
-                  <small>{selectedLanguage.label} selected</small>
+                  <small>{t('{{language}} selected', { language: selectedLanguage.nativeLabel })}</small>
                 </span>
                 <select
-                  aria-label="Language preference"
+                  aria-label={t('Language preference')}
                   className="language-select"
                   onChange={(event) => {
                     const nextLanguage = event.target.value
 
                     if (isLanguagePreferenceCode(nextLanguage)) {
-                      setLanguagePreference(nextLanguage)
+                      setLanguage(nextLanguage)
                     }
                   }}
-                  value={languagePreference}
+                  value={language}
                 >
-                  {languagePreferenceOptions.map(({ code, label }) => (
-                    <option key={code} value={code}>{label} ({code})</option>
+                  {languagePreferenceOptions.map(({ code, nativeLabel }) => (
+                    <option key={code} value={code}>{nativeLabel} ({code})</option>
                   ))}
                 </select>
               </div>
 
               {menuRoutes.map(({ label, path, icon: Icon }) => (
                 <Link className="account-menu-row" key={path} to={path} onClick={onClose}>
-                  <span>{label}</span>
+                  <span>{t(label)}</span>
                   <Icon aria-hidden="true" size={19} />
                 </Link>
               ))}
@@ -161,14 +136,14 @@ export function AccountMenu({
 
             {planRoute ? (
               <Link className="upgrade-button" to={planRoute.path} onClick={onClose}>
-                {planRoute.label}
+                {t(planRoute.label)}
               </Link>
             ) : null}
 
             {statusRoute ? (
               <Link className="platform-status" to={statusRoute.path} onClick={onClose}>
-                <span>Platform Status</span>
-                <strong>All systems normal.</strong>
+                <span>{t('Platform Status')}</span>
+                <strong>{t('All systems normal.')}</strong>
                 <i aria-hidden="true" />
               </Link>
             ) : null}
@@ -197,7 +172,7 @@ export function AccountMenu({
         <button
           className="account-icon-button"
           type="button"
-          aria-label="Open account menu"
+          aria-label={t('Open account menu')}
           onClick={() => {
             onCloseWorkspace()
             onToggle()
@@ -208,7 +183,7 @@ export function AccountMenu({
         <button
           className="account-icon-button sidebar-toggle-button"
           type="button"
-          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={sidebarCollapsed ? t('Expand sidebar') : t('Collapse sidebar')}
           aria-pressed={sidebarCollapsed}
           onClick={() => {
             onCloseWorkspace()

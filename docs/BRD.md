@@ -24,7 +24,7 @@ Organizations often store personal and GDPR-relevant data across fragmented file
 - The system must not blindly delete data.
 - Human accountability is required for deletion or retention decisions.
 - This project does not provide legal advice.
-- This repository must remain English-only.
+- Developer-facing documentation, engineering instructions, code comments, contracts, mocks, and fixtures must remain English; user-facing interface copy may be localized through reviewed frontend dictionaries.
 - No production integrations are approved at initialization time.
 - Policy details must be configurable guidance, not fixed legal conclusions.
 

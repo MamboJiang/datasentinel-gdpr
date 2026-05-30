@@ -40,7 +40,7 @@ Frontend surface work is ready for final implementation and QA planning when:
 - `docs/WEBSITE_HOMEPAGE_CONTRACT.md` defines the public homepage content contract across product thesis, workflow highlights, sample source, evidence/redaction, owner routing, human review, audit, evaluation, governance, safety boundaries, calls to action, reduced motion, and responsive/accessibility obligations.
 - Both frontend surface contracts avoid prescribing visual design, component implementation, final art direction, framework internals, or unapproved dependencies.
 - Both frontend surface contracts remain compatible with `docs/API_CONTRACT.md`, `contracts/openapi.yaml`, `contracts/mocks/`, `docs/DesignSpec.md`, and the current P0 acceptance criteria.
-- Both frontend surface contracts keep repository and user-facing content English-only, keep deletion simulated, avoid legal-advice or full-compliance claims, and avoid production Microsoft Graph, OAuth, tenant, AI, parser, OCR, database, queue, or deletion commitments.
+- Both frontend surface contracts keep developer-facing documentation and engineering instructions English-only, allow user-facing interface copy to be localized through reviewed frontend dictionaries, keep deletion simulated, avoid legal-advice or full-compliance claims, and avoid production Microsoft Graph, OAuth, tenant, AI, parser, OCR, database, queue, or deletion commitments.
 
 ## Backend Post-Source Planning Readiness
 
@@ -61,8 +61,8 @@ The first implementation milestone is accepted when:
 - The root route `/` shows a public project homepage that introduces DataSentinel and links to the internal dashboard route at `/dashboard`.
 - The frontend app shell shows only the current page title plus notifications in the top bar, keeps workspace switching in the top-left sidebar control, exposes logged-in account controls from the bottom-left sidebar account menu, and lets users collapse or expand the sidebar.
 - On desktop, the sidebar can be resized with a pointer or keyboard-accessible separator, collapses when dragged below the configured threshold, caps expansion at the configured maximum width, and keeps the content area aligned without overlap.
-- Account menu actions open local utility routes or local UI states for account settings, theme, language preference, feedback, homepage, changelog, help, docs, platform status, prototype plan, and session boundary without adding production authentication, billing, support, monitoring, tenant, external translation, or external feedback integration.
-- The account menu language preference lists EU language options, persists the selected code locally, keeps interface copy English-only in P0, and does not call a backend or translation service.
+- Account menu actions open local utility routes or local UI states for account settings, theme, language preference, feedback, homepage, changelog, help, docs, platform status, prototype plan, and session boundary without adding production authentication, billing, support, monitoring, tenant, external translation service, or external feedback integration.
+- The account menu language preference lists EU language options, persists the selected code locally, updates core user-facing UI copy through static frontend dictionaries, keeps developer-facing docs and code comments English-only, and does not call a backend or translation service.
 - A full scan can be started on a controlled sample source.
 - Starting a full scan uses an explicit `sourceId`, is allowed only for the controlled `mock_ready` sample source in P0, and records scan-start and scan-completion audit events in the mock workflow.
 - The Dashboard groups scanned files, flagged files, scanned volume, progress, scan time, review backlog, high-risk count, retention review count, and owner routing into clear scan, review, and pipeline summaries.

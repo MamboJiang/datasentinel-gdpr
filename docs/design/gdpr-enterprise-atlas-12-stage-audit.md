@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-The user requested a full design audit of the 12 workflow stages against the GDPR Enterprise Expert Atlas and asked that the Atlas markdown be saved in the project. The repository must stay English-only, so the local Atlas was normalized into `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md`.
+The user requested a full design audit of the 12 workflow stages against the GDPR Enterprise Expert Atlas and asked that the Atlas markdown be saved in the project. Developer-facing repository documentation must stay English-only, so the local Atlas was normalized into `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md`.
 
 ## Audit Basis
 
