@@ -19,6 +19,7 @@ Evaluation is a product feature. DataSentinel must show that scanning quality is
 | Admin metrics reproducibility | Stable fingerprint of the management aggregation inputs and rules | Admin dashboard and Evaluation tab |
 | Scenario quality | Precision, recall, F1, false positives, and false negatives by sample family | Evaluation tab |
 | Risk-progress context | High-risk finding review progress without claiming deletion or legal compliance | Evaluation tab |
+| AI spend guard | Optional OpenRouter model calls, estimated cost, configured budget, and fail-closed status | Evaluation tab and health metadata |
 
 ## Evaluation Run Shape
 
@@ -81,6 +82,7 @@ Each scan should record:
 - Policy pack version.
 - Model name if an AI classifier is used.
 - Model temperature if an AI classifier is used.
+- OpenRouter model, budget baseline, model-call count, estimated cost, and fail-closed result if assistive AI is used.
 - Finding fingerprint.
 - Evaluation rules fingerprint.
 - Confusion matrix and scenario-level quality basis.
@@ -111,6 +113,8 @@ For the incremental delta-scan slice, evaluation must preserve the delta rules h
 For the admin-metrics aggregation slice, evaluation must preserve the admin-metrics rules hash, upstream stage basis, owner backlog, review outcome, audit evidence, delta boundary, and resource-cost context while keeping model calls and estimated paid-service cost at zero. Admin metrics are deterministic management evidence, not legal advice, production analytics storage, or proof of deletion.
 
 For the evaluation-metrics generation slice, evaluation must generate precision, recall, F1, reproducibility, throughput, resource intensity, confusion-matrix counts, scenario-level metrics, review-throughput context, and risk-progress context from prior workflow summaries plus a controlled golden dataset definition. It must preserve an evaluation rules hash, expose false-positive and false-negative context, keep model calls and estimated paid-service cost at zero, and avoid presenting review progress as proof of deletion, legal advice, or full GDPR compliance.
+
+For the OpenRouter AI assistive-processing slice, evaluation and health metadata must expose AI readiness and cost controls without making normal deterministic scans paid. Explicit AI calls must be counted as model calls with estimated cost, model ID, and budget status. Rejected AI preflights must leave scan quality, findings, audit, metrics, and evaluation state unchanged.
 
 ## Organizer Samples
 

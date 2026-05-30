@@ -19,6 +19,12 @@ Thumbs.db
 *.log
 logs/
 
+# Local persistence
+*.sqlite
+*.sqlite3
+*.db
+/data/
+
 # Dependencies and build outputs
 node_modules/
 dist/
@@ -42,4 +48,3 @@ venv/
 *.tar.gz
 tmp/
 temp/
-

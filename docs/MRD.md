@@ -15,12 +15,15 @@
 - They need a defensible audit trail for review decisions.
 - They need governance tools that survive reorganizations, role changes, task transfers, and policy updates.
 - They need reviewers to understand what they can do without guessing their authority.
+- They need AI assistance to be visibly bounded by redaction, spend controls, and human accountability.
 
 ## Value Proposition
 
 DataSentinel GDPR should provide an evidence-backed workflow that connects data discovery, risk explanation, owner routing, human review, and audit reporting.
 
 The product should also provide an admin-operable governance layer: policy packs, organization model, permission boundaries, review support, and change previews.
+
+Optional OpenRouter AI assistance should support ambiguous redacted evidence after deterministic OCR and grep-style processing. It should not replace the policy pack, human reviewer, audit trail, or deletion boundary.
 
 ## Differentiation
 

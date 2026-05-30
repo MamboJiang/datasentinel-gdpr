@@ -9,9 +9,11 @@ from urllib.parse import parse_qs, urlparse
 
 from .demo_state import DemoState
 from .envelope import envelope, problem, response
+from .persistent_demo_state import PersistentDemoState
 from .source_api import SourceApi
 from .source_connection import ConnectionPolicy, SourceConnectionService
 from .source_store import SourceStore
+from .sqlite_store import SQLiteDocumentStore, SQLiteSourceStore, SQLiteWorkflowStore
 
 
 class SourceHttpApp:
@@ -25,6 +27,20 @@ class SourceHttpApp:
         policy = ConnectionPolicy.with_roots(allowed_roots)
         source_api = SourceApi(SourceConnectionService(store, policy), store)
         return cls(source_api, DemoState(store))
+
+    @classmethod
+    def with_sqlite(
+        cls,
+        db_path: Path | str,
+        allowed_roots: list[Path | str] | None = None,
+    ) -> "SourceHttpApp":
+        roots = allowed_roots or []
+        documents = SQLiteDocumentStore(db_path)
+        store = SQLiteSourceStore(documents, allowed_roots=roots)
+        policy = ConnectionPolicy.with_roots(roots)
+        source_api = SourceApi(SourceConnectionService(store, policy), store)
+        workflow_store = SQLiteWorkflowStore(documents)
+        return cls(source_api, PersistentDemoState(store, workflow_store))
 
     def handle(
         self,
@@ -220,6 +236,10 @@ class SourceHttpApp:
 
 def build_default_app() -> SourceHttpApp:
     return SourceHttpApp()
+
+
+def build_sqlite_app(db_path: Path | str, allowed_roots: list[Path | str] | None = None) -> SourceHttpApp:
+    return SourceHttpApp.with_sqlite(db_path, allowed_roots)
 
 
 def _normalise_path(path: str) -> str:

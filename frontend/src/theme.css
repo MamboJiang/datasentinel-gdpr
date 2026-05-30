@@ -63,9 +63,17 @@
 [data-theme="dark"] .guidance-list article,
 [data-theme="dark"] .adapter-list article,
 [data-theme="dark"] .scan-facts div,
-[data-theme="dark"] .resource-grid div {
+[data-theme="dark"] .resource-grid div,
+[data-theme="dark"] .governance-hero,
+[data-theme="dark"] .evidence-anchor,
+[data-theme="dark"] .document-toolbar span {
   background: var(--surface-subtle);
   border-color: var(--border);
+}
+
+[data-theme="dark"] .governance-hero-icon {
+  background: var(--blue-soft);
+  color: var(--blue-deep);
 }
 
 [data-theme="dark"] .document-review-pane,

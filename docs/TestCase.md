@@ -45,6 +45,30 @@
 | BEAPI-005 | Record a valid review decision | The server returns `201`, updates finding status, creates a review audit event, and keeps `deletionExecuted = false`. |
 | BEAPI-006 | Load the frontend with API unavailable | The frontend renders from local mocks without crashing. |
 
+## Local SQLite Persistence Checks
+
+| ID | Scenario | Expected Result |
+| --- | --- | --- |
+| DB-001 | Run `python3 -m backend.datasentinel.db_tool init --db-path <file>` | A local SQLite file is created with schema version, source rows, and one workflow document. |
+| DB-002 | Run `python3 -m backend.datasentinel.db_tool status --db-path <file>` | The command reports the database path, schema version, source count, and workflow-document count without exposing secrets. |
+| DB-003 | Register a source through a SQLite-backed API app and restart with the same file | The source remains listed after restart. |
+| DB-004 | Record a review through a SQLite-backed API app and restart with the same file | Finding status and the review audit event remain visible after restart. |
+| DB-005 | Start the API without `--db-path` | The server keeps the existing in-memory fixture-backed behavior. |
+
+## OpenRouter AI Assistive Processing Checks
+
+| ID | Scenario | Expected Result |
+| --- | --- | --- |
+| AI-001 | Start backend without an OpenRouter key | `/api/health` reports `ai.status = disabled` or `missing_api_key`; no API key appears in the payload. |
+| AI-002 | Start backend with assistive mode and a key | `/api/health` reports provider `openrouter`, the configured model, budget limits, fail-closed guard, and the metadata/text/OCR/grep/AI tier plan. |
+| AI-003 | Plan a redacted ambiguous evidence candidate with deterministic anchors and policy-pack context | The tier plan runs source/policy context, metadata, text/OCR, grep, and policy-context/risk before marking `ai_context` ready. |
+| AI-004 | Plan an unredacted evidence candidate | `ai_context` is blocked before any external request. |
+| AI-005 | Preflight when usage plus estimated cost exceeds budget | The budget guard rejects the call and leaves scan, finding, audit, metrics, and evaluation state unchanged. |
+| AI-006 | Preflight when OpenRouter usage cannot be checked | Fail-closed mode rejects the call before any prompt leaves the process. |
+| AI-007 | Run normal full and delta scans | Existing deterministic paths still report `modelCalls = 0`, `estimatedCostUsd = 0`, no raw content exposure, no legal conclusion, and no deletion execution. |
+| AI-008 | Review AI metadata against the Atlas | `/api/health` and `aiProcessing` include `atlasReference`, 12 `atlasAlignment` entries, and tier rows whose `atlasStages` cover source/policy, inventory/OCR, deterministic signal detection, context/risk, owner/review boundaries, audit, delta, admin metrics, and evaluation. |
+| AI-009 | Attempt AI context support without deterministic anchors or policy-pack context | The request is rejected before any external model request. |
+
 ## Full Scan Start Checks
 
 | ID | Scenario | Expected Result |
@@ -231,7 +255,7 @@
 | DEPLOY-002 | Visit `https://founder-force.uk/` | Caddy returns the DataSentinel frontend HTML from the active release after DNS points to `agent-us`. |
 | DEPLOY-003 | Visit `https://founder-force.uk/dashboard` directly | Caddy falls back to `index.html`, and the frontend can render the dashboard route after DNS points to `agent-us`. |
 | DEPLOY-004 | Call `https://founder-force.uk/api/health` | Caddy proxies to the loopback P0 API server and returns a contract health envelope. |
-| DEPLOY-005 | Review remote service boundary | The preview exposes only static frontend assets plus the P0 in-memory API and does not start OAuth, Microsoft Graph, tenant, AI, database, queue, production connector, or deletion services. |
+| DEPLOY-005 | Review remote service boundary | The preview exposes only static frontend assets plus the P0 API, may use the approved local SQLite state file, and does not start OAuth, Microsoft Graph, tenant, production database, queue, production connector, or deletion services. |
 | DEPLOY-006 | Review rollback path | A saved Caddyfile backup, release symlink, and removable API service make rollback possible without changing product code. |
 
 ## Future Behavior Test Themes

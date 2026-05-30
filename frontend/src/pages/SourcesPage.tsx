@@ -26,7 +26,7 @@ export function SourcesPage() {
           </div>
         </div>
         <div className="table-wrap">
-          <table>
+          <table className="source-table">
             <thead>
               <tr>
                 <th>{t('Source')}</th>
@@ -47,7 +47,13 @@ export function SourcesPage() {
                     <td>
                       <div className="table-primary">
                         <div className="file-avatar"><Database aria-hidden="true" size={16} /></div>
-                        <div><strong>{source.name}</strong><span>{source.sourceId}</span></div>
+                        <div>
+                          <strong>{source.name}</strong>
+                          <span>{source.sourceId}</span>
+                          {source.sampleFamilies?.length ? (
+                            <small className="source-families">{source.sampleFamilies.join(', ')}</small>
+                          ) : null}
+                        </div>
                       </div>
                     </td>
                     <td>{humanize(source.sourceType)}</td>

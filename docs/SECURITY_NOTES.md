@@ -23,7 +23,17 @@ P0 should expose allowed and denied actions to the UI. This improves user contro
 
 ## External Services
 
-P0 must not require live Microsoft Graph, production OAuth, tenant secrets, paid AI services, or external deletion APIs.
+P0 must not require live Microsoft Graph, production OAuth, tenant secrets, or external deletion APIs.
+
+OpenRouter assistive AI is the only approved external AI boundary. It must follow these controls:
+
+- The API key is stored only in ignored local environment files or host secret management.
+- The key is never returned from `/api/health`, scan, metrics, evaluation, audit, or frontend payloads.
+- AI calls require assistive mode, a configured key, redacted deterministic evidence, active policy-pack context, and a passing budget preflight.
+- Fail-closed mode prevents model calls when OpenRouter usage cannot be checked.
+- The 25 EUR project budget is represented by a 25 EUR config value and a conservative 25 USD OpenRouter credit cap.
+- Raw extracted text, file bodies, page images, credentials, tenant tokens, or unredacted personal data must not be sent to OpenRouter.
+- AI output is Atlas stage-4 operational context support only and must not be presented as legal advice, proof of GDPR compliance, owner assignment, permission decision, audit fact, or a deletion instruction.
 
 ## Review Safety
 

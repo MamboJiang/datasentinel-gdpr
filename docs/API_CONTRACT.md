@@ -31,7 +31,7 @@ Use `OpenAPI-first + mock-first + vertical-slice-first`.
 - JSON field names: lower camel case.
 - IDs are opaque strings, such as `scan_001`.
 - Dates use ISO 8601 UTC strings.
-- Money, legal conclusions, and raw sensitive values are not part of P0 payloads.
+- Legal conclusions and raw sensitive values are not part of P0 payloads. Optional AI budget metadata may expose bounded operational cost limits and estimated service cost without exposing billing credentials.
 - Sensitive snippets must be redacted.
 
 ## Response Envelope
@@ -136,6 +136,58 @@ Errors use `application/problem+json`.
 | `GET` | `/api/findings/{findingId}/review-support` | Read reviewer guidance and allowed actions. |
 
 ## State Machines
+
+### Optional AI Processing Metadata
+
+`GET /api/health`, scan payloads, admin metrics, and evaluation summaries may include optional `ai` or `aiProcessing` metadata. This metadata is informational and must never include the OpenRouter API key or raw source content.
+
+Representative shape:
+
+```json
+{
+  "status": "configured",
+  "mode": "assistive",
+  "provider": "openrouter",
+  "model": "google/gemini-3.1-flash-lite",
+  "budgetLimitEur": 25,
+  "budgetLimitUsd": 25,
+  "usageBaselineUsd": 0,
+  "budgetGuard": "fail_closed",
+  "atlasReference": "docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md",
+  "atlasAlignment": [
+    { "stage": 1, "name": "start_full_scan" },
+    { "stage": 12, "name": "evaluation_metrics" }
+  ],
+  "tierPlan": [
+    { "tier": "source_policy_context", "provider": "local_policy_pack", "mode": "deterministic", "status": "enabled", "atlasStages": [1] },
+    { "tier": "metadata_inventory", "provider": "local", "mode": "deterministic", "status": "enabled", "atlasStages": [2] },
+    { "tier": "ocr", "provider": "local_tesseract", "mode": "deferred", "status": "deferred", "atlasStages": [2] },
+    { "tier": "grep_rules", "provider": "local_regex", "mode": "deterministic", "status": "enabled", "atlasStages": [3] },
+    { "tier": "policy_context_risk", "provider": "local_policy_pack", "mode": "deterministic", "status": "enabled", "atlasStages": [4] },
+    { "tier": "ai_context", "provider": "openrouter", "mode": "assistive", "status": "configured", "atlasStages": [4], "role": "redacted_context_support_only" },
+    { "tier": "review_permission_boundary", "provider": "local_governance", "mode": "human_accountable", "status": "enabled", "atlasStages": [6, 7, 8] },
+    { "tier": "audit_recording", "provider": "local_audit", "mode": "deterministic", "status": "enabled", "atlasStages": [9] },
+    { "tier": "delta_evaluation_metrics", "provider": "local_metrics", "mode": "deterministic", "status": "enabled", "atlasStages": [10, 11, 12] }
+  ],
+  "modelCalls": 0,
+  "estimatedCostUsd": 0,
+  "paidServiceUsed": false,
+  "rawContentExposed": false,
+  "legalConclusionProvided": false,
+  "deletionExecuted": false
+}
+```
+
+AI processing state:
+
+- `disabled`: `DATASENTINEL_AI_MODE` is off.
+- `missing_api_key`: assistive mode is requested without `OPENROUTER_API_KEY`.
+- `configured`: OpenRouter key and model are configured, but no call has necessarily occurred.
+- `usage_check_failed`: fail-closed budget preflight prevented a call because usage could not be checked.
+- `budget_exceeded`: project budget or OpenRouter remaining limit prevented a call.
+- `ready`: a redacted, deterministic evidence candidate may be sent to OpenRouter by an explicit assistive classification path.
+
+The processing order is `source_policy_context -> metadata_inventory -> text_layer -> ocr -> grep_rules -> policy_context_risk -> ai_context -> owner_assignment_boundary -> review_permission_boundary -> audit_recording -> delta_evaluation_metrics`. AI escalation is optional Atlas stage-4 context support and requires redacted evidence, deterministic anchors, and active policy-pack context. Public payloads must not expose raw extracted text, full file bodies, page images, credentials, unredacted personal data, legal conclusions, owner decisions, permission decisions, audit facts invented by AI, or deletion instructions.
 
 ### Scan Status
 

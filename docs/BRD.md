@@ -18,6 +18,7 @@ Organizations often store personal and GDPR-relevant data across fragmented file
 - Report measurable scanning quality through accuracy, reproducibility, speed, and resource intensity.
 - Adapt to policy changes, organization changes, ownership transfers, and reviewer delegation without code rewrites.
 - Give users clear visibility into their permissions and decision boundaries.
+- Use optional AI assistance only for redacted evidence context when deterministic processing is insufficient.
 
 ## Constraints
 
@@ -25,8 +26,9 @@ Organizations often store personal and GDPR-relevant data across fragmented file
 - Human accountability is required for deletion or retention decisions.
 - This project does not provide legal advice.
 - Developer-facing documentation, engineering instructions, code comments, contracts, mocks, and fixtures must remain English; user-facing interface copy may be localized through reviewed frontend dictionaries.
-- No production integrations are approved at initialization time.
+- No production integrations are approved at initialization time except the optional, budget-guarded OpenRouter assistive AI boundary.
 - Policy details must be configurable guidance, not fixed legal conclusions.
+- AI output must remain review support, not legal advice, compliance proof, or deletion authority.
 
 ## Done When
 

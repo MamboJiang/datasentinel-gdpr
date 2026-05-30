@@ -75,6 +75,35 @@ The first implementation milestone is accepted when:
 - Evaluation metrics show precision, recall, F1, reproducibility, throughput, and resource intensity.
 - Deletion remains simulated.
 
+## OpenRouter AI Assistive Processing Acceptance
+
+The OpenRouter AI assistive-processing boundary is accepted when:
+
+- The design note `docs/design/openrouter-ai-processing.md` defines problem, research basis, options, state transitions, failure paths, rollback path, impact surface, and primitive acceptance criteria.
+- Runtime configuration uses ignored environment variables only; tracked files contain placeholders but no real API key.
+- `/api/health` and optional `aiProcessing` metadata expose provider, model, budget limits, usage baseline, fail-closed status, OCR/grep/AI tier plan, model-call count, estimated cost, and safety boundaries without exposing the API key.
+- AI runtime metadata exposes `atlasReference`, 12 Atlas alignment entries, and tier rows that map OCR, grep, AI context, owner/review boundaries, audit, delta governance, admin metrics, and evaluation back to `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md`.
+- The default model is `google/gemini-3.1-flash-lite`; deprecated or near-expiring cheaper models are not selected as defaults.
+- The project budget is represented as 25 EUR and a conservative 25 USD OpenRouter application cap, with `OPENROUTER_USAGE_BASELINE_USD` available for project-specific usage tracking.
+- AI calls require assistive mode, a configured key, redacted deterministic evidence, active policy-pack context, and a passing budget preflight.
+- Unredacted evidence, missing deterministic anchors, missing policy-pack context, missing usage checks in fail-closed mode, exhausted budget, or insufficient OpenRouter remaining limit reject before any external model call.
+- Existing deterministic full-scan, delta-scan, review, audit, metrics, and evaluation flows continue to show `modelCalls = 0`, `estimatedCostUsd = 0`, no raw-content exposure, no legal conclusion, and no deletion execution unless an explicit assistive classification path is invoked.
+- Automated backend tests cover env defaults, tier planning, unredacted rejection, budget blocking, fail-closed usage checks, health metadata, and secret redaction.
+
+## Local SQLite Persistence Acceptance
+
+The lightweight local database boundary is accepted when:
+
+- The design note `docs/design/local-sqlite-persistence.md` defines problem, research basis, options, state transitions, impact surface, rollback path, and primitive acceptance criteria.
+- The API server starts in the existing in-memory mode when no database path is configured.
+- The API server starts in local SQLite mode when `--db-path` or `DATASENTINEL_DB_PATH` points to a writable file.
+- `python3 -m backend.datasentinel.db_tool init --db-path <file>` creates the schema and seeds contract-compatible demo state without adding runtime dependencies.
+- `python3 -m backend.datasentinel.db_tool status --db-path <file>` reports schema version, source count, workflow-document count, and database path.
+- Source registrations survive API restart when the same SQLite file is reused.
+- Accepted scan/review mutations survive API restart when the same SQLite file is reused.
+- The local SQLite store does not introduce production Microsoft Graph, OAuth, tenant, production database, queue, production source connector, raw source-content storage, credential storage, legal conclusions, or deletion execution.
+- Automated backend tests cover source persistence, review/audit persistence, and unchanged in-memory behavior.
+
 ## Full Scan Start Acceptance
 
 The full-scan start stage is accepted when:
@@ -270,7 +299,7 @@ The remote preview deployment is accepted when:
 - The remote host proxies `/api/*` through Caddy to a loopback P0 API server.
 - Direct requests for `https://founder-force.uk/` and `https://founder-force.uk/dashboard` return DataSentinel frontend HTML after DNS points to `agent-us`.
 - Direct requests for `https://founder-force.uk/api/health` return a contract health envelope after DNS points to `agent-us` and the API service is running.
-- The preview remains mock-compatible or in-memory and adds no production Microsoft Graph, OAuth, tenant, AI, database, queue, production source connector, or deletion service.
+- The preview remains mock-compatible, in-memory, or local-SQLite-backed and adds no production Microsoft Graph, OAuth, tenant, production database, queue, production source connector, or deletion service.
 - The previous Caddyfile is saved before modification, the release symlink allows asset rollback, and the API service can be stopped independently.
 
 ## Agent-us API Server Integration Acceptance
@@ -283,5 +312,5 @@ The frontend-backend integration is accepted when:
 - Vite development mode proxies `/api` to the local Python API server without hard-coding a public host.
 - `POST /api/scans/full` accepts the controlled `mock_ready` source and rejects not-ready sources without adding audit events.
 - `POST /api/findings/{findingId}/review` records a review, updates finding state, adds an audit event, updates metrics, and keeps `deletionExecuted = false`.
-- No raw source content, legal conclusion, production connector, OAuth, Microsoft Graph, database, queue, AI service, or deletion execution is introduced.
+- No raw source content, legal conclusion, production connector, OAuth, Microsoft Graph, production database, queue, unapproved AI service, or deletion execution is introduced.
 - Python backend unit tests, frontend tests, frontend lint, and frontend build pass for the touched surfaces.

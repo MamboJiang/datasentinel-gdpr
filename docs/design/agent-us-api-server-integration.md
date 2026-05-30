@@ -17,7 +17,8 @@ The frontend can render the P0 workflow from local mocks, but `agent-us` needs t
 | Keep static-only preview | Lowest operational change | Does not satisfy server-backed `/api` integration | Rejected |
 | Add a stdlib Python P0 API behind Caddy | No new dependency, contract-compatible, reversible, enough for demo server integration | Not production-grade and in-memory only | Accepted |
 | Add FastAPI or another backend framework | Better production ergonomics | Adds dependency and abstraction before P0 needs it | Rejected |
-| Add database-backed persistence now | Durable state | Expands scope into storage, migrations, auth, and rollback | Rejected |
+| Add production database-backed persistence now | Durable state | Expands scope into managed storage, credentials, auth, backup, and rollback | Rejected |
+| Add local SQLite persistence after API integration | Restart-safe demo state without a service dependency | Not a production multi-tenant storage model | Accepted by `docs/design/local-sqlite-persistence.md` |
 
 ## State Machine
 
@@ -25,9 +26,9 @@ The frontend can render the P0 workflow from local mocks, but `agent-us` needs t
 | --- | --- | --- | --- | --- |
 | Frontend loaded | `/api/health` and data endpoints respond | Contract envelope is valid | Server-backed demo | Render server data |
 | Frontend loaded | `/api` unavailable | Local mocks exist | Mock fallback | Render local fixture workflow |
-| Server-backed demo | Full scan requested | Source is P0 `mock_ready` | Scan running | Create in-memory scan-start audit event |
-| Scan running | Completion delay passes and scan is read | Active in-memory scan exists | Scan completed | Publish completed scan values and audit event |
-| Server-backed demo | Review submitted | Decision, reason, checklist, and target guards pass | Review recorded | Update finding, metrics, and audit event in memory |
+| Server-backed demo | Full scan requested | Source is P0 `mock_ready` | Scan running | Create scan-start audit event in memory or the configured local SQLite state file |
+| Scan running | Completion delay passes and scan is read | Active scan exists | Scan completed | Publish completed scan values and audit event |
+| Server-backed demo | Review submitted | Decision, reason, checklist, and target guards pass | Review recorded | Update finding, metrics, and audit event in memory or the configured local SQLite state file |
 | Server-backed demo | Invalid command submitted | Guard fails | Previous state | Return `application/problem+json` and keep state unchanged |
 
 ## Impact Surface
@@ -51,7 +52,7 @@ The frontend can render the P0 workflow from local mocks, but `agent-us` needs t
 - `GET /api/sources` returns the existing mock-compatible source list.
 - `POST /api/scans/full` accepts only a scan-ready controlled source and returns a running scan envelope.
 - Rejected scan commands return `application/problem+json` and do not add audit events.
-- `POST /api/findings/{findingId}/review` records an in-memory review decision, updates the finding status, adds an audit event, and keeps `deletionExecuted = false`.
+- `POST /api/findings/{findingId}/review` records a review decision, updates the finding status, adds an audit event, and keeps `deletionExecuted = false`.
 - The frontend requests `/api` first and continues rendering from local mocks when the backend is unavailable.
 - Vite dev mode proxies `/api` to the local backend; Caddy on `agent-us` proxies `/api/*` to the loopback backend.
-- No Microsoft Graph, OAuth, tenant integration, database, queue, AI service, production source connector, or deletion service is introduced.
+- No Microsoft Graph, OAuth, tenant integration, production database, queue, AI service, production source connector, or deletion service is introduced.

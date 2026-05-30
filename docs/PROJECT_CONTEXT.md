@@ -10,7 +10,7 @@ DataSentinel turns GDPR file cleanup from manual auditing into a measurable, own
 
 ## Core Loop
 
-Source connection -> full scan -> inventory/extraction -> deterministic signal detection -> context classification -> owner routing -> human review -> audit trail -> delta scan -> evaluation metrics.
+Source connection -> full scan -> inventory/extraction -> deterministic signal detection -> optional redacted AI context support -> owner routing -> human review -> audit trail -> delta scan -> evaluation metrics.
 
 ## Target Users
 
@@ -28,7 +28,7 @@ Source connection -> full scan -> inventory/extraction -> deterministic signal d
 - Admin reporting must show scanned files, flagged files, data volume, scan progress, scan time, review backlog, and risk distribution.
 - Evaluation must include accuracy, reproducibility, speed, and resource intensity.
 - Deletion is simulated in the hackathon prototype.
-- The demo must not rely on live external APIs.
+- The demo must not rely on live external APIs except the optional OpenRouter assistive AI boundary, which must be disabled by default unless configured, budget-guarded, and redacted-evidence-only.
 - Legal and policy details must be configurable through versioned policy packs rather than hard-coded into scanner structure.
 - Users must see permission boundaries and action scope before making decisions.
 - The default demo source should reference the organizer sample repository.

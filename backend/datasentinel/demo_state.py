@@ -15,6 +15,7 @@ from .demo_review import (
     review_target,
     validate_review,
 )
+from .processing_pipeline import AiRuntime
 from .source_store import SourceStore, load_mock
 
 SCAN_PROFILES = {
@@ -47,8 +48,9 @@ SCAN_PROFILES = {
 class DemoState:
     """Serves the P0 contract while keeping demo mutations in memory."""
 
-    def __init__(self, source_store: SourceStore | None = None) -> None:
+    def __init__(self, source_store: SourceStore | None = None, ai_runtime: AiRuntime | None = None) -> None:
         self.source_store = source_store or SourceStore()
+        self.ai_runtime = ai_runtime or AiRuntime.from_env()
         self.scan = copy.deepcopy(load_mock("scanStatus.json")["data"])
         self.findings = copy.deepcopy(load_mock("myFindings.json")["data"])
         self.finding_details = {
@@ -62,9 +64,11 @@ class DemoState:
         self.review_support = copy.deepcopy(load_mock("reviewSupport.json")["data"])
         self._running_started_at: float | None = None
         self._completed_template = copy.deepcopy(self.scan)
+        self._refresh_ai_runtime_metadata()
 
     def health(self, trace_id: str) -> dict[str, Any]:
-        return response(200, envelope({"ok": True, "server": "datasentinel-agent-us"}, trace_id), trace_id)
+        data = {"ok": True, "server": "datasentinel-agent-us", "ai": self.ai_runtime.summary()}
+        return response(200, envelope(data, trace_id), trace_id)
 
     def get_scan(self, scan_id: str, trace_id: str, path: str) -> dict[str, Any]:
         self._finish_scan_if_ready()
@@ -92,6 +96,7 @@ class DemoState:
             return self._problem(409, "Delta scan requires a completed selected-source baseline.", path, trace_id, "#/baselineScanId")
 
         self.scan = self._running_scan(scan_type, source_id)
+        self._refresh_ai_runtime_metadata()
         self._running_started_at = time.monotonic()
         self._prepend_audit_event(f"{scan_type}_scan_started", self.scan["scanId"], source_id, "running")
         self.metrics["scanProgress"] = self.scan["progress"]
@@ -185,6 +190,7 @@ class DemoState:
             return
 
         self.scan = self._completed_scan(self.scan["scanType"], self.scan["sourceId"], self.scan["scanId"])
+        self._refresh_ai_runtime_metadata()
         self._running_started_at = None
         self.metrics["scanProgress"] = 1
         self.metrics["totalScannedFiles"] = self.scan["scannedFiles"]
@@ -210,6 +216,7 @@ class DemoState:
             "throughputFilesPerSecond": None,
             "reproducibilityFingerprint": None,
         })
+        self._attach_ai_runtime(scan)
         return scan
 
     def _completed_scan(self, scan_type: str, source_id: str, scan_id: str) -> dict[str, Any]:
@@ -230,7 +237,22 @@ class DemoState:
             "throughputFilesPerSecond": profile["throughputFilesPerSecond"],
             "reproducibilityFingerprint": "sha256:demo_delta_findings" if scan_type == "delta" else "sha256:demo_findings",
         })
+        self._attach_ai_runtime(scan)
         return scan
+
+    def _refresh_ai_runtime_metadata(self) -> None:
+        summary = self.ai_runtime.summary()
+        self._attach_ai_runtime(self.scan, summary)
+        self.metrics["aiProcessing"] = copy.deepcopy(summary)
+        self.metrics.setdefault("aggregation", {})["modelCalls"] = summary["modelCalls"]
+        self.metrics.setdefault("aggregation", {})["estimatedCostUsd"] = summary["estimatedCostUsd"]
+        self.evaluation["aiProcessing"] = copy.deepcopy(summary)
+        self.evaluation.setdefault("resourceIntensity", {})["modelCalls"] = summary["modelCalls"]
+        self.evaluation.setdefault("resourceIntensity", {})["estimatedCostUsd"] = summary["estimatedCostUsd"]
+        self.evaluation.setdefault("resourceIntensity", {})["paidServiceUsed"] = summary["paidServiceUsed"]
+
+    def _attach_ai_runtime(self, scan: dict[str, Any], summary: dict[str, Any] | None = None) -> None:
+        scan["aiProcessing"] = copy.deepcopy(summary or self.ai_runtime.summary())
 
     def _source_scan_ready(self, source: dict[str, Any]) -> bool:
         adapter = next(

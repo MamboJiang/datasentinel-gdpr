@@ -35,7 +35,7 @@ Out of scope:
 
 - Downloading or vendoring organizer sample files.
 - OCR, PDF parsing, embeddings, paid model calls, or AI classification.
-- Persistent storage, queues, workers, authentication, authorization, or production source connectors.
+- Production persistent storage, queues, workers, authentication, authorization, or production source connectors.
 - Real deletion or remote file mutation.
 - Public API contract expansion.
 

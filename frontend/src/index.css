@@ -161,6 +161,10 @@ tbody tr:hover { background: #fbfcfe; }
 .row-actions { align-items: center; display: flex; gap: 6px; justify-content: flex-end; }
 .row-actions button { align-items: center; background: transparent; border: 0; border-radius: 5px; color: var(--blue); display: flex; font-size: .7rem; font-weight: 700; gap: 5px; padding: 7px 9px; white-space: nowrap; }
 .row-actions button:hover { background: #f4f6f9; }
+.source-table th:last-child, .source-table td:last-child { background: var(--surface); box-shadow: -10px 0 18px rgba(15, 23, 42, .06); min-width: 302px; position: sticky; right: 0; z-index: 1; }
+.source-table th:last-child { background: var(--surface); z-index: 2; }
+.source-table .row-actions { flex-wrap: wrap; justify-content: flex-start; }
+.source-families { color: var(--text-soft); display: block; font-size: .62rem; line-height: 1.4; margin-top: 5px; max-width: 360px; overflow-wrap: anywhere; }
 .filter-bar { align-items: center; border-bottom: 1px solid var(--border); display: flex; gap: 12px; justify-content: space-between; padding: 13px 15px; }
 .search-field { align-items: center; color: var(--text-muted); display: flex; gap: 8px; min-width: min(360px, 100%); }
 .search-field input { background: transparent; border: 0; color: var(--text); font-size: .77rem; outline: 0; width: 100%; }

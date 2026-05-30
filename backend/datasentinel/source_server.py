@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
+import os
 from argparse import ArgumentParser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
-from .source_http import SourceHttpApp, build_default_app
+from .ai_config import load_local_env
+from .source_http import SourceHttpApp, build_default_app, build_sqlite_app
 
 
 def make_handler(app: SourceHttpApp | None = None) -> type[BaseHTTPRequestHandler]:
@@ -53,13 +55,17 @@ def make_handler(app: SourceHttpApp | None = None) -> type[BaseHTTPRequestHandle
 
 
 def main() -> None:
+    load_local_env()
     parser = ArgumentParser(description="Run the DataSentinel local demo API server.")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", default=8000, type=int)
+    parser.add_argument("--db-path", default=os.environ.get("DATASENTINEL_DB_PATH"))
     args = parser.parse_args()
 
-    server = ThreadingHTTPServer((args.host, args.port), make_handler())
-    print(f"DataSentinel API listening on http://{args.host}:{args.port}/api/health")
+    app = build_sqlite_app(args.db_path) if args.db_path else build_default_app()
+    server = ThreadingHTTPServer((args.host, args.port), make_handler(app))
+    mode = f"SQLite state at {args.db_path}" if args.db_path else "in-memory state"
+    print(f"DataSentinel API listening on http://{args.host}:{args.port}/api/health ({mode})")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

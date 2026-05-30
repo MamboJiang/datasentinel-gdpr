@@ -2,9 +2,9 @@
 
 ## Current Technical Scope
 
-This repository is initialized for documentation, collaboration, contract-first parallel delivery, and a controlled remote frontend plus P0 API preview. The approved technical baseline is the tolerant REST contract in `contracts/openapi.yaml`, its split schemas in `contracts/schemas/`, mock fixtures in `contracts/mocks/`, the local Python API server, and the deployment path documented in `docs/DEPLOYMENT.md`.
+This repository is initialized for documentation, collaboration, contract-first parallel delivery, and a controlled remote frontend plus P0 API preview. The approved technical baseline is the tolerant REST contract in `contracts/openapi.yaml`, its split schemas in `contracts/schemas/`, mock fixtures in `contracts/mocks/`, the local Python API server, optional local SQLite persistence for demo API state, the optional OpenRouter AI assistive boundary, and the deployment path documented in `docs/DEPLOYMENT.md`.
 
-No database, queue, external API integration, authentication, authorization, production file-source connection, or deletion-capable deployment path is approved yet. The approved backend runtime is limited to the stdlib Python P0 API server behind Caddy.
+No production database, queue, authentication, authorization, production file-source connection, or deletion-capable deployment path is approved yet. The approved local storage boundary is the stdlib `sqlite3` file store documented in `docs/design/local-sqlite-persistence.md`; it is optional, local to the API process, and limited to restart-safe P0 demo state. The only approved external API boundary is the optional OpenRouter assistive AI path documented in `docs/design/openrouter-ai-processing.md`; it is disabled unless explicitly configured and must not receive raw personal data.
 
 ## Technical Principles
 
@@ -81,6 +81,22 @@ Technical constraints:
 - The workflow must preserve deterministic reproducibility inputs, throughput, resource intensity, zero model calls, and zero estimated paid-service cost.
 - Apache Tika and Tesseract are documented as future production candidates only; they are not added as runtime dependencies in this slice.
 - Microsoft Graph delta query remains a future connector concept only; no production Graph integration is added.
+
+## OpenRouter AI Assistive Processing Technical Slice
+
+The approved AI implementation is a backend boundary for optional assistive classification of redacted, deterministic evidence. It is documented in `docs/design/openrouter-ai-processing.md`.
+
+Technical constraints:
+
+- Normal P0 full-scan, delta-scan, review, audit, metrics, and evaluation flows remain deterministic and report zero model calls unless a redacted AI classification path is explicitly invoked.
+- AI calls require `DATASENTINEL_AI_MODE=assistive`, `OPENROUTER_API_KEY`, a configured model, and a passing budget preflight.
+- The default model is `google/gemini-3.1-flash-lite` because current OpenRouter metadata shows no expiration, long context, and low-latency high-volume extraction positioning.
+- The budget guard uses `DATASENTINEL_AI_BUDGET_EUR=25.00`, a conservative `DATASENTINEL_AI_BUDGET_USD=25.00`, and optional `OPENROUTER_USAGE_BASELINE_USD` from OpenRouter key usage.
+- The AI path fails closed when OpenRouter usage cannot be checked and `DATASENTINEL_AI_FAIL_CLOSED=true`.
+- Source/policy context, OCR, grep-style deterministic stages, and policy-pack context must run before AI escalation. OCR is local or deferred; it must not trigger paid AI by itself.
+- External AI input must be redacted, anchored to deterministic evidence, and tied to active policy-pack context. Raw extracted text, file bodies, page images, credentials, tenant tokens, or unredacted personal data must not leave the process.
+- AI output is Atlas stage-4 operational context support only. It must not provide legal advice, claim full GDPR compliance, assign owners, decide permissions, invent audit facts, or issue deletion instructions.
+- Runtime AI metadata must map the tier plan to all 12 Atlas stages from source/policy context through evaluation metrics.
 
 ## Context and Risk Judgment Technical Slice
 
@@ -239,24 +255,26 @@ The approved deployment implementation is a frontend preview plus loopback P0 AP
 Technical constraints:
 
 - The preview serves only the Vite production build and uses browser-route fallback to `index.html`.
-- The API server returns contract-compatible envelopes from existing mocks and in-memory scan/review state.
-- The preview does not run a database, queue, worker, OAuth flow, Microsoft Graph connector, tenant integration, AI service, production source connector, or deletion integration.
-- The preview remains fixture-backed or in-memory and must not expose raw sensitive values.
+- The API server returns contract-compatible envelopes from existing mocks, in-memory scan/review state, or the approved local SQLite state file.
+- The preview does not run a production database, queue, worker, OAuth flow, Microsoft Graph connector, tenant integration, production source connector, or deletion integration. If OpenRouter AI assistive mode is configured, it remains budget-guarded and redacted-evidence-only.
+- The preview remains fixture-backed, in-memory, or local-SQLite-backed and must not expose raw sensitive values.
 - Caddy configuration changes must be validated before reload and must have a rollback path through a saved Caddyfile backup and release symlink.
 - Remote validation must check `/`, at least one internal route such as `/dashboard`, and `/api/health`.
 
 ## Agent-us API Server Technical Slice
 
-The approved first server integration is a stdlib Python HTTP server with no added runtime dependency. It exposes the P0 OpenAPI paths, returns `data`/`meta` envelopes, uses `application/problem+json` for rejected commands, and keeps scan/review mutations in memory.
+The approved first server integration is a stdlib Python HTTP server with no added runtime dependency. It exposes the P0 OpenAPI paths, returns `data`/`meta` envelopes, uses `application/problem+json` for rejected commands, and keeps scan/review mutations in memory unless a local SQLite database path is configured.
 
 Technical constraints:
 
 - The frontend calls `/api` first and falls back to local mock workflow when the server is unavailable.
 - Vite proxies `/api` to `127.0.0.1:8000` in development.
 - Caddy proxies `/api/*` to the loopback API process on `agent-us`.
+- `--db-path` or `DATASENTINEL_DB_PATH` may point the API server to a local SQLite file for restart-safe P0 state.
 - Source connection checks may validate controlled mock and local demo sources but must not call production Microsoft Graph or external tenant APIs.
 - Scan and review commands must preserve no-raw-content, no-legal-conclusion, and no-real-deletion boundaries.
 - Python `http.server` is accepted only for this controlled P0 preview because official docs identify it as a basic server not recommended for production.
+- Python `sqlite3` is accepted only as local P0 state tooling because official SQLite guidance supports local application storage, demo/testing use, and replacement of ad hoc disk files.
 
 ## Contract Baseline
 
@@ -276,7 +294,7 @@ Official or authoritative documentation must be reviewed before integrating:
 - GDPR deletion, retention, or audit-related workflow assumptions.
 - The organizer sample repository before downloading or vendoring sample files.
 - Any AI, OCR, document parsing, or classification dependency.
-- Any storage, authentication, authorization, or deployment platform.
+- Any production storage, authentication, authorization, or deployment platform beyond the approved local SQLite P0 state file.
 
 ## Technical Done When
 

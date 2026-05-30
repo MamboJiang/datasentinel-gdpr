@@ -8,7 +8,8 @@ Current remote layout:
 
 - Static releases: `/srv/datasentinel/frontend/releases/<timestamp>`
 - Active release symlink: `/srv/datasentinel/frontend/current`
-- API command: `python3 -m backend.datasentinel.source_server --host 127.0.0.1 --port 8000`
+- API command: `python3 -m backend.datasentinel.source_server --host 127.0.0.1 --port 8000 --db-path /srv/datasentinel/data/datasentinel.sqlite3`
+- Local SQLite state: `/srv/datasentinel/data/datasentinel.sqlite3`
 - API route: Caddy proxies `/api/*` to `127.0.0.1:8000`
 - Caddy config: `/etc/caddy/Caddyfile`
 - Current validated public route: `https://founder-force.uk/`
@@ -31,10 +32,39 @@ Upload `frontend/dist/` to a new timestamped release directory under `/srv/datas
 Run from the repository root on `agent-us`:
 
 ```bash
-python3 -m backend.datasentinel.source_server --host 127.0.0.1 --port 8000
+mkdir -p /srv/datasentinel/data
+python3 -m backend.datasentinel.db_tool init --db-path /srv/datasentinel/data/datasentinel.sqlite3
+python3 -m backend.datasentinel.source_server --host 127.0.0.1 --port 8000 --db-path /srv/datasentinel/data/datasentinel.sqlite3
 ```
 
-For a persistent preview, run that command under the host's service manager and keep it bound to `127.0.0.1`. The P0 API is in-memory and contract-backed. It must not be exposed as a production source connector or deletion-capable service.
+For a persistent preview, run the server command under the host's service manager and keep it bound to `127.0.0.1`. The P0 API is contract-backed and may use the local SQLite file for restart-safe demo state. It must not be exposed as a production source connector, production database, or deletion-capable service.
+
+The server can still run in memory for local debugging by omitting `--db-path`. `DATASENTINEL_DB_PATH` may also provide the database path when service-manager configuration is cleaner than command-line arguments.
+
+## OpenRouter AI Configuration
+
+OpenRouter assistive AI is optional and must be configured only through ignored environment files or host secret management. Never commit a real API key.
+
+Local/server `.env.local` values:
+
+```bash
+DATASENTINEL_AI_MODE=assistive
+OPENROUTER_API_KEY=<host secret>
+OPENROUTER_MODEL=google/gemini-3.1-flash-lite
+OPENROUTER_SITE_URL=https://founder-force.uk/
+OPENROUTER_APP_TITLE="DataSentinel GDPR"
+DATASENTINEL_AI_BUDGET_EUR=25.00
+DATASENTINEL_AI_BUDGET_USD=25.00
+OPENROUTER_USAGE_BASELINE_USD=<usage from GET https://openrouter.ai/api/v1/key>
+DATASENTINEL_AI_FAIL_CLOSED=true
+DATASENTINEL_AI_MAX_PROMPT_TOKENS=6000
+DATASENTINEL_AI_MAX_COMPLETION_TOKENS=350
+DATASENTINEL_OCR_MODE=deferred
+```
+
+The server loads `.env.local` on startup without overriding existing process environment variables. The app reports AI readiness through `/api/health` and optional `aiProcessing` metadata in scan, metrics, and evaluation responses. Existing scans remain deterministic and show zero model calls unless a redacted assistive AI classification path is explicitly invoked.
+
+OpenRouter bills in USD credits, so the runtime uses a conservative 25 USD application cap for the requested 25 EUR budget. Set the OpenRouter dashboard key credit limit as well when available; the application guard is not a replacement for provider-side spend limits.
 
 The Caddy site must keep `/api/*` proxying before SPA fallback:
 
@@ -91,7 +121,9 @@ sudo systemctl reload caddy
 curl -I http://127.0.0.1/
 curl -I http://127.0.0.1/dashboard
 curl -s http://127.0.0.1/api/health
+curl -s http://127.0.0.1/api/health | grep openrouter
 curl -s http://127.0.0.1/api/sources | grep source_001
+python3 -m backend.datasentinel.db_tool status --db-path /srv/datasentinel/data/datasentinel.sqlite3
 curl -I https://founder-force.uk/
 curl -I https://founder-force.uk/dashboard
 curl -s https://founder-force.uk/api/health
@@ -103,7 +135,7 @@ curl -s https://founder-force.uk/dashboard | grep DataSentinel
 
 If `founder-force.uk` is Cloudflare-proxied, its DNS origin record must point to `52.159.109.133` before the domain can reach the `agent-us` Caddy site.
 
-The remote API is a P0 in-memory contract server. It may serve mock-compatible envelopes and in-memory scan/review state only. It must not connect to production file sources, call Microsoft Graph, mutate source files, use OAuth or tenant credentials, add a database or queue, call AI services, or perform deletion.
+The remote API is a P0 contract server. It may serve mock-compatible envelopes, in-memory scan/review state, or the approved local SQLite state file only. It must not connect to production file sources, call Microsoft Graph, mutate source files, use OAuth or tenant credentials, add a production database or queue, or perform deletion. If OpenRouter AI assistive mode is enabled, it must remain redacted-evidence-only, fail-closed, and capped by the configured project budget.
 
 ## Rollback
 
@@ -115,4 +147,4 @@ sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 ```
 
-To roll back only the frontend assets, repoint `/srv/datasentinel/frontend/current` to a previous release directory and reload or recheck the site. To roll back the API route, stop the Python API service, remove the `/api/*` reverse proxy block, validate Caddy, and reload.
+To roll back only the frontend assets, repoint `/srv/datasentinel/frontend/current` to a previous release directory and reload or recheck the site. To roll back API persistence, stop the Python API service and restart it without `--db-path`; keep, archive, or remove `/srv/datasentinel/data/datasentinel.sqlite3` according to the demo-state retention decision. To roll back the API route, stop the Python API service, remove the `/api/*` reverse proxy block, validate Caddy, and reload.

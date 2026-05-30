@@ -49,6 +49,7 @@ The future product experience should make GDPR data cleanup feel like an account
 | Evaluation Tab | Show accuracy, reproducibility, speed, and resource intensity. |
 | Governance Settings | Show active policy pack, organization model, source adapters, and change controls. |
 | Permission Boundary | Show allowed actions, denied actions, visible scopes, and denial reasons. |
+| AI Processing Boundary | Show whether optional OpenRouter review support is disabled, missing a key, configured, or budget-blocked without exposing secrets or raw content. |
 
 ## Reviewer-Friendly Requirements
 
@@ -91,6 +92,17 @@ The inventory and extraction interaction extends the Dashboard latest-scan and p
 - The UI explicitly shows that raw source content is not exposed.
 - Completed scan state marks inventory and extraction as complete while preserving duration, throughput, and deterministic evaluation readiness.
 - The UI must avoid presenting extraction warnings as legal conclusions or deletion instructions.
+
+## OpenRouter AI Assistive Processing Interaction
+
+The AI assistive interaction is an operational boundary, not a default scan requirement:
+
+- Health and scan metadata may show the current provider, model, budget guard, OCR/grep/AI tier plan, and safety boundaries.
+- Metadata, text extraction, OCR, grep-rule stages, and active policy-pack context must run before AI context support is considered.
+- AI context support can only use redacted evidence anchored to deterministic findings and mapped to the Atlas stage-4 context/risk boundary.
+- AI runtime metadata should expose the 12 Atlas stage mapping so users can see that owner routing, permission boundaries, audit, delta governance, admin metrics, and evaluation remain outside AI authority.
+- If the AI key is missing, the budget is exhausted, or usage cannot be checked in fail-closed mode, the UI should show a neutral unavailable state and continue the deterministic workflow.
+- The UI must not expose the OpenRouter API key, raw source text, unredacted personal data, legal advice, GDPR-compliance claims, owner decisions, permission decisions, audit facts invented by AI, or deletion instructions.
 
 ## Deterministic Signal Detection Interaction
 
@@ -232,4 +244,4 @@ The public homepage separates project introduction from the internal operations 
 - Visual design system.
 - Interaction details.
 - Framework-specific components.
-- Data persistence model.
+- Production data persistence model beyond the local SQLite P0 state file.

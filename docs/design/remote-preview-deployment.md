@@ -4,6 +4,8 @@
 
 The project needs a shared remote preview so teammates can inspect the current P0 frontend without running a local Vite server. The preview must not expand the product boundary into production backend, Microsoft Graph, OAuth, tenant, deletion, storage, or legal-compliance claims.
 
+This document covers the original static frontend hosting slice. The later loopback API server and local SQLite state file are governed by `docs/design/agent-us-api-server-integration.md` and `docs/design/local-sqlite-persistence.md`.
+
 ## Scope
 
 In scope:
@@ -65,7 +67,7 @@ No API contract, mock payload, product workflow, review decision, deletion behav
 ## Primitive Acceptance Criteria
 
 - A production frontend build passes before upload.
-- The remote host serves the app from Caddy on port 80 without adding Node, Nginx, backend, database, OAuth, Graph, or deletion services.
+- The remote host serves the static app from Caddy on port 80 without adding Node, Nginx, OAuth, Graph, production database, or deletion services; the loopback API and local SQLite state file are governed by their own design notes.
 - Direct visits to `https://founder-force.uk/` and `https://founder-force.uk/dashboard` return the frontend HTML after DNS points to `agent-us`.
 - Existing non-DataSentinel Caddy routes remain configured unless explicitly retired.
 - The remote preview remains mock-backed and does not expose raw sensitive values.

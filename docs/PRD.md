@@ -26,6 +26,7 @@ Provide a prototype workflow that shows how an organization can discover GDPR-re
 - Evaluation concept for accuracy, reproducibility, speed, and resource intensity.
 - Governance-configuration concept for policy packs, organization model, permissions, review support, and change previews.
 - User-control concept for visible allowed actions, denied actions, and reason requirements.
+- Optional AI-assist concept for redacted, deterministic evidence that needs context support after OCR and grep-style rules.
 
 ## Backend Planning Sequence After Sample Source Connection
 
@@ -43,6 +44,7 @@ Once a controlled sample source is connected, P0 delivery should proceed through
 10. Represent delta scans against a prior full-scan baseline.
 11. Aggregate admin metrics.
 12. Publish evaluation metrics.
+13. Optionally use OpenRouter assistive AI for redacted ambiguous evidence only after deterministic OCR and grep-style processing.
 
 The detailed planning notes are `docs/design/backend-post-source-execution-plan.md` and `docs/design/backend-post-source-stage-details.md`.
 
@@ -71,6 +73,21 @@ The next implementation slice connects the running scan to observable file inven
 - Leave deterministic signal detection, risk scoring, owner routing, and review decisions in their existing downstream stages.
 
 The detailed design note is `docs/design/source-inventory-content-extraction.md`.
+
+## OpenRouter AI Assistive Processing Slice
+
+The optional AI slice configures OpenRouter for review-support context when deterministic evidence needs assistance. It must:
+
+- Stay disabled unless assistive mode and an OpenRouter API key are configured.
+- Use `google/gemini-3.1-flash-lite` as the default model.
+- Enforce a 25 EUR project budget through a conservative 25 USD OpenRouter application cap and optional key-usage baseline.
+- Run metadata, text/OCR, and grep-style deterministic processing before any AI escalation.
+- Send only redacted deterministic evidence to OpenRouter.
+- Fail closed when usage cannot be checked, budget is exhausted, or input is not redacted.
+- Keep normal P0 scan, review, audit, metrics, and evaluation flows at zero model calls unless explicit assistive classification is invoked.
+- Avoid legal advice, full GDPR-compliance claims, deletion instructions, raw source content, and unredacted personal data.
+
+The detailed design note is `docs/design/openrouter-ai-processing.md`.
 
 ## Context and Risk Judgment Slice
 
@@ -233,7 +250,7 @@ These surfaces must consume the tolerant contract defined in `docs/API_CONTRACT.
 - Production Microsoft 365 integration.
 - Real deletion of remote files.
 - Authentication and authorization implementation.
-- Persistent storage selection.
+- Production persistent storage selection beyond the local SQLite P0 state file.
 - AI model or vendor selection.
 - User interface implementation.
 

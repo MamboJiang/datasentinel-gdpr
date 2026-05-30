@@ -34,6 +34,37 @@ EvaluationSummary:
         estimatedCostUsd: { type: number, minimum: 0 }
         estimatedCostPerThousandFilesUsd: { type: number, minimum: 0 }
         paidServiceUsed: { type: boolean }
+    aiProcessing:
+      type: object
+      additionalProperties: true
+      properties:
+        status: { type: string }
+        mode: { type: string }
+        provider: { type: string }
+        model: { type: string }
+        budgetLimitEur: { type: number, minimum: 0 }
+        budgetLimitUsd: { type: number, minimum: 0 }
+        usageBaselineUsd: { type: [number, "null"], minimum: 0 }
+        budgetGuard: { type: string }
+        maxPromptTokens: { type: integer, minimum: 0 }
+        maxCompletionTokens: { type: integer, minimum: 0 }
+        atlasReference: { type: string }
+        atlasAlignment:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        tierPlan:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        modelCalls: { type: integer, minimum: 0 }
+        estimatedCostUsd: { type: number, minimum: 0 }
+        paidServiceUsed: { type: boolean }
+        rawContentExposed: { type: boolean }
+        legalConclusionProvided: { type: boolean }
+        deletionExecuted: { type: boolean }
     qualityBasis:
       type: object
       additionalProperties: true
@@ -190,6 +221,37 @@ AdminMetrics:
         warnings:
           type: array
           items: { type: string }
+    aiProcessing:
+      type: object
+      additionalProperties: true
+      properties:
+        status: { type: string }
+        mode: { type: string }
+        provider: { type: string }
+        model: { type: string }
+        budgetLimitEur: { type: number, minimum: 0 }
+        budgetLimitUsd: { type: number, minimum: 0 }
+        usageBaselineUsd: { type: [number, "null"], minimum: 0 }
+        budgetGuard: { type: string }
+        maxPromptTokens: { type: integer, minimum: 0 }
+        maxCompletionTokens: { type: integer, minimum: 0 }
+        atlasReference: { type: string }
+        atlasAlignment:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        tierPlan:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        modelCalls: { type: integer, minimum: 0 }
+        estimatedCostUsd: { type: number, minimum: 0 }
+        paidServiceUsed: { type: boolean }
+        rawContentExposed: { type: boolean }
+        legalConclusionProvided: { type: boolean }
+        deletionExecuted: { type: boolean }
     evaluation: { $ref: "#/EvaluationSummary" }
 AdminMetricsEnvelope:
   type: object
