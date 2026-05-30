@@ -218,6 +218,43 @@ class BackendApiServerTests(unittest.TestCase):
             self.assertEqual(finding["body"]["data"]["status"], "escalated")
             self.assertEqual(audit_events["body"]["data"][0]["eventType"], "review_recorded")
 
+    def test_prelaunch_mode_clears_historical_sqlite_demo_rows_only(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory) / "source"
+            root.mkdir()
+            db_path = Path(directory) / "datasentinel.sqlite3"
+            seeded = build_sqlite_app(db_path)
+            created = seeded.handle(
+                "POST",
+                "/api/sources",
+                "trace_seed_real_source",
+                json.dumps({
+                    "sourceId": "source_real_local",
+                    "name": "Real Local Source",
+                    "sourceType": "local_repo",
+                    "status": "registered",
+                    "rootLabel": str(root),
+                    "masterOfDataUserId": "owner_real",
+                    "config": {"rootPath": str(root)},
+                }),
+                "application/json",
+            )
+            seeded_findings = seeded.handle("GET", "/api/findings", "trace_seed_findings")
+
+            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+                prelaunch = build_sqlite_app(db_path, [root])
+                sources = prelaunch.handle("GET", "/api/sources", "trace_prelaunch_sources")
+                findings = prelaunch.handle("GET", "/api/findings", "trace_prelaunch_findings")
+                audit_events = prelaunch.handle("GET", "/api/audit/events", "trace_prelaunch_audit")
+                metrics = prelaunch.handle("GET", "/api/admin/metrics", "trace_prelaunch_metrics")
+
+            self.assertEqual(created["status"], 201)
+            self.assertGreater(len(seeded_findings["body"]["data"]), 0)
+            self.assertEqual([source["sourceId"] for source in sources["body"]["data"]], ["source_real_local"])
+            self.assertEqual(findings["body"]["data"], [])
+            self.assertEqual(audit_events["body"]["data"], [])
+            self.assertEqual(metrics["body"]["data"]["flaggedFiles"], 0)
+
     def test_scan_start_accepts_mock_ready_source(self) -> None:
         app = build_default_app()
 

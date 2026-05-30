@@ -59,6 +59,7 @@
 | AUTH-008 | Render unauthenticated console | The frontend shows the sign-in gate and does not render fixture findings. |
 | AUTH-009 | Render authenticated console with no findings | The frontend shows operational empty states and source setup actions instead of fake examples. |
 | AUTH-010 | Start server with `DATASENTINEL_ENABLE_DEMO_FIXTURES=false` | Sources, findings, audit, metrics, and evaluation start empty until a configured local source is scanned. |
+| AUTH-011 | Restart a SQLite-backed preview after disabling demo fixtures | Historical seeded demo sources and workflow documents are removed while real registered local sources and account/session records remain. |
 
 ## Local SQLite Persistence Checks
 

@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from .envelope import utc_now
-from .source_store import default_sources
+from .source_store import default_sources, demo_fixtures_enabled, demo_source_ids
 
 SCHEMA_VERSION = "2"
 WORKFLOW_STATE_KEY = "demo_workflow_state"
@@ -62,6 +62,25 @@ class SQLiteDocumentStore:
                     VALUES (?, ?, ?)
                     """,
                     [(source["sourceId"], _dump(source), now) for source in sources],
+                )
+
+    def clear_demo_fixture_records(self) -> None:
+        """Remove historical seeded demo rows when a host switches to prelaunch mode."""
+
+        fixture_ids = demo_source_ids()
+        if not fixture_ids:
+            return
+
+        placeholders = ",".join("?" for _ in fixture_ids)
+        with self._lock:
+            with self._connection() as connection:
+                connection.execute(
+                    f"DELETE FROM source_records WHERE source_id IN ({placeholders})",
+                    tuple(sorted(fixture_ids)),
+                )
+                connection.execute(
+                    "DELETE FROM workflow_documents WHERE document_key = ?",
+                    (WORKFLOW_STATE_KEY,),
                 )
 
     def list_sources(self) -> list[dict[str, Any]]:
@@ -189,6 +208,8 @@ class SQLiteSourceStore:
     ) -> None:
         self.documents = documents
         self.allowed_roots = tuple(Path(root).resolve() for root in (allowed_roots or ()))
+        if sources is None and not demo_fixtures_enabled():
+            self.documents.clear_demo_fixture_records()
         seed = default_sources() if sources is None else [copy.deepcopy(source) for source in sources]
         self.documents.seed_sources(seed)
 

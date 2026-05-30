@@ -83,6 +83,7 @@ The Google/GitHub account system is accepted when:
 - `contracts/openapi.yaml`, `contracts/schemas/common.yaml`, and `docs/API_CONTRACT.md` document provider list, login redirect, callback, session read, and logout endpoints.
 - Runtime configuration uses ignored environment variables for Google client ID/secret, GitHub client ID/secret, redirect base URL, session secret, cookie security, and auth-required mode.
 - Prelaunch deployments can set `DATASENTINEL_ENABLE_DEMO_FIXTURES=false` so the signed-in console starts from empty state and configured local sources instead of seeded demo findings.
+- When a persistent SQLite host switches to `DATASENTINEL_ENABLE_DEMO_FIXTURES=false`, historical seeded demo source rows and demo workflow documents are removed while real registered local sources and account/session records remain.
 - `GET /api/auth/providers` lists Google and GitHub setup state without exposing secrets.
 - Google and GitHub login are initiated only from the backend and provider secrets never reach the frontend.
 - GitHub login uses state plus PKCE challenge/verifier; callback state mismatch creates no session.

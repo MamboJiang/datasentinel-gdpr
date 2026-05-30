@@ -24,6 +24,10 @@ def default_sources() -> list[dict[str, Any]]:
     return copy.deepcopy(load_mock("sources.json")["data"])
 
 
+def demo_source_ids() -> set[str]:
+    return {source["sourceId"] for source in load_mock("sources.json")["data"]}
+
+
 def demo_fixtures_enabled() -> bool:
     return os.environ.get("DATASENTINEL_ENABLE_DEMO_FIXTURES", "true").lower() not in {"0", "false", "no", "off"}
 
