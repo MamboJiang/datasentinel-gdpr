@@ -4,7 +4,7 @@ DataSentinel GDPR is a hackathon project concept for GDPR-relevant data discover
 
 The project goal is to help an organization identify, classify, route, review, and audit personal-data findings across distributed file sources such as OneDrive, SharePoint, shared drives, and local sample repositories.
 
-This repository is currently initialized for planning and collaboration only. It does not contain production code yet.
+This repository now contains a local prelaunch prototype: a Vite frontend, a stdlib Python API server, local SQLite state, optional OpenRouter AI metadata, and a backend-owned Google/GitHub sign-in boundary. It is not a production GDPR compliance system.
 
 ## Product Thesis
 
@@ -22,8 +22,8 @@ Find risky personal-data records, explain why they matter, route them to the acc
 
 - No automatic deletion of user data without human review.
 - No legal advice.
-- No production integration with Microsoft 365 or other external systems yet.
-- No implementation code before the project requirements and technical approach are approved.
+- No production integration with Microsoft 365 or tenant source systems yet.
+- No production deletion, enterprise SSO, SCIM, or production RBAC.
 
 ## Documents
 

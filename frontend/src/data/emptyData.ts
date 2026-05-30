@@ -1,0 +1,104 @@
+import type { MockData } from './mockApi'
+
+export function getEmptyData(): MockData {
+  return {
+    sources: [],
+    scan: {
+      scanId: 'current',
+      sourceId: '',
+      scanType: 'none',
+      status: 'idle',
+      stage: 'not_started',
+      progress: 0,
+      totalFiles: 0,
+      scannedFiles: 0,
+      flaggedFiles: 0,
+      totalBytes: 0,
+      durationMs: null,
+      throughputFilesPerSecond: null,
+      reproducibilityFingerprint: null,
+      pipelineStages: [],
+    },
+    findings: [],
+    findingDetail: {
+      findingId: '',
+      fileName: '',
+      riskLevel: 'unknown',
+      riskScore: 0,
+      status: 'unknown',
+    },
+    findingDetails: {},
+    auditEvents: [],
+    metrics: {
+      totalScannedFiles: 0,
+      flaggedFiles: 0,
+      totalScannedGb: 0,
+      scanProgress: 0,
+      lastScanTimeSeconds: null,
+      openReviewBacklog: 0,
+      highRiskFindings: 0,
+      retentionOverdueFiles: 0,
+      reviewDecisionCount: 0,
+      auditRecordedEvents: 0,
+    },
+    evaluation: {
+      precision: null,
+      recall: null,
+      f1: null,
+      reproducibility: null,
+      throughputFilesPerSecond: null,
+      resourceIntensity: {
+        modelCalls: 0,
+        estimatedCostUsd: 0,
+        paidServiceUsed: false,
+      },
+    },
+    governanceConfig: {
+      configId: 'unconfigured',
+      activePolicyPack: {
+        policyPackId: 'unconfigured',
+        version: 'unconfigured',
+        status: 'inactive',
+        effectiveFrom: '2026-05-30',
+        reviewDecisions: [],
+      },
+      organizationModel: {
+        organizationModelId: 'unconfigured',
+        version: 'unconfigured',
+        ownerResolutionStrategy: 'unconfigured',
+      },
+      sourceAdapters: [],
+      changeControls: {
+        policyChangesRequirePreview: true,
+        orgChangesRequireAuditEvent: true,
+        realDeletionAllowed: false,
+      },
+    },
+    permissionBoundary: {
+      actorId: '',
+      roles: [],
+      allowedActions: [],
+      deniedActions: [
+        {
+          action: 'execute_real_deletion',
+          reason: 'Real deletion is disabled.',
+        },
+      ],
+      visibleScopes: [],
+    },
+    reviewSupport: {
+      findingId: '',
+      actorId: '',
+      policyPackVersion: 'unconfigured',
+      availableDecisions: [],
+      checklist: [],
+    },
+    meta: {
+      contractVersion: '0.1.0',
+      generatedAt: new Date().toISOString(),
+      traceId: 'trace_empty_state',
+      partial: false,
+      warnings: [],
+    },
+  }
+}

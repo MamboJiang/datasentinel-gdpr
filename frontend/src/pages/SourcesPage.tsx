@@ -1,13 +1,15 @@
-import { CheckCircle2, Database, Plus, RotateCw, ScanSearch } from 'lucide-react'
+import { CheckCircle2, Database, Plus, RotateCw, ScanSearch, X } from 'lucide-react'
+import { useState, type FormEvent } from 'react'
 import { useData } from '../data/useData'
 import { canStartDeltaScan, isSourceScanReady } from '../data/scanWorkflow'
 import { humanize } from '../components/formatters'
-import { Button, PageHeader, StatusBadge } from '../components/ui'
+import { Button, EmptyState, PageHeader, StatusBadge } from '../components/ui'
 import { useI18n } from '../i18n'
 
 export function SourcesPage() {
   const { t } = useI18n()
-  const { sources, scan, governanceConfig, startScan, testSourceConnection } = useData()
+  const { sources, scan, governanceConfig, createSource, startScan, testSourceConnection } = useData()
+  const [sourceDialogOpen, setSourceDialogOpen] = useState(false)
   const scanIsRunning = scan.status === 'running'
 
   return (
@@ -15,7 +17,7 @@ export function SourcesPage() {
       <PageHeader
         eyebrow="Discovery inputs"
         title="Sources"
-        actions={<Button icon={Plus}>Add source</Button>}
+        actions={<Button icon={Plus} onClick={() => setSourceDialogOpen(true)}>Add source</Button>}
       />
 
       <section className="panel table-panel">
@@ -25,7 +27,7 @@ export function SourcesPage() {
             <strong>{t('{{count}} configured sources', { count: sources.length })}</strong>
           </div>
         </div>
-        <div className="table-wrap">
+        {sources.length ? <div className="table-wrap">
           <table className="source-table">
             <thead>
               <tr>
@@ -90,8 +92,79 @@ export function SourcesPage() {
               })}
             </tbody>
           </table>
-        </div>
+        </div> : <EmptyState title="No sources configured" description="Add a local source, test the connection, then start a scan." />}
       </section>
+
+      {sourceDialogOpen ? <SourceDialog onClose={() => setSourceDialogOpen(false)} onCreate={createSource} /> : null}
     </>
+  )
+}
+
+function SourceDialog({
+  onClose,
+  onCreate,
+}: {
+  onClose: () => void
+  onCreate: ReturnType<typeof useData>['createSource']
+}) {
+  const [name, setName] = useState('')
+  const [rootPath, setRootPath] = useState('')
+  const [ownerId, setOwnerId] = useState('')
+  const canSubmit = name.trim().length > 1 && rootPath.trim().startsWith('/')
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!canSubmit) {
+      return
+    }
+
+    const normalizedName = name.trim()
+    const normalizedRoot = rootPath.trim()
+    onCreate({
+      sourceId: `source_local_${Date.now()}`,
+      name: normalizedName,
+      sourceType: 'local_repo',
+      status: 'registered',
+      rootLabel: normalizedRoot,
+      masterOfDataUserId: ownerId.trim() || undefined,
+      config: { rootPath: normalizedRoot },
+    })
+    onClose()
+  }
+
+  return (
+    <div className="dialog-overlay" role="presentation">
+      <section aria-labelledby="source-dialog-title" aria-modal="true" className="dialog-card" role="dialog">
+        <div className="dialog-header">
+          <div>
+            <p className="eyebrow">Source setup</p>
+            <h2 id="source-dialog-title">Add local source</h2>
+          </div>
+          <button className="icon-button" type="button" aria-label="Close source dialog" onClick={onClose}><X aria-hidden="true" size={18} /></button>
+        </div>
+        <form onSubmit={submit}>
+          <label className="form-field">
+            <span>Source name</span>
+            <input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder="Finance shared folder" />
+          </label>
+          <label className="form-field">
+            <span>Allowed absolute path</span>
+            <input value={rootPath} onChange={(event) => setRootPath(event.target.value)} placeholder="/srv/datasentinel/sources/finance" />
+          </label>
+          <label className="form-field">
+            <span>Master of Data user ID</span>
+            <input value={ownerId} onChange={(event) => setOwnerId(event.target.value)} placeholder="Optional owner identifier" />
+          </label>
+          <div className="dialog-notice">
+            <CheckCircle2 aria-hidden="true" size={17} />
+            <span>The API server must be started with this path under an allowed root before the connection can pass.</span>
+          </div>
+          <div className="dialog-actions">
+            <Button variant="ghost" onClick={onClose}>Cancel</Button>
+            <Button disabled={!canSubmit} type="submit">Register source</Button>
+          </div>
+        </form>
+      </section>
+    </div>
   )
 }

@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
 from .ai_config import load_local_env
-from .source_http import SourceHttpApp, build_default_app, build_sqlite_app
+from .source_http import SourceHttpApp, build_sqlite_app
 
 
 def make_handler(app: SourceHttpApp | None = None) -> type[BaseHTTPRequestHandler]:
@@ -42,7 +42,9 @@ def make_handler(app: SourceHttpApp | None = None) -> type[BaseHTTPRequestHandle
             payload = json.dumps(result["body"]).encode("utf-8") if result["status"] != 204 else b""
             self.send_response(result["status"])
             for key, value in result["headers"].items():
-                self.send_header(key, value)
+                values = value if isinstance(value, list) else [value]
+                for item in values:
+                    self.send_header(key, item)
             self.send_header("Content-Length", str(len(payload)))
             self.end_headers()
             if payload:
@@ -60,9 +62,10 @@ def main() -> None:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", default=8000, type=int)
     parser.add_argument("--db-path", default=os.environ.get("DATASENTINEL_DB_PATH"))
+    parser.add_argument("--allowed-root", action="append", default=[], help="Absolute local source root allowed for prelaunch local scans.")
     args = parser.parse_args()
 
-    app = build_sqlite_app(args.db_path) if args.db_path else build_default_app()
+    app = build_sqlite_app(args.db_path, args.allowed_root) if args.db_path else SourceHttpApp.with_roots(args.allowed_root)
     server = ThreadingHTTPServer((args.host, args.port), make_handler(app))
     mode = f"SQLite state at {args.db_path}" if args.db_path else "in-memory state"
     print(f"DataSentinel API listening on http://{args.host}:{args.port}/api/health ({mode})")

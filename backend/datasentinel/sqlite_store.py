@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import copy
 import json
+import secrets
 import sqlite3
 import threading
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -14,7 +16,7 @@ from typing import Any, Iterable
 from .envelope import utc_now
 from .source_store import default_sources
 
-SCHEMA_VERSION = "1"
+SCHEMA_VERSION = "2"
 WORKFLOW_STATE_KEY = "demo_workflow_state"
 
 
@@ -34,10 +36,14 @@ class SQLiteDocumentStore:
             ).fetchone()
             source_count = connection.execute("SELECT COUNT(*) AS count FROM source_records").fetchone()
             workflow_count = connection.execute("SELECT COUNT(*) AS count FROM workflow_documents").fetchone()
+            user_count = connection.execute("SELECT COUNT(*) AS count FROM account_users").fetchone()
+            session_count = connection.execute("SELECT COUNT(*) AS count FROM auth_sessions").fetchone()
 
         return {
             "path": str(self.path),
             "schemaVersion": schema_version["value"] if schema_version else None,
+            "accountUserCount": user_count["count"],
+            "authSessionCount": session_count["count"],
             "sourceCount": source_count["count"],
             "workflowDocumentCount": workflow_count["count"],
         }
@@ -133,6 +139,22 @@ class SQLiteDocumentStore:
                         payload_json TEXT NOT NULL,
                         updated_at TEXT NOT NULL
                     );
+
+                    CREATE TABLE IF NOT EXISTS account_users (
+                        user_id TEXT PRIMARY KEY,
+                        provider TEXT NOT NULL,
+                        provider_subject TEXT NOT NULL,
+                        payload_json TEXT NOT NULL,
+                        updated_at TEXT NOT NULL,
+                        UNIQUE(provider, provider_subject)
+                    );
+
+                    CREATE TABLE IF NOT EXISTS auth_sessions (
+                        session_id TEXT PRIMARY KEY,
+                        user_id TEXT NOT NULL,
+                        expires_at INTEGER NOT NULL,
+                        created_at TEXT NOT NULL
+                    );
                     """
                 )
                 connection.execute(
@@ -194,6 +216,71 @@ class SQLiteWorkflowStore:
 
     def save(self, payload: dict[str, Any]) -> None:
         self.documents.put_workflow_document(WORKFLOW_STATE_KEY, payload)
+
+
+class SQLiteAuthStore:
+    """Persists prelaunch account profiles and first-party sessions."""
+
+    def __init__(self, documents: SQLiteDocumentStore) -> None:
+        self.documents = documents
+
+    def upsert_user(self, user: dict[str, Any]) -> dict[str, Any]:
+        now = utc_now()
+        stored = copy.deepcopy(user)
+        with self.documents._lock:
+            with self.documents._connection() as connection:
+                connection.execute(
+                    """
+                    INSERT INTO account_users (user_id, provider, provider_subject, payload_json, updated_at)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT(provider, provider_subject) DO UPDATE SET
+                        user_id = excluded.user_id,
+                        payload_json = excluded.payload_json,
+                        updated_at = excluded.updated_at
+                    """,
+                    (stored["userId"], stored["provider"], stored["providerSubject"], _dump(stored), now),
+                )
+        return copy.deepcopy(stored)
+
+    def create_session(self, user_id: str, expires_at: int) -> str:
+        session_id = secrets.token_urlsafe(32)
+        with self.documents._lock:
+            with self.documents._connection() as connection:
+                connection.execute(
+                    """
+                    INSERT INTO auth_sessions (session_id, user_id, expires_at, created_at)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (session_id, user_id, expires_at, utc_now()),
+                )
+        return session_id
+
+    def get_session(self, session_id: str) -> dict[str, Any] | None:
+        with self.documents._connection() as connection:
+            row = connection.execute(
+                """
+                SELECT s.session_id, s.user_id, s.expires_at, u.payload_json
+                FROM auth_sessions s
+                JOIN account_users u ON u.user_id = s.user_id
+                WHERE s.session_id = ?
+                """,
+                (session_id,),
+            ).fetchone()
+
+        if not row or row["expires_at"] <= int(time.time()):
+            return None
+
+        return {
+            "sessionId": row["session_id"],
+            "userId": row["user_id"],
+            "expiresAt": row["expires_at"],
+            "user": _load(row["payload_json"]),
+        }
+
+    def delete_session(self, session_id: str) -> None:
+        with self.documents._lock:
+            with self.documents._connection() as connection:
+                connection.execute("DELETE FROM auth_sessions WHERE session_id = ?", (session_id,))
 
 
 def _dump(payload: dict[str, Any]) -> str:

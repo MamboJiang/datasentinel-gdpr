@@ -34,6 +34,48 @@ Problem:
       items:
         type: object
         additionalProperties: true
+AuthProvider:
+  type: object
+  required: [provider, label, configured, loginUrl]
+  additionalProperties: true
+  properties:
+    provider: { type: string, enum: [google, github] }
+    label: { type: string }
+    configured: { type: boolean }
+    loginUrl: { type: string }
+AuthProviderListEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data:
+      type: array
+      items: { $ref: "#/AuthProvider" }
+    meta: { $ref: "#/Meta" }
+AuthUser:
+  type: object
+  required: [userId, provider, providerSubject, displayName]
+  additionalProperties: true
+  properties:
+    userId: { type: string }
+    provider: { type: string, enum: [google, github] }
+    providerSubject: { type: string }
+    displayName: { type: string }
+    email: { type: [string, "null"] }
+    avatarUrl: { type: [string, "null"] }
+AuthSession:
+  type: object
+  required: [authenticated]
+  additionalProperties: true
+  properties:
+    authenticated: { type: boolean }
+    user: { anyOf: [{ $ref: "#/AuthUser" }, { type: "null" }] }
+    expiresAt: { type: [string, "null"], format: date-time }
+AuthSessionEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/AuthSession" }
+    meta: { $ref: "#/Meta" }
 HealthEnvelope:
   type: object
   required: [data, meta]

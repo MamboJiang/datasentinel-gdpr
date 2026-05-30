@@ -6,11 +6,65 @@ from pathlib import Path
 import threading
 import time
 import unittest
+from unittest import mock
 from http.server import ThreadingHTTPServer
 from tempfile import TemporaryDirectory
 
+from backend.datasentinel.auth import AUTH_TX_COOKIE, SESSION_COOKIE, AuthService, InMemoryAuthStore
+from backend.datasentinel.auth_support import cookie_value, unsign
 from backend.datasentinel import build_default_app, make_handler
-from backend.datasentinel.source_http import build_sqlite_app
+from backend.datasentinel.source_http import SourceHttpApp, build_sqlite_app
+
+
+class FakeOAuthTransport:
+    def post_form(self, url: str, payload: dict[str, str], headers: dict[str, str]) -> dict[str, str]:
+        self.last_post = {"url": url, "payload": payload, "headers": headers}
+        return {"access_token": "provider_token_not_returned", "token_type": "bearer"}
+
+    def get_json(self, url: str, headers: dict[str, str]) -> dict[str, object] | list[dict[str, object]]:
+        self.last_get = {"url": url, "headers": headers}
+        if url.endswith("/user/emails"):
+            return [{"email": "privacy.reviewer@example.org", "primary": True, "verified": True}]
+        return {"id": 42, "login": "privacy-reviewer", "name": "Privacy Reviewer", "email": None, "avatar_url": "https://avatars.example/reviewer.png"}
+
+
+def auth_settings(auth_required: bool = False) -> dict[str, object]:
+    return {
+        "auth_required": auth_required,
+        "cookie_secure": False,
+        "frontend_return_url": "http://localhost:5173/dashboard",
+        "redirect_base_url": "http://localhost:8000",
+        "session_secret": "test-session-secret",
+        "providers": {
+            "google": {"client_id": "google-client", "client_secret": "google-secret"},
+            "github": {"client_id": "github-client", "client_secret": "github-secret"},
+        },
+    }
+
+
+def auth_app(auth_required: bool = False) -> SourceHttpApp:
+    service = AuthService(InMemoryAuthStore(), auth_settings(auth_required), FakeOAuthTransport())
+    return SourceHttpApp(auth_service=service)
+
+
+def start_github_session(app: SourceHttpApp) -> str:
+    login = app.handle("GET", "/api/auth/login/github", "trace_auth_login")
+    auth_cookie = login["headers"]["Set-Cookie"][0]
+    tx_value = cookie_value(auth_cookie, AUTH_TX_COOKIE)
+    assert tx_value is not None
+    tx = unsign(tx_value, "test-session-secret")
+    assert tx is not None
+    callback = app.handle(
+        "GET",
+        f"/api/auth/callback/github?code=oauth_code&state={tx['state']}",
+        "trace_auth_callback",
+        None,
+        None,
+        {"Cookie": auth_cookie},
+    )
+    session_cookies = [item for item in callback["headers"]["Set-Cookie"] if item.startswith(f"{SESSION_COOKIE}=")]
+    assert session_cookies
+    return session_cookies[0]
 
 
 class BackendApiServerTests(unittest.TestCase):
@@ -26,6 +80,73 @@ class BackendApiServerTests(unittest.TestCase):
         self.assertEqual(sources["status"], 200)
         self.assertGreaterEqual(len(sources["body"]["data"]), 1)
         self.assertEqual(sources["body"]["meta"]["contractVersion"], "0.1.0")
+
+    def test_auth_provider_list_does_not_expose_secrets(self) -> None:
+        app = auth_app()
+
+        providers = app.handle("GET", "/api/auth/providers", "trace_auth_providers")
+        serialized = json.dumps(providers["body"])
+
+        self.assertEqual(providers["status"], 200)
+        self.assertEqual({item["provider"] for item in providers["body"]["data"]}, {"google", "github"})
+        self.assertTrue(all(item["configured"] for item in providers["body"]["data"]))
+        self.assertNotIn("google-secret", serialized)
+        self.assertNotIn("github-secret", serialized)
+
+    def test_unconfigured_provider_rejects_login_without_session(self) -> None:
+        settings = auth_settings()
+        settings["providers"] = {"google": {"client_id": "", "client_secret": ""}, "github": {"client_id": "", "client_secret": ""}}
+        app = SourceHttpApp(auth_service=AuthService(InMemoryAuthStore(), settings, FakeOAuthTransport()))
+
+        rejected = app.handle("GET", "/api/auth/login/github", "trace_auth_unconfigured")
+
+        self.assertEqual(rejected["status"], 503)
+        self.assertEqual(rejected["contentType"], "application/problem+json")
+
+    def test_github_callback_state_mismatch_does_not_create_session(self) -> None:
+        app = auth_app()
+        login = app.handle("GET", "/api/auth/login/github", "trace_auth_login")
+        callback = app.handle(
+            "GET",
+            "/api/auth/callback/github?code=oauth_code&state=wrong",
+            "trace_auth_bad_state",
+            None,
+            None,
+            {"Cookie": login["headers"]["Set-Cookie"][0]},
+        )
+        session = app.handle("GET", "/api/auth/session", "trace_auth_session")
+
+        self.assertEqual(callback["status"], 302)
+        self.assertIn("auth=failed", callback["headers"]["Location"])
+        self.assertFalse(session["body"]["data"]["authenticated"])
+
+    def test_github_callback_creates_safe_session_and_logout_revokes_it(self) -> None:
+        app = auth_app()
+        session_cookie = start_github_session(app)
+        session = app.handle("GET", "/api/auth/session", "trace_auth_session", None, None, {"Cookie": session_cookie})
+        serialized = json.dumps(session["body"])
+
+        self.assertTrue(session["body"]["data"]["authenticated"])
+        self.assertEqual(session["body"]["data"]["user"]["provider"], "github")
+        self.assertEqual(session["body"]["data"]["user"]["email"], "privacy.reviewer@example.org")
+        self.assertNotIn("provider_token_not_returned", serialized)
+
+        logged_out = app.handle("POST", "/api/auth/logout", "trace_auth_logout", "{}", "application/json", {"Cookie": session_cookie})
+        after_logout = app.handle("GET", "/api/auth/session", "trace_auth_after_logout", None, None, {"Cookie": session_cookie})
+
+        self.assertFalse(logged_out["body"]["data"]["authenticated"])
+        self.assertFalse(after_logout["body"]["data"]["authenticated"])
+
+    def test_auth_required_protects_workflow_routes(self) -> None:
+        app = auth_app(auth_required=True)
+
+        rejected = app.handle("GET", "/api/sources", "trace_auth_required")
+        session_cookie = start_github_session(app)
+        accepted = app.handle("GET", "/api/sources", "trace_auth_sources", None, None, {"Cookie": session_cookie})
+
+        self.assertEqual(rejected["status"], 401)
+        self.assertEqual(rejected["contentType"], "application/problem+json")
+        self.assertEqual(accepted["status"], 200)
 
     def test_scan_start_rejects_not_ready_source_without_state_change(self) -> None:
         app = build_default_app()
@@ -201,6 +322,58 @@ class BackendApiServerTests(unittest.TestCase):
             server.shutdown()
             server.server_close()
             thread.join(timeout=5)
+
+    def test_prelaunch_mode_scans_configured_local_source_without_seed_findings(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory) / "source"
+            root.mkdir()
+            (root / "contacts.txt").write_text("Contact privacy.reviewer@example.org for this record.", encoding="utf-8")
+            db_path = Path(directory) / "datasentinel.sqlite3"
+
+            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+                app = build_sqlite_app(db_path, [root])
+                initial_sources = app.handle("GET", "/api/sources", "trace_pre_sources")
+                initial_findings = app.handle("GET", "/api/findings", "trace_pre_findings")
+
+                created = app.handle(
+                    "POST",
+                    "/api/sources",
+                    "trace_pre_create",
+                    json.dumps({
+                        "sourceId": "source_local",
+                        "name": "Local Source",
+                        "sourceType": "local_repo",
+                        "status": "registered",
+                        "rootLabel": str(root),
+                        "masterOfDataUserId": "owner_local",
+                        "config": {"rootPath": str(root)},
+                    }),
+                    "application/json",
+                )
+                connected = app.handle("POST", "/api/sources/source_local/connect-test", "trace_pre_connect")
+                started = app.handle(
+                    "POST",
+                    "/api/scans/full",
+                    "trace_pre_scan",
+                    json.dumps({"sourceId": "source_local"}),
+                    "application/json",
+                )
+                time.sleep(1.1)
+                completed = app.handle("GET", f"/api/scans/{started['body']['data']['scanId']}", "trace_pre_completed")
+                findings = app.handle("GET", "/api/findings", "trace_pre_findings_done")
+                detail = app.handle("GET", f"/api/findings/{findings['body']['data'][0]['findingId']}", "trace_pre_finding_detail")
+                serialized = json.dumps(detail["body"])
+
+            self.assertEqual(initial_sources["body"]["data"], [])
+            self.assertEqual(initial_findings["body"]["data"], [])
+            self.assertEqual(created["status"], 201)
+            self.assertEqual(connected["body"]["data"]["connectionStatus"], "connected")
+            self.assertEqual(started["status"], 202)
+            self.assertEqual(completed["body"]["data"]["status"], "completed")
+            self.assertEqual(completed["body"]["data"]["totalFiles"], 1)
+            self.assertEqual(len(findings["body"]["data"]), 1)
+            self.assertIn("[REDACTED_EMAIL]", serialized)
+            self.assertNotIn("privacy.reviewer@example.org", serialized)
 
 
 if __name__ == "__main__":

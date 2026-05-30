@@ -7,26 +7,35 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from .auth import AuthService
 from .demo_state import DemoState
 from .envelope import envelope, problem, response
 from .persistent_demo_state import PersistentDemoState
+from .prelaunch_state import PrelaunchState
 from .source_api import SourceApi
 from .source_connection import ConnectionPolicy, SourceConnectionService
-from .source_store import SourceStore
-from .sqlite_store import SQLiteDocumentStore, SQLiteSourceStore, SQLiteWorkflowStore
+from .source_store import SourceStore, demo_fixtures_enabled
+from .sqlite_store import SQLiteAuthStore, SQLiteDocumentStore, SQLiteSourceStore, SQLiteWorkflowStore
 
 
 class SourceHttpApp:
-    def __init__(self, source_api: SourceApi | None = None, demo_state: DemoState | None = None) -> None:
+    def __init__(
+        self,
+        source_api: SourceApi | None = None,
+        demo_state: DemoState | None = None,
+        auth_service: AuthService | None = None,
+    ) -> None:
         self.source_api = source_api or SourceApi()
-        self.demo_state = demo_state or DemoState(self.source_api.store)
+        self.demo_state = demo_state or (DemoState(self.source_api.store) if demo_fixtures_enabled() else PrelaunchState(self.source_api.store))
+        self.auth_service = auth_service or AuthService()
 
     @classmethod
     def with_roots(cls, allowed_roots: list[Path | str]) -> "SourceHttpApp":
         store = SourceStore.with_roots(allowed_roots)
         policy = ConnectionPolicy.with_roots(allowed_roots)
         source_api = SourceApi(SourceConnectionService(store, policy), store)
-        return cls(source_api, DemoState(store))
+        state = DemoState(store) if demo_fixtures_enabled() else PrelaunchState(store)
+        return cls(source_api, state)
 
     @classmethod
     def with_sqlite(
@@ -40,7 +49,9 @@ class SourceHttpApp:
         policy = ConnectionPolicy.with_roots(roots)
         source_api = SourceApi(SourceConnectionService(store, policy), store)
         workflow_store = SQLiteWorkflowStore(documents)
-        return cls(source_api, PersistentDemoState(store, workflow_store))
+        auth_service = AuthService(SQLiteAuthStore(documents))
+        state = PersistentDemoState(store, workflow_store) if demo_fixtures_enabled() else PrelaunchState(store)
+        return cls(source_api, state, auth_service)
 
     def handle(
         self,
@@ -86,8 +97,29 @@ class SourceHttpApp:
         content_type: str | None,
         headers: dict[str, str],
     ) -> dict[str, Any]:
+        if method == "GET" and route == "/auth/providers":
+            return self.auth_service.providers(trace_id)
+
+        login_provider = _match(route, "/auth/login/")
+        if method == "GET" and login_provider:
+            return self.auth_service.start_login(login_provider, trace_id, f"/api{route}")
+
+        callback_provider = _match(route, "/auth/callback/")
+        if method == "GET" and callback_provider:
+            return self.auth_service.complete_callback(callback_provider, query, headers, trace_id)
+
+        if method == "GET" and route == "/auth/session":
+            return self.auth_service.session(headers, trace_id)
+
+        if method == "POST" and route == "/auth/logout":
+            return self.auth_service.logout(headers, trace_id)
+
         if method == "GET" and route == "/health":
             return self.demo_state.health(trace_id)
+
+        auth_required = self.auth_service.require_session(headers, trace_id, f"/api{route}")
+        if auth_required:
+            return auth_required
 
         if method == "GET" and route == "/sources":
             return self.source_api.list_sources(trace_id)

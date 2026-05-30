@@ -32,14 +32,16 @@ The future product experience should make GDPR data cleanup feel like an account
 - Render partial data gracefully when the API reports `meta.partial = true`.
 - Give users a clear sense of their permission boundary before they act.
 - Make reviewer guidance operational through checklists, available decisions, transfer options, and escalation options.
+- Separate authentication from authorization: Google/GitHub sign-in identifies the browser user, while permission boundaries still decide available workflow actions.
 
 ## P0 Information Architecture
 
 | Surface | Purpose |
 | --- | --- |
 | Public Project Homepage | Introduce DataSentinel, explain the workflow, and link into the internal dashboard without showing the app shell. |
-| App Shell, Workspace, and Account Menus | Show a page-title-focused top bar with notifications, keep workspace context in the top-left sidebar control, keep logged-in account controls in the bottom-left sidebar menu, and support sidebar collapse. |
-| Source Connector | Select a controlled demo source and start full or delta scans. |
+| Sign-In Gate | Let users start Google or GitHub login when configured, and show setup status when providers are unavailable. |
+| App Shell, Workspace, and Account Menus | Show a page-title-focused top bar with notifications, keep workspace context in the top-left sidebar control, keep authenticated account controls in the bottom-left sidebar menu, and support sidebar collapse. |
+| Source Connector | Select or register an allowed source and start full or delta scans. |
 | Admin Dashboard | Show decision-oriented scan coverage, review queue, high-risk queue, owner routing, latest scan status, and pipeline health without overloading one panel. |
 | Findings Table | Show risk-ranked findings filtered by owner, scan, status, or risk level. |
 | Evidence Card | Show redacted evidence, signals, context, owner, retention status, and audit timeline. |
@@ -69,7 +71,18 @@ The post-source backend planning sequence is documented in `docs/design/backend-
 - Audit view reflects workflow state changes and human decisions.
 - Delta scan presentation reflects changed-file-only processing against a prior full-scan baseline.
 
-The frontend should request the project server through `/api` when available and continue rendering the P0 mock workflow when the backend is unavailable. The fallback is a resilience behavior, not a second contract; both paths must preserve the same envelope, state, and no-deletion boundaries.
+The frontend should request the project server through `/api` when available. Prelaunch deployments should show an unavailable or signed-out state instead of silently rendering fixture data. Local mock fallback may remain for explicit development/testing mode only, and both paths must preserve the same envelope, state, and no-deletion boundaries.
+
+## Prelaunch Account Interaction
+
+The account interaction is documented in `docs/design/prelaunch-account-system.md`.
+
+- The app reads `/api/auth/session` before rendering the internal console.
+- If no valid session exists, the app renders a sign-in gate backed by `/api/auth/providers`.
+- Google and GitHub buttons navigate to backend login routes; the frontend does not receive provider tokens.
+- The account menu renders the safe session profile and exposes logout through `/api/auth/logout`.
+- Permission-boundary surfaces remain visible after login because authentication is not production authorization.
+- The signed-in empty state must avoid fake findings before a source has been configured and scanned.
 
 ## Full Scan Start Interaction
 

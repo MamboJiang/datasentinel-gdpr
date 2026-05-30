@@ -13,9 +13,19 @@ The hackathon prototype must simulate deletion. It must not delete, quarantine, 
 - Audit examples should include decision metadata, not raw sensitive content.
 - Human-entered audit reason text should be sanitized before public display; audit events must preserve accountability without becoming a new store of raw personal data.
 
+## Authentication
+
+Prelaunch sign-in uses backend-owned Google and GitHub OAuth authorization-code flows. Provider client secrets, provider access tokens, refresh tokens, auth state, and PKCE verifier must stay server-side and must not be returned to the frontend.
+
+The browser receives only a DataSentinel first-party HttpOnly session cookie plus safe profile fields from `/api/auth/session`.
+
+`X-Actor-Id` may still exist for local development compatibility. It is not authentication and must not override a valid authenticated session in prelaunch mode.
+
+Enterprise SSO, SCIM, production RBAC, tenant provisioning, and production authorization policy are deferred.
+
 ## Role Simulation
 
-P0 may simulate roles with `X-Actor-Id`. This is not authentication. Production authentication and authorization are deferred.
+Permission and review roles remain represented through the permission-boundary contract. Authentication proves a browser user identity; it does not by itself grant deletion, tenant, connector, or review powers.
 
 ## Permission Boundary UX
 
@@ -23,7 +33,9 @@ P0 should expose allowed and denied actions to the UI. This improves user contro
 
 ## External Services
 
-P0 must not require live Microsoft Graph, production OAuth, tenant secrets, or external deletion APIs.
+P0 must not require live Microsoft Graph, tenant secrets, or external deletion APIs.
+
+Google and GitHub OAuth are approved only for prelaunch sign-in. They must not be used as file-source connectors, directory sync, tenant inventory, or authorization providers in this slice.
 
 OpenRouter assistive AI is the only approved external AI boundary. It must follow these controls:
 

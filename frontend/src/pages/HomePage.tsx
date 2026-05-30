@@ -134,7 +134,7 @@ export function HomePage() {
   return (
     <div className="landing-page" ref={rootRef}>
       <div className="landing-announcement">
-        <span>DataSentinel P0 is mock-backed, redacted, and human-reviewed.</span>
+        <span>DataSentinel prelaunch uses signed-in access, redacted evidence, and human review.</span>
         <a href="#safety" onClick={(event) => handleSectionLink(event, 'safety')}>
           Review boundaries <ArrowRight aria-hidden="true" size={14} />
         </a>
@@ -150,7 +150,7 @@ export function HomePage() {
         <nav className="landing-nav" aria-label="Homepage navigation">
           <a href="#problem" onClick={(event) => handleSectionLink(event, 'problem')}>Problem</a>
           <a href="#workflow" onClick={(event) => handleSectionLink(event, 'workflow')}>Workflow</a>
-          <a href="#sample" onClick={(event) => handleSectionLink(event, 'sample')}>Sample</a>
+          <a href="#sample" onClick={(event) => handleSectionLink(event, 'sample')}>Sources</a>
           <a href="#safety" onClick={(event) => handleSectionLink(event, 'safety')}>Safety</a>
         </nav>
         <Link className="landing-nav-cta" to="/dashboard">Open dashboard</Link>
@@ -162,16 +162,16 @@ export function HomePage() {
             <div className="landing-scene-grid" />
             <div className="landing-file-card landing-parallax-slow">
               <div>
-                <span>supplier_onboarding_2021.pdf</span>
-                <strong>High risk</strong>
+                <span>Configured source file</span>
+                <strong>Needs review</strong>
               </div>
-              <p>IBAN: DE** **** **** ****</p>
+              <p>Identifier: [REDACTED]</p>
               <p>Contact: [REDACTED_EMAIL]</p>
-              <small>Page 1 · 2 evidence anchors</small>
+              <small>Evidence anchors stay masked</small>
             </div>
             <div className="landing-route-card landing-parallax-medium">
               <span>Owner route</span>
-              <strong>Finance Master of Data</strong>
+              <strong>Accountable owner</strong>
               <div>
                 <i /> <b /> <i />
               </div>
@@ -179,9 +179,9 @@ export function HomePage() {
             </div>
             <div className="landing-audit-card landing-parallax-fast">
               <span>Audit trail</span>
-              <p>scan_started</p>
-              <p>finding_assigned</p>
-              <p>review_recorded</p>
+              <p>scan started</p>
+              <p>finding assigned</p>
+              <p>review recorded</p>
             </div>
           </div>
 
@@ -268,18 +268,18 @@ export function HomePage() {
 
         <section className="landing-section landing-sample" id="sample" tabIndex={-1}>
           <div className="landing-section-copy landing-reveal">
-            <h2>Controlled sample source, not live enterprise data.</h2>
+            <h2>Connect a source before findings appear.</h2>
             <p>
-              The default demo references the organizer repository a-klumpp/GDPR-data-samples and uses controlled sample
-              or mock-backed behavior. The sample PDFs are referenced, not vendored into this project.
+              Prelaunch deployments should show configured sources and real empty states. The public organizer repository
+              remains available as a reference dataset for local validation without vendoring the files.
             </p>
           </div>
           <div className="landing-sample-layout">
             <article className="landing-sample-card landing-reveal">
-              <span>Reference source</span>
+              <span>Optional validation reference</span>
               <strong>Organizer GDPR Data Samples</strong>
               <a href="https://github.com/a-klumpp/GDPR-data-samples" rel="noreferrer" target="_blank">
-                Open repository reference <ExternalLink aria-hidden="true" size={14} />
+                Open reference dataset <ExternalLink aria-hidden="true" size={14} />
               </a>
             </article>
             <div className="landing-sample-families landing-reveal" aria-label="Sample families">
@@ -301,9 +301,9 @@ export function HomePage() {
               {consoleSurfaces.map((surface) => <span key={surface}>{surface}</span>)}
             </div>
             <div className="landing-console-copy landing-reveal">
-              <strong>Inspect the internal workspace simulation.</strong>
+              <strong>Enter the internal workspace.</strong>
               <p>
-                The console starts at /dashboard and keeps homepage navigation separate from the internal shell.
+                The console starts at /dashboard after sign-in and keeps homepage navigation separate from the internal shell.
               </p>
               <Link className="landing-primary" to="/dashboard">
                 Open dashboard <ArrowRight aria-hidden="true" size={17} />
@@ -317,8 +317,8 @@ export function HomePage() {
             <div>
               <h2>Measured, not guessed.</h2>
               <p>
-                Evaluation keeps accuracy, reproducibility, throughput, and resource intensity in view. Mock-backed values are
-                prototype evidence, not production certification.
+                Evaluation keeps accuracy, reproducibility, throughput, and resource intensity in view after a scan has produced
+                measurable results.
               </p>
             </div>
             <dl>

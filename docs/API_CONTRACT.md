@@ -84,6 +84,7 @@ Requests should send:
 - `X-Contract-Version: 0.1.0`
 - `X-Actor-Id: user_demo_admin` or a seeded demo user.
 - `Idempotency-Key` for review actions and scan start requests when available.
+- Authenticated prelaunch requests should rely on the first-party HttpOnly session cookie created by the auth callback. `X-Actor-Id` remains a development compatibility header and is not authentication.
 
 Responses should include:
 
@@ -116,6 +117,11 @@ Errors use `application/problem+json`.
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/api/health` | Check backend readiness. |
+| `GET` | `/api/auth/providers` | List configured Google and GitHub login providers without secrets. |
+| `GET` | `/api/auth/login/{provider}` | Start backend-owned OAuth login for `google` or `github`. |
+| `GET` | `/api/auth/callback/{provider}` | Complete provider callback, create a first-party session, and redirect back to the app. |
+| `GET` | `/api/auth/session` | Read current first-party session and safe user profile. |
+| `POST` | `/api/auth/logout` | Revoke the current first-party session and clear the session cookie. |
 | `GET` | `/api/sources` | List configured sources. |
 | `POST` | `/api/sources` | Create a local or mock source. |
 | `POST` | `/api/sources/{sourceId}/connect-test` | Validate source reachability. |
@@ -136,6 +142,25 @@ Errors use `application/problem+json`.
 | `GET` | `/api/findings/{findingId}/review-support` | Read reviewer guidance and allowed actions. |
 
 ## State Machines
+
+### Account Session
+
+Provider login uses backend authorization-code flows. Provider client secrets and provider tokens must stay server-side. The browser receives only a first-party HttpOnly session cookie and safe profile fields from `/api/auth/session`.
+
+`signed_out -> auth_starting -> provider_redirected -> callback_validating -> session_active`
+
+Failure paths:
+
+- `auth_starting -> auth_failed` when the provider is unknown, disabled, or missing credentials.
+- `callback_validating -> auth_failed` when provider error, missing code, state mismatch, token exchange failure, or missing stable provider user ID occurs.
+- `session_active -> signed_out` when logout is accepted or the session expires.
+
+Auth payloads:
+
+- Provider list exposes `provider`, `label`, `configured`, and `loginUrl`.
+- Session read exposes `authenticated`, optional `user`, and optional `expiresAt`.
+- User profile exposes local `userId`, `provider`, `providerSubject`, `displayName`, optional `email`, and optional `avatarUrl`.
+- Provider access tokens, refresh tokens, client secrets, auth state, and PKCE verifier are never returned.
 
 ### Optional AI Processing Metadata
 
@@ -326,6 +351,8 @@ Frontend agents should begin with:
 - `contracts/mocks/sources.json`
 
 Mocks are contract fixtures. They are not production seed data.
+
+Prelaunch hosts should set `DATASENTINEL_ENABLE_DEMO_FIXTURES=false` so `/api/sources`, `/api/findings`, `/api/audit/events`, metrics, and evaluation begin empty and populate only from configured local sources and user actions.
 
 Scan mocks may include optional `fileInventory`, `contentExtraction`, `signalDetection`, `contextRisk`, `ownerAssignment`, `findingAssembly`, `reviewSupport`, and `pipelineStages` fields. These fields summarize internal processing and are safe for public UI because they expose counts, hashes, methods, policy-pack version, organization-model version, warnings, and redaction boundaries rather than raw source content.
 

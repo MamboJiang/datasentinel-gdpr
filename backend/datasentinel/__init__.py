@@ -9,6 +9,7 @@ from .ai_config import (
     settings_from_env,
 )
 from .ai_gateway import AiBudgetGuard, AiRequestRejected, OpenRouterClient
+from .auth import AuthService, InMemoryAuthStore, OAuthTransport, settings_from_env as auth_settings_from_env
 from .processing_pipeline import (
     AiRuntime,
     CandidateSafety,
@@ -35,10 +36,12 @@ __all__ = [
     "AiRuntime",
     "AiRuntimeSettings",
     "AiSettings",
+    "AuthService",
     "CandidateSafety",
     "ConnectionIssue",
     "ConnectionPolicy",
     "EvidenceSignal",
+    "InMemoryAuthStore",
     "OpenRouterClient",
     "OpenRouterSettings",
     "ProcessingCandidate",
@@ -47,6 +50,7 @@ __all__ = [
     "SourceHttpApp",
     "SourceStore",
     "WorkflowContext",
+    "auth_settings_from_env",
     "build_default_app",
     "build_tier_plan",
     "default_sources",

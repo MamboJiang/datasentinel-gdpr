@@ -2,9 +2,9 @@
 
 ## Current Technical Scope
 
-This repository is initialized for documentation, collaboration, contract-first parallel delivery, and a controlled remote frontend plus P0 API preview. The approved technical baseline is the tolerant REST contract in `contracts/openapi.yaml`, its split schemas in `contracts/schemas/`, mock fixtures in `contracts/mocks/`, the local Python API server, optional local SQLite persistence for demo API state, the optional OpenRouter AI assistive boundary, and the deployment path documented in `docs/DEPLOYMENT.md`.
+This repository is initialized for documentation, collaboration, contract-first parallel delivery, and a controlled remote frontend plus P0 API preview. The approved technical baseline is the tolerant REST contract in `contracts/openapi.yaml`, its split schemas in `contracts/schemas/`, mock fixtures in `contracts/mocks/`, the local Python API server, optional local SQLite persistence for demo API state, the prelaunch Google/GitHub account boundary, the optional OpenRouter AI assistive boundary, and the deployment path documented in `docs/DEPLOYMENT.md`.
 
-No production database, queue, authentication, authorization, production file-source connection, or deletion-capable deployment path is approved yet. The approved local storage boundary is the stdlib `sqlite3` file store documented in `docs/design/local-sqlite-persistence.md`; it is optional, local to the API process, and limited to restart-safe P0 demo state. The only approved external API boundary is the optional OpenRouter assistive AI path documented in `docs/design/openrouter-ai-processing.md`; it is disabled unless explicitly configured and must not receive raw personal data.
+No production database, queue, enterprise SSO, production RBAC, production file-source connection, or deletion-capable deployment path is approved yet. The approved local storage boundary is the stdlib `sqlite3` file store documented in `docs/design/local-sqlite-persistence.md`; it is optional, local to the API process, and limited to restart-safe P0 and prelaunch state. The approved external API boundaries are Google/GitHub OAuth for sign-in and the optional OpenRouter assistive AI path documented in `docs/design/openrouter-ai-processing.md`; OpenRouter is disabled unless explicitly configured and must not receive raw personal data.
 
 ## Technical Principles
 
@@ -97,6 +97,20 @@ Technical constraints:
 - External AI input must be redacted, anchored to deterministic evidence, and tied to active policy-pack context. Raw extracted text, file bodies, page images, credentials, tenant tokens, or unredacted personal data must not leave the process.
 - AI output is Atlas stage-4 operational context support only. It must not provide legal advice, claim full GDPR compliance, assign owners, decide permissions, invent audit facts, or issue deletion instructions.
 - Runtime AI metadata must map the tier plan to all 12 Atlas stages from source/policy context through evaluation metrics.
+
+## Prelaunch Account System Technical Slice
+
+The approved account implementation is a backend-owned Google/GitHub OAuth boundary documented in `docs/design/prelaunch-account-system.md`.
+
+Technical constraints:
+
+- Login uses provider authorization-code flow. GitHub login includes state and PKCE; Google login validates state and stable ID-token claims from the server exchange.
+- Provider client secrets, provider access tokens, refresh tokens, auth transaction state, and PKCE verifier remain server-side and are never returned to React.
+- The backend stores only local account profile and first-party session metadata.
+- The browser session is represented by an HttpOnly first-party cookie.
+- `/api/auth/providers`, `/api/auth/session`, and `/api/auth/logout` use the normal envelope shape; login and callback routes are redirects.
+- `DATASENTINEL_AUTH_REQUIRED=true` protects workflow endpoints in prelaunch deployments. Development can keep it false for local contract testing.
+- Authentication does not change review permission boundaries, source connector permissions, deletion boundaries, or GDPR legal-advice constraints.
 
 ## Context and Risk Judgment Technical Slice
 

@@ -75,6 +75,25 @@ The first implementation milestone is accepted when:
 - Evaluation metrics show precision, recall, F1, reproducibility, throughput, and resource intensity.
 - Deletion remains simulated.
 
+## Prelaunch Account Acceptance
+
+The Google/GitHub account system is accepted when:
+
+- The design note `docs/design/prelaunch-account-system.md` defines problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
+- `contracts/openapi.yaml`, `contracts/schemas/common.yaml`, and `docs/API_CONTRACT.md` document provider list, login redirect, callback, session read, and logout endpoints.
+- Runtime configuration uses ignored environment variables for Google client ID/secret, GitHub client ID/secret, redirect base URL, session secret, cookie security, and auth-required mode.
+- Prelaunch deployments can set `DATASENTINEL_ENABLE_DEMO_FIXTURES=false` so the signed-in console starts from empty state and configured local sources instead of seeded demo findings.
+- `GET /api/auth/providers` lists Google and GitHub setup state without exposing secrets.
+- Google and GitHub login are initiated only from the backend and provider secrets never reach the frontend.
+- GitHub login uses state plus PKCE challenge/verifier; callback state mismatch creates no session.
+- Successful provider callback creates a first-party HttpOnly session cookie and a safe local user profile.
+- `/api/auth/session` returns authenticated state and safe profile fields without provider tokens.
+- `POST /api/auth/logout` revokes the local session and clears the session cookie.
+- The unauthenticated console shows a sign-in gate instead of seeded demo findings.
+- The authenticated console account menu uses the current session profile instead of a hard-coded demo actor.
+- Authentication does not grant real deletion, Microsoft Graph access, tenant access, legal conclusions, or hidden permission powers.
+- Automated backend tests cover provider setup, unconfigured rejection, state mismatch rejection, session read, logout, and auth-required workflow protection.
+
 ## OpenRouter AI Assistive Processing Acceptance
 
 The OpenRouter AI assistive-processing boundary is accepted when:

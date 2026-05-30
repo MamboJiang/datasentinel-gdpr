@@ -16,6 +16,7 @@ import { canStartDeltaScan, getDefaultFullScanSource, isSourceScanReady } from '
 import { formatBytes, formatDate, humanize } from '../components/formatters'
 import {
   Button,
+  EmptyState,
   MetricCard,
   PageHeader,
   PartialWarning,
@@ -228,6 +229,7 @@ export function DashboardPage() {
                 <RiskBadge riskLevel={finding.riskLevel} score={finding.riskScore} />
               </Link>
             ))}
+            {highRisk.length === 0 ? <EmptyState title="No priority findings yet" description="Configure a source and run a scan to populate the review queue." /> : null}
           </div>
         </section>
 
@@ -244,6 +246,7 @@ export function DashboardPage() {
                 </div>
               </div>
             ))}
+            {auditEvents.length === 0 ? <EmptyState title="No audit events yet" description="Scan and review activity will appear here." /> : null}
           </div>
         </section>
       </div>

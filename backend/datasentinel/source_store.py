@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -17,7 +18,14 @@ def load_mock(name: str) -> dict[str, Any]:
 
 
 def default_sources() -> list[dict[str, Any]]:
+    if not demo_fixtures_enabled():
+        return []
+
     return copy.deepcopy(load_mock("sources.json")["data"])
+
+
+def demo_fixtures_enabled() -> bool:
+    return os.environ.get("DATASENTINEL_ENABLE_DEMO_FIXTURES", "true").lower() not in {"0", "false", "no", "off"}
 
 
 class SourceStore:

@@ -43,7 +43,22 @@
 | BEAPI-003 | Start a full scan for `source_001` | The server returns `202`, a running scan envelope, `meta.partial = true`, and no raw source content. |
 | BEAPI-004 | Start a full scan for a not-ready source | The server returns `application/problem+json` and does not create a new audit event. |
 | BEAPI-005 | Record a valid review decision | The server returns `201`, updates finding status, creates a review audit event, and keeps `deletionExecuted = false`. |
-| BEAPI-006 | Load the frontend with API unavailable | The frontend renders from local mocks without crashing. |
+| BEAPI-006 | Load the frontend with API unavailable | The frontend renders a server-unavailable or explicit development fallback state without silently presenting fake prelaunch data. |
+
+## Prelaunch Account Checks
+
+| ID | Scenario | Expected Result |
+| --- | --- | --- |
+| AUTH-001 | Call `GET /api/auth/providers` | The response lists Google and GitHub with `configured` flags and no secrets. |
+| AUTH-002 | Start login for an unconfigured provider | The server returns `application/problem+json` and creates no session. |
+| AUTH-003 | Start GitHub login when configured | The server redirects to GitHub with state and PKCE challenge, and stores the verifier only in a signed HttpOnly transaction cookie. |
+| AUTH-004 | Complete callback with mismatched state | The server rejects the callback before token exchange and creates no user or session. |
+| AUTH-005 | Complete callback with validated provider identity | The server stores a local user profile, creates a first-party session, and redirects to the app. |
+| AUTH-006 | Call `GET /api/auth/session` with a valid cookie | The response returns `authenticated = true`, safe user profile fields, and no provider tokens. |
+| AUTH-007 | Call `POST /api/auth/logout` | The server revokes the local session, clears the cookie, and `/api/auth/session` returns unauthenticated. |
+| AUTH-008 | Render unauthenticated console | The frontend shows the sign-in gate and does not render fixture findings. |
+| AUTH-009 | Render authenticated console with no findings | The frontend shows operational empty states and source setup actions instead of fake examples. |
+| AUTH-010 | Start server with `DATASENTINEL_ENABLE_DEMO_FIXTURES=false` | Sources, findings, audit, metrics, and evaluation start empty until a configured local source is scanned. |
 
 ## Local SQLite Persistence Checks
 

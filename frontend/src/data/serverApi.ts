@@ -16,6 +16,16 @@ import type {
 } from '../types'
 import type { StartScanOptions } from './scanWorkflow'
 
+export type CreateSourceInput = {
+  sourceId: string
+  name: string
+  sourceType: string
+  status?: string
+  rootLabel?: string
+  masterOfDataUserId?: string
+  config?: Record<string, unknown>
+}
+
 type ApiEnvelope<T> = {
   data: T
   meta: Meta
@@ -55,7 +65,7 @@ export async function loadServerData(fallback: MockData): Promise<MockData> {
     permissionEnvelope,
   ] = await Promise.all([
     requestEnvelope<Source[]>('/sources'),
-    requestEnvelope<Scan>(`/scans/${fallback.scan.scanId}`),
+    requestEnvelope<Scan>('/scans/current'),
     requestEnvelope<FindingSummary[]>('/findings'),
     requestEnvelope<AuditEvent[]>('/audit/events'),
     requestEnvelope<AdminMetrics>('/admin/metrics'),
@@ -122,6 +132,14 @@ export async function testServerSourceConnection(sourceId: string): Promise<ApiE
   })
 }
 
+export async function createServerSource(input: CreateSourceInput): Promise<ApiEnvelope<Source>> {
+  return requestEnvelope<Source>('/sources', {
+    body: JSON.stringify(input),
+    headers: jsonHeaders({ idempotencyKey: `source_${input.sourceId}` }),
+    method: 'POST',
+  })
+}
+
 export async function reviewServerFinding(input: ReviewInput): Promise<ApiEnvelope<ReviewRecord>> {
   return requestEnvelope<ReviewRecord>(`/findings/${input.findingId}/review`, {
     body: JSON.stringify(input),
@@ -133,6 +151,7 @@ export async function reviewServerFinding(input: ReviewInput): Promise<ApiEnvelo
 async function requestEnvelope<T>(path: string, init: RequestInit = {}): Promise<ApiEnvelope<T>> {
   const response = await fetch(`${apiBase}${path}`, {
     ...init,
+    credentials: 'include',
     headers: init.headers ?? jsonHeaders(),
   })
 
