@@ -42,9 +42,11 @@ Evaluation is a product feature. DataSentinel must show that scanning quality is
 Each scan should record:
 
 - Dataset hash.
+- Dataset source URL when applicable.
 - Scanner version.
 - Detector rules hash.
 - Config hash.
+- Policy pack version.
 - Model name if an AI classifier is used.
 - Model temperature if an AI classifier is used.
 - Finding fingerprint.
@@ -52,3 +54,7 @@ Each scan should record:
 ## P0 Boundary
 
 The first implementation may use deterministic mock evaluation values if the scanner is not complete. The UI and API shape must still match the contract so the real harness can replace mock values later.
+
+## Organizer Samples
+
+The default evaluation source should reference `https://github.com/a-klumpp/GDPR-data-samples` and treat the sample families as controlled categories. The repository should not vendor the PDFs unless a separate storage and licensing decision is made.

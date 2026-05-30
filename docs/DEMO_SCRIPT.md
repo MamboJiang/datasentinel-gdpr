@@ -15,6 +15,7 @@ DataSentinel does not just detect personal data. It makes every GDPR finding mea
 7. Show the audit event created by that decision.
 8. Run or show a delta scan that only processes changed files.
 9. Open the evaluation tab and show accuracy, reproducibility, speed, and resource intensity.
+10. Open governance settings and show active policy-pack version, permission boundary, and organizer sample source.
 
 ## Required Demo Lines
 
@@ -22,6 +23,8 @@ DataSentinel does not just detect personal data. It makes every GDPR finding mea
 - "AI assists with classification and explanation, but the human reviewer has the last word."
 - "Every review decision creates an audit event."
 - "This is a governance loop, not a one-time scanner."
+- "The policy layer can change without rewriting the scanner."
+- "Users can see what they are allowed to do and why an action is unavailable."
 
 ## Backup Path
 

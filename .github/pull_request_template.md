@@ -10,6 +10,7 @@
 - [ ] `docs/API_CONTRACT.md` updated
 - [ ] `contracts/openapi.yaml` updated
 - [ ] Mock payloads updated
+- [ ] Governance, permission, or policy-pack docs updated
 
 ## Validation
 

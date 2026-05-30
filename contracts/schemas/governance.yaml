@@ -1,0 +1,167 @@
+PolicyPack:
+  type: object
+  required: [policyPackId, version, status, effectiveFrom, reviewDecisions]
+  additionalProperties: true
+  properties:
+    policyPackId: { type: string }
+    version: { type: string }
+    status: { type: string, example: "active" }
+    jurisdictionTags:
+      type: array
+      items: { type: string }
+    effectiveFrom: { type: string, format: date }
+    effectiveTo: { type: [string, "null"], format: date }
+    retentionRules:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+    evidenceRequirements:
+      type: array
+      items: { type: string }
+    escalationPaths:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+    reviewDecisions:
+      type: array
+      items: { type: string }
+OrganizationModel:
+  type: object
+  required: [organizationModelId, version, ownerResolutionStrategy]
+  additionalProperties: true
+  properties:
+    organizationModelId: { type: string }
+    version: { type: string }
+    ownerResolutionStrategy: { type: string }
+    orgUnits:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+    delegationRules:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+PermissionBoundary:
+  type: object
+  required: [actorId, roles, allowedActions, deniedActions, visibleScopes]
+  additionalProperties: true
+  properties:
+    actorId: { type: string }
+    roles:
+      type: array
+      items: { type: string }
+    allowedActions:
+      type: array
+      items: { type: string }
+    deniedActions:
+      type: array
+      items:
+        type: object
+        required: [action, reason]
+        additionalProperties: true
+        properties:
+          action: { type: string }
+          reason: { type: string }
+    visibleScopes:
+      type: array
+      items: { type: string }
+ReviewSupport:
+  type: object
+  required: [findingId, actorId, policyPackVersion, availableDecisions, checklist]
+  additionalProperties: true
+  properties:
+    findingId: { type: string }
+    actorId: { type: string }
+    policyPackVersion: { type: string }
+    plainLanguageSummary: { type: string }
+    availableDecisions:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+    checklist:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+    transferOptions:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+    escalationOptions:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+    permissionBoundary: { $ref: "#/PermissionBoundary" }
+GovernanceConfig:
+  type: object
+  required: [configId, activePolicyPack, organizationModel, sourceAdapters]
+  additionalProperties: true
+  properties:
+    configId: { type: string }
+    activePolicyPack: { $ref: "#/PolicyPack" }
+    organizationModel: { $ref: "#/OrganizationModel" }
+    sourceAdapters:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
+    changeControls:
+      type: object
+      additionalProperties: true
+GovernanceChangePreviewRequest:
+  type: object
+  required: [changeType, proposedByActorId]
+  additionalProperties: true
+  properties:
+    changeType: { type: string, example: "policy_pack_update" }
+    proposedByActorId: { type: string }
+    payload:
+      type: object
+      additionalProperties: true
+GovernanceConfigEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/GovernanceConfig" }
+    meta: { $ref: "./common.yaml#/Meta" }
+PolicyPackEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/PolicyPack" }
+    meta: { $ref: "./common.yaml#/Meta" }
+PermissionBoundaryEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/PermissionBoundary" }
+    meta: { $ref: "./common.yaml#/Meta" }
+ReviewSupportEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/ReviewSupport" }
+    meta: { $ref: "./common.yaml#/Meta" }
+GovernanceChangePreviewEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data:
+      type: object
+      required: [changeType, affectedFindings, affectedQueues, warnings]
+      additionalProperties: true
+      properties:
+        changeType: { type: string }
+        affectedFindings: { type: integer, minimum: 0 }
+        affectedQueues: { type: integer, minimum: 0 }
+        warnings:
+          type: array
+          items: { type: string }
+    meta: { $ref: "./common.yaml#/Meta" }

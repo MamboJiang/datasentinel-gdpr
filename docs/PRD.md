@@ -24,6 +24,8 @@ Provide a prototype workflow that shows how an organization can discover GDPR-re
 - Delta-scan concept for ongoing governance.
 - Admin-reporting concept for scanned files, flagged files, scanned volume, progress, scan time, backlog, and risk distribution.
 - Evaluation concept for accuracy, reproducibility, speed, and resource intensity.
+- Governance-configuration concept for policy packs, organization model, permissions, review support, and change previews.
+- User-control concept for visible allowed actions, denied actions, and reason requirements.
 
 ## P0 Screens and API Consumers
 
@@ -34,6 +36,8 @@ Provide a prototype workflow that shows how an organization can discover GDPR-re
 - Review action panel.
 - Audit timeline or report view.
 - Evaluation tab.
+- Governance settings inspection.
+- Permission boundary view.
 
 These surfaces must consume the tolerant contract defined in `docs/API_CONTRACT.md` and `contracts/openapi.yaml`.
 
@@ -52,4 +56,6 @@ These surfaces must consume the tolerant contract defined in `docs/API_CONTRACT.
 - Deletion must be human-accountable.
 - Sensitive snippets should be minimized or masked in any future UI.
 - Frontend and backend work must use the shared API contract and mock fixtures.
+- Legal rules must be represented as configurable guidance, not fixed code conclusions.
+- User interfaces must show permission boundaries and avoid surprising denial after submit.
 - Requirements changes must update this document and `ACCEPTANCE.md`.

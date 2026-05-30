@@ -29,6 +29,9 @@ Source connection -> full scan -> hybrid detection -> context classification -> 
 - Evaluation must include accuracy, reproducibility, speed, and resource intensity.
 - Deletion is simulated in the hackathon prototype.
 - The demo must not rely on live external APIs.
+- Legal and policy details must be configurable through versioned policy packs rather than hard-coded into scanner structure.
+- Users must see permission boundaries and action scope before making decisions.
+- The default demo source should reference the organizer sample repository.
 
 ## P0 Demo Path
 
@@ -41,6 +44,8 @@ Run full scan -> show admin metrics -> open evidence card -> record user review 
 - Keep side effects in boundary layers.
 - Keep sensitive evidence redacted by default.
 - Treat metrics as product features, not internal logs.
+- Treat governance configuration as an admin-operable layer.
+- Preserve policy-pack version and actor context in review and audit flows.
 
 ## Deferred P0 Items
 
@@ -49,3 +54,9 @@ Run full scan -> show admin metrics -> open evidence card -> record user review 
 - Multi-tenant SaaS controls.
 - Billing, procurement, and compliance certification.
 - Advanced vector search or customer-specific policy engines.
+
+## Organizer Sample Source
+
+Default demo source: `https://github.com/a-klumpp/GDPR-data-samples`.
+
+Sample families: `Expense_Report`, `IT_Access_Request`, `Incident_Report`, `Supplier_Onboarding`, and `Training_Evaluation`.

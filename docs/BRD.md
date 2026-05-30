@@ -16,6 +16,8 @@ Organizations often store personal and GDPR-relevant data across fragmented file
 - Preserve an audit trail for deletion, retention, escalation, or exception decisions.
 - Support future full-scan and delta-scan governance loops.
 - Report measurable scanning quality through accuracy, reproducibility, speed, and resource intensity.
+- Adapt to policy changes, organization changes, ownership transfers, and reviewer delegation without code rewrites.
+- Give users clear visibility into their permissions and decision boundaries.
 
 ## Constraints
 
@@ -24,6 +26,7 @@ Organizations often store personal and GDPR-relevant data across fragmented file
 - This project does not provide legal advice.
 - This repository must remain English-only.
 - No production integrations are approved at initialization time.
+- Policy details must be configurable guidance, not fixed legal conclusions.
 
 ## Done When
 

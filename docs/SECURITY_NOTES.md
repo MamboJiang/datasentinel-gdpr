@@ -16,6 +16,10 @@ The hackathon prototype must simulate deletion. It must not delete, quarantine, 
 
 P0 may simulate roles with `X-Actor-Id`. This is not authentication. Production authentication and authorization are deferred.
 
+## Permission Boundary UX
+
+P0 should expose allowed and denied actions to the UI. This improves user control without pretending that role simulation is production authorization.
+
 ## External Services
 
 P0 must not require live Microsoft Graph, production OAuth, tenant secrets, paid AI services, or external deletion APIs.
@@ -30,3 +34,7 @@ Any future production deletion path must include:
 - Audit event.
 - Rollback or recovery story.
 - Explicit design note before implementation.
+
+## Law-Agnostic Structure
+
+Scanner and review workflow code should consume policy-pack guidance. It should not hard-code one current legal interpretation as permanent structure.

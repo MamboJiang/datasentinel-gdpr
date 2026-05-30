@@ -8,6 +8,11 @@
     "openReviewBacklog": 11,
     "highRiskFindings": 5,
     "retentionOverdueFiles": 7,
+    "governance": {
+      "activePolicyPackVersion": "2026.05-demo",
+      "openTransferRequests": 2,
+      "pendingPolicyChangePreviews": 0
+    },
     "findingsBySource": {
       "onedrive": 8,
       "sharepoint": 7,

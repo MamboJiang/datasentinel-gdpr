@@ -13,10 +13,14 @@
 - They cannot manually inspect large distributed file stores.
 - They need evidence before deleting or retaining files.
 - They need a defensible audit trail for review decisions.
+- They need governance tools that survive reorganizations, role changes, task transfers, and policy updates.
+- They need reviewers to understand what they can do without guessing their authority.
 
 ## Value Proposition
 
 DataSentinel GDPR should provide an evidence-backed workflow that connects data discovery, risk explanation, owner routing, human review, and audit reporting.
+
+The product should also provide an admin-operable governance layer: policy packs, organization model, permission boundaries, review support, and change previews.
 
 ## Differentiation
 

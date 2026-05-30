@@ -2,11 +2,13 @@
   "data": [
     {
       "sourceId": "source_001",
-      "name": "Open GDPR Sample Repository",
-      "sourceType": "local_repo",
-      "status": "connected",
-      "rootLabel": "samples/open-gdpr",
-      "masterOfDataUserId": "user_anna"
+      "name": "Organizer GDPR Data Samples",
+      "sourceType": "organizer_sample_repo",
+      "status": "mock_ready",
+      "rootLabel": "a-klumpp/GDPR-data-samples",
+      "masterOfDataUserId": "user_anna",
+      "referenceUrl": "https://github.com/a-klumpp/GDPR-data-samples",
+      "sampleFamilies": ["Expense_Report", "IT_Access_Request", "Incident_Report", "Supplier_Onboarding", "Training_Evaluation"]
     },
     {
       "sourceId": "source_002",

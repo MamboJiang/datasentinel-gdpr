@@ -9,6 +9,10 @@ Source:
     status: { type: string, example: "connected" }
     rootLabel: { type: [string, "null"] }
     masterOfDataUserId: { type: [string, "null"] }
+    referenceUrl: { type: [string, "null"], format: uri }
+    sampleFamilies:
+      type: array
+      items: { type: string }
 CreateSourceRequest:
   type: object
   required: [name, sourceType]

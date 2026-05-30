@@ -9,6 +9,7 @@ Source of truth:
 - Machine-readable contract: `contracts/openapi.yaml`.
 - Mock payloads: `contracts/mocks/`.
 - Design rationale: `docs/design/frontend-backend-delivery-contract.md`.
+- Adaptive governance rationale: `docs/design/adaptive-governance-review-control.md`.
 
 ## Standard Basis
 
@@ -72,6 +73,8 @@ List responses may also include:
 - Numeric metrics may be `null` while a scan is running.
 - `meta.partial = true` means the UI may render available data with a warning.
 - Backend should preserve stable IDs within a demo seed.
+- Permission-aware endpoints should return both allowed and denied actions when available.
+- Policy guidance should include policy-pack version, not hard-coded legal conclusions.
 
 ## Required Headers
 
@@ -126,6 +129,11 @@ Errors use `application/problem+json`.
 | `GET` | `/api/audit/events` | List audit events. |
 | `GET` | `/api/admin/metrics` | Read admin dashboard metrics. |
 | `GET` | `/api/evaluation/runs/latest` | Read latest evaluation summary. |
+| `GET` | `/api/governance/config` | Read active governance configuration. |
+| `GET` | `/api/governance/policy-packs/active` | Read active policy pack. |
+| `POST` | `/api/governance/changes/preview` | Preview policy or organization change impact. |
+| `GET` | `/api/users/me/permissions` | Read current actor permission boundary. |
+| `GET` | `/api/findings/{findingId}/review-support` | Read reviewer guidance and allowed actions. |
 
 ## State Machines
 
@@ -166,6 +174,32 @@ Allowed P0 decisions:
 
 Every review decision requires `reason`.
 
+### Governance Policy Status
+
+`draft -> validating -> pending_activation -> active -> superseded`
+
+Rollback path:
+
+- `active -> rolled_back`
+
+### Task Transfer
+
+`assigned -> transfer_pending -> assigned`
+
+Failure path:
+
+- `transfer_pending -> assigned` when the target rejects the task.
+
+## Organizer Sample Source
+
+Default demo source:
+
+```text
+https://github.com/a-klumpp/GDPR-data-samples
+```
+
+The contract represents the source as `sourceType = organizer_sample_repo` and exposes sample families as metadata. The repository content is referenced, not vendored.
+
 ## Mock Payloads
 
 Frontend agents should begin with:
@@ -174,7 +208,10 @@ Frontend agents should begin with:
 - `contracts/mocks/auditEvents.json`
 - `contracts/mocks/evaluationLatest.json`
 - `contracts/mocks/findingDetail.json`
+- `contracts/mocks/governanceConfig.json`
 - `contracts/mocks/myFindings.json`
+- `contracts/mocks/permissionBoundary.json`
+- `contracts/mocks/reviewSupport.json`
 - `contracts/mocks/scanStatus.json`
 - `contracts/mocks/sources.json`
 

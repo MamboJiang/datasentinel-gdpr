@@ -24,8 +24,8 @@ Allow frontend, backend, product, and QA workstreams to move in parallel while s
 
 1. Freeze `contracts/openapi.yaml` at version `0.1.0`.
 2. Freeze P0 mock payloads in `contracts/mocks/`.
-3. Frontend renders admin metrics, findings list, evidence card, review action, audit timeline, and evaluation from mocks.
-4. Backend implements `/api/health` and returns mock-compatible scan and findings payloads.
+3. Frontend renders admin metrics, findings list, evidence card, review action, audit timeline, evaluation, permissions, and governance settings from mocks.
+4. Backend implements `/api/health` and returns mock-compatible scan, findings, governance, and permissions payloads.
 5. QA verifies docs, mocks, and OpenAPI use the same field names.
 
 ## Integration Gates
@@ -50,12 +50,16 @@ Allow frontend, backend, product, and QA workstreams to move in parallel while s
 - `GET /api/findings/{findingId}` returns evidence.
 - `POST /api/findings/{findingId}/review` records a decision.
 - `GET /api/audit/events` includes the review event.
+- `GET /api/users/me/permissions` returns allowed and denied actions.
+- `GET /api/findings/{findingId}/review-support` returns checklist, transfer, and escalation support.
 
 ### Gate 4: Evaluation and Demo Confidence
 
 - Admin metrics show scanned files, flagged files, volume, progress, time, review backlog, and high-risk count.
 - Evaluation shows precision, recall, F1, reproducibility, throughput, and resource intensity.
 - Deletion remains simulated.
+- Governance settings show active policy-pack version and source adapter readiness.
+- The organizer sample source appears as the default demo source.
 
 ## AI Task Brief Template
 
@@ -75,6 +79,7 @@ Validation:
 - Treat `meta.partial = true` as renderable with a warning.
 - Never display raw sensitive values.
 - Do not add endpoint assumptions outside `docs/API_CONTRACT.md`.
+- Show denied actions with reasons instead of silently hiding all unavailable controls.
 
 ## Backend Agent Rules
 
@@ -83,6 +88,7 @@ Validation:
 - Use `application/problem+json` for errors.
 - Make scan and review actions idempotent when `Idempotency-Key` is present.
 - Keep real deletion out of P0.
+- Return policy-pack version and permission-boundary data when the contract includes it.
 
 ## QA Agent Rules
 

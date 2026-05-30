@@ -29,6 +29,8 @@ The future product experience should make GDPR data cleanup feel like an account
 - Separate risk explanation from legal conclusion.
 - Show scan quality metrics as first-class product evidence.
 - Render partial data gracefully when the API reports `meta.partial = true`.
+- Give users a clear sense of their permission boundary before they act.
+- Make reviewer guidance operational through checklists, available decisions, transfer options, and escalation options.
 
 ## P0 Information Architecture
 
@@ -41,6 +43,16 @@ The future product experience should make GDPR data cleanup feel like an account
 | Review Panel | Let a human record a decision with a reason. |
 | Audit View | Show scan and review events. |
 | Evaluation Tab | Show accuracy, reproducibility, speed, and resource intensity. |
+| Governance Settings | Show active policy pack, organization model, source adapters, and change controls. |
+| Permission Boundary | Show allowed actions, denied actions, visible scopes, and denial reasons. |
+
+## Reviewer-Friendly Requirements
+
+- Show a plain-language summary before every decision.
+- Show why an action is allowed or denied.
+- Show required reason fields before submit.
+- Provide transfer and escalation options when ownership is unclear.
+- Keep legal conclusions out of UI copy; show policy guidance and human decision requirements.
 
 ## Deferred Design Decisions
 

@@ -28,6 +28,9 @@ AdminMetrics:
     findingsBySource:
       type: object
       additionalProperties: { type: integer }
+    governance:
+      type: object
+      additionalProperties: true
     evaluation: { $ref: "#/EvaluationSummary" }
 AdminMetricsEnvelope:
   type: object

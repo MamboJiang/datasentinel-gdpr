@@ -27,6 +27,8 @@ If the change affects requirements, behavior, API shape, states, roles, permissi
 - Do not add dependencies, frameworks, or abstractions before a task explicitly needs them.
 - Do not invent API fields or endpoints outside `docs/API_CONTRACT.md` and `contracts/openapi.yaml`.
 - Do not break existing mock payloads unless the contract version changes and affected docs are updated.
+- Do not hard-code one legal snapshot into scanner or review structure; use policy-pack concepts from `docs/GOVERNANCE_CONFIG.md`.
+- Do not hide user permission boundaries. Expose allowed and denied actions when the contract provides them.
 
 ## Parallel Delivery Contract
 
@@ -37,6 +39,8 @@ Frontend and backend work in parallel through the shared contract:
 - Mock payloads: `contracts/mocks/`.
 - Product context: `docs/PROJECT_CONTEXT.md`.
 - Delivery workflow: `docs/DELIVERY_WORKFLOW.md`.
+- Governance model: `docs/GOVERNANCE_CONFIG.md`.
+- Organizer samples: `docs/GDPR_SAMPLE_REFERENCES.md`.
 
 Frontend agents may build UI against mock payloads before backend endpoints exist. Backend agents must return the same envelope shape and field names as the mocks.
 

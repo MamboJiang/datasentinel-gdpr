@@ -1,0 +1,69 @@
+{
+  "data": {
+    "findingId": "finding_001",
+    "actorId": "user_anna",
+    "policyPackVersion": "2026.05-demo",
+    "plainLanguageSummary": "This finding needs a human business-context decision. The system can show evidence and guidance, but it does not make a legal conclusion.",
+    "availableDecisions": [
+      {
+        "decision": "keep_with_reason",
+        "requiresReason": true,
+        "label": "Keep with business reason"
+      },
+      {
+        "decision": "reassign_owner",
+        "requiresReason": true,
+        "label": "Transfer to another owner"
+      },
+      {
+        "decision": "escalate",
+        "requiresReason": true,
+        "label": "Escalate to DPO or Legal"
+      }
+    ],
+    "checklist": [
+      {
+        "itemId": "business_purpose",
+        "label": "Confirm whether a current business purpose exists.",
+        "required": true
+      },
+      {
+        "itemId": "legal_hold",
+        "label": "Check whether a legal hold or active dispute applies.",
+        "required": true
+      }
+    ],
+    "transferOptions": [
+      {
+        "userId": "user_markus",
+        "displayName": "Markus Keller",
+        "reason": "IT Operations owner"
+      }
+    ],
+    "escalationOptions": [
+      {
+        "queueId": "queue_dpo",
+        "label": "DPO review queue"
+      }
+    ],
+    "permissionBoundary": {
+      "actorId": "user_anna",
+      "roles": ["master_of_data", "reviewer"],
+      "allowedActions": ["keep_with_reason", "reassign_owner", "escalate"],
+      "deniedActions": [
+        {
+          "action": "execute_real_deletion",
+          "reason": "Real deletion is disabled in the prototype."
+        }
+      ],
+      "visibleScopes": ["assigned_findings", "finance_org_unit"]
+    }
+  },
+  "meta": {
+    "contractVersion": "0.1.0",
+    "generatedAt": "2026-05-30T12:08:00Z",
+    "traceId": "trace_demo_review_support",
+    "partial": false,
+    "warnings": []
+  }
+}

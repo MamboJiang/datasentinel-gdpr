@@ -48,6 +48,17 @@ FindingSummary:
     recommendedAction: { type: string, example: "escalate" }
     status: { type: string, example: "open" }
     owner: { $ref: "#/Owner" }
+    policyContext:
+      type: object
+      additionalProperties: true
+    availableActions:
+      type: array
+      items: { type: string }
+    deniedActions:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
 Finding:
   allOf:
     - $ref: "#/FindingSummary"

@@ -1,0 +1,67 @@
+{
+  "data": {
+    "configId": "govcfg_001",
+    "activePolicyPack": {
+      "policyPackId": "policy_gdpr_demo",
+      "version": "2026.05-demo",
+      "status": "active",
+      "jurisdictionTags": ["EU", "GDPR"],
+      "effectiveFrom": "2026-05-30",
+      "effectiveTo": null,
+      "retentionRules": [
+        {
+          "ruleId": "retention_supplier_review_3y",
+          "documentCategory": "supplier_onboarding",
+          "reviewAfterDays": 1095,
+          "guidance": "Review whether a business purpose still exists."
+        }
+      ],
+      "evidenceRequirements": ["redacted_snippet", "detector_signal", "owner_assignment", "policy_version"],
+      "escalationPaths": [
+        {
+          "pathId": "legal_escalation",
+          "label": "Escalate to DPO or Legal"
+        }
+      ],
+      "reviewDecisions": ["delete_candidate", "keep_with_reason", "correct_false_positive", "reassign_owner", "escalate"]
+    },
+    "organizationModel": {
+      "organizationModelId": "org_demo",
+      "version": "2026.05-demo",
+      "ownerResolutionStrategy": "direct_owner_then_master_of_data",
+      "orgUnits": [
+        {
+          "orgUnitId": "finance",
+          "displayName": "Finance",
+          "masterOfDataUserId": "user_anna"
+        }
+      ],
+      "delegationRules": [
+        {
+          "ruleId": "delegate_within_org_unit",
+          "description": "Review tasks can be transferred to another owner in the same org unit."
+        }
+      ]
+    },
+    "sourceAdapters": [
+      {
+        "sourceType": "organizer_sample_repo",
+        "label": "Organizer GDPR data samples",
+        "status": "mock_ready",
+        "referenceUrl": "https://github.com/a-klumpp/GDPR-data-samples"
+      }
+    ],
+    "changeControls": {
+      "policyChangesRequirePreview": true,
+      "orgChangesRequireAuditEvent": true,
+      "realDeletionAllowed": false
+    }
+  },
+  "meta": {
+    "contractVersion": "0.1.0",
+    "generatedAt": "2026-05-30T12:08:00Z",
+    "traceId": "trace_demo_governance",
+    "partial": false,
+    "warnings": []
+  }
+}

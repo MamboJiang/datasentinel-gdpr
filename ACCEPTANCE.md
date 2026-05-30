@@ -29,6 +29,8 @@ Frontend-backend parallel development may start when:
 - `docs/DELIVERY_WORKFLOW.md` defines frontend, backend, contract, and QA responsibilities.
 - `AGENTS.md` and `.github/copilot-instructions.md` tell teammate AI tools how to follow the contract.
 - No frontend or backend implementation code is introduced before the first scoped implementation task.
+- `docs/GOVERNANCE_CONFIG.md` defines policy packs, organization model, permission boundaries, review support, and enterprise change scenarios.
+- `docs/GDPR_SAMPLE_REFERENCES.md` records how the organizer sample repository is used without vendoring PDFs.
 
 ## P0 Product Acceptance
 
@@ -43,3 +45,14 @@ The first implementation milestone is accepted when:
 - A delta scan can represent changed-file-only processing.
 - Evaluation metrics show precision, recall, F1, reproducibility, throughput, and resource intensity.
 - Deletion remains simulated.
+
+## Adaptive Governance Acceptance
+
+The design points are accepted when:
+
+- Legal or policy details can be represented as a versioned policy pack instead of hard-coded scanner logic.
+- A reviewer can see plain-language support, required checklist items, available decisions, transfer options, escalation options, and required reason fields.
+- A user can see allowed actions, denied actions, denial reasons, and visible scopes before attempting an action.
+- Ownership transfer, personnel change, organization model change, policy version change, and regulatory update scenarios are represented in docs and contract mocks.
+- Audit and evaluation payloads can preserve the policy-pack version used for a finding or decision.
+- The organizer sample repository is represented as a default demo source with sample families.

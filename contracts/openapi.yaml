@@ -183,6 +183,23 @@ paths:
                 $ref: "./schemas/finding-review.yaml#/ReviewEnvelope"
         default:
           $ref: "#/components/responses/Problem"
+  /findings/{findingId}/review-support:
+    get:
+      operationId: getFindingReviewSupport
+      parameters:
+        - $ref: "#/components/parameters/FindingId"
+        - name: actorId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Reviewer guidance and permission-aware action support.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/governance.yaml#/ReviewSupportEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
   /audit/events:
     get:
       operationId: listAuditEvents
@@ -220,6 +237,58 @@ paths:
             application/json:
               schema:
                 $ref: "./schemas/metrics.yaml#/EvaluationEnvelope"
+  /governance/config:
+    get:
+      operationId: getGovernanceConfig
+      responses:
+        "200":
+          description: Active governance configuration for admin and UI setup.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/governance.yaml#/GovernanceConfigEnvelope"
+  /governance/policy-packs/active:
+    get:
+      operationId: getActivePolicyPack
+      responses:
+        "200":
+          description: Active policy pack.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/governance.yaml#/PolicyPackEnvelope"
+  /governance/changes/preview:
+    post:
+      operationId: previewGovernanceChange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/governance.yaml#/GovernanceChangePreviewRequest"
+      responses:
+        "200":
+          description: Preview of governance change impact.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/governance.yaml#/GovernanceChangePreviewEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /users/me/permissions:
+    get:
+      operationId: getMyPermissionBoundary
+      parameters:
+        - name: actorId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Current user's permission boundary and action scope.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/governance.yaml#/PermissionBoundaryEnvelope"
 components:
   parameters:
     IdempotencyKey:

@@ -11,6 +11,11 @@
     "retentionStatus": "overdue",
     "recommendedAction": "escalate",
     "status": "assigned",
+    "policyContext": {
+      "policyPackId": "policy_gdpr_demo",
+      "policyPackVersion": "2026.05-demo",
+      "policyConclusion": "human_review_required"
+    },
     "owner": {
       "userId": "user_anna",
       "displayName": "Anna Schneider",
@@ -40,6 +45,13 @@
       }
     ],
     "riskExplanation": "The document appears to contain supplier payment information and personal contact details. Retention review is recommended because the file was last modified more than three years ago.",
+    "availableActions": ["keep_with_reason", "reassign_owner", "escalate"],
+    "deniedActions": [
+      {
+        "action": "execute_real_deletion",
+        "reason": "Real deletion is disabled in the prototype."
+      }
+    ],
     "auditTimeline": [
       {
         "auditEventId": "audit_001",

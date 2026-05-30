@@ -30,6 +30,9 @@ These are not approved implementation modules yet. They are candidate boundaries
 - Delta scan boundary.
 - Evaluation harness boundary.
 - Admin metrics boundary.
+- Governance configuration boundary.
+- Permission boundary boundary.
+- Review support boundary.
 
 ## Contract Baseline
 
@@ -38,6 +41,8 @@ These are not approved implementation modules yet. They are candidate boundaries
 - Error format: `application/problem+json`.
 - State machines: scan, finding review, and contract lifecycle are documented in `docs/API_CONTRACT.md` and `docs/design/frontend-backend-delivery-contract.md`.
 - Mocks are contract fixtures, not production seed data.
+- Governance configuration is documented in `docs/GOVERNANCE_CONFIG.md`.
+- Adaptive policy and review state machines are documented in `docs/design/adaptive-governance-review-control.md`.
 
 ## External Research Required Before Implementation
 
@@ -45,6 +50,7 @@ Official or authoritative documentation must be reviewed before integrating:
 
 - Microsoft Graph or any file-source API.
 - GDPR deletion, retention, or audit-related workflow assumptions.
+- The organizer sample repository before downloading or vendoring sample files.
 - Any AI, OCR, document parsing, or classification dependency.
 - Any storage, authentication, authorization, or deployment platform.
 

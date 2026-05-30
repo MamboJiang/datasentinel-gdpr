@@ -39,6 +39,8 @@ Find risky personal-data records, explain why they matter, route them to the acc
 - [Evaluation Harness](docs/EVALUATION.md)
 - [Security Notes](docs/SECURITY_NOTES.md)
 - [Demo Script](docs/DEMO_SCRIPT.md)
+- [Governance Configuration](docs/GOVERNANCE_CONFIG.md)
+- [Organizer Sample References](docs/GDPR_SAMPLE_REFERENCES.md)
 - [Acceptance Criteria](ACCEPTANCE.md)
 
 ## Frontend-Backend Contract
