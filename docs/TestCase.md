@@ -298,7 +298,7 @@
 
 These are not implementation tests yet. They define the areas that future tests should cover:
 
-- App shell behavior for page-title-focused top bar, top-right notifications, top-left workspace menu visibility, bottom-left account menu visibility, sidebar collapse, menu open, keyboard close, and platform-status display.
+- App shell behavior for page-title-focused top bar, top-right timestamped notification center, dismiss/clear notification actions, no bottom toast overlay, top-left workspace menu visibility, bottom-left account menu visibility, sidebar collapse, menu open, keyboard close, and platform-status display.
 - Public homepage behavior for root-route rendering, dashboard navigation, scroll-linked parallax, and reduced-motion fallback.
 - File review behavior for format-specific anchors, renderer fallback, keyboard navigation, and redacted preview highlighting.
 - Full-scan behavior with controlled sample files.

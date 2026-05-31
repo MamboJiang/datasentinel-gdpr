@@ -16,6 +16,12 @@ import type {
 import type { StartScanOptions } from './scanWorkflow'
 import type { CreateSourceInput } from './serverApi'
 
+export type AppNotification = {
+  id: string
+  message: string
+  createdAt: string
+}
+
 export type DataContextValue = {
   sources: Source[]
   scan: Scan
@@ -27,7 +33,7 @@ export type DataContextValue = {
   permissionBoundary: PermissionBoundary
   reviewSupport: ReviewSupport
   meta: Meta
-  toast: string | null
+  notifications: AppNotification[]
   getFinding: (findingId: string) => Finding | undefined
   getReviewSupport: (findingId: string) => ReviewSupport
   createSource: (input: CreateSourceInput) => void
@@ -35,7 +41,8 @@ export type DataContextValue = {
   startScan: (options: StartScanOptions) => void
   testSourceConnection: (sourceId: string) => void
   reviewFinding: (input: ReviewInput) => void
-  clearToast: () => void
+  dismissNotification: (notificationId: string) => void
+  clearNotifications: () => void
 }
 
 export const DataContext = createContext<DataContextValue | null>(null)

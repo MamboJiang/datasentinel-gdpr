@@ -11,7 +11,6 @@ import {
   Plus,
   Search,
   Settings2,
-  ShieldCheck,
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -57,7 +56,7 @@ function getPageTitle(pathname: string) {
 
 export function AppShell() {
   const { t } = useI18n()
-  const { toast, clearToast } = useData()
+  const { notifications, dismissNotification, clearNotifications } = useData()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -65,12 +64,14 @@ export function AppShell() {
   const [workspaceOpen, setWorkspaceOpen] = useState(false)
   const [workspaceQuery, setWorkspaceQuery] = useState('')
   const [accountOpen, setAccountOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [navQuery, setNavQuery] = useState('')
   const pageTitle = t(getPageTitle(location.pathname))
   const visibleWorkspaces = workspaces.filter(({ name }) => name.toLowerCase().includes(workspaceQuery.toLowerCase()))
   const visibleNavigation = navigation.filter(({ label }) => t(label).toLowerCase().includes(navQuery.toLowerCase()))
   const activeSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth
   const shellStyle = { '--sidebar-width': `${activeSidebarWidth}px` } as CSSProperties
+  const latestNotificationMessage = notifications[0]?.message ?? ''
 
   function closeWorkspaceSwitcher() {
     setWorkspaceOpen(false)
@@ -79,6 +80,10 @@ export function AppShell() {
 
   function closeAccountMenu() {
     setAccountOpen(false)
+  }
+
+  function closeNotifications() {
+    setNotificationsOpen(false)
   }
 
   useEffect(() => {
@@ -112,6 +117,21 @@ export function AppShell() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [accountOpen])
 
+  useEffect(() => {
+    if (!notificationsOpen) {
+      return
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setNotificationsOpen(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [notificationsOpen])
+
   return (
     <div className="app-shell" style={shellStyle}>
       <aside className={`sidebar ${mobileOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
@@ -128,6 +148,7 @@ export function AppShell() {
               }
 
               closeAccountMenu()
+              closeNotifications()
               setWorkspaceOpen(true)
             }}
             type="button"
@@ -216,10 +237,15 @@ export function AppShell() {
           accountOpen={accountOpen}
           onClose={closeAccountMenu}
           onCloseWorkspace={closeWorkspaceSwitcher}
-          onToggle={() => setAccountOpen((isOpen) => !isOpen)}
+          onToggle={() => {
+            closeWorkspaceSwitcher()
+            closeNotifications()
+            setAccountOpen((isOpen) => !isOpen)
+          }}
           onToggleSidebar={() => {
             closeWorkspaceSwitcher()
             closeAccountMenu()
+            closeNotifications()
             setSidebarCollapsed((isCollapsed) => !isCollapsed)
           }}
           sidebarCollapsed={sidebarCollapsed}
@@ -247,26 +273,78 @@ export function AppShell() {
             <Menu aria-hidden="true" size={20} />
           </button>
           <strong className="topbar-title">{pageTitle}</strong>
-          <button className="topbar-notification" type="button" aria-label={t('Notifications')}>
+          <button
+            aria-controls="notification-panel"
+            aria-expanded={notificationsOpen}
+            aria-haspopup="dialog"
+            className={`topbar-notification ${notificationsOpen ? 'topbar-notification-active' : ''}`}
+            onClick={() => {
+              closeWorkspaceSwitcher()
+              closeAccountMenu()
+              setNotificationsOpen((isOpen) => !isOpen)
+            }}
+            type="button"
+            aria-label={t('Notifications')}
+          >
             <Bell aria-hidden="true" size={18} />
-            <span aria-hidden="true" />
+            {notifications.length > 0 ? <span className="notification-dot" aria-hidden="true" /> : null}
           </button>
+          <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            {latestNotificationMessage}
+          </span>
+          {notificationsOpen ? (
+            <>
+              <button className="notification-backdrop" type="button" aria-label={t('Close notifications')} onClick={closeNotifications} />
+              <section className="notification-popover" id="notification-panel" role="dialog" aria-label={t('Notifications')}>
+                <div className="notification-header">
+                  <strong>{t('Notifications')}</strong>
+                  <button type="button" onClick={clearNotifications} disabled={notifications.length === 0}>
+                    {t('Clear all')}
+                  </button>
+                </div>
+
+                {notifications.length > 0 ? (
+                  <ol className="notification-list">
+                    {notifications.map((notification) => (
+                      <li className="notification-item" key={notification.id}>
+                        <span>{notification.message}</span>
+                        <time dateTime={notification.createdAt}>{formatNotificationTime(notification.createdAt)}</time>
+                        <button
+                          type="button"
+                          aria-label={t('Dismiss notification')}
+                          onClick={() => dismissNotification(notification.id)}
+                        >
+                          <X aria-hidden="true" size={15} />
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="notification-empty">{t('No notifications yet')}</p>
+                )}
+              </section>
+            </>
+          ) : null}
         </header>
 
         <main className="main-content">
           <Outlet />
         </main>
       </div>
-
-      {toast ? (
-        <div className="toast" role="status">
-          <ShieldCheck aria-hidden="true" size={18} />
-          <span>{toast}</span>
-          <button type="button" aria-label={t('Dismiss notification')} onClick={clearToast}>
-            <X aria-hidden="true" size={16} />
-          </button>
-        </div>
-      ) : null}
     </div>
   )
+}
+
+function formatNotificationTime(value: string) {
+  const parsed = new Date(value)
+
+  if (Number.isNaN(parsed.getTime())) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(parsed)
 }

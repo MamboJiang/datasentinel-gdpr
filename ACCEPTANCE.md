@@ -60,6 +60,7 @@ The first implementation milestone is accepted when:
 
 - The root route `/` shows a public project homepage that introduces DataSentinel and links to the internal dashboard route at `/dashboard`.
 - The frontend app shell shows only the current page title plus notifications in the top bar, keeps workspace switching in the top-left sidebar control, exposes logged-in account controls from the bottom-left sidebar account menu, and lets users collapse or expand the sidebar.
+- The top-right notification button opens a session notification center; operation feedback is timestamped, newest-first, dismissible, and does not render as a bottom toast.
 - On desktop, the sidebar can be resized with a pointer or keyboard-accessible separator, collapses when dragged below the configured threshold, caps expansion at the configured maximum width, and keeps the content area aligned without overlap.
 - Account menu actions open local utility routes or local UI states for account settings, theme, language preference, feedback, homepage, changelog, help, docs, platform status, prototype plan, and session boundary without adding production authentication, billing, support, monitoring, tenant, external translation service, or external feedback integration.
 - The account menu language preference lists EU language options, persists the selected code locally, updates core user-facing UI copy through static frontend dictionaries, keeps developer-facing docs and code comments English-only, and does not call a backend or translation service.

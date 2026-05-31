@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { DataContext } from './DataContext'
+import { DataContext, type DataContextValue } from './DataContext'
 import { getEmptyData } from './emptyData'
 import { recordHumanReviewDecision } from './humanReviewDecision'
 import { getInitialMockData } from './mockApi'
@@ -15,10 +15,21 @@ const localMocksEnabled = import.meta.env.VITE_DATASENTINEL_ENABLE_LOCAL_MOCKS =
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState(localMocksEnabled ? getInitialMockData : getEmptyData)
-  const [toast, setToast] = useState<string | null>(null)
+  const [notifications, setNotifications] = useState<DataContextValue['notifications']>([])
   const scanTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const serverAvailable = useRef(false)
   const googleDriveAccessTokens = useRef<Record<string, string>>({})
+
+  function notify(message: string) {
+    setNotifications((current) => [
+      {
+        id: `notification_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        message,
+        createdAt: new Date().toISOString(),
+      },
+      ...current,
+    ].slice(0, 50))
+  }
 
   useEffect(() => {
     let active = true
@@ -68,7 +79,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           meta: result.meta,
           scan: result.data,
         }))
-        setToast(`${scanOptions.scanType === 'full' ? 'Full' : 'Delta'} scan started on the project server.`)
+        notify(`${scanOptions.scanType === 'full' ? 'Full' : 'Delta'} scan started on the project server.`)
         scanTimer.current = setTimeout(() => {
           refreshServerData(`${scanOptions.scanType === 'full' ? 'Full' : 'Delta'} scan completed.`)
           scanTimer.current = null
@@ -76,7 +87,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return
       } catch (error) {
         serverAvailable.current = false
-        setToast(error instanceof Error ? error.message : 'Project server unavailable; using local mock workflow.')
+        notify(error instanceof Error ? error.message : 'Project server unavailable; using local mock workflow.')
       }
     }
 
@@ -92,7 +103,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     })
 
     if (!result.accepted) {
-      setToast(result.toast)
+      notify(result.toast)
       return
     }
 
@@ -101,7 +112,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     setData(result.data)
-    setToast(result.toast)
+    notify(result.toast)
 
     scanTimer.current = setTimeout(() => {
       setData((current) => completeScanWorkflow(current, {
@@ -109,7 +120,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         occurredAt: new Date().toISOString(),
         scanId: result.scanId,
       }))
-      setToast(`${options.scanType === 'full' ? 'Full' : 'Delta'} scan completed.`)
+      notify(`${options.scanType === 'full' ? 'Full' : 'Delta'} scan completed.`)
       scanTimer.current = null
     }, result.completionDelayMs)
   }
@@ -119,21 +130,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
       try {
         const result = await testServerSourceConnection(sourceId)
         const diagnostics = result.data.diagnostics?.map((item) => item.message).filter(Boolean).join(' ')
-        setToast(`${result.data.name ?? sourceId} connection: ${result.data.connectionStatus}.${diagnostics ? ` ${diagnostics}` : ''}`)
+        notify(`${result.data.name ?? sourceId} connection: ${result.data.connectionStatus}.${diagnostics ? ` ${diagnostics}` : ''}`)
         return
       } catch (error) {
         serverAvailable.current = false
-        setToast(error instanceof Error ? error.message : 'Project server unavailable; using local source check.')
+        notify(error instanceof Error ? error.message : 'Project server unavailable; using local source check.')
       }
     }
 
     const source = data.sources.find((candidate) => candidate.sourceId === sourceId)
-    setToast(getSourceConnectionMessage(source, data.governanceConfig))
+    notify(getSourceConnectionMessage(source, data.governanceConfig))
   }
 
   async function createSource(input: CreateSourceInput) {
     if (!serverAvailable.current) {
-      setToast('Project server unavailable; source registration requires the API server.')
+      notify('Project server unavailable; source registration requires the API server.')
       return
     }
 
@@ -150,15 +161,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
           result.data,
         ],
       }))
-      setToast(`${result.data.name} registered. Test the connection before scanning.`)
+      notify(`${result.data.name} registered. Test the connection before scanning.`)
     } catch (error) {
-      setToast(error instanceof Error ? error.message : 'Source registration failed.')
+      notify(error instanceof Error ? error.message : 'Source registration failed.')
     }
   }
 
   async function deleteSource(sourceId: string) {
     if (!serverAvailable.current) {
-      setToast('Project server unavailable; source deletion requires the API server.')
+      notify('Project server unavailable; source deletion requires the API server.')
       return
     }
 
@@ -170,9 +181,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         meta: result.meta,
         sources: current.sources.filter((source) => source.sourceId !== sourceId),
       }))
-      setToast(`${result.data.name} source registration deleted.`)
+      notify(`${result.data.name} source registration deleted.`)
     } catch (error) {
-      setToast(error instanceof Error ? error.message : 'Source deletion failed.')
+      notify(error instanceof Error ? error.message : 'Source deletion failed.')
     }
   }
 
@@ -184,7 +195,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return
       } catch (error) {
         serverAvailable.current = false
-        setToast(error instanceof Error ? error.message : 'Project server unavailable; using local review workflow.')
+        notify(error instanceof Error ? error.message : 'Project server unavailable; using local review workflow.')
       }
     }
 
@@ -207,12 +218,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }, reviewSupport)
 
     if (!result.accepted) {
-      setToast(result.reason)
+      notify(result.reason)
       return
     }
 
     setData(result.data)
-    setToast(result.toast)
+    notify(result.toast)
   }
 
   function getFinding(findingId: string): Finding | undefined {
@@ -255,7 +266,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         permissionBoundary: data.permissionBoundary,
         reviewSupport: data.reviewSupport,
         meta: data.meta,
-        toast,
+        notifications,
         getFinding,
         getReviewSupport,
         createSource,
@@ -263,17 +274,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
         startScan,
         testSourceConnection,
         reviewFinding,
-        clearToast: () => setToast(null),
+        dismissNotification: (notificationId) => setNotifications((current) => current.filter(({ id }) => id !== notificationId)),
+        clearNotifications: () => setNotifications([]),
       }}
     >
       {children}
     </DataContext.Provider>
   )
 
-  async function refreshServerData(successToast: string) {
+  async function refreshServerData(successNotification: string) {
     const nextData = await loadServerData(localMocksEnabled ? getInitialMockData() : getEmptyData())
     serverAvailable.current = true
     setData(nextData)
-    setToast(successToast)
+    notify(successNotification)
   }
 }

@@ -77,7 +77,7 @@ The public root route `/` belongs to the homepage. The internal console starts a
 
 ## App Shell Contract
 
-The internal shell must provide current page title, notifications or status indicators, top-left workspace context, bottom-left account controls, sidebar collapse/expand, desktop sidebar resize by pointer or keyboard separator, active-route indication, route navigation, keyboard-accessible menus, focus-safe close behavior, and responsive readability. Sidebar resize must collapse when dragged below the configured threshold and cap expansion at the configured maximum width. Account menu controls must either navigate to a concrete local utility route or perform a clearly local UI action. Theme switching and language preference may use local browser state. Language preference uses static frontend dictionaries for user-facing UI copy; developer-facing docs, engineering notes, and code comments remain English-only. Feedback must remain local-only in P0. Log out, plan, and status controls must expose prototype boundaries instead of production authentication, billing, tenant, support, monitoring, or translation-service behavior. The shell must not mix public homepage navigation into the internal workspace shell or hide account, workspace, or permission context.
+The internal shell must provide current page title, a top-right session notification center, top-left workspace context, bottom-left account controls, sidebar collapse/expand, desktop sidebar resize by pointer or keyboard separator, active-route indication, route navigation, keyboard-accessible menus, focus-safe close behavior, and responsive readability. Sidebar resize must collapse when dragged below the configured threshold and cap expansion at the configured maximum width. Account menu controls must either navigate to a concrete local utility route or perform a clearly local UI action. Theme switching and language preference may use local browser state. Language preference uses static frontend dictionaries for user-facing UI copy; developer-facing docs, engineering notes, and code comments remain English-only. Feedback must remain local-only in P0. Log out, plan, and status controls must expose prototype boundaries instead of production authentication, billing, tenant, support, monitoring, or translation-service behavior. The shell must not mix public homepage navigation into the internal workspace shell or hide account, workspace, or permission context.
 
 ## Shared Data Contract
 
@@ -108,7 +108,7 @@ When the contract provides delta data, the console must show baseline identity, 
 
 ## Notifications and Status
 
-The console should surface scan started, scan completed, scan rejected, partial data available, recoverable warning, review recorded, review rejected, audit event created, governance preview ready, and backend/mock unavailable states. Notifications must not include raw sensitive content and must not replace audit records.
+The console should surface scan started, scan completed, scan rejected, partial data available, recoverable warning, review recorded, review rejected, audit event created, governance preview ready, and backend/mock unavailable states in the top-right session notification center, not bottom toast overlays. Notifications must be timestamped, newest-first, dismissible, must not include raw sensitive content, and must not replace audit records.
 
 ## Error and Partial-State Contract
 

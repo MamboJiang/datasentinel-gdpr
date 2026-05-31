@@ -41,7 +41,7 @@ The future product experience should make GDPR data cleanup feel like an account
 | --- | --- |
 | Public Project Homepage | Introduce DataSentinel, explain the workflow, and link into the internal dashboard without showing the app shell. |
 | Sign-In Gate | Let users start Google or GitHub login when configured, and show setup status when providers are unavailable. |
-| App Shell, Workspace, and Account Menus | Show a page-title-focused top bar with notifications, keep workspace context in the top-left sidebar control, keep authenticated account controls in the bottom-left sidebar menu, and support sidebar collapse. |
+| App Shell, Workspace, and Account Menus | Show a page-title-focused top bar with an interactive session notification center, keep workspace context in the top-left sidebar control, keep authenticated account controls in the bottom-left sidebar menu, and support sidebar collapse. |
 | Source Connector | Select or register an allowed source and start full or delta scans. |
 | Admin Dashboard | Show decision-oriented scan coverage, review queue, high-risk queue, owner routing, latest scan status, and pipeline health without overloading one panel. |
 | Findings Table | Show risk-ranked findings filtered by owner, scan, status, or risk level. |
