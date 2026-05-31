@@ -23,61 +23,293 @@
 }
 
 .landing-workflow-layout {
+  align-items: stretch;
   display: grid;
   gap: 64px;
   grid-template-columns: minmax(300px, .7fr) minmax(0, 1fr);
   margin-top: 54px;
+  position: relative;
+  z-index: 1;
+}
+
+.landing-workflow {
+  isolation: isolate;
+  overflow: hidden;
+  position: relative;
+}
+
+.landing-workflow .landing-section-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-workflow-depth-grid {
+  background-image:
+    linear-gradient(to right, rgba(11, 87, 208, .045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(43, 66, 92, .04) 1px, transparent 1px);
+  background-size: 92px 92px;
+  inset: -120px 0 -80px;
+  mask-image: linear-gradient(to bottom, transparent, black 18%, black 72%, transparent);
+  opacity: .56;
+  pointer-events: none;
+  position: absolute;
+  will-change: transform;
+  z-index: 0;
 }
 
 .landing-workflow-visual {
-  align-content: center;
-  background: #1f1f21;
+  align-content: start;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .76), rgba(247, 250, 255, .44)),
+    radial-gradient(circle at 30% 0%, rgba(11, 87, 208, .1), transparent 42%),
+    radial-gradient(circle at 80% 100%, rgba(20, 122, 66, .08), transparent 36%);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(222, 222, 222, .68);
   border-radius: 8px;
-  color: #ffffff;
+  box-shadow: 0 24px 70px rgba(24, 24, 28, .08);
+  color: var(--landing-ink);
+  display: grid;
+  grid-template-rows: auto repeat(6, minmax(54px, auto));
+  height: 620px;
+  min-height: 620px;
+  overflow: hidden;
+  padding: 34px 40px;
+}
+
+.landing-workflow-visual-hint {
+  color: #2f4a67;
+  font-size: .72rem;
+  font-weight: 760;
+  letter-spacing: .08em;
+  margin-bottom: 26px;
+  padding: 0;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.landing-workflow-flow-item {
+  align-items: center;
   display: grid;
   gap: 12px;
-  min-height: 420px;
-  padding: 34px;
+}
+
+.landing-workflow-flow-item:nth-child(odd) {
+  justify-items: start;
+}
+
+.landing-workflow-flow-item:nth-child(even) {
+  justify-items: end;
 }
 
 .landing-workflow-node {
   align-items: center;
-  border: 1px solid rgba(255, 255, 255, .22);
+  appearance: none;
+  background: #f8fafc;
+  border: 1px solid rgba(43, 66, 92, .18);
   border-radius: 8px;
+  color: #26384d;
+  cursor: pointer;
   display: flex;
   font-size: .86rem;
   font-weight: 730;
   height: 54px;
   justify-content: center;
+  transition: background .45s ease, border-color .45s ease, box-shadow .45s ease, color .45s ease, transform .45s ease;
+  width: min(86%, 348px);
+}
+
+.landing-workflow-node:hover:not(.landing-workflow-node-active) {
+  background: #dfe7ef;
+  border-color: rgba(43, 66, 92, .34);
+  box-shadow: 0 12px 28px rgba(43, 66, 92, .13);
+  color: #1f2f42;
+  transform: translateY(-2px);
+}
+
+.landing-workflow-node-active {
+  background: #34475d;
+  border-color: #34475d;
+  box-shadow: 0 14px 30px rgba(43, 66, 92, .12);
+  color: #f8fafc;
+  text-shadow: none;
+  transform: scale(1.02);
 }
 
 .landing-workflow-line {
-  background: rgba(255, 255, 255, .34);
-  height: 30px;
+  background-image: linear-gradient(to bottom, rgba(98, 102, 108, .34) 55%, transparent 0);
+  background-size: 1px 8px;
+  height: 22px;
   justify-self: center;
+  transition: background .45s ease, box-shadow .45s ease, transform .45s ease;
   width: 1px;
 }
 
+.landing-workflow-line-active {
+  background-image: linear-gradient(to bottom, rgba(43, 66, 92, .58) 55%, transparent 0);
+  box-shadow: 0 0 10px rgba(43, 66, 92, .14);
+  transform: scaleY(1.18);
+}
+
+.landing-workflow-steps-shell {
+  height: 620px;
+  min-height: 620px;
+  position: relative;
+}
+
+.landing-workflow-switch {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #2f4a67;
+  cursor: pointer;
+  display: inline-flex;
+  animation: landing-workflow-arrow-breathe 1.8s ease-in-out infinite;
+  height: 36px;
+  justify-content: center;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  transition: color .3s ease, opacity .3s ease, transform .3s ease;
+  width: 36px;
+  z-index: 3;
+}
+
+.landing-workflow-switch:hover:not(:disabled) {
+  color: var(--landing-ink);
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.landing-workflow-switch:disabled {
+  cursor: default;
+  opacity: .34;
+}
+
+.landing-workflow-switch svg {
+  transform: rotate(-90deg);
+  width: 22px;
+  height: 22px;
+}
+
+.landing-workflow-switch-bottom svg {
+  transform: rotate(90deg);
+}
+
+.landing-workflow-switch-top {
+  top: 10px;
+}
+
+.landing-workflow-switch-bottom {
+  bottom: 10px;
+}
+
 .landing-workflow-steps {
+  align-content: center;
+  animation: landing-workflow-panel-in .5s ease both;
+  background: rgba(255, 255, 255, .62);
+  border: 1px solid rgba(222, 222, 222, .74);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(24, 24, 28, .06);
   display: grid;
-  gap: 12px;
+  gap: 14px;
+  height: 100%;
+  min-height: 620px;
+  overflow: hidden;
+  padding: 34px 26px;
+}
+
+.landing-workflow-steps-shell-overview .landing-workflow-steps {
+  align-content: start;
+  gap: 10px 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.landing-workflow-steps-shell-overview .landing-workflow-panel-top {
+  grid-column: 1 / -1;
+}
+
+.landing-workflow-steps-shell-detail .landing-workflow-steps {
+  padding-bottom: 46px;
+  padding-top: 46px;
+}
+
+.landing-workflow-panel-top {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.landing-workflow-phase-label {
+  color: #2f4a67;
+  font-size: .72rem;
+  font-weight: 760;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.landing-workflow-back {
+  background: transparent;
+  border: 0;
+  color: #4e5965;
+  cursor: pointer;
+  font-size: .78rem;
+  font-weight: 730;
+  padding: 0;
+  transition: color .3s ease;
+}
+
+.landing-workflow-back:hover {
+  color: var(--landing-ink);
 }
 
 .landing-workflow-step {
   align-items: center;
-  border-top: 1px solid var(--landing-border);
+  animation: landing-workflow-step-in .5s ease both;
+  background: rgba(255, 255, 255, .54);
+  border-radius: 8px;
+  border: 1px solid rgba(222, 222, 222, .68);
   display: grid;
   gap: 22px;
   grid-template-columns: 50px minmax(0, 1fr);
   min-height: 94px;
+  padding: 18px 20px;
+  transition: background .45s ease, box-shadow .45s ease, border-color .45s ease, transform .45s ease;
   will-change: transform, opacity;
 }
 
+.landing-workflow-steps-shell-overview .landing-workflow-step {
+  gap: 14px;
+  grid-template-columns: 40px minmax(0, 1fr);
+  min-height: 74px;
+  padding: 14px 16px;
+}
+
+.landing-workflow-steps-shell-overview .landing-workflow-step:first-of-type {
+  background: rgba(255, 255, 255, .76);
+}
+
+.landing-workflow-steps-shell-overview .landing-workflow-step strong {
+  font-size: .9rem;
+  line-height: 1.24;
+}
+
+.landing-workflow-step:hover {
+  background: linear-gradient(135deg, rgba(43, 66, 92, .12), rgba(79, 111, 111, .08));
+  border-color: rgba(43, 66, 92, .26);
+  box-shadow: 0 16px 38px rgba(43, 66, 92, .13);
+  transform: translateX(4px);
+}
+
 .landing-workflow-step span {
-  color: var(--landing-red);
+  color: #2f4a67;
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: .82rem;
   font-weight: 760;
+  transition: color .3s ease, transform .3s ease;
+}
+
+.landing-workflow-step:hover span {
+  color: #4f6f6f;
+  transform: scale(1.08);
 }
 
 .landing-workflow-step p {
@@ -91,6 +323,61 @@
   color: var(--landing-ink);
   display: block;
   font-size: .96rem;
+}
+
+@keyframes landing-workflow-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landing-workflow-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes landing-workflow-arrow-breathe {
+  0%, 100% {
+    opacity: .72;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-workflow-node,
+  .landing-workflow-switch,
+  .landing-workflow-step,
+  .landing-workflow-step span {
+    transition: none;
+  }
+
+  .landing-workflow-node-active,
+  .landing-workflow-step:hover,
+  .landing-workflow-step:hover span {
+    transform: none;
+  }
+
+  .landing-workflow-steps,
+  .landing-workflow-switch,
+  .landing-workflow-step {
+    animation: none;
+  }
 }
 
 .landing-problem {
