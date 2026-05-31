@@ -13,6 +13,7 @@ import { GovernancePage } from './pages/GovernancePage'
 import { HomePage } from './pages/HomePage'
 import { SourcesPage } from './pages/SourcesPage'
 import { WorkspaceAdminPage } from './pages/WorkspaceAdminPage'
+import { WorkspaceGroupsPage } from './pages/WorkspaceGroupsPage'
 import { WorkspaceInvitationPage } from './pages/WorkspaceInvitationPage'
 import { WorkspaceMembersPage } from './pages/WorkspaceMembersPage'
 import {
@@ -35,6 +36,7 @@ function App() {
           <Route element={<ConsoleRoot />}>
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="workspace/admin" element={<WorkspaceAdminPage />} />
+            <Route path="workspace/admin/groups" element={<WorkspaceGroupsPage />} />
             <Route path="workspace/admin/members" element={<WorkspaceMembersPage />} />
             <Route path="workspace/invitations/:invitationId" element={<WorkspaceInvitationPage />} />
             <Route path="sources" element={<SourcesPage />} />

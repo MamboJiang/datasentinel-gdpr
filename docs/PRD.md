@@ -116,14 +116,16 @@ The Workspace slice separates signed-in accounts from Workspace membership. It m
 - Let Workspace members switch current Workspace from the top-left Workspace menu, with operational data scoped to the selected Workspace.
 - Treat Workspace groups as the P0 permission carrier for owners, administrators, privacy reviewers, data stewards, and auditors.
 - Let Workspace administrators define additional groups, rename groups, and set group permissions from a visible permission catalog.
+- Let Workspace administrators customize the Workspace name and introduction shown in the left sidebar without changing billing, plan, tenant, or compliance status.
 - Let Workspace administrators change member group assignments and remove members without allowing admin lockout.
 - Let Workspace administrators generate invite links with explicit non-owner group assignment and copy pending invite links.
 - Let Workspace owners transfer Owner authority by entering another active member's email, with submission enabled only after a match and a second confirmation before the transfer.
 - Let Workspace owners delete a Workspace only after exact-name confirmation and a second confirmation, closing local memberships and invitations without deleting external source files.
 - Expose allowed and denied Workspace actions before privileged actions are attempted.
-- Use the top-left Workspace menu to show current Workspace, no-Workspace state, and legacy pending invitations when present.
+- Use the top-left Workspace menu to show current Workspace, current membership groups in the compact pill, no-Workspace state, and legacy pending invitations when present.
 - Hide sidebar destinations that are outside the current Workspace permission boundary.
-- Provide a Workspace admin surface with members, editable groups, invitations, permission boundaries, and management charts.
+- Provide a Workspace admin overview with compact member/group summaries, compact invitation rows, permission boundaries, management charts, Workspace profile settings, and the Danger Zone as the final section.
+- Provide dedicated Workspace admin subpages for full member management and full group controls.
 - Keep real deletion, production tenant access, Microsoft Graph directory sync, legal conclusions, and hidden privileges out of this slice.
 
 The detailed design note is `docs/design/workspace-admin-permission-system.md`.

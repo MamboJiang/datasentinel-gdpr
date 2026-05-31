@@ -156,6 +156,7 @@ export type ReviewSupport = {
     label?: string
   }[]
   checklist: {
+    decision?: ReviewDecision
     itemId: string
     label: string
     required?: boolean

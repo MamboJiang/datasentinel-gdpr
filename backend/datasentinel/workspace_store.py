@@ -6,7 +6,14 @@ import copy
 from typing import Any, Protocol
 
 from .sqlite_store import OWNER_GLOBAL, SQLiteDocumentStore
-from .workspace_seed import WORKSPACE_PERMISSION_IDS, WORKSPACE_STATE_VERSION, groups_for_workspace, seed_state
+from .workspace_seed import (
+    WORKSPACE_ADMIN_REQUIRED_PERMISSIONS,
+    WORKSPACE_OWNER_REQUIRED_PERMISSIONS,
+    WORKSPACE_PERMISSION_IDS,
+    WORKSPACE_STATE_VERSION,
+    groups_for_workspace,
+    seed_state,
+)
 
 WORKSPACE_STATE_KEY = "workspace_state"
 
@@ -69,10 +76,20 @@ def normalize_workspace_state(state: dict[str, Any]) -> tuple[dict[str, Any], bo
             if isinstance(item, str) and item in valid_permission_ids
         ]
         normalized_permissions = list(dict.fromkeys(filtered_permissions))
+        if group.get("groupId") == "workspace_owner":
+            normalized_permissions = _with_required_permissions(normalized_permissions, WORKSPACE_OWNER_REQUIRED_PERMISSIONS)
+        if group.get("groupId") == "workspace_admin":
+            normalized_permissions = _with_required_permissions(normalized_permissions, WORKSPACE_ADMIN_REQUIRED_PERMISSIONS)
         if normalized_permissions != group["permissions"]:
             group["permissions"] = normalized_permissions
             changed = True
     for item in state.get("workspaces", []):
+        if "headerLabel" not in item:
+            item["headerLabel"] = str(item.get("plan") or "")
+            changed = True
+        elif not isinstance(item.get("headerLabel"), str):
+            item["headerLabel"] = str(item.get("plan") or "")
+            changed = True
         workspace_id = item.get("workspaceId")
         if not isinstance(workspace_id, str) or not workspace_id:
             continue
@@ -103,3 +120,7 @@ def normalize_workspace_state(state: dict[str, Any]) -> tuple[dict[str, Any], bo
             invitation["invitePath"] = f"/workspace/invitations/{invitation['invitationId']}"
             changed = True
     return state, changed
+
+
+def _with_required_permissions(permissions: list[str], required_permissions: tuple[str, ...]) -> list[str]:
+    return list(dict.fromkeys([*permissions, *required_permissions]))

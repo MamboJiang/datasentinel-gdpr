@@ -198,7 +198,7 @@ describe('human review decision handling', () => {
           actorId: 'user_guest',
         }),
         support: guestSupport,
-        reason: 'Mark as deletion candidate is outside the current permission boundary.',
+        reason: 'Approve delete (mark candidate) is outside the current permission boundary.',
       },
       {
         command: commandFor(completed, reviewerSupport, 'delete_candidate', {

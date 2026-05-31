@@ -14,6 +14,7 @@ import {
   applyLocalWorkspaceMemberDeletion,
   applyLocalWorkspaceMemberUpdate,
   applyLocalWorkspaceOwnerTransfer,
+  applyLocalWorkspaceSettingsUpdate,
   buildLocalWorkspaceGroup,
 } from './workspaceLocalState'
 import {
@@ -26,6 +27,7 @@ import {
   deleteServerWorkspaceMember,
   deleteServerWorkspaceGroup,
   deleteServerSource,
+  getServerReviewSupport,
   isApiRequestError,
   loadServerData,
   reviewServerFinding,
@@ -35,7 +37,10 @@ import {
   testServerSourceConnection,
   updateServerWorkspaceMember,
   updateServerWorkspaceGroup,
+  updateServerWorkspaceSettings,
+  updateServerSource,
   type CreateSourceInput,
+  type UpdateSourceInput,
 } from './serverApi'
 import type {
   CreateWorkspaceInvitationInput,
@@ -45,8 +50,10 @@ import type {
   DeleteWorkspaceMemberInput,
   Finding,
   ReviewInput,
+  ReviewSupport,
   UpdateWorkspaceGroupInput,
   UpdateWorkspaceMemberInput,
+  UpdateWorkspaceSettingsInput,
   TransferWorkspaceOwnerInput,
   WorkspaceGroup,
   WorkspaceGroupInput,
@@ -57,6 +64,7 @@ const localMocksEnabled = import.meta.env.VITE_DATASENTINEL_ENABLE_LOCAL_MOCKS =
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState(localMocksEnabled ? getInitialMockData : getEmptyData)
+  const [reviewSupportByFindingId, setReviewSupportByFindingId] = useState<Record<string, ReviewSupport>>({})
   const [notifications, setNotifications] = useState<DataContextValue['notifications']>([])
   const [serverConnection, setServerConnection] = useState<DataContextValue['serverConnection']>({
     checkedAt: null,
@@ -125,6 +133,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
         markServerConnected()
         setData(serverData)
+        setReviewSupportByFindingId(serverData.reviewSupport.findingId ? { [serverData.reviewSupport.findingId]: serverData.reviewSupport } : {})
       })
       .catch(() => {
         if (!active) {
@@ -265,6 +274,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function updateSource(input: UpdateSourceInput) {
+    if (!serverAvailable.current) {
+      notify('Project server unavailable; Source assignment requires the API server.')
+      return
+    }
+
+    try {
+      const result = await updateServerSource(input)
+      await refreshServerData(`${result.data.name} Source owner updated.`)
+    } catch (error) {
+      notify(error instanceof Error ? error.message : 'Source update failed.')
+    }
+  }
+
   async function deleteSource(sourceId: string) {
     if (!serverAvailable.current) {
       notify('Project server unavailable; source deletion requires the API server.')
@@ -304,6 +327,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           finding,
           governanceConfig: data.governanceConfig,
           occurredAt,
+          workspaceMembers: data.workspaceAdmin.members,
         })
       : data.reviewSupport
     const result = recordHumanReviewDecision(data, {
@@ -377,6 +401,56 @@ export function DataProvider({ children }: { children: ReactNode }) {
       },
     }))
     notify('Workspace switched in local mock state.')
+    return true
+  }
+
+  async function updateWorkspaceSettings(input: UpdateWorkspaceSettingsInput): Promise<boolean> {
+    const name = input.name?.trim().replace(/\s+/g, ' ')
+    const description = input.description?.trim().replace(/\s+/g, ' ')
+    const headerLabel = input.headerLabel?.trim().replace(/\s+/g, ' ')
+
+    if (input.name !== undefined && !name) {
+      notify('Workspace name is required.')
+      return false
+    }
+
+    if (name && name.length > 80) {
+      notify('Workspace name must be 80 characters or fewer.')
+      return false
+    }
+
+    if (description && description.length > 240) {
+      notify('Workspace description must be 240 characters or fewer.')
+      return false
+    }
+
+    if (headerLabel !== undefined && headerLabel.length > 24) {
+      notify('Workspace header label must be 24 characters or fewer.')
+      return false
+    }
+
+    if (serverAvailable.current) {
+      try {
+        await updateServerWorkspaceSettings({ ...input, description, headerLabel, name })
+        await refreshServerData('Workspace profile updated.')
+        return true
+      } catch (error) {
+        if (!shouldUseLocalFallback(error)) {
+          notifyApiRejection(error, 'Workspace settings update was rejected by the project server.')
+          return false
+        }
+        markServerUnavailable()
+        notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
+      }
+    }
+
+    if (!canManageWorkspaceSettings()) {
+      notify('Workspace settings permission is required.')
+      return false
+    }
+
+    setData((current) => applyLocalWorkspaceSettingsUpdate(current, input.workspaceId, { description, headerLabel, name }))
+    notify('Workspace profile updated in local mock state.')
     return true
   }
 
@@ -765,6 +839,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return data.workspaceAdmin.permissionBoundary.allowedActions.includes('manage_workspace_groups')
   }
 
+  function canManageWorkspaceSettings() {
+    return data.workspaceAdmin.permissionBoundary.allowedActions.includes('manage_workspace_settings')
+  }
+
   function canManageWorkspaceMembers() {
     return data.workspaceAdmin.permissionBoundary.allowedActions.includes('manage_workspace_members')
   }
@@ -821,17 +899,49 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   function getReviewSupport(findingId: string) {
     const finding = getFinding(findingId)
+    const actorId = data.workspaceAdmin.currentMembership?.accountId ?? data.permissionBoundary.actorId
+    const cachedReviewSupport = reviewSupportByFindingId[findingId]
+
+    if (cachedReviewSupport?.actorId === actorId) {
+      return cachedReviewSupport
+    }
 
     if (!finding) {
       return data.reviewSupport
     }
 
+    if (data.reviewSupport.findingId === findingId && data.reviewSupport.actorId === actorId) {
+      return data.reviewSupport
+    }
+
     return buildReviewSupport({
-      actorId: data.permissionBoundary.actorId,
+      actorId,
       finding,
       governanceConfig: data.governanceConfig,
       occurredAt: data.meta.generatedAt,
+      workspaceMembers: data.workspaceAdmin.currentMembership ? data.workspaceAdmin.members : undefined,
     })
+  }
+
+  async function loadReviewSupport(findingId: string): Promise<ReviewSupport> {
+    if (serverAvailable.current) {
+      try {
+        const result = await getServerReviewSupport(findingId)
+        setReviewSupportByFindingId((current) => ({ ...current, [findingId]: result.data }))
+        return result.data
+      } catch (error) {
+        if (!shouldUseLocalFallback(error)) {
+          notifyApiRejection(error, 'Review support was rejected by the project server.')
+          return getReviewSupport(findingId)
+        }
+        markServerUnavailable()
+        notify(error instanceof Error ? error.message : 'Project server unavailable; using local review support.')
+      }
+    }
+
+    const reviewSupport = getReviewSupport(findingId)
+    setReviewSupportByFindingId((current) => ({ ...current, [findingId]: reviewSupport }))
+    return reviewSupport
   }
 
   return (
@@ -854,13 +964,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
         notifications,
         getFinding,
         getReviewSupport,
+        loadReviewSupport,
         createSource,
+        updateSource,
         deleteSource,
         startScan,
         testSourceConnection,
         reviewFinding,
         createWorkspace,
         switchWorkspace,
+        updateWorkspaceSettings,
         createWorkspaceInvitation,
         acceptWorkspaceInvitation,
         createWorkspaceGroup,
@@ -882,6 +995,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const nextData = await loadServerData(localMocksEnabled ? getInitialMockData() : getEmptyData())
     markServerConnected()
     setData(nextData)
+    setReviewSupportByFindingId(nextData.reviewSupport.findingId ? { [nextData.reviewSupport.findingId]: nextData.reviewSupport } : {})
     notify(successNotification)
   }
 }

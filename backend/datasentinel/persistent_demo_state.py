@@ -6,7 +6,7 @@ import copy
 import time
 from typing import Any, Protocol
 
-from .demo_state import DemoState
+from .demo_state import DemoState, _normalize_review_retention_status
 from .deterministic_signals import safe_public_source_path, sanitize_public_signal
 from .prelaunch_state import PrelaunchState
 from .source_store import SourceStore
@@ -67,8 +67,15 @@ class PersistentDemoState(DemoState):
 
         return result
 
-    def review_finding(self, finding_id: str, payload: dict[str, Any], trace_id: str, path: str) -> dict[str, Any]:
-        result = super().review_finding(finding_id, payload, trace_id, path)
+    def review_finding(
+        self,
+        finding_id: str,
+        payload: dict[str, Any],
+        trace_id: str,
+        path: str,
+        access_context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        result = super().review_finding(finding_id, payload, trace_id, path, access_context)
 
         if result["status"] < 400:
             self._save_state()
@@ -118,11 +125,22 @@ class PersistentPrelaunchState(PrelaunchState):
             self._save_state()
         return result
 
-    def review_finding(self, finding_id: str, payload: dict[str, Any], trace_id: str, path: str) -> dict[str, Any]:
-        result = super().review_finding(finding_id, payload, trace_id, path)
+    def review_finding(
+        self,
+        finding_id: str,
+        payload: dict[str, Any],
+        trace_id: str,
+        path: str,
+        access_context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        result = super().review_finding(finding_id, payload, trace_id, path, access_context)
         if result["status"] < 400:
             self._save_state()
         return result
+
+    def source_assignment_changed(self, source: dict[str, Any]) -> None:
+        super().source_assignment_changed(source)
+        self._save_state()
 
     def source_deleted(self, source_id: str) -> None:
         super().source_deleted(source_id)
@@ -176,6 +194,8 @@ class PersistentPrelaunchState(PrelaunchState):
 
 
 def _sanitize_finding_record(finding: dict[str, Any]) -> None:
+    _normalize_review_retention_status(finding)
+
     source_path = finding.get("sourcePath")
     if isinstance(source_path, str):
         finding["sourcePath"] = safe_public_source_path(source_path)

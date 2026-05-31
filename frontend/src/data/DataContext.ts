@@ -24,10 +24,11 @@ import type {
   WorkspaceInvitation,
   UpdateWorkspaceGroupInput,
   UpdateWorkspaceMemberInput,
+  UpdateWorkspaceSettingsInput,
   TransferWorkspaceOwnerInput,
 } from '../types'
 import type { StartScanOptions } from './scanWorkflow'
-import type { CreateSourceInput } from './serverApi'
+import type { CreateSourceInput, UpdateSourceInput } from './serverApi'
 
 export type AppNotification = {
   id: string
@@ -61,13 +62,16 @@ export type DataContextValue = {
   notifications: AppNotification[]
   getFinding: (findingId: string) => Finding | undefined
   getReviewSupport: (findingId: string) => ReviewSupport
+  loadReviewSupport: (findingId: string) => Promise<ReviewSupport>
   createSource: (input: CreateSourceInput) => void
+  updateSource: (input: UpdateSourceInput) => void
   deleteSource: (sourceId: string) => void
   startScan: (options: StartScanOptions) => void
   testSourceConnection: (sourceId: string) => void
   reviewFinding: (input: ReviewInput) => void
   createWorkspace: (input: CreateWorkspaceInput) => void
   switchWorkspace: (workspaceId: string) => Promise<boolean>
+  updateWorkspaceSettings: (input: UpdateWorkspaceSettingsInput) => Promise<boolean>
   createWorkspaceInvitation: (input: CreateWorkspaceInvitationInput) => Promise<WorkspaceInvitation | null>
   acceptWorkspaceInvitation: (invitationId: string) => Promise<boolean>
   createWorkspaceGroup: (input: WorkspaceGroupInput) => Promise<WorkspaceGroup | null>

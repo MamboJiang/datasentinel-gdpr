@@ -6,7 +6,7 @@ import hashlib
 import time
 from typing import Any
 
-from .demo_state import DemoState
+from .demo_state import DemoState, _source_owner
 from .deterministic_signals import detect_signals, safe_public_source_path
 from .envelope import envelope, response, utc_now
 from .source_documents import SourceDocument, SourceDocumentBatch, SourceReadIssue, read_source_documents
@@ -161,7 +161,7 @@ def _finding(scan_id: str, source: dict[str, Any], document: SourceDocument, sig
     }
     risk = "high" if any(signal_type in high_risk_types for signal_type in signal_types) else "medium"
     score = 86 if risk == "high" else 64
-    owner_id = source.get("masterOfDataUserId") or "authenticated_user"
+    owner = _source_owner(source)
     finding_id = "finding_" + hashlib.sha256(f"{scan_id}:{document.source_path}".encode("utf-8")).hexdigest()[:12]
     return {
         "findingId": finding_id,
@@ -176,8 +176,8 @@ def _finding(scan_id: str, source: dict[str, Any], document: SourceDocument, sig
         "recommendedAction": "escalate" if risk == "high" else "keep_with_reason",
         "evidenceSignalCount": len(signals),
         "policyPackVersion": policy_version,
-        "status": "assigned",
-        "owner": {"userId": owner_id, "displayName": owner_id, "email": None, "assignmentType": "source_master_of_data", "assignmentReason": "Configured source owner receives local prelaunch findings.", "assignmentSource": "source_config"},
+        "status": "assigned" if owner else "unassigned",
+        "owner": owner,
         "file": {"sourceName": source["name"], "sourceType": source["sourceType"], "lastModifiedAt": utc_now(), "sizeBytes": document.size_bytes},
         "signals": signals,
         "riskExplanation": "The prelaunch scan found redacted identifier patterns that require accountable human review before any action.",
@@ -211,7 +211,7 @@ def _scan(scan_id: str, source: dict[str, Any], scan_type: str, batch: SourceDoc
         "contentExtraction": {"status": "completed", "extractionFingerprint": f"sha256:{scan_id}_{batch.extraction_method}", "processedFiles": batch.total_files, "successfulFiles": len(batch.documents), "warningFiles": batch.unsupported_files, "unsupportedFiles": batch.unsupported_files, "ocrDeferredFiles": batch.ocr_deferred_files, "redactedEvidenceCandidates": signal_count, "rawContentExposed": False, "methods": extraction_methods, "formatCounts": batch.format_counts or [], "recognitionDifficulty": recognition_difficulty, "aiAssistanceUsed": False, "modelCalls": 0, "warnings": warnings},
         "signalDetection": {"status": "completed", "detectorRulesVersion": "prelaunch-local-v2", "detectorRulesHash": f"sha256:{scan_id}_signals", "evidenceRequirements": ["redacted_snippet", "detector_signal", "owner_assignment", "policy_version"], "evaluatedEvidenceCandidates": signal_count, "detectedSignals": signal_count, "redactedSignals": signal_count, "findingsWithSignals": len(findings), "rawContentExposed": False, "signalTypeCounts": signal_count_items, "warnings": []},
         "contextRisk": {"status": "completed", "policyPackVersion": policy_version, "riskRulesFingerprint": f"sha256:{scan_id}_risk", "assessedEvidenceCandidates": signal_count, "contextClassifiedFindings": len(findings), "riskAssessedFindings": len(findings), "highRiskFindings": sum(1 for item in findings if item["riskLevel"] == "high"), "mediumRiskFindings": sum(1 for item in findings if item["riskLevel"] == "medium"), "lowRiskFindings": 0, "retentionReviewFiles": len(findings), "humanReviewRequiredFindings": len(findings), "legalConclusionProvided": False, "contextCategories": [], "warnings": []},
-        "ownerAssignment": {"status": "completed", "policyPackVersion": policy_version, "organizationModelVersion": "prelaunch", "ownerResolutionStrategy": "source_master_of_data", "assignmentRulesFingerprint": f"sha256:{scan_id}_owner", "humanReviewRequiredFindings": len(findings), "assignedFindings": len(findings), "directOwnerAssignments": 0, "masterOfDataAssignments": len(findings), "escalationAssignments": 0, "unownedFindings": 0, "transferOptionCount": 0, "escalationOptionCount": 1, "sourceOwnerAvailable": True, "warnings": []},
+        "ownerAssignment": {"status": "completed", "policyPackVersion": policy_version, "organizationModelVersion": "prelaunch", "ownerResolutionStrategy": "source_owner_then_data_steward_fallback", "assignmentRulesFingerprint": f"sha256:{scan_id}_owner", "humanReviewRequiredFindings": len(findings), "assignedFindings": sum(1 for item in findings if item.get("owner")), "directOwnerAssignments": sum(1 for item in findings if (item.get("owner") or {}).get("assignmentType") == "direct_owner"), "masterOfDataAssignments": sum(1 for item in findings if (item.get("owner") or {}).get("assignmentType") == "data_steward_fallback"), "escalationAssignments": 0, "unownedFindings": sum(1 for item in findings if not item.get("owner")), "transferOptionCount": 0, "escalationOptionCount": 1, "sourceOwnerAvailable": any(item.get("owner") for item in findings), "warnings": []},
         "findingAssembly": {"status": "completed", "policyPackVersion": policy_version, "sourceSnapshotId": f"snapshot_{source['sourceId']}_{scan_id}", "assemblyRulesFingerprint": f"sha256:{scan_id}_assembly", "assembledFindings": len(findings), "evidenceCards": len(findings), "evidenceSignals": signal_count, "redactedEvidenceSnippets": signal_count, "missingEvidenceCards": 0, "deniedActionCount": len(findings), "rawContentExposed": False, "legalConclusionProvided": False, "warnings": []},
         "reviewSupport": {"status": "completed", "policyPackVersion": policy_version, "organizationModelVersion": "prelaunch", "supportRulesFingerprint": f"sha256:{scan_id}_support", "reviewableFindings": len(findings), "supportedFindings": len(findings), "allowedActionCount": 4, "deniedActionCount": 1, "availableDecisionCount": 4, "reasonRequiredDecisionCount": 4, "checklistItemCount": 3, "transferOptionCount": 0, "escalationOptionCount": 1, "rawContentExposed": False, "legalConclusionProvided": False, "warnings": []},
         "auditRecording": {"status": "completed", "policyPackVersion": policy_version, "auditRulesFingerprint": f"sha256:{scan_id}_audit", "recordedEventCount": len(findings), "linkedScanEvents": 1, "linkedFindingEvents": len(findings), "reviewDecisionEvents": 0, "systemEvents": len(findings), "humanEvents": 0, "rawContentExposed": False, "legalConclusionProvided": False, "deletionExecuted": False, "warnings": []},

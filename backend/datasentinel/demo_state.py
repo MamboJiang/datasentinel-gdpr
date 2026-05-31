@@ -103,27 +103,29 @@ class DemoState:
 
         return response(202, envelope(self.scan, trace_id, partial=True, warnings=self._running_warnings()), trace_id)
 
-    def list_findings(self, trace_id: str) -> dict[str, Any]:
+    def list_findings(self, trace_id: str, access_context: dict[str, Any] | None = None) -> dict[str, Any]:
         self._finish_scan_if_ready()
-        pagination = {"limit": 25, "offset": 0, "total": len(self.findings), "nextCursor": None}
-        return response(200, envelope(self.findings, trace_id, pagination=pagination), trace_id)
+        findings = self._visible_findings(access_context)
+        pagination = {"limit": 25, "offset": 0, "total": len(findings), "nextCursor": None}
+        return response(200, envelope(findings, trace_id, pagination=pagination), trace_id)
 
-    def get_finding(self, finding_id: str, trace_id: str, path: str) -> dict[str, Any]:
+    def get_finding(self, finding_id: str, trace_id: str, path: str, access_context: dict[str, Any] | None = None) -> dict[str, Any]:
         self._finish_scan_if_ready()
         finding = self._finding_detail(finding_id)
 
-        if not finding:
+        if not finding or not _can_view_finding(finding, access_context):
             return self._not_found("Finding not found", path, trace_id, "#/findingId")
 
         return response(200, envelope(finding, trace_id), trace_id)
 
-    def review_finding(self, finding_id: str, payload: dict[str, Any], trace_id: str, path: str) -> dict[str, Any]:
+    def review_finding(self, finding_id: str, payload: dict[str, Any], trace_id: str, path: str, access_context: dict[str, Any] | None = None) -> dict[str, Any]:
         finding = self._finding_detail(finding_id)
 
-        if not finding:
+        if not finding or not _can_view_finding(finding, access_context):
             return self._not_found("Finding not found", path, trace_id, "#/findingId")
 
-        validation = validate_review(self.review_support, finding_id, payload)
+        review_support = self._review_support_for(finding, access_context)
+        validation = validate_review(review_support, finding_id, payload)
 
         if validation:
             return self._validation(validation[1], path, trace_id, validation[0])
@@ -131,8 +133,8 @@ class DemoState:
         decision = payload["decision"]
         resulting_status = DECISION_STATUS[decision]
         review = build_review_record(
-            self.review_support,
-            self.permission_boundary,
+            review_support,
+            review_support.get("permissionBoundary") or self.permission_boundary,
             self.scan,
             finding_id,
             payload,
@@ -140,7 +142,7 @@ class DemoState:
         )
         audit_event = build_review_audit_event(finding, review)
         self.audit_events.insert(0, audit_event)
-        self._update_finding_after_review(finding_id, resulting_status, payload, audit_event)
+        self._update_finding_after_review(finding_id, resulting_status, payload, audit_event, review_support)
         apply_review_metrics(self.metrics, decision)
 
         return response(201, envelope(review, trace_id), trace_id)
@@ -172,16 +174,18 @@ class DemoState:
         }
         return response(200, envelope(preview, trace_id, warnings=preview["warnings"]), trace_id)
 
-    def permissions(self, trace_id: str) -> dict[str, Any]:
+    def permissions(self, trace_id: str, access_context: dict[str, Any] | None = None) -> dict[str, Any]:
+        if access_context and access_context.get("permissionBoundary"):
+            return response(200, envelope(access_context["permissionBoundary"], trace_id), trace_id)
         return response(200, envelope(self.permission_boundary, trace_id), trace_id)
 
-    def finding_review_support(self, finding_id: str, trace_id: str, path: str) -> dict[str, Any]:
+    def finding_review_support(self, finding_id: str, trace_id: str, path: str, access_context: dict[str, Any] | None = None) -> dict[str, Any]:
         self._finish_scan_if_ready()
-        if not self._finding_detail(finding_id):
+        finding = self._finding_detail(finding_id)
+        if not finding or not _can_view_finding(finding, access_context):
             return self._not_found("Finding not found", path, trace_id, "#/findingId")
 
-        support = copy.deepcopy(self.review_support)
-        support["findingId"] = finding_id
+        support = self._review_support_for(finding, access_context)
         return response(200, envelope(support, trace_id), trace_id)
 
     def _finish_scan_if_ready(self) -> None:
@@ -286,7 +290,24 @@ class DemoState:
             if summary:
                 self.finding_details[finding_id] = {**copy.deepcopy(summary), "auditTimeline": []}
 
+        finding = self.finding_details.get(finding_id)
+        if finding:
+            _normalize_review_retention_status(finding)
+
         return self.finding_details.get(finding_id)
+
+    def _visible_findings(self, access_context: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+        for finding in self.findings:
+            _normalize_review_retention_status(finding)
+        return [copy.deepcopy(finding) for finding in self.findings if _can_view_finding(finding, access_context)]
+
+    def _review_support_for(self, finding: dict[str, Any], access_context: dict[str, Any] | None = None) -> dict[str, Any]:
+        if not access_context:
+            support = copy.deepcopy(self.review_support)
+            support["findingId"] = finding["findingId"]
+            return support
+
+        return _workspace_review_support(finding, access_context, self.governance_config, self.scan)
 
     def _update_finding_after_review(
         self,
@@ -294,11 +315,12 @@ class DemoState:
         resulting_status: str,
         payload: dict[str, Any],
         audit_event: dict[str, Any],
+        review_support: dict[str, Any],
     ) -> None:
         transfer_owner = None
 
         if payload["decision"] == "reassign_owner":
-            target = review_target(self.review_support, payload)
+            target = review_target(review_support, payload)
             if target:
                 transfer_owner = {
                     "userId": target[0],
@@ -312,14 +334,36 @@ class DemoState:
         for finding in self.findings:
             if finding["findingId"] == finding_id:
                 finding["status"] = resulting_status
+                if payload["decision"] == "keep_with_reason":
+                    finding["retentionStatus"] = "retained_until_review"
                 if transfer_owner:
                     finding["owner"] = transfer_owner
 
         detail = self.finding_details[finding_id]
         detail["status"] = resulting_status
+        if payload["decision"] == "keep_with_reason":
+            detail["retentionStatus"] = "retained_until_review"
         if transfer_owner:
             detail["owner"] = transfer_owner
         detail.setdefault("auditTimeline", []).insert(0, copy.deepcopy(audit_event))
+
+    def source_assignment_changed(self, source: dict[str, Any]) -> None:
+        if self.scan.get("sourceId") != source.get("sourceId"):
+            return
+
+        owner = _source_owner(source)
+        for finding in self.findings:
+            finding["owner"] = copy.deepcopy(owner) if owner else None
+            if not owner:
+                finding["status"] = "unassigned"
+            elif finding.get("status") == "unassigned":
+                finding["status"] = "assigned"
+        for detail in self.finding_details.values():
+            detail["owner"] = copy.deepcopy(owner) if owner else None
+            if not owner:
+                detail["status"] = "unassigned"
+            elif detail.get("status") == "unassigned":
+                detail["status"] = "assigned"
 
     def _prepend_audit_event(self, event_type: str, scan_id: str, source_id: str, state: str) -> None:
         now = utc_now()
@@ -398,3 +442,155 @@ class DemoState:
             trace_id,
             content_type="application/problem+json",
         )
+
+
+DECISION_LABELS = {
+    "delete_candidate": "Approve delete (mark candidate)",
+    "keep_with_reason": "Retain exception",
+    "correct_false_positive": "Correct false positive",
+    "reassign_owner": "Transfer to another owner",
+    "escalate": "Escalate to DPO or Legal",
+}
+
+
+def _can_view_finding(finding: dict[str, Any], access_context: dict[str, Any] | None) -> bool:
+    if not access_context:
+        return True
+
+    if not access_context.get("workspace"):
+        return True
+
+    actor_id = (access_context.get("actor") or {}).get("accountId")
+    if not actor_id:
+        return False
+
+    owner = finding.get("owner")
+    return isinstance(owner, dict) and owner.get("userId") == actor_id
+
+
+def _workspace_review_support(
+    finding: dict[str, Any],
+    access_context: dict[str, Any],
+    governance_config: dict[str, Any],
+    scan: dict[str, Any],
+) -> dict[str, Any]:
+    actor_id = (access_context.get("actor") or {}).get("accountId") or "unknown"
+    workspace_boundary = access_context.get("permissionBoundary") or {}
+    allowed_actions = set(workspace_boundary.get("allowedActions") or [])
+    owns_finding = _can_view_finding(finding, access_context)
+    can_review = owns_finding and ("review_findings" in allowed_actions or _finding_owner_id(finding) == actor_id)
+    decisions = list((governance_config.get("activePolicyPack") or {}).get("reviewDecisions") or DECISION_STATUS.keys())
+    available_decisions = [
+        {"decision": decision, "requiresReason": True, "label": DECISION_LABELS.get(decision, decision.replace("_", " ").title())}
+        for decision in decisions
+        if decision in DECISION_STATUS and can_review
+    ]
+    denied = list(workspace_boundary.get("deniedActions") or [])
+
+    if not can_review:
+        denied.extend([
+            {
+                "action": decision,
+                "reason": "Current actor can only record review decisions for findings assigned to them or an explicit review role.",
+            }
+            for decision in decisions
+            if decision in DECISION_STATUS
+        ])
+
+    if not any(item.get("action") == "execute_real_deletion" for item in denied):
+        denied.append({"action": "execute_real_deletion", "reason": "Real deletion is disabled in P0."})
+
+    boundary = {
+        "actorId": actor_id,
+        "roles": list(workspace_boundary.get("roles") or []),
+        "allowedActions": ["view_assigned_findings", *[item["decision"] for item in available_decisions]] if owns_finding else [],
+        "deniedActions": denied,
+        "visibleScopes": [f"finding:{finding['findingId']}"] if owns_finding else [],
+        "boundaryFingerprint": f"sha256:{actor_id}_{finding['findingId']}_workspace_review_boundary",
+        "evaluatedAt": utc_now(),
+    }
+
+    return {
+        "findingId": finding["findingId"],
+        "actorId": actor_id,
+        "policyPackVersion": (governance_config.get("activePolicyPack") or {}).get("version", "prelaunch"),
+        "plainLanguageSummary": f"This finding is assigned to {(finding.get('owner') or {}).get('displayName') or 'an accountable owner'}. Review decisions must stay inside the Workspace permission boundary.",
+        "availableDecisions": available_decisions,
+        "checklist": _review_checklist(finding),
+        "transferOptions": _transfer_options(access_context, finding) if can_review else [],
+        "escalationOptions": _escalation_options(governance_config) if can_review else [],
+        "permissionBoundary": boundary,
+        "reviewSupportRulesFingerprint": scan.get("reviewSupport", {}).get("supportRulesFingerprint"),
+    }
+
+
+def _review_checklist(finding: dict[str, Any]) -> list[dict[str, Any]]:
+    items = [
+        {"itemId": "review_redacted_evidence", "label": "Review the redacted evidence card and file anchor before deciding.", "required": True},
+        {"itemId": "confirm_business_purpose", "label": "Confirm whether a current business purpose exists.", "required": True},
+        {"itemId": "confirm_permission_boundary", "label": "Confirm the action is inside the displayed permission boundary.", "required": True},
+    ]
+    if finding.get("riskLevel") == "high" or finding.get("recommendedAction") == "escalate":
+        items.append({"itemId": "consider_escalation_path", "label": "Consider whether the DPO or Legal review path should handle this finding.", "required": True})
+    items.append({
+        "itemId": "confirm_delete_candidate",
+        "label": "Confirm this only marks the file as a deletion candidate and does not execute deletion.",
+        "required": True,
+        "decision": "delete_candidate",
+    })
+    return items
+
+
+def _transfer_options(access_context: dict[str, Any], finding: dict[str, Any]) -> list[dict[str, Any]]:
+    owner_id = _finding_owner_id(finding)
+    options = []
+    for member in access_context.get("members") or []:
+        if member.get("accountId") == owner_id or not _member_can_receive_review(member):
+            continue
+        options.append({
+            "userId": member["accountId"],
+            "displayName": member.get("displayName") or member["accountId"],
+            "email": member.get("email"),
+            "reason": "Active Workspace member available for accountable transfer.",
+        })
+    return options
+
+
+def _member_can_receive_review(member: dict[str, Any]) -> bool:
+    group_ids = set(member.get("groupIds") or [])
+    return bool(group_ids & {"workspace_owner", "privacy_reviewer", "data_steward", "dpo_legal"})
+
+
+def _normalize_review_retention_status(finding: dict[str, Any]) -> None:
+    if finding.get("status") == "retained" and finding.get("retentionStatus") in {"needs_review", "review_required", "overdue", None}:
+        finding["retentionStatus"] = "retained_until_review"
+
+
+def _escalation_options(governance_config: dict[str, Any]) -> list[dict[str, str]]:
+    paths = (governance_config.get("activePolicyPack") or {}).get("escalationPaths") or []
+    return [{"queueId": item.get("pathId") or "legal_escalation", "label": item.get("label") or "Escalate to DPO or Legal"} for item in paths]
+
+
+def _finding_owner_id(finding: dict[str, Any]) -> str | None:
+    owner = finding.get("owner")
+    return owner.get("userId") if isinstance(owner, dict) and isinstance(owner.get("userId"), str) else None
+
+
+def _source_owner(source: dict[str, Any]) -> dict[str, Any] | None:
+    owner = source.get("assignedOwner")
+    if isinstance(owner, dict) and owner.get("userId"):
+        return copy.deepcopy(owner)
+    fallback = source.get("fallbackOwner")
+    if isinstance(fallback, dict) and fallback.get("userId"):
+        return copy.deepcopy(fallback)
+    owner_id = source.get("assignedOwnerUserId") or source.get("masterOfDataUserId")
+    if isinstance(owner_id, str) and owner_id.strip():
+        return {
+            "userId": owner_id.strip(),
+            "displayName": owner_id.strip(),
+            "email": None,
+            "assignmentType": "source_master_of_data",
+            "assignmentReason": "Configured Source owner receives findings from this Source.",
+            "assignmentSource": "source_config",
+        }
+    return None

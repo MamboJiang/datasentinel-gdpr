@@ -91,6 +91,7 @@ export function StatusBadge({ value }: { value?: string | null }) {
       computed: 'positive',
       mock_ready: 'positive',
       retained: 'positive',
+      retained_until_review: 'positive',
       running: 'info',
       assigned: 'info',
       under_review: 'info',

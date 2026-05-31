@@ -125,13 +125,14 @@ Technical constraints:
 - `POST /api/workspaces/current` switches the current Workspace for an account that is already an active member of the target Workspace.
 - SQLite-backed operational sources, scans, findings, audit events, metrics, and evaluation use the selected `workspace:{workspaceId}` owner scope when a current Workspace exists.
 - Workspace groups carry explicit permissions from the exposed permission catalog and are evaluated with deny-by-default behavior.
-- The local API exposes Workspace directory, Workspace switch, admin summary, owner-transfer, Workspace delete, group create/update/delete, member update/delete, invite-link generation, and invitation accept endpoints using the standard envelope and problem-details error format.
+- Workspace profile settings require `manage_workspace_settings`; the frontend profile editor exposes `name` and `description` as shell profile fields. Legacy `headerLabel` payload support remains compatibility-only and is not used as a visible sidebar property.
+- The local API exposes Workspace directory, Workspace switch, admin summary, Workspace profile settings, owner-transfer, Workspace delete, group create/update/delete, member update/delete, invite-link generation, and invitation accept endpoints using the standard envelope and problem-details error format.
 - Group deletion removes the group reference from memberships and pending invite links; the protected `workspace_owner` and `workspace_admin` groups cannot be deleted or stripped of required owner/admin-management permissions.
 - Member updates and removals require `manage_workspace_members`, owner assignment changes require `manage_workspace_ownership`, and member changes cannot remove or demote the last active `workspace_owner` or `workspace_admin` member.
 - Owner transfer assigns `workspace_owner` and `workspace_admin` to the target active member and removes `workspace_owner` from prior active owners; the frontend resolves the target from an exact active-member email match and requires a second confirmation before calling the API.
 - Workspace deletion requires `manage_workspace_ownership` plus exact Workspace-name confirmation; the frontend also requires a second confirmation before the API soft-deletes the local Workspace, removes active memberships, revokes pending invitations, and clears affected current Workspace selections without deleting external source files.
 - SQLite-backed deployments may persist local Workspace membership and invitation state, but this remains a prelaunch store and not production tenant authorization.
-- The frontend Workspace menu and `/workspace/admin` route consume contract data and tolerate no-Workspace, non-admin, empty, switched, and denied states.
+- The frontend Workspace menu, `/workspace/admin` overview, `/workspace/admin/members`, and `/workspace/admin/groups` routes consume contract data and tolerate no-Workspace, non-admin, empty, switched, and denied states.
 - The frontend sidebar hides destinations outside the current Workspace permission boundary and marks expandable navigation groups with a chevron.
 - Invitation acceptance must be idempotent at the membership level and must not create duplicate memberships.
 - Workspace permissions do not enable production Microsoft Graph, enterprise directory sync, tenant provisioning, billing, source-file deletion, hidden permission data, legal advice, or full GDPR-compliance claims.
@@ -145,7 +146,9 @@ Technical constraints:
 - `remote_file_link` uses `config.url`, requires HTTPS, rejects embedded credentials, rejects private-address hosts, rejects Google Drive or Google Docs share pages, and supports only text-like content, PDF text layers, Office Open XML content, supported image files, supported transcript files, or recognized raw video media. Extractable files must stay within the prelaunch size limit; raw video media is reported as hard/OCR-deferred.
 - `google_drive_selection` uses Google Picker in the browser to collect selected item metadata and Google Identity Services to obtain a short-lived access token for scan execution.
 - The backend exposes `/api/integrations/google-drive/picker-config` for browser-safe Picker setup state behind the prelaunch session boundary; it must not expose client secrets or provider tokens.
-- Google Drive scans receive `authorization.googleDriveAccessToken` only in the scan request and must not persist it.
+- Google Drive scans receive `authorization.googleDriveAccessToken` only in the scan request and must not persist it; frontend status presentation may treat a Drive source as connected only while that token is present in browser memory.
+- Source creation and Source metadata updates may set `assignedOwnerUserId` to an active Workspace member account ID; explicit null uses Data Steward fallback when available.
+- Workspace Admin permission can edit Source ownership metadata, but business review visibility is still based on finding assignment rather than admin membership.
 - The scanner reads source content into memory during scan execution and persists redacted evidence, finding, metric, and audit state only.
 - Google Workspace documents may be exported to text-like content; folder traversal is bounded by the prelaunch file limit.
 - PDF extraction is limited to existing text layers through the prelaunch document-reader boundary; OCR remains deferred.
@@ -218,9 +221,9 @@ The approved review-support implementation is a deterministic frontend mock work
 Technical constraints:
 
 - Review support is an explicit workflow boundary after `assembling_findings`; it is not durable authorization, identity sync, notification delivery, human review persistence, or deletion handling.
-- The stage consumes assembled findings, owner assignment, active policy-pack decisions, organization-model delegation targets, and actor permission boundary.
+- The stage consumes assembled findings, owner assignment, active policy-pack decisions, active Workspace members when available, and actor permission boundary.
 - The stage exposes `reviewSupport` as a scan summary with policy-pack version, organization-model version, support-rule fingerprint, supported finding count, available decision count, required reason count, checklist count, transfer count, escalation count, denied action count, redaction boundary, no-legal-conclusion boundary, and warnings.
-- Finding-specific support exposes allowed decisions, denied actions, denial reasons, checklist items, transfer options, and escalation options before submit.
+- Finding-specific support exposes allowed decisions, denied actions, denial reasons, checklist items, transfer options from active Workspace members, and escalation options before submit. In Workspace context, clients must treat an empty Workspace transfer-target list as empty and must not refill it from static governance delegation fixtures.
 - Review input validation rejects denied decisions, missing reasons, missing transfer targets, and missing escalation targets before changing finding, audit, source, metric, or evaluation state.
 - Dashboard and finding detail presentation must keep raw source text, file bodies, page images, unredacted personal data, hidden permission data, legal advice, and deletion execution out of the UI.
 - Evaluation must preserve a review-support rules hash, deterministic reproducibility, zero model calls, and zero estimated paid-service cost.
@@ -233,11 +236,12 @@ The approved human-review implementation is a deterministic frontend mock workfl
 Technical constraints:
 
 - Human review command handling is an explicit workflow boundary after `preparing_review_support`; it is not real deletion, retention-label execution, production authorization, notification delivery, or durable backend persistence.
-- The stage consumes the assembled finding, current review support, actor permission boundary, active policy-pack version, organization-model transfer targets, support-rule fingerprint, and review command input.
+- The stage consumes the assembled finding, current review support, actor permission boundary, active policy-pack version, Workspace-member transfer targets, support-rule fingerprint, and review command input.
 - The stage validates available decision, actor, reason, checklist acknowledgement, retention review date for retain decisions, transfer target, escalation queue, and idempotency before changing any state.
 - Accepted decisions update finding status, delegated owner when applicable, audit timeline, review outcome metrics, backlog metrics, and evaluation traceability together.
+- Accepted retain decisions update the finding retention state to `retained_until_review` in both list and detail payloads so a retained finding is not still presented as needing retention review.
 - Rejected decisions must keep finding, source, audit, metric, and evaluation state unchanged.
-- `delete_candidate` is a status and audit outcome only; no source file, connector, retention label, deletion service, or external system is changed in P0.
+- `delete_candidate` requires an explicit confirmation checklist item and is a status and audit outcome only; no source file, connector, retention label, deletion service, or external system is changed in P0.
 - Dashboard and finding detail presentation must keep raw source text, file bodies, page images, unredacted personal data, hidden permission data, legal advice, and deletion execution out of the UI.
 - Evaluation must preserve a human-review decision rules hash, deterministic reproducibility, zero model calls, and zero estimated paid-service cost.
 - Production workflow engines, databases, ticketing systems, authorization providers, Microsoft Graph, OAuth, directory, notification, and deletion integrations are not added in this slice.

@@ -91,14 +91,17 @@ The first implementation milestone is accepted when:
 - The account menu platform status tile shows whether the frontend data provider is checking, connected to, or disconnected from the project API server; it must not show a static all-systems-normal message when the server is unavailable.
 - The account menu language preference lists EU language options, persists the selected code locally, updates core user-facing UI copy through static frontend dictionaries, keeps developer-facing docs and code comments English-only, and does not call a backend or translation service.
 - A full scan can be started on a controlled sample source or a prelaunch connected source.
+- Source registration can optionally assign an active Workspace member as the direct Source owner, and Workspace admins can edit that owner without mutating external source files.
 - Starting a full scan uses an explicit `sourceId`, is allowed only for the controlled `mock_ready` sample source or approved prelaunch source types, and records scan-start and scan-completion audit events in the workflow.
 - The Dashboard groups scanned files, flagged files, scanned volume, progress, scan time, review backlog, high-risk count, retention review count, and owner routing into clear scan, review, and pipeline summaries.
 - A responsible user can list assigned findings.
+- A Workspace Admin membership alone does not grant business review-decision authority for findings not assigned to that actor.
 - A finding detail view shows redacted evidence, signals, risk explanation, owner assignment, retention status, and audit timeline, and the top title hierarchy shows `Findings / Finding Detail` with `Findings` linking back to the findings list.
 - A reviewer can open a redacted file review surface from a finding detail view and focus the relevant sensitive evidence location without exposing raw sensitive values.
 - A human reviewer can record delete candidate, keep with reason, false positive, reassign, or escalate decisions.
 - The review decision dialog never renders an empty decision selector; it either lists allowed decisions or shows a disabled no-available-decisions state tied to the visible permission boundary.
 - Every review decision creates an audit event with actor, timestamp, reason, and resulting status.
+- A `keep_with_reason` review changes the finding status to `retained` and the displayed retention state to a retained review-date state, so retained findings do not continue to show `Needs Review` in the findings table.
 - A delta scan can run as a changed-file-only workflow against a completed full-scan baseline.
 - Evaluation metrics show precision, recall, F1, reproducibility, throughput, and resource intensity.
 - Deletion remains simulated.
@@ -131,25 +134,27 @@ The Google/GitHub account system is accepted when:
 The Workspace administrator and user-group system is accepted when:
 
 - `docs/design/workspace-admin-permission-system.md` defines problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
-- `contracts/openapi.yaml`, `contracts/schemas/workspace.yaml`, `contracts/mocks/workspaceDirectory.json`, `contracts/mocks/workspaceAdmin.json`, `contracts/mocks/workspaceGroup.json`, and `docs/API_CONTRACT.md` document workspace directory, admin summary, owner transfer, Workspace deletion, group management, invitation creation, and invitation acceptance endpoints.
+- `contracts/openapi.yaml`, `contracts/schemas/workspace.yaml`, `contracts/mocks/workspaceDirectory.json`, `contracts/mocks/workspaceAdmin.json`, `contracts/mocks/workspaceGroup.json`, and `docs/API_CONTRACT.md` document workspace directory, admin summary, Workspace profile settings, owner transfer, Workspace deletion, group management, invitation creation, and invitation acceptance endpoints.
 - A newly created signed-in account has no Workspace membership by default and sees an invitation-required state rather than seeded Workspace access.
 - A signed-in account can open a Workspace creation dialog from the left Workspace menu or no-Workspace state, enter Workspace settings, create a Workspace, and automatically becomes an active `workspace_owner` and `workspace_admin` member of that Workspace.
 - Creating or accepting a Workspace makes that Workspace current for the account, and a member can switch current Workspace from the left Workspace menu.
 - Sources, scan state, findings, audit events, metrics, and evaluation are isolated by the current Workspace; creating or switching to a Workspace does not copy operational data from another Workspace.
-- A seeded or invited Workspace admin can open `/workspace/admin` and inspect members, groups, pending invite links, permission boundaries, and workspace-level charts.
+- A seeded or invited Workspace admin can open `/workspace/admin` and inspect compact member and group summaries, pending invite links, permission boundaries, and workspace-level charts.
+- A Workspace admin with `manage_workspace_settings` can customize the Workspace name and introduction near the bottom of `/workspace/admin`; this does not change Workspace membership or operational scope, and the Danger Zone remains the final page section.
 - A Workspace admin can open `/workspace/admin/members` from the sidebar or the Admin page Members panel and search, filter, group, and sort Workspace members by member text, group, status, join date, and last activity.
+- A Workspace admin can open `/workspace/admin/groups` from the sidebar or the Admin page Group controls panel and manage Workspace groups on a dedicated page.
 - A Workspace admin with `manage_workspace_members` can change another active member's Workspace groups from `/workspace/admin/members`.
 - A Workspace admin with `manage_workspace_members` can remove an active member from the Workspace, except their own active membership.
 - Member group changes or removals that would leave the Workspace without an active `workspace_admin` member are rejected.
 - Workspace groups carry explicit permissions for workspace ownership, workspace administration, privacy review, data stewardship, and audit read-only access.
-- A Workspace admin can create new Workspace groups, set their names and permissions from the exposed permission catalog, and immediately use them in invite links.
-- Workspace group controls render collapsed by default: the new-group form is hidden behind a single button, existing groups show compact summary cards, and permission editing expands only after the admin clicks a group's edit icon.
-- A Workspace admin can rename groups and change group permissions; permission boundaries use the updated definitions.
-- A Workspace admin can delete non-admin groups; member and pending invite references to the deleted group are removed or revoked when no groups remain.
+- A Workspace admin can create new Workspace groups from `/workspace/admin/groups`, set their names and permissions from the exposed permission catalog, and immediately use them in invite links.
+- Workspace group controls on `/workspace/admin/groups` render collapsed by default: the new-group form is hidden behind a single button, existing groups show compact summary cards, and permission editing expands only after the admin clicks a group's edit icon.
+- A Workspace admin can rename groups and change group permissions from `/workspace/admin/groups`; permission boundaries use the updated definitions.
+- A Workspace admin can delete non-admin groups from `/workspace/admin/groups`; member and pending invite references to the deleted group are removed or revoked when no groups remain.
 - The `workspace_owner` group cannot be invited, deleted, or stripped of the minimum owner-management permissions required for owner transfer and Workspace deletion.
 - The `workspace_admin` group cannot be deleted or stripped of the minimum admin-management permissions required to avoid locking out the Workspace.
 - Permission boundaries expose both allowed and denied Workspace actions, including a visible denial for real deletion.
-- The left workspace menu is backed by Workspace data, shows the current Workspace when available, shows legacy pending invitations or no-Workspace state when unavailable, and opens the Workspace creation dialog from its create action.
+- The left workspace menu is backed by Workspace data, shows the current Workspace name and introduction, shows current membership groups only in the compact right-side pill when available, shows legacy pending invitations or no-Workspace state when unavailable, and opens the Workspace creation dialog from its create action.
 - Sidebar links are hidden when the current Workspace permission boundary does not allow the destination, and expandable sidebar groups show a right-side chevron.
 - A Workspace admin can generate a pending invite link with one or more non-owner Workspace groups and can copy each pending invite link from the invitations list.
 - A signed-in account that opens the invite link can accept it and becomes an active Workspace member exactly once.
@@ -159,7 +164,7 @@ The Workspace administrator and user-group system is accepted when:
 - Workspace deletion removes the Workspace from visible directories, removes active memberships, revokes pending invite links, clears affected current-Workspace selections, and never deletes external source files or production tenant resources.
 - Admin charts render deterministic management data from existing metrics plus Workspace membership and invitation summaries without adding a chart dependency.
 - Workspace permissions do not grant production tenant access, Microsoft Graph access, source-file deletion, legal advice, full GDPR-compliance claims, or hidden powers.
-- Automated tests cover Workspace-less accounts, Workspace creation, admin summary access, group customization, member management, invitation creation, invitation acceptance, owner transfer, and Workspace deletion confirmation.
+- Automated tests cover Workspace-less accounts, Workspace creation, admin summary access, Workspace profile customization, group customization, member management, invitation creation, invitation acceptance, owner transfer, and Workspace deletion confirmation.
 
 ## Prelaunch Source Input Acceptance
 
@@ -171,12 +176,15 @@ Google Drive and direct-link source input are accepted when:
 - `/api/integrations/google-drive/picker-config` reports Picker setup state behind the prelaunch session boundary without exposing Google client secrets, provider tokens, refresh tokens, or GitHub credentials.
 - An authenticated empty prelaunch project can still register sources when there are no findings or finding detail records yet.
 - The Sources page can register a `remote_file_link` with `config.url` and no fake prefilled source examples.
+- The Sources page can select or clear a direct Source owner from active Workspace members during Source registration.
+- The Sources page exposes an edit action for admins to change a Source owner after registration.
 - The Sources page shows the current prelaunch supported file types below the source inventory surface.
 - Remote file-link scans require HTTPS, no embedded credentials, a public-resolving host, supported text-like content, a PDF text layer, Office Open XML content, supported image files, supported transcript files, or recognized raw video media; extractable files must stay within the prelaunch size limit and raw video media is reported as hard/OCR-deferred.
 - Google Drive and Google Docs share-page URLs are rejected as direct links and must be added through Google Drive Picker.
 - The Sources page can select Google Drive files or a folder through Google Picker when host credentials are configured.
 - Google Picker intermediate callbacks do not close the source setup flow; picked files or folders remain visible in the Add Source dialog before registration.
 - Google Drive source registration stores selected item metadata but not access tokens.
+- A Google Drive source with a current in-memory Picker token is presented as connected for the current browser session even though the persisted server record does not store that token.
 - Google Drive full scans require a short-lived per-scan access token; missing or expired tokens reject the scan, put the workflow into a failed source-unavailable state, clear visible scan-derived findings, and never fall back to local mock findings.
 - PDF files with an extractable text layer can be scanned from local, direct-link, or Google Drive selected sources without storing raw PDF bodies or raw extracted text.
 - DOCX, XLSX, and PPTX files can be scanned deterministically from local, direct-link, or Google Drive selected sources without storing raw Office XML or raw extracted text.
@@ -185,9 +193,11 @@ Google Drive and direct-link source input are accepted when:
 - Scan payloads expose recognition difficulty counts and per-format extraction counts while normal deterministic scans keep `aiAssistanceUsed = false` and `modelCalls = 0`.
 - Image-only or unreadable PDFs are reported as unsupported/OCR-deferred prelaunch inputs rather than silent successes.
 - The Sources page can delete a DataSentinel source registration, clears DataSentinel scan/finding state derived from that deleted registration, and the backend `DELETE /api/sources/{sourceId}` route does not delete external source files.
+- Findings produced from an assigned Source are visible to the assigned owner or explicit fallback route, not every Workspace member.
+- Finding review transfer options for an assigned Workspace finding come from active Workspace members exposed by current review support and must not fall back to static demo delegation targets.
 - Source scanning reads file content only during scan execution and persists metadata, redacted evidence, findings, metrics, and audit events rather than raw source bodies.
 - Prelaunch finding payloads and console views use safe source references or source names instead of raw external source URLs or absolute host paths.
-- Automated tests cover Picker config redaction, Picker picked/cancel/pending callback handling, empty-project source registration readiness, remote-link redaction/no-raw-content behavior, Google Drive share-link rejection, safe source-reference display, PDF text-layer scanning without raw-text persistence, DOCX/XLSX/PPTX deterministic extraction with difficulty counts, local image OCR with redaction, video transcript scanning, raw video media deferred handling, source-registration deletion, Drive token failure clearing stale findings, frontend no-mock-fallback command rejection, and real findings pagination totals.
+- Automated tests cover Picker config redaction, Picker picked/cancel/pending callback handling, empty-project source registration readiness, remote-link redaction/no-raw-content behavior, Google Drive share-link rejection, safe source-reference display, PDF text-layer scanning without raw-text persistence, DOCX/XLSX/PPTX deterministic extraction with difficulty counts, local image OCR with redaction, video transcript scanning, raw video media deferred handling, source-registration deletion, Drive token failure clearing stale findings, frontend no-mock-fallback command rejection, Source owner assignment visibility, Source owner editing, review-transfer target scoping, and real findings pagination totals.
 
 ## OpenRouter AI Assistive Processing Acceptance
 
@@ -326,9 +336,11 @@ The human-review decision-handling stage is accepted when:
 - The design note `docs/design/human-review-decision-handling.md` defines scope, state transitions, failure paths, rollback path, Atlas-derived requirements, research basis, and primitive acceptance criteria.
 - A review decision is accepted only when current finding-specific review support exposes the decision inside the actor permission boundary.
 - A reviewer can submit `delete_candidate`, `keep_with_reason`, `correct_false_positive`, `reassign_owner`, and `escalate` decisions with required human context.
+- A `delete_candidate` review requires an explicit confirmation checklist acknowledgement and still records `deletionExecuted = false`.
 - Every accepted decision creates exactly one review record and one audit event with actor, timestamp, decision, reason, resulting status, policy-pack version, permission-boundary fingerprint, and review-support rules fingerprint when available.
 - `delete_candidate` changes finding review status only; no source file, connector, deletion service, or real deletion state is changed.
 - `keep_with_reason` requires and records a retention review date.
+- `keep_with_reason` updates both detail and list payload retention state to `retained_until_review` so the UI does not show an unresolved retention review after a retained decision.
 - `reassign_owner` requires and records a supported transfer target.
 - `escalate` requires and records a supported escalation queue.
 - Denied decisions, denied actors, actor mismatch, missing reasons, missing checklist acknowledgements, missing retention review dates, missing transfer targets, missing escalation queues, and unknown findings are rejected without changing finding, audit, source, metric, or evaluation state.

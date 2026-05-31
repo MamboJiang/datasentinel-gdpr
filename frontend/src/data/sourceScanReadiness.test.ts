@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GovernanceConfig, Source } from '../types'
-import { canStartSourceScan, sourceScanBlockReason } from './sourceScanReadiness'
+import { canStartSourceScan, sourceDisplayStatus, sourceScanBlockReason } from './sourceScanReadiness'
 
 const governanceConfig = {
   sourceAdapters: [
@@ -26,6 +26,8 @@ describe('source scan readiness', () => {
     expect(canStartSourceScan(driveSource, governanceConfig, [])).toBe(false)
     expect(sourceScanBlockReason(driveSource, governanceConfig, [])).toBe('Google Drive scan requires reconnecting through the Picker')
     expect(canStartSourceScan(driveSource, governanceConfig, ['source_drive'])).toBe(true)
+    expect(sourceDisplayStatus(driveSource, ['source_drive'])).toBe('connected')
+    expect(sourceDisplayStatus(driveSource, [])).toBe('authorization_required')
   })
 
   it('allows connected non-Drive sources without runtime authorization', () => {

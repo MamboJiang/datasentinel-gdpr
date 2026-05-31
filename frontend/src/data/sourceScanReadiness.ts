@@ -5,6 +5,14 @@ export function requiresRuntimeAuthorization(source: Source): boolean {
   return source.sourceType === 'google_drive_selection'
 }
 
+export function sourceDisplayStatus(source: Source, runtimeAuthorizedSourceIds: string[]): string {
+  if (requiresRuntimeAuthorization(source) && runtimeAuthorizedSourceIds.includes(source.sourceId)) {
+    return 'connected'
+  }
+
+  return source.status
+}
+
 export function canStartSourceScan(source: Source, governanceConfig: GovernanceConfig, runtimeAuthorizedSourceIds: string[]): boolean {
   if (requiresRuntimeAuthorization(source)) {
     return hasConnectedAdapter(source, governanceConfig) && runtimeAuthorizedSourceIds.includes(source.sourceId)

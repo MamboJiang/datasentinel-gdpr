@@ -13,6 +13,7 @@
         "slug": "privacy-ops",
         "status": "active",
         "plan": "Prelaunch",
+        "headerLabel": "Prelaunch",
         "description": "Privacy operations workspace",
         "createdAt": "2026-05-30T12:30:00Z",
         "memberCount": 1,

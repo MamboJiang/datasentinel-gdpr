@@ -78,6 +78,7 @@ P0 exposes configuration for inspection and mock-driven UI. Production editing i
 - View permission boundaries.
 - Preview policy or org changes before activation.
 - View Workspace members, groups, pending invite links, and group-derived permission boundaries.
+- Change Workspace profile settings when `manage_workspace_settings` is present.
 - Create, rename, re-permission, and delete Workspace groups when `manage_workspace_groups` is present.
 - Generate invite links into a Workspace with explicit group assignment.
 
@@ -85,11 +86,11 @@ P0 exposes configuration for inspection and mock-driven UI. Production editing i
 
 Workspace groups are the P0 role carrier. Account sign-in does not grant Workspace access by itself.
 
-Workspace admins can add custom groups from the exposed permission catalog. Custom group IDs are opaque and remain stable across rename operations. Deleting a non-admin group removes the group reference from active members and pending invite links; pending links with no remaining groups become revoked. The `workspace_admin` group remains protected so it cannot be deleted or stripped of `view_workspace_admin` plus `manage_workspace_groups`.
+Workspace admins can add custom groups from the exposed permission catalog. Custom group IDs are opaque and remain stable across rename operations. Deleting a non-admin group removes the group reference from active members and pending invite links; pending links with no remaining groups become revoked. The `workspace_admin` group remains protected so it cannot be deleted or stripped of `view_workspace_admin`, `manage_workspace_settings`, plus `manage_workspace_groups`.
 
 | Group | Purpose | Representative permissions |
 | --- | --- | --- |
-| `workspace_admin` | Manage the Workspace control plane. | `view_workspace_admin`, `invite_workspace_members`, `manage_workspace_members`, `manage_workspace_groups`, `view_workspace_metrics`, `view_workspace_audit`, `view_governance`, `view_review_support` |
+| `workspace_admin` | Manage the Workspace control plane. | `view_workspace_admin`, `manage_workspace_settings`, `invite_workspace_members`, `manage_workspace_members`, `manage_workspace_groups`, `view_workspace_metrics`, `view_workspace_audit`, `view_governance`, `view_review_support` |
 | `privacy_reviewer` | Review assigned findings with visible support. | `view_assigned_findings`, `review_findings`, `view_review_support` |
 | `data_steward` | Own source or department stewardship decisions. | `view_owned_sources`, `view_assigned_findings`, `review_findings` |
 | `auditor` | Inspect evidence without mutating workflow state. | `view_workspace_audit`, `view_workspace_metrics`, `view_governance` |

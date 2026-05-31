@@ -30,11 +30,22 @@ def validate_review(
     if decision not in DECISION_STATUS:
         return "#/decision", "Review decision is not available."
 
+    available_decisions = {item["decision"] for item in review_support.get("availableDecisions", []) if isinstance(item, dict) and item.get("decision")}
+    if available_decisions and decision not in available_decisions:
+        return "#/decision", "Review decision is outside the current permission boundary."
+
+    actor_id = payload.get("actorId")
+    if actor_id and actor_id != review_support.get("actorId"):
+        return "#/actorId", "Review actor does not match the current permission boundary."
+
     if not isinstance(reason, str) or not reason.strip():
         return "#/reason", "Review reason is required."
 
     checklist_ids = set(payload.get("checklistItemIds") or [])
-    required_ids = {item["itemId"] for item in review_support["checklist"] if item.get("required")}
+    required_ids = {
+        item["itemId"] for item in review_support["checklist"]
+        if item.get("required") and item.get("decision") in (None, decision)
+    }
 
     if not required_ids.issubset(checklist_ids):
         return "#/checklistItemIds", "Required review checklist items must be acknowledged."
@@ -45,8 +56,14 @@ def validate_review(
     if decision == "reassign_owner" and not payload.get("reassignToUserId"):
         return "#/reassignToUserId", "Transfer target is required."
 
+    if decision == "reassign_owner" and not any(item.get("userId") == payload.get("reassignToUserId") for item in review_support.get("transferOptions", [])):
+        return "#/reassignToUserId", "Transfer target is outside the current review support options."
+
     if decision == "escalate" and not payload.get("nextAction"):
         return "#/nextAction", "Escalation queue is required."
+
+    if decision == "escalate" and not any(item.get("queueId") == payload.get("nextAction") for item in review_support.get("escalationOptions", [])):
+        return "#/nextAction", "Escalation queue is outside the current review support options."
 
     return None
 

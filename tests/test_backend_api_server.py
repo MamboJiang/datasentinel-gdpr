@@ -988,6 +988,33 @@ class BackendApiServerTests(unittest.TestCase):
         self.assertEqual(finding["body"]["data"]["status"], "escalated")
         self.assertEqual(audit_events["body"]["data"][0]["eventType"], "review_recorded")
 
+    def test_retain_review_updates_retention_status(self) -> None:
+        app = build_default_app()
+        support = app.handle("GET", "/api/findings/finding_001/review-support", "trace_retain_support")
+        checklist_ids = [item["itemId"] for item in support["body"]["data"]["checklist"]]
+        reviewed = app.handle(
+            "POST",
+            "/api/findings/finding_001/review",
+            "trace_retain_review",
+            json.dumps({
+                "actorId": "user_anna",
+                "checklistItemIds": checklist_ids,
+                "decision": "keep_with_reason",
+                "reason": "Business owner confirmed a time-boxed retention exception.",
+                "retentionUntil": "2027-05-30",
+            }),
+            "application/json",
+        )
+        finding = app.handle("GET", "/api/findings/finding_001", "trace_retain_finding")
+        findings = app.handle("GET", "/api/findings", "trace_retain_findings")
+        retained_summary = next(item for item in findings["body"]["data"] if item["findingId"] == "finding_001")
+
+        self.assertEqual(reviewed["status"], 201)
+        self.assertEqual(finding["body"]["data"]["status"], "retained")
+        self.assertEqual(finding["body"]["data"]["retentionStatus"], "retained_until_review")
+        self.assertEqual(retained_summary["status"], "retained")
+        self.assertEqual(retained_summary["retentionStatus"], "retained_until_review")
+
     def test_sqlite_app_serves_health_over_real_http(self) -> None:
         with TemporaryDirectory() as directory:
             db_path = Path(directory) / "datasentinel.sqlite3"

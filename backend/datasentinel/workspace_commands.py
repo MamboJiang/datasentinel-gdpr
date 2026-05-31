@@ -135,6 +135,47 @@ def parse_member_group_payload(state: dict[str, Any], workspace_id: str, payload
     return {"groupIds": unique_group_ids}
 
 
+def parse_workspace_settings_payload(payload: dict[str, Any], path: str, trace_id: str) -> dict[str, Any]:
+    parsed: dict[str, str] = {}
+
+    if "name" in payload:
+        name = payload.get("name")
+        if not isinstance(name, str):
+            return workspace_problem(422, "Workspace name must be a string.", path, trace_id, "#/name")
+
+        normalized_name = " ".join(name.strip().split())
+        if not normalized_name:
+            return workspace_problem(422, "Workspace name is required.", path, trace_id, "#/name")
+        if len(normalized_name) > 80:
+            return workspace_problem(422, "Workspace name must be 80 characters or fewer.", path, trace_id, "#/name")
+        parsed["name"] = normalized_name
+
+    if "description" in payload:
+        description = payload.get("description")
+        if not isinstance(description, str):
+            return workspace_problem(422, "Workspace description must be a string.", path, trace_id, "#/description")
+
+        normalized_description = " ".join(description.strip().split())
+        if len(normalized_description) > 240:
+            return workspace_problem(422, "Workspace description must be 240 characters or fewer.", path, trace_id, "#/description")
+        parsed["description"] = normalized_description
+
+    if "headerLabel" in payload:
+        header_label = payload.get("headerLabel")
+        if not isinstance(header_label, str):
+            return workspace_problem(422, "Workspace header label must be a string.", path, trace_id, "#/headerLabel")
+
+        normalized_label = " ".join(header_label.strip().split())
+        if len(normalized_label) > 24:
+            return workspace_problem(422, "Workspace header label must be 24 characters or fewer.", path, trace_id, "#/headerLabel")
+        parsed["headerLabel"] = normalized_label
+
+    if not parsed:
+        return workspace_problem(422, "Workspace settings payload must include a name, description, or header label.", path, trace_id, "#")
+
+    return parsed
+
+
 def workspace_problem(status: int, detail: str, path: str, trace_id: str, pointer: str) -> dict[str, Any]:
     return response(
         status,

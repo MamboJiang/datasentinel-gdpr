@@ -18,6 +18,11 @@ WORKSPACE_PERMISSION_OPTIONS = [
         "description": "Open the Workspace administration surface and inspect visible control-plane state.",
     },
     {
+        "permission": "manage_workspace_settings",
+        "label": "Manage Workspace settings",
+        "description": "Change Workspace name and description shown in the application shell.",
+    },
+    {
         "permission": "invite_workspace_members",
         "label": "Generate invite links",
         "description": "Create pending invitation links with explicit Workspace group assignment.",
@@ -69,8 +74,8 @@ WORKSPACE_PERMISSION_OPTIONS = [
     },
 ]
 WORKSPACE_PERMISSION_IDS = tuple(item["permission"] for item in WORKSPACE_PERMISSION_OPTIONS)
-WORKSPACE_OWNER_REQUIRED_PERMISSIONS = ("manage_workspace_ownership", "view_workspace_admin", "manage_workspace_members")
-WORKSPACE_ADMIN_REQUIRED_PERMISSIONS = ("view_workspace_admin", "manage_workspace_groups")
+WORKSPACE_OWNER_REQUIRED_PERMISSIONS = ("manage_workspace_ownership", "view_workspace_admin", "manage_workspace_settings", "manage_workspace_members")
+WORKSPACE_ADMIN_REQUIRED_PERMISSIONS = ("view_workspace_admin", "manage_workspace_settings", "manage_workspace_groups")
 
 
 def seed_state() -> dict[str, Any]:
@@ -82,6 +87,7 @@ def seed_state() -> dict[str, Any]:
             "slug": "datasentinel-gdpr",
             "status": "active",
             "plan": "Prelaunch",
+            "headerLabel": "Prelaunch",
             "description": "Privacy operations workspace",
             "createdAt": "2026-05-30T12:00:00Z",
         }],
@@ -101,13 +107,12 @@ def _seed_groups() -> list[dict[str, Any]]:
     return [
         _group("workspace_owner", "Workspace owners", "Highest Workspace authority for owner transfer and Workspace deletion.", [
             "manage_workspace_ownership", "view_workspace_admin", "invite_workspace_members", "manage_workspace_members",
-            "manage_workspace_groups", "view_workspace_metrics", "view_workspace_audit", "view_governance",
+            "manage_workspace_settings", "manage_workspace_groups", "view_workspace_metrics", "view_workspace_audit", "view_governance",
             "view_assigned_findings", "view_review_support", "review_findings", "view_owned_sources",
         ]),
         _group("workspace_admin", "Workspace admins", "Manage Workspace members, groups, invitations, audit, governance, and metrics.", [
-            "view_workspace_admin", "invite_workspace_members", "manage_workspace_members", "manage_workspace_groups",
-            "view_workspace_metrics", "view_workspace_audit", "view_governance", "view_assigned_findings",
-            "view_review_support", "review_findings", "view_owned_sources",
+            "view_workspace_admin", "manage_workspace_settings", "invite_workspace_members", "manage_workspace_members", "manage_workspace_groups",
+            "view_workspace_metrics", "view_workspace_audit", "view_governance", "view_owned_sources",
         ]),
         _group("privacy_reviewer", "Privacy reviewers", "Review assigned findings with visible permission boundaries.", [
             "view_assigned_findings", "view_review_support", "review_findings",

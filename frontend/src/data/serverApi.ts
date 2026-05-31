@@ -23,14 +23,21 @@ import type {
 import type { StartScanOptions } from './scanWorkflow'
 
 export type CreateSourceInput = {
+  assignedOwnerUserId?: string | null
   googleDriveAccessToken?: string
   sourceId: string
   name: string
   sourceType: string
   status?: string
   rootLabel?: string
-  masterOfDataUserId?: string
+  masterOfDataUserId?: string | null
   config?: Record<string, unknown>
+}
+
+export type UpdateSourceInput = {
+  assignedOwnerUserId?: string | null
+  name?: string
+  sourceId: string
 }
 
 export type GoogleDrivePickerConfig = {
@@ -226,6 +233,17 @@ export async function deleteServerSource(sourceId: string): Promise<ApiEnvelope<
   })
 }
 
+export async function updateServerSource(input: UpdateSourceInput): Promise<ApiEnvelope<Source>> {
+  return requestEnvelope<Source>(`/sources/${encodeURIComponent(input.sourceId)}`, {
+    body: JSON.stringify({
+      assignedOwnerUserId: input.assignedOwnerUserId ?? null,
+      name: input.name,
+    }),
+    headers: jsonHeaders({ idempotencyKey: `source_update_${input.sourceId}_${Date.now()}` }),
+    method: 'PATCH',
+  })
+}
+
 export async function loadGoogleDrivePickerConfig(): Promise<ApiEnvelope<GoogleDrivePickerConfig>> {
   return requestEnvelope<GoogleDrivePickerConfig>('/integrations/google-drive/picker-config')
 }
@@ -236,6 +254,10 @@ export async function reviewServerFinding(input: ReviewInput): Promise<ApiEnvelo
     headers: jsonHeaders({ idempotencyKey: input.idempotencyKey ?? `review_${input.findingId}_${Date.now()}` }),
     method: 'POST',
   })
+}
+
+export async function getServerReviewSupport(findingId: string): Promise<ApiEnvelope<ReviewSupport>> {
+  return requestEnvelope<ReviewSupport>(`/findings/${encodeURIComponent(findingId)}/review-support`)
 }
 
 export async function createServerWorkspace(input: {
@@ -254,6 +276,23 @@ export async function switchServerWorkspace(workspaceId: string): Promise<ApiEnv
     body: JSON.stringify({ workspaceId }),
     headers: jsonHeaders({ idempotencyKey: `workspace_switch_${workspaceId}_${Date.now()}` }),
     method: 'POST',
+  })
+}
+
+export async function updateServerWorkspaceSettings(input: {
+  description?: string
+  headerLabel?: string
+  name?: string
+  workspaceId: string
+}): Promise<ApiEnvelope<Workspace>> {
+  return requestEnvelope<Workspace>(`/workspaces/${encodeURIComponent(input.workspaceId)}`, {
+    body: JSON.stringify({
+      description: input.description,
+      headerLabel: input.headerLabel,
+      name: input.name,
+    }),
+    headers: jsonHeaders({ idempotencyKey: `workspace_settings_${input.workspaceId}_${Date.now()}` }),
+    method: 'PATCH',
   })
 }
 

@@ -1,37 +1,22 @@
-import { AlertCircle, ArrowRight, BarChart3, Check, Copy, KeyRound, Link2, Pencil, Plus, Save, ShieldCheck, Trash2, UsersRound, X } from 'lucide-react'
+import { AlertCircle, ArrowRight, BarChart3, Check, Copy, KeyRound, Link2, Save, Settings2, ShieldCheck, Trash2, UsersRound } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useData } from '../data/useData'
-import type { WorkspaceChartDatum, WorkspaceGroup, WorkspaceInvitation, WorkspaceMembership, WorkspacePermissionOption } from '../types'
+import type { Workspace, WorkspaceChartDatum, WorkspaceGroup, WorkspaceInvitation, WorkspaceMembership } from '../types'
 import './WorkspaceAdminPage.css'
-
-type GroupDraft = {
-  description: string
-  name: string
-  permissions: string[]
-}
 
 export function WorkspaceAdminPage() {
   const {
-    createWorkspaceGroup,
     createWorkspaceInvitation,
     deleteWorkspace,
-    deleteWorkspaceGroup,
     metrics,
     transferWorkspaceOwner,
-    updateWorkspaceGroup,
     workspaceAdmin,
     workspaceDirectory,
   } = useData()
   const [generatedInvitation, setGeneratedInvitation] = useState<WorkspaceInvitation | null>(null)
   const [copiedInvitationId, setCopiedInvitationId] = useState('')
-  const [createGroupOpen, setCreateGroupOpen] = useState(false)
-  const [editingGroupId, setEditingGroupId] = useState<string | null>(null)
-  const [groupDrafts, setGroupDrafts] = useState<Record<string, GroupDraft>>({})
-  const [newGroupDescription, setNewGroupDescription] = useState('')
-  const [newGroupName, setNewGroupName] = useState('')
-  const [newGroupPermissions, setNewGroupPermissions] = useState<string[]>(['view_assigned_findings'])
   const [ownerTransferEmail, setOwnerTransferEmail] = useState('')
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
   const [selectedGroups, setSelectedGroups] = useState<string[]>(() => {
@@ -39,18 +24,22 @@ export function WorkspaceAdminPage() {
     return defaultGroup ? [defaultGroup.groupId] : []
   })
   const canInvite = workspaceAdmin.permissionBoundary.allowedActions.includes('invite_workspace_members')
-  const canManageGroups = workspaceAdmin.permissionBoundary.allowedActions.includes('manage_workspace_groups')
   const canManageOwnership = workspaceAdmin.permissionBoundary.allowedActions.includes('manage_workspace_ownership')
+  const canManageSettings = workspaceAdmin.permissionBoundary.allowedActions.includes('manage_workspace_settings')
   const workspace = workspaceAdmin.workspace
   const memberCount = workspace?.memberCount ?? workspaceAdmin.members.length
   const openBacklog = metrics.openReviewBacklog ?? 0
   const highRisk = metrics.highRiskFindings ?? 0
   const defaultGroup = workspaceAdmin.groups.find((group) => group.groupId === 'privacy_reviewer') ?? workspaceAdmin.groups[0]
   const invitableGroups = workspaceAdmin.groups.filter((group) => group.groupId !== 'workspace_owner')
+  const previewMembers = workspaceAdmin.members.slice(0, 4)
+  const remainingMemberCount = Math.max(0, workspaceAdmin.members.length - previewMembers.length)
+  const previewGroups = workspaceAdmin.groups.slice(0, 4)
+  const remainingGroupCount = Math.max(0, workspaceAdmin.groups.length - previewGroups.length)
+  const totalGroupPermissions = workspaceAdmin.groups.reduce((total, group) => total + group.permissions.length, 0)
   const availableGroupIds = new Set(invitableGroups.map((group) => group.groupId))
   const selectedGroupIds = (selectedGroups.length > 0 ? selectedGroups : (defaultGroup ? [defaultGroup.groupId] : []))
     .filter((groupId) => availableGroupIds.has(groupId))
-  const availablePermissions = workspaceAdmin.availablePermissions
   const currentAccountId = workspaceAdmin.currentMembership?.accountId
   const ownerTransferTargets = workspaceAdmin.members.filter((member) => member.status === 'active' && member.accountId !== currentAccountId)
   const ownerTransferEmailValue = ownerTransferEmail.trim().toLowerCase()
@@ -68,114 +57,6 @@ export function WorkspaceAdminPage() {
           : [...active, groupId]
       )
     })
-  }
-
-  function draftForGroup(group: WorkspaceGroup): GroupDraft {
-    return groupDrafts[group.groupId] ?? {
-      description: group.description ?? '',
-      name: group.name,
-      permissions: group.permissions,
-    }
-  }
-
-  function updateGroupDraft(group: WorkspaceGroup, patch: Partial<GroupDraft>) {
-    setGroupDrafts((current) => ({
-      ...current,
-      [group.groupId]: {
-        ...(current[group.groupId] ?? {
-          description: group.description ?? '',
-          name: group.name,
-          permissions: group.permissions,
-        }),
-        ...patch,
-      },
-    }))
-  }
-
-  function toggleDraftPermission(group: WorkspaceGroup, permission: string) {
-    const draft = draftForGroup(group)
-    updateGroupDraft(group, {
-      permissions: draft.permissions.includes(permission)
-        ? draft.permissions.filter((item) => item !== permission)
-        : [...draft.permissions, permission],
-    })
-  }
-
-  function toggleNewGroupPermission(permission: string) {
-    setNewGroupPermissions((current) => (
-      current.includes(permission)
-        ? current.filter((item) => item !== permission)
-        : [...current, permission]
-    ))
-  }
-
-  async function submitNewGroup(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    if (!workspace || !newGroupName.trim()) {
-      return
-    }
-
-    const group = await createWorkspaceGroup({
-      workspaceId: workspace.workspaceId,
-      name: newGroupName.trim(),
-      description: newGroupDescription.trim(),
-      permissions: newGroupPermissions,
-    })
-
-    if (group) {
-      setNewGroupName('')
-      setNewGroupDescription('')
-      setNewGroupPermissions(['view_assigned_findings'])
-      setCreateGroupOpen(false)
-    }
-  }
-
-  async function submitGroupUpdate(event: FormEvent<HTMLFormElement>, group: WorkspaceGroup) {
-    event.preventDefault()
-
-    if (!workspace) {
-      return
-    }
-
-    const draft = draftForGroup(group)
-    const updated = await updateWorkspaceGroup({
-      workspaceId: workspace.workspaceId,
-      groupId: group.groupId,
-      name: draft.name.trim(),
-      description: draft.description.trim(),
-      permissions: draft.permissions,
-    })
-
-    if (updated) {
-      setGroupDrafts((current) => {
-        const remaining = { ...current }
-        delete remaining[group.groupId]
-        return remaining
-      })
-      setEditingGroupId(null)
-    }
-  }
-
-  async function removeGroup(group: WorkspaceGroup) {
-    if (!workspace) {
-      return
-    }
-
-    const deleted = await deleteWorkspaceGroup({
-      workspaceId: workspace.workspaceId,
-      groupId: group.groupId,
-    })
-
-    if (deleted) {
-      setSelectedGroups((current) => current.filter((groupId) => groupId !== group.groupId))
-      setGroupDrafts((current) => {
-        const remaining = { ...current }
-        delete remaining[group.groupId]
-        return remaining
-      })
-      setEditingGroupId((current) => current === group.groupId ? null : current)
-    }
   }
 
   async function submitInvitation(event: FormEvent<HTMLFormElement>) {
@@ -363,7 +244,7 @@ export function WorkspaceAdminPage() {
             </Link>
           </div>
           <div className="workspace-member-list">
-            {workspaceAdmin.members.map((member) => (
+            {previewMembers.map((member) => (
               <article className="workspace-member-row" key={member.membershipId}>
                 <span className="workspace-member-avatar" aria-hidden="true">{initials(member.displayName)}</span>
                 <span>
@@ -377,154 +258,53 @@ export function WorkspaceAdminPage() {
                 </span>
               </article>
             ))}
+            {remainingMemberCount > 0 ? (
+              <Link className="workspace-summary-more" to="/workspace/admin/members">
+                View {remainingMemberCount} more member{remainingMemberCount === 1 ? '' : 's'}
+                <ArrowRight aria-hidden="true" size={15} />
+              </Link>
+            ) : null}
           </div>
         </section>
 
-        <section className="panel workspace-admin-list workspace-group-manager" aria-labelledby="workspace-groups-title">
+        <section className="panel workspace-admin-list" aria-labelledby="workspace-groups-title">
           <div className="workspace-section-heading">
             <ShieldCheck aria-hidden="true" size={18} />
             <div>
               <h3 id="workspace-groups-title">Group controls</h3>
-              <p>Permissions are explicit, scoped to this Workspace, and denied by default.</p>
+              <p>Group definitions now live on a dedicated admin subpage.</p>
             </div>
+            <Link className="workspace-section-link" to="/workspace/admin/groups">
+              Group controls
+              <ArrowRight aria-hidden="true" size={15} />
+            </Link>
           </div>
-          {createGroupOpen ? (
-            <form className="workspace-group-create" id="workspace-group-create-panel" onSubmit={submitNewGroup}>
-              <div className="workspace-group-create-header">
-                <strong>New group</strong>
-                <button
-                  aria-label="Close new group form"
-                  className="workspace-group-icon-button"
-                  onClick={() => setCreateGroupOpen(false)}
-                  type="button"
-                >
-                  <X aria-hidden="true" size={15} />
-                </button>
-              </div>
-              <fieldset disabled={!canManageGroups}>
-                <label>
-                  <span>Group name</span>
-                  <input
-                    onChange={(event) => setNewGroupName(event.target.value)}
-                    placeholder="Legal reviewers"
-                    value={newGroupName}
-                  />
-                </label>
-                <label>
-                  <span>Description</span>
-                  <textarea
-                    onChange={(event) => setNewGroupDescription(event.target.value)}
-                    placeholder="Review legal escalation evidence."
-                    rows={2}
-                    value={newGroupDescription}
-                  />
-                </label>
-                <PermissionGrid
-                  disabled={!canManageGroups}
-                  onToggle={toggleNewGroupPermission}
-                  options={availablePermissions}
-                  selected={newGroupPermissions}
-                />
-              </fieldset>
-              <button disabled={!canManageGroups || !newGroupName.trim()} type="submit">
-                <Plus aria-hidden="true" size={16} />
-                Add group
-              </button>
-            </form>
-          ) : (
-            <button
-              aria-controls="workspace-group-create-panel"
-              aria-expanded={createGroupOpen}
-              className="workspace-group-create-toggle"
-              disabled={!canManageGroups}
-              onClick={() => setCreateGroupOpen(true)}
-              type="button"
-            >
-              <Plus aria-hidden="true" size={16} />
-              New group
-            </button>
-          )}
+          <div className="workspace-group-overview" aria-label="Group controls summary">
+            <SummaryPill label="Groups" value={workspaceAdmin.groups.length} />
+            <SummaryPill label="Permission grants" value={totalGroupPermissions} />
+            <SummaryPill label="Invitable groups" value={invitableGroups.length} />
+          </div>
           <div className="workspace-group-list">
-            {workspaceAdmin.groups.map((group) => {
-              const draft = draftForGroup(group)
-              const editing = editingGroupId === group.groupId
-              const ownerGroup = group.groupId === 'workspace_owner'
-              const lockedGroupDelete = ownerGroup || group.groupId === 'workspace_admin'
-              const groupEditingDisabled = !canManageGroups || (ownerGroup && !canManageOwnership)
-              return (
-                <article className={`workspace-group-row ${editing ? 'workspace-group-row-open' : ''}`} key={group.groupId}>
-                  <div className="workspace-group-summary">
-                    <span className="workspace-group-summary-copy">
-                      <strong>{group.name}</strong>
-                      <small>{group.description || 'No description'}</small>
-                    </span>
-                    <span className="workspace-group-summary-meta">
-                      <small>{group.memberCount} members</small>
-                      <small>{group.permissions.length} permissions</small>
-                    </span>
-                    <button
-                      aria-controls={`workspace-group-editor-${group.groupId}`}
-                      aria-expanded={editing}
-                      aria-label={`Edit ${group.name}`}
-                      className="workspace-group-icon-button"
-                      disabled={groupEditingDisabled}
-                      onClick={() => setEditingGroupId(editing ? null : group.groupId)}
-                      type="button"
-                    >
-                      <Pencil aria-hidden="true" size={15} />
-                    </button>
-                  </div>
-                  <div className="workspace-group-permissions-preview" aria-label={`${group.name} permission preview`}>
-                    {group.permissions.slice(0, 3).map((permission) => <small key={permission}>{permissionLabel(permission, availablePermissions)}</small>)}
-                    {group.permissions.length > 3 ? <small>+{group.permissions.length - 3} more</small> : null}
-                  </div>
-                  {editing ? (
-                    <form className="workspace-group-editor" id={`workspace-group-editor-${group.groupId}`} onSubmit={(event) => void submitGroupUpdate(event, group)}>
-                      <fieldset disabled={groupEditingDisabled}>
-                        <div className="workspace-group-editor-top">
-                          <label>
-                            <span>Group name</span>
-                            <input
-                              onChange={(event) => updateGroupDraft(group, { name: event.target.value })}
-                              value={draft.name}
-                            />
-                          </label>
-                          <span>{group.memberCount} members</span>
-                        </div>
-                        <label>
-                          <span>Description</span>
-                          <textarea
-                            onChange={(event) => updateGroupDraft(group, { description: event.target.value })}
-                            rows={2}
-                            value={draft.description}
-                          />
-                        </label>
-                        <PermissionGrid
-                          disabled={groupEditingDisabled}
-                          onToggle={(permission) => toggleDraftPermission(group, permission)}
-                          options={availablePermissions}
-                          selected={draft.permissions}
-                        />
-                      </fieldset>
-                      <div className="workspace-group-actions">
-                        <button disabled={groupEditingDisabled || !draft.name.trim()} type="submit">
-                          <Save aria-hidden="true" size={15} />
-                          Save
-                        </button>
-                        <button
-                          disabled={groupEditingDisabled || lockedGroupDelete}
-                          onClick={() => void removeGroup(group)}
-                          type="button"
-                        >
-                          <Trash2 aria-hidden="true" size={15} />
-                          Delete
-                        </button>
-                      </div>
-                    </form>
-                  ) : null}
-                </article>
-              )
-            })}
+            {previewGroups.map((group) => (
+              <article className="workspace-group-row" key={group.groupId}>
+                <div className="workspace-group-summary workspace-group-summary-compact">
+                  <span className="workspace-group-summary-copy">
+                    <strong>{group.name}</strong>
+                    <small>{group.description || 'No description'}</small>
+                  </span>
+                  <span className="workspace-group-summary-meta">
+                    <small>{group.memberCount} members</small>
+                    <small>{group.permissions.length} permissions</small>
+                  </span>
+                </div>
+              </article>
+            ))}
+            {remainingGroupCount > 0 ? (
+              <Link className="workspace-summary-more" to="/workspace/admin/groups">
+                View {remainingGroupCount} more group{remainingGroupCount === 1 ? '' : 's'}
+                <ArrowRight aria-hidden="true" size={15} />
+              </Link>
+            ) : null}
           </div>
         </section>
       </div>
@@ -539,21 +319,32 @@ export function WorkspaceAdminPage() {
           </div>
         <div className="workspace-invitation-list">
           {workspaceAdmin.invitations.map((invitation) => (
-            <article className="workspace-invitation-row" key={invitation.invitationId}>
-              <a href={invitationLink(invitation)}>{invitationLink(invitation)}</a>
-              <span className="workspace-invitation-status">{invitation.status}</span>
-              <small>{groupListLabel(invitation.groupIds, workspaceAdmin.groups)}</small>
-              <time dateTime={invitation.expiresAt}>Expires {formatDate(invitation.expiresAt)}</time>
+            <article className={`workspace-invitation-row workspace-invitation-row-${invitation.status}`} key={invitation.invitationId}>
+              <span className="workspace-invitation-main">
+                <a href={invitationLink(invitation)}>{invitationLink(invitation)}</a>
+                <small>
+                  {groupListLabel(invitation.groupIds, workspaceAdmin.groups)}
+                  <span aria-hidden="true"> · </span>
+                  <time dateTime={invitation.expiresAt}>Expires {formatDate(invitation.expiresAt)}</time>
+                </small>
+              </span>
+              <span className={`workspace-invitation-status workspace-invitation-status-${invitation.status}`}>{invitation.status}</span>
               {invitation.status === 'pending' ? (
                 <button onClick={() => void copyInvitationLink(invitation)} type="button">
                   {copiedInvitationId === invitation.invitationId ? <Check aria-hidden="true" size={15} /> : <Copy aria-hidden="true" size={15} />}
                   {copiedInvitationId === invitation.invitationId ? 'Copied' : 'Copy'}
                 </button>
-              ) : <span className="workspace-invitation-placeholder" aria-hidden="true" />}
+              ) : null}
             </article>
           ))}
         </div>
       </section>
+
+      <WorkspaceProfileSettings
+        canManageSettings={canManageSettings}
+        key={workspace.workspaceId}
+        workspace={workspace}
+      />
 
       <section className="panel workspace-danger-zone" aria-labelledby="workspace-danger-title">
         <div className="workspace-section-heading">
@@ -618,7 +409,98 @@ export function WorkspaceAdminPage() {
   )
 }
 
+function WorkspaceProfileSettings({
+  canManageSettings,
+  workspace,
+}: {
+  canManageSettings: boolean
+  workspace: Workspace
+}) {
+  const { updateWorkspaceSettings } = useData()
+  const [workspaceName, setWorkspaceName] = useState(workspace.name)
+  const [workspaceDescription, setWorkspaceDescription] = useState(workspace.description ?? '')
+  const normalizedWorkspaceName = workspaceName.trim().replace(/\s+/g, ' ')
+  const normalizedWorkspaceDescription = workspaceDescription.trim().replace(/\s+/g, ' ')
+  const workspaceProfileChanged = (
+    normalizedWorkspaceName !== workspace.name
+    || normalizedWorkspaceDescription !== (workspace.description ?? '')
+  )
+
+  async function submitWorkspaceSettings(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const updated = await updateWorkspaceSettings({
+      workspaceId: workspace.workspaceId,
+      description: normalizedWorkspaceDescription,
+      name: normalizedWorkspaceName,
+    })
+
+    if (updated) {
+      setWorkspaceName(normalizedWorkspaceName)
+      setWorkspaceDescription(normalizedWorkspaceDescription)
+    }
+  }
+
+  return (
+    <section className="panel workspace-profile-settings" aria-labelledby="workspace-profile-title">
+      <div className="workspace-section-heading">
+        <Settings2 aria-hidden="true" size={18} />
+        <div>
+          <h3 id="workspace-profile-title">Workspace profile</h3>
+          <p>Name and introduction shown in the Workspace shell.</p>
+        </div>
+      </div>
+      <form onSubmit={(event) => void submitWorkspaceSettings(event)}>
+        <fieldset disabled={!canManageSettings}>
+          <label>
+            <span>Workspace name</span>
+            <input
+              maxLength={80}
+              onChange={(event) => setWorkspaceName(event.target.value)}
+              placeholder="DataSentinel GDPR"
+              value={workspaceName}
+            />
+          </label>
+          <label>
+            <span>Introduction</span>
+            <textarea
+              maxLength={240}
+              onChange={(event) => setWorkspaceDescription(event.target.value)}
+              placeholder="Privacy operations workspace"
+              rows={3}
+              value={workspaceDescription}
+            />
+          </label>
+        </fieldset>
+        <div className="workspace-profile-preview" aria-label="Workspace profile preview">
+          <span className="workspace-profile-avatar" aria-hidden="true">{initials(normalizedWorkspaceName)}</span>
+          <span>
+            <strong>{normalizedWorkspaceName || workspace.name}</strong>
+            <small>{normalizedWorkspaceDescription || 'No introduction shown'}</small>
+          </span>
+        </div>
+        <button
+          disabled={!canManageSettings || !normalizedWorkspaceName || !workspaceProfileChanged}
+          type="submit"
+        >
+          <Save aria-hidden="true" size={15} />
+          Save profile
+        </button>
+      </form>
+    </section>
+  )
+}
+
 function MetricTile({ label, value }: { label: string; value: number }) {
+  return (
+    <span>
+      <strong>{value}</strong>
+      <small>{label}</small>
+    </span>
+  )
+}
+
+function SummaryPill({ label, value }: { label: string; value: number }) {
   return (
     <span>
       <strong>{value}</strong>
@@ -642,37 +524,6 @@ function ChartGroup({ data, title }: { data: WorkspaceChartDatum[]; title: strin
           </div>
           <strong>{item.value}</strong>
         </div>
-      ))}
-    </div>
-  )
-}
-
-function PermissionGrid({
-  disabled,
-  onToggle,
-  options,
-  selected,
-}: {
-  disabled: boolean
-  onToggle: (permission: string) => void
-  options: WorkspacePermissionOption[]
-  selected: string[]
-}) {
-  return (
-    <div className="workspace-permission-grid">
-      {options.map((option) => (
-        <label className="workspace-permission-option" key={option.permission}>
-          <input
-            checked={selected.includes(option.permission)}
-            disabled={disabled}
-            onChange={() => onToggle(option.permission)}
-            type="checkbox"
-          />
-          <span>
-            <strong>{option.label}</strong>
-            <small>{option.permission}</small>
-          </span>
-        </label>
       ))}
     </div>
   )
@@ -729,10 +580,6 @@ function groupListLabel(groupIds: string[], groups: WorkspaceGroup[]) {
 
 function memberLabel(member: WorkspaceMembership) {
   return member.email ? `${member.displayName} (${member.email})` : member.displayName
-}
-
-function permissionLabel(permission: string, options: WorkspacePermissionOption[]) {
-  return options.find((option) => option.permission === permission)?.label ?? permission
 }
 
 function initials(value: string) {

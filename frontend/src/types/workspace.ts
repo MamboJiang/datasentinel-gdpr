@@ -4,6 +4,7 @@ export type Workspace = {
   slug: string
   status: string
   plan: string
+  headerLabel?: string
   description?: string
   createdAt?: string
   memberCount: number
@@ -111,6 +112,13 @@ export type CreateWorkspaceInvitationInput = {
 export type CreateWorkspaceInput = {
   name: string
   description?: string
+}
+
+export type UpdateWorkspaceSettingsInput = {
+  workspaceId: string
+  name?: string
+  description?: string
+  headerLabel?: string
 }
 
 export type WorkspaceGroupInput = {
