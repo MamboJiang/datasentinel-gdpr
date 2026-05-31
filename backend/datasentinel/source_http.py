@@ -137,7 +137,12 @@ class SourceHttpApp:
 
         source_id = _match(route, "/sources/")
         if method == "DELETE" and source_id and "/" not in source_id:
-            return source_api.delete_source(source_id, trace_id, f"/api{route}")
+            result = source_api.delete_source(source_id, trace_id, f"/api{route}")
+            if result["status"] < 400:
+                source_deleted = getattr(demo_state, "source_deleted", None)
+                if callable(source_deleted):
+                    source_deleted(source_id)
+            return result
 
         source_connect = _match(route, "/sources/", "/connect-test")
         if method == "POST" and source_connect:

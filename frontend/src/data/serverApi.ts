@@ -110,7 +110,7 @@ export async function loadServerData(fallback: MockData): Promise<MockData> {
         }
       : fallback.findingDetails,
     auditEvents: auditEventsEnvelope.data,
-    metrics: metricsEnvelope.data,
+    metrics: normalizeAdminMetrics(metricsEnvelope.data),
     evaluation: evaluationEnvelope.data,
     governanceConfig: governanceEnvelope.data,
     permissionBoundary: permissionEnvelope.data,
@@ -128,6 +128,29 @@ export async function loadServerData(fallback: MockData): Promise<MockData> {
       reviewSupportEnvelope.meta,
     ]),
   }
+}
+
+function normalizeAdminMetrics(metrics: AdminMetrics): AdminMetrics {
+  if (!metrics.aggregation || isStructuredAggregation(metrics.aggregation)) {
+    return metrics
+  }
+
+  const metricsWithoutAggregation = { ...metrics }
+  delete metricsWithoutAggregation.aggregation
+  return metricsWithoutAggregation
+}
+
+function isStructuredAggregation(aggregation: AdminMetrics['aggregation']) {
+  return Boolean(
+    aggregation
+    && Array.isArray(aggregation.inputStages)
+    && aggregation.scanCoverage
+    && aggregation.risk
+    && aggregation.ownerBacklog
+    && aggregation.outcomes
+    && aggregation.audit
+    && Array.isArray(aggregation.warnings),
+  )
 }
 
 export async function startServerScan(options: StartScanOptions): Promise<ApiEnvelope<Scan>> {

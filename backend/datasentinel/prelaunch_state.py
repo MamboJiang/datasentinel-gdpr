@@ -82,6 +82,14 @@ class PrelaunchState(DemoState):
         self.review_support = _review_support("")
         self.permission_boundary = _permission_boundary()
 
+    def source_deleted(self, source_id: str) -> None:
+        if self.scan.get("sourceId") != source_id:
+            return
+
+        self._pending_result = None
+        self._running_started_at = None
+        self._clear_seeded_workflow()
+
 
 def _scan_source(source: dict[str, Any], governance: dict[str, Any], scan_type: str, payload: dict[str, Any]) -> dict[str, Any]:
     batch = read_source_documents(source, payload)

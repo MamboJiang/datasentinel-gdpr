@@ -105,6 +105,7 @@ class PersistentPrelaunchState(PrelaunchState):
         saved = self.workflow_store.load()
         if saved:
             self._restore_state(saved)
+            self._clear_missing_source_workflow()
             self._refresh_ai_runtime_metadata()
         self._save_state()
 
@@ -120,6 +121,12 @@ class PersistentPrelaunchState(PrelaunchState):
         if result["status"] < 400:
             self._save_state()
         return result
+
+    def source_deleted(self, source_id: str) -> None:
+        super().source_deleted(source_id)
+        if self.scan.get("sourceId") != source_id:
+            self._running_started_epoch = None
+        self._save_state()
 
     def _finish_scan_if_ready(self) -> None:
         before = (self.scan.get("status"), self._pending_result is not None)
@@ -143,6 +150,14 @@ class PersistentPrelaunchState(PrelaunchState):
         else:
             self._running_started_epoch = None
             self._running_started_at = None
+
+    def _clear_missing_source_workflow(self) -> None:
+        source_id = self.scan.get("sourceId")
+        if isinstance(source_id, str) and source_id and not self.source_store.get(source_id):
+            self._pending_result = None
+            self._running_started_epoch = None
+            self._running_started_at = None
+            self._clear_seeded_workflow()
 
     def _save_state(self) -> None:
         snapshot = {field: copy.deepcopy(getattr(self, field)) for field in WORKFLOW_FIELDS}

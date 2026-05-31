@@ -176,12 +176,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     try {
       const result = await deleteServerSource(sourceId)
       delete googleDriveAccessTokens.current[sourceId]
-      setData((current) => ({
-        ...current,
-        meta: result.meta,
-        sources: current.sources.filter((source) => source.sourceId !== sourceId),
-      }))
-      notify(`${result.data.name} source registration deleted.`)
+      await refreshServerData(`${result.data.name} source registration deleted.`)
     } catch (error) {
       notify(error instanceof Error ? error.message : 'Source deletion failed.')
     }

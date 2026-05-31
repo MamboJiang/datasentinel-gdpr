@@ -14,6 +14,7 @@ import { Link } from 'react-router-dom'
 import { useData } from '../data/useData'
 import { canStartDeltaScan, getDefaultFullScanSource, isSourceScanReady } from '../data/scanWorkflow'
 import { formatBytes, formatDate, humanize } from '../components/formatters'
+import type { AdminMetricsAggregationSummary } from '../types'
 import {
   Button,
   EmptyState,
@@ -48,7 +49,9 @@ export function DashboardPage() {
   const reviewSupport = scan.reviewSupport
   const auditRecording = scan.auditRecording
   const deltaScan = scan.deltaScan
-  const aggregation = metrics.aggregation
+  const rawAggregation = metrics.aggregation
+  const aggregation = getDashboardAggregation(rawAggregation)
+  const estimatedCostUsd = rawAggregation?.estimatedCostUsd ?? 0
   const pipelineStages = scan.pipelineStages ?? []
   const processedFiles = scan.scannedFiles ?? 0
   const totalFiles = scan.totalFiles ?? 0
@@ -59,10 +62,10 @@ export function DashboardPage() {
   const ownerRoutedCount = ownerAssignment?.assignedFindings ?? metrics.assignedFindings ?? metrics.ownerRoutedFindings ?? 0
   const unownedCount = ownerAssignment?.unownedFindings ?? 0
   const scanTypeLabel = scan.scanType === 'delta' ? 'Changed files scan' : 'All files scan'
-  const ownerTaskCompletion = aggregation
+  const ownerTaskCompletion = aggregation?.ownerBacklog
     ? `${Math.round(aggregation.ownerBacklog.ownerTaskCompletionRate * 100)}%`
     : '—'
-  const metricStageBasis = aggregation
+  const metricStageBasis = aggregation?.inputStages
     ? `${aggregation.inputStages.length} stages · ${aggregation.status}`
     : 'Not available'
 
@@ -164,7 +167,7 @@ export function DashboardPage() {
               <Gauge aria-hidden="true" size={17} />
               <div>
                 <strong>{ownerTaskCompletion} owner task completion</strong>
-                <span>{aggregation?.ownerBacklog.reviewThroughputPerDay ?? metrics.reviewThroughputPerDay ?? 0} decisions/day · {aggregation?.estimatedCostUsd ?? 0} USD estimated service cost</span>
+                <span>{aggregation?.ownerBacklog.reviewThroughputPerDay ?? metrics.reviewThroughputPerDay ?? 0} decisions/day · {estimatedCostUsd} USD estimated service cost</span>
               </div>
             </div>
             <div className="review-focus-row">
@@ -252,4 +255,18 @@ export function DashboardPage() {
       </div>
     </>
   )
+}
+
+function getDashboardAggregation(aggregation: AdminMetricsAggregationSummary | undefined) {
+  if (
+    !aggregation
+    || !Array.isArray(aggregation.inputStages)
+    || !aggregation.risk
+    || !aggregation.ownerBacklog
+    || !aggregation.audit
+  ) {
+    return undefined
+  }
+
+  return aggregation
 }

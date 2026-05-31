@@ -118,7 +118,7 @@ Google Drive and direct-link source input are accepted when:
 - Google Drive full scans require a short-lived per-scan access token and reject missing tokens without changing scan, finding, audit, metric, or evaluation state.
 - PDF files with an extractable text layer can be scanned from local, direct-link, or Google Drive selected sources without storing raw PDF bodies or raw extracted text.
 - Image-only or unreadable PDFs are reported as unsupported/OCR-deferred prelaunch inputs rather than silent successes.
-- The Sources page can delete a DataSentinel source registration, and the backend `DELETE /api/sources/{sourceId}` route does not delete external source files.
+- The Sources page can delete a DataSentinel source registration, clears DataSentinel scan/finding state derived from that deleted registration, and the backend `DELETE /api/sources/{sourceId}` route does not delete external source files.
 - Source scanning reads file content only during scan execution and persists metadata, redacted evidence, findings, metrics, and audit events rather than raw source bodies.
 - Automated tests cover Picker config redaction, Picker picked/cancel/pending callback handling, empty-project source registration readiness, remote-link redaction/no-raw-content behavior, Google Drive share-link rejection, PDF text-layer scanning without raw-text persistence, source-registration deletion, and missing Drive token rejection.
 
