@@ -14,6 +14,7 @@ from backend.datasentinel.auth import AUTH_TX_COOKIE, SESSION_COOKIE, AuthServic
 from backend.datasentinel.auth_support import cookie_value, unsign
 from backend.datasentinel import build_default_app, make_handler
 from backend.datasentinel.source_http import SourceHttpApp, build_sqlite_app
+from backend.datasentinel.source_documents import SourceDocument, SourceDocumentBatch
 
 
 class FakeOAuthTransport:
@@ -148,6 +149,33 @@ class BackendApiServerTests(unittest.TestCase):
         self.assertEqual(rejected["contentType"], "application/problem+json")
         self.assertEqual(accepted["status"], 200)
 
+    def test_auth_required_protects_google_drive_picker_config(self) -> None:
+        app = auth_app(auth_required=True)
+
+        with mock.patch.dict("os.environ", {
+            "GOOGLE_CLIENT_ID": "google-client-id",
+            "GOOGLE_CLIENT_SECRET": "google-secret-not-public",
+            "GOOGLE_PICKER_API_KEY": "picker-public-key",
+            "GOOGLE_CLOUD_PROJECT_NUMBER": "1234567890",
+        }):
+            rejected = app.handle("GET", "/api/integrations/google-drive/picker-config", "trace_picker_rejected")
+            session_cookie = start_github_session(app)
+            accepted = app.handle(
+                "GET",
+                "/api/integrations/google-drive/picker-config",
+                "trace_picker_accepted",
+                None,
+                None,
+                {"Cookie": session_cookie},
+            )
+            serialized = json.dumps(accepted["body"])
+
+        self.assertEqual(rejected["status"], 401)
+        self.assertEqual(rejected["contentType"], "application/problem+json")
+        self.assertEqual(accepted["status"], 200)
+        self.assertTrue(accepted["body"]["data"]["configured"])
+        self.assertNotIn("google-secret-not-public", serialized)
+
     def test_scan_start_rejects_not_ready_source_without_state_change(self) -> None:
         app = build_default_app()
         before = app.handle("GET", "/api/audit/events", "trace_test_audit_before")
@@ -254,6 +282,194 @@ class BackendApiServerTests(unittest.TestCase):
             self.assertEqual(findings["body"]["data"], [])
             self.assertEqual(audit_events["body"]["data"], [])
             self.assertEqual(metrics["body"]["data"]["flaggedFiles"], 0)
+
+    def test_google_drive_picker_config_exposes_only_public_setup(self) -> None:
+        app = auth_app()
+
+        with mock.patch.dict("os.environ", {
+            "GOOGLE_CLIENT_ID": "google-client-id",
+            "GOOGLE_CLIENT_SECRET": "google-secret-not-public",
+            "GOOGLE_PICKER_API_KEY": "picker-public-key",
+            "GOOGLE_CLOUD_PROJECT_NUMBER": "1234567890",
+        }):
+            config = app.handle("GET", "/api/integrations/google-drive/picker-config", "trace_picker_config")
+            serialized = json.dumps(config["body"])
+
+        self.assertEqual(config["status"], 200)
+        self.assertTrue(config["body"]["data"]["configured"])
+        self.assertEqual(config["body"]["data"]["clientId"], "google-client-id")
+        self.assertEqual(config["body"]["data"]["apiKey"], "picker-public-key")
+        self.assertNotIn("google-secret-not-public", serialized)
+
+    def test_prelaunch_mode_scans_remote_file_link_without_storing_raw_file(self) -> None:
+        with TemporaryDirectory() as directory:
+            db_path = Path(directory) / "datasentinel.sqlite3"
+
+            def fake_reader(source: dict[str, object], payload: dict[str, object]) -> SourceDocumentBatch:
+                self.assertEqual(source["sourceType"], "remote_file_link")
+                return SourceDocumentBatch(
+                    documents=[SourceDocument("contacts.txt", "https://example.com/contacts.txt", "Contact privacy.reviewer@example.org", 36, "Remote_File")],
+                    total_files=1,
+                    total_bytes=36,
+                    unsupported_files=0,
+                    warnings=[],
+                    family="Remote_File",
+                    extraction_method="remote_https_text",
+                )
+
+            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+                app = build_sqlite_app(db_path)
+                with mock.patch("backend.datasentinel.source_api.validate_remote_source_url", lambda url: None):
+                    created = app.handle(
+                        "POST",
+                        "/api/sources",
+                        "trace_remote_create",
+                        json.dumps({
+                            "sourceId": "source_remote_file",
+                            "name": "Remote contact file",
+                            "sourceType": "remote_file_link",
+                            "rootLabel": "https://example.com/contacts.txt",
+                            "masterOfDataUserId": "owner_remote",
+                            "config": {"url": "https://example.com/contacts.txt"},
+                        }),
+                        "application/json",
+                    )
+                with mock.patch("backend.datasentinel.prelaunch_state.read_source_documents", fake_reader):
+                    started = app.handle(
+                        "POST",
+                        "/api/scans/full",
+                        "trace_remote_scan",
+                        json.dumps({"sourceId": "source_remote_file"}),
+                        "application/json",
+                    )
+                    time.sleep(1.1)
+                    findings = app.handle("GET", "/api/findings", "trace_remote_findings")
+                    detail = app.handle("GET", f"/api/findings/{findings['body']['data'][0]['findingId']}", "trace_remote_detail")
+                    serialized = json.dumps(detail["body"])
+
+            self.assertEqual(created["status"], 201)
+            self.assertEqual(created["body"]["data"]["status"], "connected")
+            self.assertEqual(started["status"], 202)
+            self.assertEqual(len(findings["body"]["data"]), 1)
+            self.assertIn("[REDACTED_EMAIL]", serialized)
+            self.assertNotIn("privacy.reviewer@example.org", serialized)
+
+    def test_google_drive_scan_requires_per_scan_access_token(self) -> None:
+        with TemporaryDirectory() as directory:
+            db_path = Path(directory) / "datasentinel.sqlite3"
+            with mock.patch.dict("os.environ", {
+                "DATASENTINEL_ENABLE_DEMO_FIXTURES": "false",
+                "GOOGLE_CLIENT_ID": "google-client-id",
+                "GOOGLE_PICKER_API_KEY": "picker-public-key",
+                "GOOGLE_CLOUD_PROJECT_NUMBER": "1234567890",
+            }):
+                app = build_sqlite_app(db_path)
+                created = app.handle(
+                    "POST",
+                    "/api/sources",
+                    "trace_drive_create",
+                    json.dumps({
+                        "sourceId": "source_drive",
+                        "name": "Google Drive Selection",
+                        "sourceType": "google_drive_selection",
+                        "rootLabel": "Selected Drive folder",
+                        "config": {"items": [{"id": "drive-folder-id", "name": "Folder", "mimeType": "application/vnd.google-apps.folder"}]},
+                    }),
+                    "application/json",
+                )
+                rejected = app.handle(
+                    "POST",
+                    "/api/scans/full",
+                    "trace_drive_scan",
+                    json.dumps({"sourceId": "source_drive"}),
+                    "application/json",
+                )
+
+        self.assertEqual(created["body"]["data"]["status"], "connected")
+        self.assertEqual(rejected["status"], 409)
+        self.assertIn("short-lived access token", rejected["body"]["detail"])
+
+    def test_source_registration_strips_runtime_tokens_from_config(self) -> None:
+        with TemporaryDirectory() as directory:
+            db_path = Path(directory) / "datasentinel.sqlite3"
+            with mock.patch.dict("os.environ", {
+                "DATASENTINEL_ENABLE_DEMO_FIXTURES": "false",
+                "GOOGLE_CLIENT_ID": "google-client-id",
+                "GOOGLE_PICKER_API_KEY": "picker-public-key",
+                "GOOGLE_CLOUD_PROJECT_NUMBER": "1234567890",
+            }):
+                app = build_sqlite_app(db_path)
+                created = app.handle(
+                    "POST",
+                    "/api/sources",
+                    "trace_drive_token_strip",
+                    json.dumps({
+                        "googleDriveAccessToken": "top-level-token",
+                        "sourceId": "source_drive_sanitized",
+                        "name": "Google Drive Selection",
+                        "sourceType": "google_drive_selection",
+                        "rootLabel": "Selected Drive file",
+                        "config": {
+                            "accessToken": "config-token",
+                            "items": [{
+                                "id": "drive-file-id",
+                                "mimeType": "text/plain",
+                                "name": "contacts.txt",
+                                "refreshToken": "refresh-token",
+                                "url": "https://drive.google.com/file/d/drive-file-id/view",
+                            }],
+                        },
+                    }),
+                    "application/json",
+                )
+                listed = app.handle("GET", "/api/sources", "trace_drive_token_strip_list")
+                serialized = json.dumps(listed["body"])
+
+        self.assertEqual(created["status"], 201)
+        self.assertNotIn("top-level-token", serialized)
+        self.assertNotIn("config-token", serialized)
+        self.assertNotIn("refresh-token", serialized)
+        self.assertEqual(
+            created["body"]["data"]["config"]["items"],
+            [{
+                "id": "drive-file-id",
+                "mimeType": "text/plain",
+                "name": "contacts.txt",
+                "url": "https://drive.google.com/file/d/drive-file-id/view",
+            }],
+        )
+
+    def test_created_local_source_cannot_spoof_connected_status(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory) / "source"
+            root.mkdir()
+            db_path = Path(directory) / "datasentinel.sqlite3"
+            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+                app = build_sqlite_app(db_path, [root])
+                created = app.handle(
+                    "POST",
+                    "/api/sources",
+                    "trace_local_spoof_create",
+                    json.dumps({
+                        "sourceId": "source_local_spoof",
+                        "name": "Local Source Spoof",
+                        "sourceType": "local_repo",
+                        "status": "connected",
+                        "rootLabel": str(root),
+                        "config": {"rootPath": str(root)},
+                    }),
+                    "application/json",
+                )
+                rejected = app.handle(
+                    "POST",
+                    "/api/scans/full",
+                    "trace_local_spoof_scan",
+                    json.dumps({"sourceId": "source_local_spoof"}),
+                    "application/json",
+                )
+
+        self.assertEqual(created["body"]["data"]["status"], "registered")
+        self.assertEqual(rejected["status"], 409)
 
     def test_scan_start_accepts_mock_ready_source(self) -> None:
         app = build_default_app()

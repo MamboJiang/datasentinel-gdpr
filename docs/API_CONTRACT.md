@@ -122,8 +122,9 @@ Errors use `application/problem+json`.
 | `GET` | `/api/auth/callback/{provider}` | Complete provider callback, create a first-party session, and redirect back to the app. |
 | `GET` | `/api/auth/session` | Read current first-party session and safe user profile. |
 | `POST` | `/api/auth/logout` | Revoke the current first-party session and clear the session cookie. |
+| `GET` | `/api/integrations/google-drive/picker-config` | Read session-protected Google Drive Picker browser setup state without secrets. |
 | `GET` | `/api/sources` | List configured sources. |
-| `POST` | `/api/sources` | Create a local or mock source. |
+| `POST` | `/api/sources` | Create a mock, local, direct-link, or Google Drive selected source. |
 | `POST` | `/api/sources/{sourceId}/connect-test` | Validate source reachability. |
 | `POST` | `/api/scans/full` | Start a full scan for a connected or mock-ready source. |
 | `POST` | `/api/scans/delta` | Start a delta scan. |
@@ -219,7 +220,8 @@ The processing order is `source_policy_context -> metadata_inventory -> text_lay
 Start guard:
 
 - `POST /api/scans/full` requires `sourceId`.
-- P0 accepts full-scan start for the controlled `mock_ready` organizer sample source.
+- P0 accepts full-scan start for the controlled `mock_ready` organizer sample source, connected local prelaunch sources, connected direct HTTPS file links, and connected Google Drive selected sources.
+- `google_drive_selection` scans require `authorization.googleDriveAccessToken` in the scan request. The token is a short-lived per-scan value and must not be stored by the server.
 - A source that is missing, unreadable, or not scan-ready must not create a scan record; backend implementations should return `application/problem+json`, and mock UI implementations should show a neutral denial message.
 - Accepted scan starts should be idempotent when `Idempotency-Key` is present.
 - `POST /api/scans/delta` requires `sourceId` and a completed selected-source baseline; when `baselineScanId` is provided it must match an available baseline. Missing, running, not-ready, or mismatched baselines must not create scan, audit, finding, metric, or evaluation state changes.
@@ -333,6 +335,36 @@ https://github.com/a-klumpp/GDPR-data-samples
 ```
 
 The contract represents the source as `sourceType = organizer_sample_repo` and exposes sample families as metadata. The repository content is referenced, not vendored.
+
+## Prelaunch Source Inputs
+
+Source records may include optional `config` for connector-specific metadata:
+
+- `remote_file_link` stores `config.url` as a direct HTTPS file URL. The backend validates that the URL is HTTPS, has no embedded credentials, resolves to public IP addresses, and points to text-like content within the prelaunch size limit before extraction.
+- `google_drive_selection` stores `config.items`, an array of Google Picker selected item metadata such as `id`, `name`, `mimeType`, and optional `url`. The backend uses this metadata only with a per-scan `authorization.googleDriveAccessToken`.
+- `local_repo` stores `config.rootPath` for host-mounted folders that pass the configured allowed-root policy.
+
+`GET /api/integrations/google-drive/picker-config` requires the first-party session cookie when `DATASENTINEL_AUTH_REQUIRED=true` and returns browser-safe Picker setup state:
+
+```json
+{
+  "data": {
+    "configured": true,
+    "clientId": "public-oauth-client-id",
+    "apiKey": "public-picker-api-key",
+    "appId": "google-cloud-project-number",
+    "scopes": {
+      "files": "https://www.googleapis.com/auth/drive.file",
+      "folders": "https://www.googleapis.com/auth/drive.readonly"
+    },
+    "missing": []
+  }
+}
+```
+
+The endpoint may return `configured = false` with `null` browser setup fields and a `missing` list. It must never return Google client secrets, GitHub credentials, provider access tokens, refresh tokens, auth transaction state, raw source content, or unredacted personal data.
+
+Prelaunch source scans read raw source content only inside the scan process. Public payloads may expose source metadata, counts, warnings, redacted snippets, findings, metrics, and audit events; they must not expose raw file bodies, page images, provider tokens, refresh tokens, client secrets, legal conclusions, or deletion execution.
 
 ## Mock Payloads
 

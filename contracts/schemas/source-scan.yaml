@@ -13,16 +13,23 @@ Source:
     sampleFamilies:
       type: array
       items: { type: string }
-CreateSourceRequest:
-  type: object
-  required: [name, sourceType]
-  additionalProperties: true
-  properties:
-    name: { type: string }
-    sourceType: { type: string, example: "local_repo" }
     config:
       type: object
       additionalProperties: true
+CreateSourceRequest:
+  type: object
+  required: [sourceId, name, sourceType]
+  additionalProperties: true
+  properties:
+    sourceId: { type: string }
+    name: { type: string }
+    sourceType:
+      type: string
+      examples: ["local_repo", "remote_file_link", "google_drive_selection"]
+    config:
+      type: object
+      additionalProperties: true
+      description: Source-specific configuration. For `remote_file_link`, use `url`. For `google_drive_selection`, use selected `items` returned by Google Picker. For `local_repo`, use `rootPath`.
     masterOfDataUserId: { type: [string, "null"] }
 SourceEnvelope:
   type: object
@@ -59,6 +66,12 @@ StartFullScanRequest:
     sourceId: { type: string }
     deterministicMode: { type: boolean, default: true }
     runEvaluation: { type: boolean, default: true }
+    authorization:
+      type: object
+      additionalProperties: false
+      description: Per-scan short-lived authorization. Tokens must not be stored by the server.
+      properties:
+        googleDriveAccessToken: { type: string }
 StartDeltaScanRequest:
   type: object
   required: [sourceId]

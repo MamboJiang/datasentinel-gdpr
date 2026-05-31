@@ -63,8 +63,8 @@ The first implementation milestone is accepted when:
 - On desktop, the sidebar can be resized with a pointer or keyboard-accessible separator, collapses when dragged below the configured threshold, caps expansion at the configured maximum width, and keeps the content area aligned without overlap.
 - Account menu actions open local utility routes or local UI states for account settings, theme, language preference, feedback, homepage, changelog, help, docs, platform status, prototype plan, and session boundary without adding production authentication, billing, support, monitoring, tenant, external translation service, or external feedback integration.
 - The account menu language preference lists EU language options, persists the selected code locally, updates core user-facing UI copy through static frontend dictionaries, keeps developer-facing docs and code comments English-only, and does not call a backend or translation service.
-- A full scan can be started on a controlled sample source.
-- Starting a full scan uses an explicit `sourceId`, is allowed only for the controlled `mock_ready` sample source in P0, and records scan-start and scan-completion audit events in the mock workflow.
+- A full scan can be started on a controlled sample source or a prelaunch connected source.
+- Starting a full scan uses an explicit `sourceId`, is allowed only for the controlled `mock_ready` sample source or approved prelaunch source types, and records scan-start and scan-completion audit events in the workflow.
 - The Dashboard groups scanned files, flagged files, scanned volume, progress, scan time, review backlog, high-risk count, retention review count, and owner routing into clear scan, review, and pipeline summaries.
 - A responsible user can list assigned findings.
 - A finding detail view shows redacted evidence, signals, risk explanation, owner assignment, retention status, and audit timeline.
@@ -94,6 +94,22 @@ The Google/GitHub account system is accepted when:
 - The authenticated console account menu uses the current session profile instead of a hard-coded demo actor.
 - Authentication does not grant real deletion, Microsoft Graph access, tenant access, legal conclusions, or hidden permission powers.
 - Automated backend tests cover provider setup, unconfigured rejection, state mismatch rejection, session read, logout, and auth-required workflow protection.
+
+## Prelaunch Source Input Acceptance
+
+Google Drive and direct-link source input are accepted when:
+
+- The design note `docs/design/google-drive-source-integration.md` defines problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
+- `contracts/openapi.yaml`, `contracts/schemas/common.yaml`, `contracts/schemas/source-scan.yaml`, and `docs/API_CONTRACT.md` document Google Drive Picker public config, remote-link source config, Drive selected-item config, and per-scan short-lived authorization.
+- Runtime configuration uses ignored environment variables for Google Picker public credentials: `GOOGLE_PICKER_API_KEY` and `GOOGLE_CLOUD_PROJECT_NUMBER`.
+- `/api/integrations/google-drive/picker-config` reports Picker setup state behind the prelaunch session boundary without exposing Google client secrets, provider tokens, refresh tokens, or GitHub credentials.
+- The Sources page can register a `remote_file_link` with `config.url` and no fake prefilled source examples.
+- Remote file-link scans require HTTPS, no embedded credentials, a public-resolving host, text-like content, and the prelaunch size limit.
+- The Sources page can select Google Drive files or a folder through Google Picker when host credentials are configured.
+- Google Drive source registration stores selected item metadata but not access tokens.
+- Google Drive full scans require a short-lived per-scan access token and reject missing tokens without changing scan, finding, audit, metric, or evaluation state.
+- Source scanning reads file content only during scan execution and persists metadata, redacted evidence, findings, metrics, and audit events rather than raw source bodies.
+- Automated tests cover Picker config redaction, remote-link redaction/no-raw-content behavior, and missing Drive token rejection.
 
 ## OpenRouter AI Assistive Processing Acceptance
 

@@ -29,7 +29,7 @@ Related contract files:
 | `PermissionBoundary` | Allowed actions, denied actions, denial reasons, visible data scopes, boundary fingerprint, and evaluation timestamp for the current actor. |
 | `ReviewSupport` | Reviewer guidance, checklist, available decisions, required reason fields, transfer options, and escalation options. |
 | `ReviewDecision` | Human decision record with reason, checklist acknowledgement, target or retention context, resulting status, audit event, and no-real-deletion boundary. |
-| `SourceAdapterConfig` | Demo source, local source, mock SharePoint, and future connector readiness. |
+| `SourceAdapterConfig` | Demo source, local source, direct HTTPS file link, Google Drive selected source, mock SharePoint, and future connector readiness. |
 
 ## Policy Pack Shape
 

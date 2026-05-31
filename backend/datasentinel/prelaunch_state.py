@@ -5,14 +5,13 @@ from __future__ import annotations
 import hashlib
 import re
 import time
-from pathlib import Path
 from typing import Any
 
 from .demo_state import DemoState
 from .envelope import envelope, response, utc_now
+from .source_documents import SourceDocument, SourceDocumentBatch, SourceReadIssue, read_source_documents
 from .source_store import SourceStore
 
-SUPPORTED_SUFFIXES = {".txt", ".csv", ".tsv", ".json", ".md", ".log", ".xml", ".html"}
 EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 IBAN_RE = re.compile(r"\b[A-Z]{2}\d{2}(?:[ -]?[A-Z0-9]){11,30}\b")
 PHONE_RE = re.compile(r"\b(?:\+\d{1,3}[ -]?)?(?:\(?\d{2,4}\)?[ -]?){2,4}\d{2,4}\b")
@@ -37,10 +36,11 @@ class PrelaunchState(DemoState):
         if not source or not self._source_scan_ready(source):
             return self._problem(409, "Source is not scan-ready", path, trace_id, "#/sourceId")
 
-        if source.get("sourceType") != "local_repo":
-            return self._problem(409, "Prelaunch mode scans configured local sources only.", path, trace_id, "#/sourceId")
+        try:
+            result = _scan_source(source, self.governance_config, scan_type, payload)
+        except SourceReadIssue as issue:
+            return self._problem(409, issue.detail, path, trace_id, issue.pointer)
 
-        result = _scan_source(source, self.governance_config, scan_type)
         self._pending_result = result
         self.scan = {**result["scan"], "status": "running", "stage": "detecting_signals", "progress": 0.35}
         self._running_started_at = time.monotonic()
@@ -83,40 +83,28 @@ class PrelaunchState(DemoState):
         self.permission_boundary = _permission_boundary()
 
 
-def _scan_source(source: dict[str, Any], governance: dict[str, Any], scan_type: str) -> dict[str, Any]:
-    root = Path((source.get("config") or {}).get("rootPath", "")).expanduser()
-    files = [candidate for candidate in root.rglob("*") if candidate.is_file()] if root.is_dir() else []
+def _scan_source(source: dict[str, Any], governance: dict[str, Any], scan_type: str, payload: dict[str, Any]) -> dict[str, Any]:
+    batch = read_source_documents(source, payload)
     scan_id = f"scan_{int(time.time() * 1000)}"
     policy_version = governance.get("activePolicyPack", {}).get("version", "unconfigured")
     findings: list[dict[str, Any]] = []
     details: dict[str, dict[str, Any]] = {}
-    unsupported = 0
-    extracted = 0
     signal_count = 0
-    total_bytes = 0
 
-    for file_path in files[:500]:
-        size = file_path.stat().st_size
-        total_bytes += size
-        if file_path.suffix.lower() not in SUPPORTED_SUFFIXES or size > 1_000_000:
-            unsupported += 1
-            continue
-
-        text = file_path.read_text(encoding="utf-8", errors="ignore")
-        extracted += 1
-        signals = _signals(text)
+    for document in batch.documents:
+        signals = _signals(document.text)
         if not signals:
             continue
 
         signal_count += len(signals)
-        finding = _finding(scan_id, source, file_path, signals, policy_version)
+        finding = _finding(scan_id, source, document, signals, policy_version)
         findings.append({key: value for key, value in finding.items() if key not in {"signals", "riskExplanation", "policyContext", "availableActions", "deniedActions", "auditTimeline", "file"}})
         details[finding["findingId"]] = finding
 
     audit_events = [_finding_audit(item, policy_version) for item in details.values()]
-    scan = _scan(scan_id, source, scan_type, files, total_bytes, extracted, unsupported, findings, signal_count, policy_version)
-    metrics = _metrics(scan, findings, unsupported)
-    evaluation = _evaluation(scan, unsupported)
+    scan = _scan(scan_id, source, scan_type, batch, findings, signal_count, policy_version)
+    metrics = _metrics(scan, findings, batch.unsupported_files)
+    evaluation = _evaluation(scan, batch.unsupported_files)
     return {"scan": scan, "findings": findings, "findingDetails": details, "auditEvents": audit_events, "metrics": metrics, "evaluation": evaluation}
 
 
@@ -141,20 +129,20 @@ def _snippet(text: str, start: int, end: int, marker: str) -> str:
     return PHONE_RE.sub("[REDACTED_PHONE]", redacted).replace("\n", " ")[:180]
 
 
-def _finding(scan_id: str, source: dict[str, Any], path: Path, signals: list[dict[str, Any]], policy_version: str) -> dict[str, Any]:
+def _finding(scan_id: str, source: dict[str, Any], document: SourceDocument, signals: list[dict[str, Any]], policy_version: str) -> dict[str, Any]:
     signal_types = sorted({signal["type"] for signal in signals})
     risk = "high" if "iban_like" in signal_types else "medium"
     score = 86 if risk == "high" else 64
     owner_id = source.get("masterOfDataUserId") or "authenticated_user"
-    finding_id = "finding_" + hashlib.sha256(f"{scan_id}:{path}".encode("utf-8")).hexdigest()[:12]
+    finding_id = "finding_" + hashlib.sha256(f"{scan_id}:{document.source_path}".encode("utf-8")).hexdigest()[:12]
     return {
         "findingId": finding_id,
         "scanId": scan_id,
-        "fileName": path.name,
-        "sourcePath": str(path),
+        "fileName": document.name,
+        "sourcePath": document.source_path,
         "riskLevel": risk,
         "riskScore": score,
-        "contextCategory": "local_source",
+        "contextCategory": document.family.lower(),
         "personalDataTypes": signal_types,
         "retentionStatus": "needs_review",
         "recommendedAction": "escalate" if risk == "high" else "keep_with_reason",
@@ -162,9 +150,9 @@ def _finding(scan_id: str, source: dict[str, Any], path: Path, signals: list[dic
         "policyPackVersion": policy_version,
         "status": "assigned",
         "owner": {"userId": owner_id, "displayName": owner_id, "email": None, "assignmentType": "source_master_of_data", "assignmentReason": "Configured source owner receives local prelaunch findings.", "assignmentSource": "source_config"},
-        "file": {"sourceName": source["name"], "sourceType": source["sourceType"], "lastModifiedAt": utc_now(), "sizeBytes": path.stat().st_size},
+        "file": {"sourceName": source["name"], "sourceType": source["sourceType"], "lastModifiedAt": utc_now(), "sizeBytes": document.size_bytes},
         "signals": signals,
-        "riskExplanation": "The local scan found redacted identifier patterns that require accountable human review before any action.",
+        "riskExplanation": "The prelaunch scan found redacted identifier patterns that require accountable human review before any action.",
         "policyContext": {"policyPackId": "policy_gdpr_demo", "policyPackVersion": policy_version, "policyConclusion": "human_review_required"},
         "availableActions": ["keep_with_reason", "correct_false_positive", "reassign_owner", "escalate"],
         "deniedActions": [{"action": "execute_real_deletion", "reason": "Real deletion is disabled."}],
@@ -172,8 +160,8 @@ def _finding(scan_id: str, source: dict[str, Any], path: Path, signals: list[dic
     }
 
 
-def _scan(scan_id: str, source: dict[str, Any], scan_type: str, files: list[Path], total_bytes: int, extracted: int, unsupported: int, findings: list[dict[str, Any]], signal_count: int, policy_version: str) -> dict[str, Any]:
-    warnings = [f"{unsupported} unsupported files skipped by the local prelaunch scanner."] if unsupported else []
+def _scan(scan_id: str, source: dict[str, Any], scan_type: str, batch: SourceDocumentBatch, findings: list[dict[str, Any]], signal_count: int, policy_version: str) -> dict[str, Any]:
+    warnings = batch.warnings
     return {
         "scanId": scan_id,
         "sourceId": source["sourceId"],
@@ -181,16 +169,16 @@ def _scan(scan_id: str, source: dict[str, Any], scan_type: str, files: list[Path
         "status": "completed",
         "stage": "completed",
         "progress": 1,
-        "totalFiles": len(files),
-        "scannedFiles": len(files),
+        "totalFiles": batch.total_files,
+        "scannedFiles": batch.total_files,
         "flaggedFiles": len(findings),
-        "totalBytes": total_bytes,
+        "totalBytes": batch.total_bytes,
         "durationMs": 1000,
-        "throughputFilesPerSecond": len(files),
-        "reproducibilityFingerprint": "sha256:" + hashlib.sha256(f"{source['sourceId']}:{len(files)}:{signal_count}".encode("utf-8")).hexdigest()[:24],
+        "throughputFilesPerSecond": batch.total_files,
+        "reproducibilityFingerprint": "sha256:" + hashlib.sha256(f"{source['sourceId']}:{batch.total_files}:{signal_count}".encode("utf-8")).hexdigest()[:24],
         "pipelineStages": [{"stage": stage, "status": "completed", "warnings": warnings if stage == "extracting_content" else []} for stage in ["source_ready", "inventorying_files", "extracting_content", "detecting_signals", "judging_context_risk", "assigning_owner", "assembling_findings", "preparing_review_support", "recording_audit_events"]],
-        "fileInventory": {"status": "completed", "sourceSnapshotId": f"snapshot_{source['sourceId']}_{scan_id}", "inventoryFingerprint": f"sha256:{scan_id}_inventory", "totalCandidateFiles": len(files), "fingerprintedFiles": len(files), "skippedFiles": 0, "totalBytes": total_bytes, "permissionSnapshots": len(files), "sampleFamilies": [{"family": "Local_Source", "candidateFiles": len(files), "processedFiles": len(files), "flaggedFiles": len(findings), "bytes": total_bytes}], "warnings": []},
-        "contentExtraction": {"status": "completed", "extractionFingerprint": f"sha256:{scan_id}_local_text", "processedFiles": len(files), "successfulFiles": extracted, "warningFiles": unsupported, "unsupportedFiles": unsupported, "ocrDeferredFiles": 0, "redactedEvidenceCandidates": signal_count, "rawContentExposed": False, "methods": [{"method": "local_text", "files": extracted, "status": "completed"}], "warnings": warnings},
+        "fileInventory": {"status": "completed", "sourceSnapshotId": f"snapshot_{source['sourceId']}_{scan_id}", "inventoryFingerprint": f"sha256:{scan_id}_inventory", "totalCandidateFiles": batch.total_files, "fingerprintedFiles": batch.total_files, "skippedFiles": 0, "totalBytes": batch.total_bytes, "permissionSnapshots": batch.total_files, "sampleFamilies": [{"family": batch.family, "candidateFiles": batch.total_files, "processedFiles": len(batch.documents), "flaggedFiles": len(findings), "bytes": batch.total_bytes}], "warnings": []},
+        "contentExtraction": {"status": "completed", "extractionFingerprint": f"sha256:{scan_id}_{batch.extraction_method}", "processedFiles": batch.total_files, "successfulFiles": len(batch.documents), "warningFiles": batch.unsupported_files, "unsupportedFiles": batch.unsupported_files, "ocrDeferredFiles": 0, "redactedEvidenceCandidates": signal_count, "rawContentExposed": False, "methods": [{"method": batch.extraction_method, "files": len(batch.documents), "status": "completed"}], "warnings": warnings},
         "signalDetection": {"status": "completed", "detectorRulesVersion": "prelaunch-local-v1", "detectorRulesHash": f"sha256:{scan_id}_signals", "evidenceRequirements": ["redacted_snippet", "detector_signal", "owner_assignment", "policy_version"], "evaluatedEvidenceCandidates": signal_count, "detectedSignals": signal_count, "redactedSignals": signal_count, "findingsWithSignals": len(findings), "rawContentExposed": False, "signalTypeCounts": [], "warnings": []},
         "contextRisk": {"status": "completed", "policyPackVersion": policy_version, "riskRulesFingerprint": f"sha256:{scan_id}_risk", "assessedEvidenceCandidates": signal_count, "contextClassifiedFindings": len(findings), "riskAssessedFindings": len(findings), "highRiskFindings": sum(1 for item in findings if item["riskLevel"] == "high"), "mediumRiskFindings": sum(1 for item in findings if item["riskLevel"] == "medium"), "lowRiskFindings": 0, "retentionReviewFiles": len(findings), "humanReviewRequiredFindings": len(findings), "legalConclusionProvided": False, "contextCategories": [], "warnings": []},
         "ownerAssignment": {"status": "completed", "policyPackVersion": policy_version, "organizationModelVersion": "prelaunch", "ownerResolutionStrategy": "source_master_of_data", "assignmentRulesFingerprint": f"sha256:{scan_id}_owner", "humanReviewRequiredFindings": len(findings), "assignedFindings": len(findings), "directOwnerAssignments": 0, "masterOfDataAssignments": len(findings), "escalationAssignments": 0, "unownedFindings": 0, "transferOptionCount": 0, "escalationOptionCount": 1, "sourceOwnerAvailable": True, "warnings": []},

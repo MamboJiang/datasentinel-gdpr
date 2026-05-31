@@ -17,6 +17,7 @@ import type {
 import type { StartScanOptions } from './scanWorkflow'
 
 export type CreateSourceInput = {
+  googleDriveAccessToken?: string
   sourceId: string
   name: string
   sourceType: string
@@ -24,6 +25,18 @@ export type CreateSourceInput = {
   rootLabel?: string
   masterOfDataUserId?: string
   config?: Record<string, unknown>
+}
+
+export type GoogleDrivePickerConfig = {
+  apiKey: string | null
+  appId: string | null
+  clientId: string | null
+  configured: boolean
+  missing: string[]
+  scopes: {
+    files: string
+    folders: string
+  }
 }
 
 type ApiEnvelope<T> = {
@@ -115,6 +128,7 @@ export async function startServerScan(options: StartScanOptions): Promise<ApiEnv
 
   return requestEnvelope<Scan>(path, {
     body: JSON.stringify({
+      authorization: options.googleDriveAccessToken ? { googleDriveAccessToken: options.googleDriveAccessToken } : undefined,
       baselineScanId: options.baselineScanId,
       modifiedSince: options.modifiedSince,
       sourceId: options.sourceId,
@@ -133,11 +147,17 @@ export async function testServerSourceConnection(sourceId: string): Promise<ApiE
 }
 
 export async function createServerSource(input: CreateSourceInput): Promise<ApiEnvelope<Source>> {
+  const payload: Partial<CreateSourceInput> = { ...input }
+  delete payload.googleDriveAccessToken
   return requestEnvelope<Source>('/sources', {
-    body: JSON.stringify(input),
+    body: JSON.stringify(payload),
     headers: jsonHeaders({ idempotencyKey: `source_${input.sourceId}` }),
     method: 'POST',
   })
+}
+
+export async function loadGoogleDrivePickerConfig(): Promise<ApiEnvelope<GoogleDrivePickerConfig>> {
+  return requestEnvelope<GoogleDrivePickerConfig>('/integrations/google-drive/picker-config')
 }
 
 export async function reviewServerFinding(input: ReviewInput): Promise<ApiEnvelope<ReviewRecord>> {

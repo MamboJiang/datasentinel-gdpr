@@ -66,6 +66,16 @@ paths:
             application/json:
               schema:
                 $ref: "./schemas/common.yaml#/HealthEnvelope"
+  /integrations/google-drive/picker-config:
+    get:
+      operationId: getGoogleDrivePickerConfig
+      responses:
+        "200":
+          description: Public Google Drive Picker setup state. Provider secrets and tokens are never returned.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/common.yaml#/GoogleDrivePickerConfigEnvelope"
   /sources:
     get:
       operationId: listSources
