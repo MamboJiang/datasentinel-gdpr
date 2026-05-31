@@ -118,7 +118,7 @@ The approved source-input implementation is a prelaunch boundary for direct HTTP
 
 Technical constraints:
 
-- `remote_file_link` uses `config.url`, requires HTTPS, rejects embedded credentials, rejects private-address hosts, and supports only text-like content within the prelaunch size limit.
+- `remote_file_link` uses `config.url`, requires HTTPS, rejects embedded credentials, rejects private-address hosts, rejects Google Drive or Google Docs share pages, and supports only text-like content within the prelaunch size limit.
 - `google_drive_selection` uses Google Picker in the browser to collect selected item metadata and Google Identity Services to obtain a short-lived access token for scan execution.
 - The backend exposes `/api/integrations/google-drive/picker-config` for browser-safe Picker setup state behind the prelaunch session boundary; it must not expose client secrets or provider tokens.
 - Google Drive scans receive `authorization.googleDriveAccessToken` only in the scan request and must not persist it.

@@ -354,6 +354,28 @@ class BackendApiServerTests(unittest.TestCase):
             self.assertIn("[REDACTED_EMAIL]", serialized)
             self.assertNotIn("privacy.reviewer@example.org", serialized)
 
+    def test_remote_file_link_rejects_google_drive_share_pages(self) -> None:
+        with TemporaryDirectory() as directory:
+            db_path = Path(directory) / "datasentinel.sqlite3"
+            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+                app = build_sqlite_app(db_path)
+                rejected = app.handle(
+                    "POST",
+                    "/api/sources",
+                    "trace_drive_share_rejected",
+                    json.dumps({
+                        "sourceId": "source_drive_share_link",
+                        "name": "Drive share page",
+                        "sourceType": "remote_file_link",
+                        "rootLabel": "https://drive.google.com/file/d/file-id/view?usp=sharing",
+                        "config": {"url": "https://drive.google.com/file/d/file-id/view?usp=sharing"},
+                    }),
+                    "application/json",
+                )
+
+        self.assertEqual(rejected["status"], 422)
+        self.assertIn("Google Drive Picker", rejected["body"]["errors"][0]["detail"])
+
     def test_google_drive_scan_requires_per_scan_access_token(self) -> None:
         with TemporaryDirectory() as directory:
             db_path = Path(directory) / "datasentinel.sqlite3"

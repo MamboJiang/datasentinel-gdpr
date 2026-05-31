@@ -78,7 +78,7 @@
 | SRCIN-001 | Call `GET /api/integrations/google-drive/picker-config` with a valid first-party session cookie | The response reports `configured`, `clientId`, `apiKey`, `appId`, scopes, and missing browser setup fields without returning client secrets or provider tokens. |
 | SRCIN-002 | Register a direct HTTPS file link | The source is created as `remote_file_link` with `config.url` and can become scan-ready when the URL passes policy checks. |
 | SRCIN-003 | Scan a direct HTTPS text file with detectable personal-data patterns | The scan produces findings with redacted evidence and no raw source body or unredacted personal data in public payloads. |
-| SRCIN-004 | Register a non-HTTPS, credential-bearing, private-address, over-limit, or unsupported direct file link | The backend rejects the connection or scan before creating workflow output. |
+| SRCIN-004 | Register a non-HTTPS, credential-bearing, Google Drive share-page, private-address, over-limit, or unsupported direct file link | The backend rejects the connection or scan before creating workflow output. |
 | SRCIN-005 | Load an authenticated empty prelaunch project with no findings, then register a source | The frontend treats the API as available and does not request a blank finding detail before source registration. |
 | SRCIN-006 | Select Google Drive files through Picker | The source stores selected item metadata and keeps the access token out of persisted source state. |
 | SRCIN-007 | Select a Google Drive folder through Picker | The scan enumerates descendant files up to the prelaunch limit and exports supported Google Workspace documents to text-like content. |
