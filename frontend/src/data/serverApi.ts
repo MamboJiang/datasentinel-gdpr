@@ -87,10 +87,15 @@ export async function loadServerData(fallback: MockData): Promise<MockData> {
     requestEnvelope<PermissionBoundary>('/users/me/permissions'),
   ])
   const primaryFindingId = findingsEnvelope.data[0]?.findingId ?? fallback.findingDetail.findingId
-  const [findingEnvelope, reviewSupportEnvelope] = await Promise.all([
-    requestEnvelope<Finding>(`/findings/${primaryFindingId}`),
-    requestEnvelope<ReviewSupport>(`/findings/${primaryFindingId}/review-support`),
-  ])
+  const [findingEnvelope, reviewSupportEnvelope] = primaryFindingId
+    ? await Promise.all([
+        requestEnvelope<Finding>(`/findings/${primaryFindingId}`),
+        requestEnvelope<ReviewSupport>(`/findings/${primaryFindingId}/review-support`),
+      ])
+    : [
+        { data: fallback.findingDetail, meta: findingsEnvelope.meta },
+        { data: fallback.reviewSupport, meta: findingsEnvelope.meta },
+      ]
 
   return {
     ...fallback,
@@ -98,10 +103,12 @@ export async function loadServerData(fallback: MockData): Promise<MockData> {
     scan: scanEnvelope.data,
     findings: findingsEnvelope.data,
     findingDetail: findingEnvelope.data,
-    findingDetails: {
-      ...fallback.findingDetails,
-      [findingEnvelope.data.findingId]: findingEnvelope.data,
-    },
+    findingDetails: findingEnvelope.data.findingId
+      ? {
+          ...fallback.findingDetails,
+          [findingEnvelope.data.findingId]: findingEnvelope.data,
+        }
+      : fallback.findingDetails,
     auditEvents: auditEventsEnvelope.data,
     metrics: metricsEnvelope.data,
     evaluation: evaluationEnvelope.data,

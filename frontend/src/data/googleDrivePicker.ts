@@ -23,6 +23,7 @@ type DocsViewLike = {
   setEnableDrives: (enabled: boolean) => DocsViewLike
   setIncludeFolders: (included: boolean) => DocsViewLike
   setMode: (mode: string) => DocsViewLike
+  setParent: (parentId: string) => DocsViewLike
   setSelectFolderEnabled: (enabled: boolean) => DocsViewLike
 }
 
@@ -54,7 +55,7 @@ type GoogleLike = {
     Feature: { MULTISELECT_ENABLED: string }
     PickerBuilder: new () => PickerBuilderLike
     Response: { ACTION: string, DOCUMENTS: string }
-    ViewId: { DOCS: string }
+    ViewId: { DOCS: string, FOLDERS: string }
   }
 }
 
@@ -140,10 +141,10 @@ function showPicker(config: GoogleDrivePickerConfig, mode: GoogleDrivePickerMode
   const appId = config.appId
 
   return new Promise((resolve, reject) => {
-    const docsView = new picker.DocsView(picker.ViewId.DOCS)
-      .setEnableDrives(true)
+    const docsView = new picker.DocsView(mode === 'folders' ? picker.ViewId.FOLDERS : picker.ViewId.DOCS)
       .setIncludeFolders(mode === 'folders')
       .setMode(picker.DocsViewMode.LIST)
+      .setParent('root')
       .setSelectFolderEnabled(mode === 'folders')
 
     const builder = new picker.PickerBuilder()
