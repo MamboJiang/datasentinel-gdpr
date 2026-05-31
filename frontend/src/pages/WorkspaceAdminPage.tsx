@@ -1,9 +1,9 @@
-import { AlertCircle, ArrowRight, BarChart3, Check, Copy, Link2, Pencil, Plus, Save, ShieldCheck, Trash2, UsersRound, X } from 'lucide-react'
+import { AlertCircle, ArrowRight, BarChart3, Check, Copy, KeyRound, Link2, Pencil, Plus, Save, ShieldCheck, Trash2, UsersRound, X } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useData } from '../data/useData'
-import type { WorkspaceChartDatum, WorkspaceGroup, WorkspaceInvitation, WorkspacePermissionOption } from '../types'
+import type { WorkspaceChartDatum, WorkspaceGroup, WorkspaceInvitation, WorkspaceMembership, WorkspacePermissionOption } from '../types'
 import './WorkspaceAdminPage.css'
 
 type GroupDraft = {
@@ -16,8 +16,10 @@ export function WorkspaceAdminPage() {
   const {
     createWorkspaceGroup,
     createWorkspaceInvitation,
+    deleteWorkspace,
     deleteWorkspaceGroup,
     metrics,
+    transferWorkspaceOwner,
     updateWorkspaceGroup,
     workspaceAdmin,
     workspaceDirectory,
@@ -30,21 +32,32 @@ export function WorkspaceAdminPage() {
   const [newGroupDescription, setNewGroupDescription] = useState('')
   const [newGroupName, setNewGroupName] = useState('')
   const [newGroupPermissions, setNewGroupPermissions] = useState<string[]>(['view_assigned_findings'])
+  const [ownerTransferEmail, setOwnerTransferEmail] = useState('')
+  const [deleteConfirmation, setDeleteConfirmation] = useState('')
   const [selectedGroups, setSelectedGroups] = useState<string[]>(() => {
     const defaultGroup = workspaceAdmin.groups.find((group) => group.groupId === 'privacy_reviewer') ?? workspaceAdmin.groups[0]
     return defaultGroup ? [defaultGroup.groupId] : []
   })
   const canInvite = workspaceAdmin.permissionBoundary.allowedActions.includes('invite_workspace_members')
   const canManageGroups = workspaceAdmin.permissionBoundary.allowedActions.includes('manage_workspace_groups')
+  const canManageOwnership = workspaceAdmin.permissionBoundary.allowedActions.includes('manage_workspace_ownership')
   const workspace = workspaceAdmin.workspace
   const memberCount = workspace?.memberCount ?? workspaceAdmin.members.length
   const openBacklog = metrics.openReviewBacklog ?? 0
   const highRisk = metrics.highRiskFindings ?? 0
   const defaultGroup = workspaceAdmin.groups.find((group) => group.groupId === 'privacy_reviewer') ?? workspaceAdmin.groups[0]
-  const availableGroupIds = new Set(workspaceAdmin.groups.map((group) => group.groupId))
+  const invitableGroups = workspaceAdmin.groups.filter((group) => group.groupId !== 'workspace_owner')
+  const availableGroupIds = new Set(invitableGroups.map((group) => group.groupId))
   const selectedGroupIds = (selectedGroups.length > 0 ? selectedGroups : (defaultGroup ? [defaultGroup.groupId] : []))
     .filter((groupId) => availableGroupIds.has(groupId))
   const availablePermissions = workspaceAdmin.availablePermissions
+  const currentAccountId = workspaceAdmin.currentMembership?.accountId
+  const ownerTransferTargets = workspaceAdmin.members.filter((member) => member.status === 'active' && member.accountId !== currentAccountId)
+  const ownerTransferEmailValue = ownerTransferEmail.trim().toLowerCase()
+  const ownerTransferTarget = ownerTransferEmailValue
+    ? ownerTransferTargets.find((member) => member.email?.trim().toLowerCase() === ownerTransferEmailValue)
+    : undefined
+  const ownerTransferEmailMismatch = Boolean(ownerTransferEmail.trim()) && !ownerTransferTarget
 
   function toggleGroup(groupId: string) {
     setSelectedGroups((current) => {
@@ -192,6 +205,48 @@ export function WorkspaceAdminPage() {
     setCopiedInvitationId(invitation.invitationId)
   }
 
+  async function submitOwnerTransfer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!workspace || !ownerTransferTarget) {
+      return
+    }
+
+    if (!window.confirm(`Transfer Workspace owner to ${memberLabel(ownerTransferTarget)}?`)) {
+      return
+    }
+
+    const transferred = await transferWorkspaceOwner({
+      workspaceId: workspace.workspaceId,
+      membershipId: ownerTransferTarget.membershipId,
+    })
+
+    if (transferred) {
+      setOwnerTransferEmail('')
+    }
+  }
+
+  async function submitWorkspaceDelete(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!workspace || deleteConfirmation !== workspace.name) {
+      return
+    }
+
+    if (!window.confirm(`Delete Workspace "${workspace.name}"? This removes Workspace memberships and pending invites, but does not delete external source files.`)) {
+      return
+    }
+
+    const deleted = await deleteWorkspace({
+      workspaceId: workspace.workspaceId,
+      workspaceName: deleteConfirmation,
+    })
+
+    if (deleted) {
+      setDeleteConfirmation('')
+    }
+  }
+
   if (!workspaceDirectory.currentWorkspaceId && workspaceDirectory.workspaceRequired) {
     return (
       <section className="workspace-admin-empty panel">
@@ -247,7 +302,7 @@ export function WorkspaceAdminPage() {
             <fieldset disabled={!canInvite}>
               <legend>Groups granted by this link</legend>
               <div className="workspace-group-picks">
-                {workspaceAdmin.groups.map((group) => (
+                {invitableGroups.map((group) => (
                   <label key={group.groupId}>
                     <input
                       checked={selectedGroupIds.includes(group.groupId)}
@@ -393,7 +448,9 @@ export function WorkspaceAdminPage() {
             {workspaceAdmin.groups.map((group) => {
               const draft = draftForGroup(group)
               const editing = editingGroupId === group.groupId
-              const lockedAdminDelete = group.groupId === 'workspace_admin'
+              const ownerGroup = group.groupId === 'workspace_owner'
+              const lockedGroupDelete = ownerGroup || group.groupId === 'workspace_admin'
+              const groupEditingDisabled = !canManageGroups || (ownerGroup && !canManageOwnership)
               return (
                 <article className={`workspace-group-row ${editing ? 'workspace-group-row-open' : ''}`} key={group.groupId}>
                   <div className="workspace-group-summary">
@@ -410,7 +467,7 @@ export function WorkspaceAdminPage() {
                       aria-expanded={editing}
                       aria-label={`Edit ${group.name}`}
                       className="workspace-group-icon-button"
-                      disabled={!canManageGroups}
+                      disabled={groupEditingDisabled}
                       onClick={() => setEditingGroupId(editing ? null : group.groupId)}
                       type="button"
                     >
@@ -423,7 +480,7 @@ export function WorkspaceAdminPage() {
                   </div>
                   {editing ? (
                     <form className="workspace-group-editor" id={`workspace-group-editor-${group.groupId}`} onSubmit={(event) => void submitGroupUpdate(event, group)}>
-                      <fieldset disabled={!canManageGroups}>
+                      <fieldset disabled={groupEditingDisabled}>
                         <div className="workspace-group-editor-top">
                           <label>
                             <span>Group name</span>
@@ -443,19 +500,19 @@ export function WorkspaceAdminPage() {
                           />
                         </label>
                         <PermissionGrid
-                          disabled={!canManageGroups}
+                          disabled={groupEditingDisabled}
                           onToggle={(permission) => toggleDraftPermission(group, permission)}
                           options={availablePermissions}
                           selected={draft.permissions}
                         />
                       </fieldset>
                       <div className="workspace-group-actions">
-                        <button disabled={!canManageGroups || !draft.name.trim()} type="submit">
+                        <button disabled={groupEditingDisabled || !draft.name.trim()} type="submit">
                           <Save aria-hidden="true" size={15} />
                           Save
                         </button>
                         <button
-                          disabled={!canManageGroups || lockedAdminDelete}
+                          disabled={groupEditingDisabled || lockedGroupDelete}
                           onClick={() => void removeGroup(group)}
                           type="button"
                         >
@@ -484,11 +541,77 @@ export function WorkspaceAdminPage() {
           {workspaceAdmin.invitations.map((invitation) => (
             <article className="workspace-invitation-row" key={invitation.invitationId}>
               <a href={invitationLink(invitation)}>{invitationLink(invitation)}</a>
-              <span>{invitation.status}</span>
+              <span className="workspace-invitation-status">{invitation.status}</span>
               <small>{groupListLabel(invitation.groupIds, workspaceAdmin.groups)}</small>
               <time dateTime={invitation.expiresAt}>Expires {formatDate(invitation.expiresAt)}</time>
+              {invitation.status === 'pending' ? (
+                <button onClick={() => void copyInvitationLink(invitation)} type="button">
+                  {copiedInvitationId === invitation.invitationId ? <Check aria-hidden="true" size={15} /> : <Copy aria-hidden="true" size={15} />}
+                  {copiedInvitationId === invitation.invitationId ? 'Copied' : 'Copy'}
+                </button>
+              ) : <span className="workspace-invitation-placeholder" aria-hidden="true" />}
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="panel workspace-danger-zone" aria-labelledby="workspace-danger-title">
+        <div className="workspace-section-heading">
+          <Trash2 aria-hidden="true" size={18} />
+          <div>
+            <h3 id="workspace-danger-title">Danger Zone</h3>
+            <p>Owner-only controls for transferring highest authority or deleting this Workspace.</p>
+          </div>
+        </div>
+        <div className="workspace-danger-grid">
+          <form className="workspace-danger-card" onSubmit={(event) => void submitOwnerTransfer(event)}>
+            <span>
+              <KeyRound aria-hidden="true" size={17} />
+              <strong>Transfer owner</strong>
+            </span>
+            <p>Move the Owner role to another active member. The target keeps or receives Admin as well.</p>
+            <label>
+              <span>New owner email</span>
+              <input
+                disabled={!canManageOwnership || ownerTransferTargets.length === 0}
+                onChange={(event) => setOwnerTransferEmail(event.target.value)}
+                placeholder="member@example.com"
+                type="email"
+                value={ownerTransferEmail}
+              />
+            </label>
+            {ownerTransferTarget ? (
+              <small className="workspace-danger-match">Matched {memberLabel(ownerTransferTarget)}</small>
+            ) : null}
+            {ownerTransferEmailMismatch ? (
+              <small className="workspace-danger-warning">No active Workspace member matches this email.</small>
+            ) : null}
+            <button disabled={!canManageOwnership || !ownerTransferTarget} type="submit">
+              <KeyRound aria-hidden="true" size={15} />
+              Transfer owner
+            </button>
+          </form>
+
+          <form className="workspace-danger-card workspace-danger-delete" onSubmit={(event) => void submitWorkspaceDelete(event)}>
+            <span>
+              <Trash2 aria-hidden="true" size={17} />
+              <strong>Delete Workspace</strong>
+            </span>
+            <p>Delete the DataSentinel Workspace record, revoke pending invites, and remove Workspace memberships. This does not delete external source files.</p>
+            <label>
+              <span>Type {workspace.name} to confirm</span>
+              <input
+                disabled={!canManageOwnership}
+                onChange={(event) => setDeleteConfirmation(event.target.value)}
+                placeholder={workspace.name}
+                value={deleteConfirmation}
+              />
+            </label>
+            <button disabled={!canManageOwnership || deleteConfirmation !== workspace.name} type="submit">
+              <Trash2 aria-hidden="true" size={15} />
+              Delete Workspace
+            </button>
+          </form>
         </div>
       </section>
     </div>
@@ -602,6 +725,10 @@ function groupLabel(groupId: string, groups: WorkspaceGroup[]) {
 
 function groupListLabel(groupIds: string[], groups: WorkspaceGroup[]) {
   return groupIds.length > 0 ? groupIds.map((groupId) => groupLabel(groupId, groups)).join(', ') : 'No groups'
+}
+
+function memberLabel(member: WorkspaceMembership) {
+  return member.email ? `${member.displayName} (${member.email})` : member.displayName
 }
 
 function permissionLabel(permission: string, options: WorkspacePermissionOption[]) {

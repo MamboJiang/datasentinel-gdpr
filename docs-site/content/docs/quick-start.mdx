@@ -1,0 +1,93 @@
+---
+title: Quick Start
+description: Complete the first accountable discovery workflow from sign-in through audit and evaluation.
+---
+
+Use this path when you want to see DataSentinel working end to end.
+
+## 1. Open the console
+
+Open the product homepage and choose **Open dashboard**. If sign-in is required, the console shows a sign-in gate before it shows operational data.
+
+If Google or GitHub sign-in is not configured for the current deployment, the sign-in gate shows provider setup status instead of exposing provider secrets or pretending that authentication succeeded.
+
+## 2. Choose a Workspace
+
+A Workspace is the boundary for members, groups, sources, findings, audit events, metrics, and evaluation state.
+
+If you have no Workspace membership, use one of these options:
+
+- Accept an invitation link from a Workspace administrator.
+- Create a new Workspace if the deployment exposes that action to your account.
+
+After a Workspace is selected, the sidebar shows only destinations allowed by your Workspace permission boundary.
+
+## 3. Register or select a source
+
+Open **Sources**. Depending on deployment setup, you may see:
+
+- The controlled organizer sample source.
+- A direct HTTPS file-link registration form.
+- A Google Drive Picker option for selected files or folders.
+- Host-allowed local source options in local preview environments.
+
+Only scan-ready sources can start a full scan. A not-ready source should show a visible reason or receive a neutral rejection if you try to scan it.
+
+## 4. Start a full scan
+
+Start the scan from either:
+
+- **Dashboard**, which targets the default ready sample source when available.
+- **Sources**, which targets the selected source row.
+
+The scan must target a specific source. DataSentinel records scan-start and scan-completion activity as audit-visible workflow events.
+
+## 5. Follow progress on the Dashboard
+
+The Dashboard groups scan, review, and pipeline status. Watch for:
+
+- Scanned files and scanned volume.
+- Flagged files and high-risk counts.
+- Review backlog.
+- Owner routing results.
+- Pipeline stages such as inventory, extraction, signal detection, context/risk judgment, owner assignment, finding assembly, review support, audit recording, metrics, and evaluation.
+
+Partial or recoverable warning states are expected for unsupported formats, OCR-deferred files, or unavailable integrations. They should be visible instead of silently hidden.
+
+## 6. Review findings
+
+Open **Findings** and choose a row. The finding detail page should show:
+
+- Redacted evidence only.
+- Detected signals and location context.
+- Risk and retention context.
+- Assigned owner or escalation path.
+- Allowed and denied actions.
+- Audit timeline.
+
+Use the file review surface when available to focus on the relevant redacted evidence location.
+
+## 7. Record a human decision
+
+The review dialog shows decisions that are available to your current permission boundary. Depending on the finding and permissions, these can include:
+
+- Delete candidate.
+- Keep with reason.
+- Correct false positive.
+- Reassign owner.
+- Escalate.
+
+Each accepted decision needs the required reason and checklist acknowledgement. A keep-with-reason decision also needs a retention review date when the policy pack requires it.
+
+## 8. Inspect audit and evaluation
+
+Open **Audit Trail** to confirm the scan and review events. Open **Evaluation** to inspect quality and resource signals such as precision, recall, F1, reproducibility, throughput, model-call count, estimated paid-service cost, and rules traceability.
+
+## Completion checklist
+
+- A source was selected or registered.
+- A full scan started against an explicit source.
+- Findings were visible only with redacted evidence.
+- A human decision was recorded with a reason.
+- The audit trail showed the workflow event.
+- Evaluation metrics stayed visible and did not imply legal compliance.

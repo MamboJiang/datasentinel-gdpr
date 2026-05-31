@@ -1,0 +1,59 @@
+---
+title: Accounts and Workspaces
+description: Understand sign-in, Workspace membership, groups, and permission boundaries before using privileged actions.
+---
+
+DataSentinel separates identity from authorization.
+
+Sign-in identifies the browser user. Workspace membership and Workspace groups decide what the user can see or do inside the product.
+
+## Sign-in
+
+Prelaunch deployments can support backend-owned Google or GitHub sign-in. Provider login starts from the backend, and the frontend receives only safe session information such as display name, provider, and local user ID.
+
+Provider access tokens, refresh tokens, client secrets, state values, and PKCE verifier details are not shown in the console.
+
+## Workspace membership
+
+A newly signed-in account may have no Workspace membership. In that state, the console should show an invitation-required or Workspace creation path instead of seeded operational data.
+
+When you select a Workspace, DataSentinel scopes these records to that Workspace:
+
+- Sources.
+- Scan state.
+- Findings.
+- Audit events.
+- Metrics.
+- Evaluation state.
+- Workspace members and groups.
+
+Switching to another Workspace does not copy operational data from the previous Workspace.
+
+## Workspace groups
+
+Workspace groups carry permissions for administration, privacy review, data stewardship, and audit read-only access. A Workspace administrator can manage members, groups, and invitations when their permission boundary allows those actions.
+
+The default administrator group cannot be removed or stripped of the minimum permissions needed to prevent Workspace lockout.
+
+## Permission boundaries
+
+Before you act, DataSentinel should expose:
+
+- Allowed actions.
+- Denied actions.
+- Denial reasons.
+- Visible scopes.
+- Required reason fields.
+- Transfer or escalation options when relevant.
+
+Denied actions are part of the product contract. A visible denial is expected when an action is outside your role, outside the Workspace, unsafe for the prototype, or not implemented in P0.
+
+## Invitations
+
+Workspace administrators can create invitation links with explicit group assignment. A signed-in user can accept a valid pending invitation once.
+
+Expired, revoked, duplicate, or already-member invitation attempts should not create membership or privilege changes.
+
+## Account menu
+
+The account menu exposes local utility surfaces such as account settings, language preference, feedback, homepage, changelog, help, docs, platform status, prototype plan, and session boundary. These surfaces do not add production authentication, billing, support, monitoring, tenant, translation, or feedback-service integrations.

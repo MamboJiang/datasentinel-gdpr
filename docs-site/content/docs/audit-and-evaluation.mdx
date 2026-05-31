@@ -1,0 +1,60 @@
+---
+title: Audit and Evaluation
+description: Use audit events and evaluation metrics to verify accountability, quality, reproducibility, and resource intensity.
+---
+
+Audit and evaluation are first-class product surfaces. They show what happened and how well the workflow performed.
+
+## Audit Trail
+
+The Audit Trail records workflow events such as:
+
+- Scan start.
+- Scan completion.
+- Owner assignment.
+- Finding assembly.
+- Review support preparation.
+- Human review decisions.
+- Source registration or source-registration removal when supported.
+
+Events should show structured context such as action, outcome, actor, object type, object ID, timestamp, previous state, resulting state, evidence references, policy-pack version, permission context, and review-support fingerprint when available.
+
+Human-entered text should be sanitized before it appears in audit payloads or UI surfaces.
+
+## Finding timeline
+
+Each finding detail page can show a scoped audit timeline. Use it to understand:
+
+- When the finding was assembled.
+- Which scan produced it.
+- How owner assignment happened.
+- Which review decisions were recorded.
+- Whether a denial or simulated deletion boundary was recorded.
+
+## Evaluation metrics
+
+Evaluation helps the team and reviewers inspect scan quality. The surface can show:
+
+- Precision.
+- Recall.
+- F1.
+- Reproducibility.
+- Throughput.
+- Resource intensity.
+- Model-call count.
+- Estimated paid-service cost.
+- Rules or pipeline traceability.
+
+Evaluation metrics are product evidence, not a compliance certificate.
+
+## Resource intensity
+
+For deterministic P0 workflows, model calls and estimated paid-service cost should remain zero. Optional AI assistance, when configured, must be redacted-evidence-only, budget-guarded, and fail closed when safety checks cannot pass.
+
+## What auditors should look for
+
+- Every accepted review decision has an actor, reason, timestamp, and resulting status.
+- Scan and review events refer to the correct source and finding IDs.
+- Denied actions are visible rather than hidden.
+- Evaluation explains quality and resource usage without claiming full GDPR compliance.
+- Raw source content and unredacted personal data are not present in public payloads.

@@ -8,9 +8,13 @@ Current remote layout:
 
 - Static releases: `/srv/datasentinel/frontend/releases/<timestamp>`
 - Active release symlink: `/srv/datasentinel/frontend/current`
+- User docs releases: `/srv/datasentinel/docs/releases/<timestamp>`
+- Active user docs symlink: `/srv/datasentinel/docs/current`
+- User docs service: `datasentinel-docs.service`, running `npm run start -- --hostname 127.0.0.1 --port 3300`
 - API command: `python3 -m backend.datasentinel.source_server --host 127.0.0.1 --port 8000 --db-path /srv/datasentinel/data/datasentinel.sqlite3`
 - Local SQLite state: `/srv/datasentinel/data/datasentinel.sqlite3`
 - API route: Caddy proxies `/api/*` to `127.0.0.1:8000`
+- User docs route: Caddy proxies `/docs*` and `/_next/*` to `127.0.0.1:3300`
 - Caddy config: `/etc/caddy/Caddyfile`
 - Current validated public route: `https://founder-force.uk/`
 - Host-IP fallback route: `http://52.159.109.133/`
@@ -26,6 +30,21 @@ npm run build
 ```
 
 Upload `frontend/dist/` to a new timestamped release directory under `/srv/datasentinel/frontend/releases/`, then point `/srv/datasentinel/frontend/current` to that release.
+
+## Build and Deploy User Docs
+
+Run from `docs-site/`:
+
+```bash
+npm ci
+npm run typecheck
+npm run build
+npm audit --omit=dev
+```
+
+Upload the docs-site source, lockfile, `.next/`, and production dependencies to a new timestamped release directory under `/srv/datasentinel/docs/releases/`, then point `/srv/datasentinel/docs/current` to that release. The docs app runs as a local Next service on `127.0.0.1:3300`; Caddy exposes it at `https://founder-force.uk/docs`.
+
+The docs search endpoint is scoped to `/docs/api/search` so it does not conflict with the product API under `/api/*`.
 
 ## Run API Server
 
@@ -136,6 +155,14 @@ founder-force.uk {
 			reverse_proxy 127.0.0.1:8000
 		}
 
+		handle /docs* {
+			reverse_proxy 127.0.0.1:3300
+		}
+
+		handle /_next/* {
+			reverse_proxy 127.0.0.1:3300
+		}
+
 		handle {
 			root * /srv/datasentinel/frontend/current
 			try_files {path} /index.html
@@ -148,6 +175,14 @@ founder-force.uk {
 	route {
 		handle /api/* {
 			reverse_proxy 127.0.0.1:8000
+		}
+
+		handle /docs* {
+			reverse_proxy 127.0.0.1:3300
+		}
+
+		handle /_next/* {
+			reverse_proxy 127.0.0.1:3300
 		}
 
 		handle_path /hermes-rich/* {
@@ -179,6 +214,8 @@ For shared preview work, validate the deployed server route directly. Local Vite
 ```bash
 curl -I http://127.0.0.1/
 curl -I http://127.0.0.1/dashboard
+curl -I http://127.0.0.1/docs
+curl -s http://127.0.0.1/docs | grep "DataSentinel User Guide"
 curl -s http://127.0.0.1/api/health
 curl -s http://127.0.0.1/api/health | grep openrouter
 curl -s --cookie "datasentinel_session=<session id>" http://127.0.0.1/api/integrations/google-drive/picker-config
@@ -186,6 +223,8 @@ curl -s http://127.0.0.1/api/sources | grep source_001
 python3 -m backend.datasentinel.db_tool status --db-path /srv/datasentinel/data/datasentinel.sqlite3
 curl -I https://founder-force.uk/
 curl -I https://founder-force.uk/dashboard
+curl -I https://founder-force.uk/docs
+curl -s https://founder-force.uk/docs | grep "DataSentinel User Guide"
 curl -s https://founder-force.uk/api/health
 curl -s --cookie "datasentinel_session=<session id>" https://founder-force.uk/api/integrations/google-drive/picker-config
 curl -s http://127.0.0.1/ | grep DataSentinel

@@ -23,6 +23,20 @@
 | CONTRACT-007 | Review governance contract | Governance config, active policy pack, permissions, and review support endpoints are documented and mocked. |
 | CONTRACT-008 | Review organizer sample source | The organizer sample repository is represented as a default demo source without vendoring PDFs. |
 
+## User Documentation Checks
+
+| ID | Scenario | Expected Result |
+| --- | --- | --- |
+| USERDOC-001 | Install the Fumadocs docs app | `npm install` succeeds from `docs-site` and creates only docs-site dependency artifacts. |
+| USERDOC-002 | Build the Fumadocs docs app | `npm run build` succeeds from `docs-site`. |
+| USERDOC-003 | Review docs navigation | The sidebar contains quick start, accounts and Workspaces, sources, dashboard and scans, findings and review, audit and evaluation, governance, safety boundaries, and FAQ pages. |
+| USERDOC-004 | Review user-facing workflow coverage | The docs explain source registration, full scans, findings review, human decisions, audit, evaluation, governance, Workspace scoping, and permission boundaries in user language. |
+| USERDOC-005 | Review safety copy | The docs state no legal advice, no full GDPR compliance claim, deletion simulated in P0, no raw-content exposure, and no provider-token persistence. |
+| USERDOC-006 | Review scope discipline | The docs do not invent API fields, endpoints, production Microsoft Graph access, tenant integrations, real deletion behavior, legal conclusions, or hidden permission powers. |
+| USERDOC-007 | Request `https://founder-force.uk/docs` | The response serves the Fumadocs user guide under the existing domain prefix. |
+| USERDOC-008 | Open the console account menu and click Docs | The browser performs a document navigation to `/docs` and renders the deployed Fumadocs guide. |
+| USERDOC-009 | Request `https://founder-force.uk/docs/api/search` | The response comes from the docs search route, while `https://founder-force.uk/api/health` still comes from the product API. |
+
 ## Backend Planning Checks
 
 | ID | Scenario | Expected Result |
@@ -68,7 +82,10 @@
 | ID | Scenario | Expected Result |
 | --- | --- | --- |
 | WORKSPACE-001 | Call `GET /api/workspaces` as a newly created account with no membership | The response has no current Workspace, no Workspace list, and `workspaceRequired = true`. |
-| WORKSPACE-001A | Call `POST /api/workspaces` as a signed-in account | The response includes the new Workspace and the creator becomes an active `workspace_admin` member. |
+| WORKSPACE-001A | Call `POST /api/workspaces` as a signed-in account | The response includes the new Workspace and the creator becomes an active `workspace_owner` and `workspace_admin` member. |
+| WORKSPACE-001B | Create two Workspaces, register a Source in the first, then switch to the second | The second Workspace lists no Source or Finding state copied from the first Workspace. |
+| WORKSPACE-001C | Call `POST /api/workspaces/current` for a Workspace where the account is a member | The response updates `currentWorkspaceId`, and subsequent operational API reads use the selected Workspace scope. |
+| WORKSPACE-001D | Call `POST /api/workspaces/current` for an unknown or non-member Workspace | The server returns problem details and leaves the previous Workspace selection unchanged. |
 | WORKSPACE-002 | Call `GET /api/workspaces/current/admin` as a Workspace admin | The response includes Workspace, current membership, members, groups, permission catalog, invitations, permission boundary, and chart data. |
 | WORKSPACE-003 | Call `GET /api/workspaces/current/admin` as a non-admin or Workspace-less account | The response exposes denied admin actions and no mutation capability. |
 | WORKSPACE-004 | Generate an invite link as a Workspace admin | The server returns a pending invitation with invite path, invited groups, inviter, expiry, and no provider secrets. |
@@ -77,13 +94,27 @@
 | WORKSPACE-007 | Accept an invitation twice, after expiry, after revocation, or as an existing member | The server returns problem details and does not create duplicate membership. |
 | WORKSPACE-008 | Render the Workspace menu | The menu shows current Workspace for members and pending/no-Workspace state for accounts without membership. |
 | WORKSPACE-008A | Click the Workspace menu create action | A Workspace creation dialog opens with name, description, creator-role, and default-group settings before creation. |
+| WORKSPACE-008B | Click a non-current Workspace in the Workspace menu | The menu switches current Workspace and reloads Workspace-scoped operational state. |
+| WORKSPACE-008C | Render the sidebar as a non-admin Workspace member | Links requiring denied Workspace actions are hidden, and expandable links show a right-side chevron. |
 | WORKSPACE-009 | Render `/workspace/admin` | Admin charts render member/group/invitation/review metrics without a charting dependency or legal-compliance claim. |
 | WORKSPACE-010 | Create a Workspace group as an admin | The server returns the new group with a generated ID, visible name, description, explicit permissions, and zero initial members. |
 | WORKSPACE-011 | Rename or re-permission a Workspace group as an admin | The group keeps its ID and permission boundaries use the updated permissions. |
 | WORKSPACE-012 | Delete a non-admin Workspace group | The group disappears from admin summary, members lose that group reference, and pending invite links with no remaining groups are revoked. |
 | WORKSPACE-013 | Render `/workspace/admin` group controls | The new-group form and per-group permission editors are collapsed by default; only a new-group button and compact group cards are visible until the admin opens a form or card edit icon. |
 | WORKSPACE-014 | Open `/workspace/admin/members` from sidebar or Admin Members panel | The Members page lists all Workspace members and supports search, group filtering, status filtering, grouping, and sorting by name, primary group, status, joined date, and last activity. |
-| WORKSPACE-013 | Delete `workspace_admin` or remove its required admin-management permissions | The server returns problem details and no lockout-causing change is persisted. |
+| WORKSPACE-015 | Update a member's groups as an admin with `manage_workspace_members` | The member's permission boundary changes to the selected valid groups. |
+| WORKSPACE-016 | Remove a Workspace member as an admin with `manage_workspace_members` | The member is no longer active in admin summary and their selected Workspace is cleared when needed. |
+| WORKSPACE-017 | Update or remove members as a non-admin | The server returns problem details and no membership change is persisted. |
+| WORKSPACE-018 | Remove self or remove/demote the last active `workspace_admin` member | The server returns problem details and no lockout-causing change is persisted. |
+| WORKSPACE-019 | Delete `workspace_admin` or remove its required admin-management permissions | The server returns problem details and no lockout-causing change is persisted. |
+| WORKSPACE-020 | Generate a pending invite and render the Invitations list | Pending invitations show a copy action; accepted, expired, or revoked invitations do not expose a pending-copy control. |
+| WORKSPACE-021 | Create an invitation that includes `workspace_owner` | The server returns problem details and no invitation grants Owner authority. |
+| WORKSPACE-022 | Type another active member's exact email in the Owner transfer control | The transfer button is disabled while the input is empty or unmatched, becomes enabled only for a matching active member email, and requires a second confirmation before submission. |
+| WORKSPACE-022A | Transfer owner authority as a Workspace owner to another active member | The target member receives `workspace_owner` and `workspace_admin`, and the previous owner loses `workspace_owner`. |
+| WORKSPACE-023 | Transfer owner authority as a non-owner or to a removed/unknown member | The server returns problem details and no membership changes. |
+| WORKSPACE-024 | Delete `workspace_owner` or remove its required owner-management permissions | The server returns problem details and no lockout-causing change is persisted. |
+| WORKSPACE-025 | Delete a Workspace with a non-matching confirmation name | The server returns problem details and leaves the Workspace, memberships, and invitations unchanged. |
+| WORKSPACE-026 | Delete a Workspace with exact-name confirmation as a Workspace owner | A second confirmation is required, then the Workspace is removed from visible directories, active memberships are removed, pending invitations are revoked, affected current selections are cleared, and no external source files are deleted. |
 
 ## Local SQLite Persistence Checks
 

@@ -1,4 +1,4 @@
-import { ArrowLeft, Search, UsersRound } from 'lucide-react'
+import { ArrowLeft, Check, Pencil, Search, Trash2, UsersRound, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyState, PageHeader, StatusBadge } from '../components/ui'
@@ -10,15 +10,19 @@ type MemberSort = 'name' | 'group' | 'status' | 'joined' | 'activity'
 type MemberGrouping = 'none' | 'group' | 'status'
 
 export function WorkspaceMembersPage() {
-  const { workspaceAdmin, workspaceDirectory } = useData()
+  const { deleteWorkspaceMember, updateWorkspaceMember, workspaceAdmin, workspaceDirectory } = useData()
   const [query, setQuery] = useState('')
   const [groupFilter, setGroupFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [sortBy, setSortBy] = useState<MemberSort>('name')
   const [grouping, setGrouping] = useState<MemberGrouping>('none')
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null)
+  const [draftGroupIds, setDraftGroupIds] = useState<string[]>([])
   const groups = workspaceAdmin.groups
   const workspace = workspaceAdmin.workspace
   const canViewAdmin = workspaceAdmin.permissionBoundary.allowedActions.includes('view_workspace_admin')
+  const canManageMembers = workspaceAdmin.permissionBoundary.allowedActions.includes('manage_workspace_members')
+  const currentAccountId = workspaceAdmin.currentMembership?.accountId
 
   const filteredMembers = useMemo(() => {
     return workspaceAdmin.members
@@ -43,12 +47,55 @@ export function WorkspaceMembersPage() {
     return <EmptyState title="Members unavailable" description="Your current Workspace groups do not include administrator visibility." />
   }
 
+  function startMemberEdit(member: WorkspaceMembership) {
+    setEditingMemberId(member.membershipId)
+    setDraftGroupIds(member.groupIds)
+  }
+
+  function cancelMemberEdit() {
+    setEditingMemberId(null)
+    setDraftGroupIds([])
+  }
+
+  function toggleDraftGroup(groupId: string) {
+    setDraftGroupIds((current) => (
+      current.includes(groupId)
+        ? current.filter((item) => item !== groupId)
+        : [...current, groupId]
+    ))
+  }
+
+  async function saveMemberGroups(member: WorkspaceMembership) {
+    const updated = await updateWorkspaceMember({
+      groupIds: draftGroupIds,
+      membershipId: member.membershipId,
+      workspaceId: member.workspaceId,
+    })
+    if (updated) {
+      cancelMemberEdit()
+    }
+  }
+
+  async function removeMember(member: WorkspaceMembership) {
+    if (!window.confirm(`Remove ${member.displayName} from this Workspace?`)) {
+      return
+    }
+
+    const removed = await deleteWorkspaceMember({
+      membershipId: member.membershipId,
+      workspaceId: member.workspaceId,
+    })
+    if (removed && editingMemberId === member.membershipId) {
+      cancelMemberEdit()
+    }
+  }
+
   return (
     <div className="workspace-members-page">
       <PageHeader
         eyebrow="Workspace admin"
         title="Members"
-        description="Search, filter, group, and sort every member in this Workspace."
+        description={canManageMembers ? 'Search, filter, group, sort, and manage every member in this Workspace.' : 'Search, filter, group, and sort every member in this Workspace.'}
         actions={<Link className="button button-secondary" to="/workspace/admin"><ArrowLeft aria-hidden="true" size={16} /> Admin</Link>}
       />
 
@@ -111,7 +158,7 @@ export function WorkspaceMembersPage() {
                 </div>
               </div>
               <div className="workspace-member-table-wrap">
-                <table className="workspace-member-table">
+                <table className={`workspace-member-table${canManageMembers ? ' workspace-member-table-actions' : ''}`}>
                   <thead>
                     <tr>
                       <th>Member</th>
@@ -119,32 +166,77 @@ export function WorkspaceMembersPage() {
                       <th>Status</th>
                       <th>Joined</th>
                       <th>Last active</th>
+                      {canManageMembers ? <th>Actions</th> : null}
                     </tr>
                   </thead>
                   <tbody>
-                    {section.members.map((member) => (
-                      <tr key={member.membershipId}>
-                        <td>
-                          <div className="workspace-member-identity">
-                            <span className="workspace-member-avatar" aria-hidden="true">{initials(member.displayName)}</span>
-                            <span>
-                              <strong>{member.displayName}</strong>
-                              <small>{member.email ?? member.accountId}</small>
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <span className="workspace-role-stack">
-                            {member.groupIds.length > 0
-                              ? member.groupIds.map((groupId) => <small key={groupId}>{groupLabel(groupId, groups)}</small>)
-                              : <small>No groups</small>}
-                          </span>
-                        </td>
-                        <td><StatusBadge value={member.status} /></td>
-                        <td>{formatDate(member.joinedAt)}</td>
-                        <td>{formatDate(member.lastActiveAt)}</td>
-                      </tr>
-                    ))}
+                    {section.members.map((member) => {
+                      const editing = editingMemberId === member.membershipId
+                      const selfMember = member.accountId === currentAccountId
+                      const saveDisabled = draftGroupIds.length === 0 || sameGroups(draftGroupIds, member.groupIds)
+
+                      return (
+                        <tr key={member.membershipId}>
+                          <td>
+                            <div className="workspace-member-identity">
+                              <span className="workspace-member-avatar" aria-hidden="true">{initials(member.displayName)}</span>
+                              <span>
+                                <strong>{member.displayName}</strong>
+                                <small>{member.email ?? member.accountId}</small>
+                              </span>
+                            </div>
+                          </td>
+                          <td>
+                            {editing ? (
+                              <div className="workspace-member-group-editor" aria-label={`${member.displayName} groups`}>
+                                {groups.map((group) => (
+                                  <label key={group.groupId}>
+                                    <input
+                                      checked={draftGroupIds.includes(group.groupId)}
+                                      onChange={() => toggleDraftGroup(group.groupId)}
+                                      type="checkbox"
+                                    />
+                                    <span>{group.name}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="workspace-role-stack">
+                                {member.groupIds.length > 0
+                                  ? member.groupIds.map((groupId) => <small key={groupId}>{groupLabel(groupId, groups)}</small>)
+                                  : <small>No groups</small>}
+                              </span>
+                            )}
+                          </td>
+                          <td><StatusBadge value={member.status} /></td>
+                          <td>{formatDate(member.joinedAt)}</td>
+                          <td>{formatDate(member.lastActiveAt)}</td>
+                          {canManageMembers ? (
+                            <td>
+                              <div className="workspace-member-actions">
+                                {editing ? (
+                                  <>
+                                    <button aria-label={`Save groups for ${member.displayName}`} disabled={saveDisabled} onClick={() => { void saveMemberGroups(member) }} title="Save groups" type="button">
+                                      <Check aria-hidden="true" size={15} />
+                                    </button>
+                                    <button aria-label={`Cancel editing ${member.displayName}`} onClick={cancelMemberEdit} title="Cancel" type="button">
+                                      <X aria-hidden="true" size={15} />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button aria-label={`Edit groups for ${member.displayName}`} onClick={() => startMemberEdit(member)} title="Edit groups" type="button">
+                                    <Pencil aria-hidden="true" size={15} />
+                                  </button>
+                                )}
+                                <button aria-label={`Remove ${member.displayName}`} disabled={selfMember} onClick={() => { void removeMember(member) }} title={selfMember ? 'You cannot remove your own active membership' : 'Remove member'} type="button">
+                                  <Trash2 aria-hidden="true" size={15} />
+                                </button>
+                              </div>
+                            </td>
+                          ) : null}
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -202,6 +294,14 @@ function compareMembers(left: WorkspaceMembership, right: WorkspaceMembership, s
 
 function groupLabel(groupId: string, groups: WorkspaceGroup[]) {
   return groups.find((group) => group.groupId === groupId)?.name ?? groupId
+}
+
+function sameGroups(left: string[], right: string[]) {
+  if (left.length !== right.length) {
+    return false
+  }
+  const rightSet = new Set(right)
+  return left.every((item) => rightSet.has(item))
 }
 
 function initials(value: string) {

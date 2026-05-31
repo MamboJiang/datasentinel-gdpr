@@ -2,6 +2,7 @@ import {
   Activity,
   Bell,
   Check,
+  ChevronRight,
   ChevronsUpDown,
   Database,
   FileSearch,
@@ -38,6 +39,7 @@ type NavigationItem = {
   end?: boolean
   icon: LucideIcon
   label: string
+  requiredAny?: string[]
   to: string
 }
 
@@ -45,6 +47,7 @@ type NavigationChild = {
   end?: boolean
   icon?: LucideIcon
   label: string
+  requiredAny?: string[]
   to: string
 }
 
@@ -54,20 +57,21 @@ type PageTitleSegment = {
 }
 
 const navigation: NavigationItem[] = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true, requiredAny: ['view_workspace_metrics', 'view_workspace_admin', 'view_assigned_findings', 'view_owned_sources', 'view_workspace_audit', 'view_governance'] },
   {
     to: '/workspace/admin',
     label: 'Workspace admin',
     icon: ShieldCheck,
+    requiredAny: ['view_workspace_admin'],
     children: [
-      { to: '/workspace/admin/members', label: 'Members', icon: UsersRound },
+      { to: '/workspace/admin/members', label: 'Members', icon: UsersRound, requiredAny: ['view_workspace_admin'] },
     ],
   },
-  { to: '/sources', label: 'Sources', icon: Database },
-  { to: '/findings', label: 'Findings', icon: FileSearch },
-  { to: '/audit', label: 'Audit trail', icon: Activity },
-  { to: '/evaluation', label: 'Evaluation', icon: Gauge },
-  { to: '/governance', label: 'Governance', icon: Settings2 },
+  { to: '/sources', label: 'Sources', icon: Database, requiredAny: ['view_owned_sources', 'view_workspace_admin'] },
+  { to: '/findings', label: 'Findings', icon: FileSearch, requiredAny: ['view_assigned_findings', 'view_workspace_admin'] },
+  { to: '/audit', label: 'Audit trail', icon: Activity, requiredAny: ['view_workspace_audit', 'view_workspace_admin'] },
+  { to: '/evaluation', label: 'Evaluation', icon: Gauge, requiredAny: ['view_workspace_metrics', 'view_workspace_admin'] },
+  { to: '/governance', label: 'Governance', icon: Settings2, requiredAny: ['view_governance', 'view_workspace_admin'] },
 ]
 
 function getPageTitleSegments(pathname: string): PageTitleSegment[] {
@@ -106,6 +110,7 @@ export function AppShell() {
   const { t } = useI18n()
   const {
     acceptWorkspaceInvitation,
+    switchWorkspace,
     notifications,
     dismissNotification,
     clearNotifications,
@@ -126,7 +131,12 @@ export function AppShell() {
   const pageTitleSegments = getPageTitleSegments(location.pathname)
   const pageTitle = pageTitleSegments.map(({ label }) => t(label)).join(' / ')
   const visibleWorkspaces = workspaceDirectory.workspaces.filter(({ name }) => name.toLowerCase().includes(workspaceQuery.toLowerCase()))
+  const allowedWorkspaceActions = new Set(workspaceAdmin.permissionBoundary.allowedActions ?? [])
   const visibleNavigation = navigation.filter((item) => {
+    if (!canAccessNavigationItem(item, allowedWorkspaceActions)) {
+      return false
+    }
+
     const query = navQuery.toLowerCase()
     return t(item.label).toLowerCase().includes(query)
       || item.children?.some((child) => t(child.label).toLowerCase().includes(query))
@@ -143,6 +153,12 @@ export function AppShell() {
     ?? workspaceAdmin.workspace
   const workspaceInitials = workspaceInitialsFor(currentWorkspace?.name)
   const currentRoles = workspaceAdmin.currentMembership?.groupIds.join(', ') ?? 'Invitation required'
+  const routeNavigation = navigationEntryForPath(location.pathname)
+  const routeDenied = Boolean(
+    routeNavigation
+    && !isWorkspaceInviteRoute
+    && !canAccessNavigationEntry(routeNavigation, allowedWorkspaceActions),
+  )
 
   function closeWorkspaceSwitcher() {
     setWorkspaceOpen(false)
@@ -162,6 +178,13 @@ export function AppShell() {
     closeAccountMenu()
     closeNotifications()
     setWorkspaceCreateOpen(true)
+  }
+
+  async function selectWorkspace(workspaceId: string) {
+    const switched = await switchWorkspace(workspaceId)
+    if (switched) {
+      closeWorkspaceSwitcher()
+    }
   }
 
   useEffect(() => {
@@ -285,7 +308,9 @@ export function AppShell() {
                   <button
                     className={`workspace-option ${workspace.workspaceId === workspaceDirectory.currentWorkspaceId ? 'workspace-option-active' : ''}`}
                     key={workspace.workspaceId}
-                    onClick={closeWorkspaceSwitcher}
+                    onClick={() => {
+                      void selectWorkspace(workspace.workspaceId)
+                    }}
                     type="button"
                   >
                     <span className="workspace-option-avatar" aria-hidden="true">{workspaceInitialsFor(workspace.name)}</span>
@@ -344,7 +369,9 @@ export function AppShell() {
 
         <nav aria-label={t('Primary navigation')}>
           {visibleNavigation.map(({ to, label, icon: Icon, end, children }) => {
-            const childNavigation = (children ?? []).filter((child) => !navQuery || t(child.label).toLowerCase().includes(navQuery.toLowerCase()) || t(label).toLowerCase().includes(navQuery.toLowerCase()))
+            const childNavigation = (children ?? [])
+              .filter((child) => canAccessNavigationEntry(child, allowedWorkspaceActions))
+              .filter((child) => !navQuery || t(child.label).toLowerCase().includes(navQuery.toLowerCase()) || t(label).toLowerCase().includes(navQuery.toLowerCase()))
             const expanded = childNavigation.length > 0 && (location.pathname.startsWith(to) || Boolean(navQuery))
 
             return (
@@ -357,6 +384,9 @@ export function AppShell() {
                 >
                   <Icon aria-hidden="true" size={18} strokeWidth={2} />
                   <span>{t(label)}</span>
+                  {children?.length ? (
+                    <ChevronRight aria-hidden="true" className="nav-expand-icon" size={15} strokeWidth={2} />
+                  ) : null}
                 </NavLink>
                 {expanded ? (
                   <div className="nav-subtree">
@@ -507,10 +537,53 @@ export function AppShell() {
         </header>
 
         <main className="main-content">
-          {workspaceDirectory.workspaceRequired && !workspaceDirectory.currentWorkspaceId && !isWorkspaceInviteRoute ? <WorkspaceAccessNotice /> : <Outlet />}
+          {workspaceDirectory.workspaceRequired && !workspaceDirectory.currentWorkspaceId && !isWorkspaceInviteRoute ? (
+            <WorkspaceAccessNotice />
+          ) : routeDenied ? (
+            <PermissionDeniedNotice label={routeNavigation?.label ?? 'This page'} />
+          ) : (
+            <Outlet />
+          )}
         </main>
       </div>
     </div>
+  )
+}
+
+function canAccessNavigationItem(item: NavigationItem, allowedActions: Set<string>) {
+  return canAccessNavigationEntry(item, allowedActions)
+}
+
+function canAccessNavigationEntry(item: NavigationItem | NavigationChild, allowedActions: Set<string>) {
+  return !item.requiredAny || item.requiredAny.some((action) => allowedActions.has(action))
+}
+
+function navigationEntryForPath(pathname: string): NavigationItem | NavigationChild | undefined {
+  for (const item of navigation) {
+    const child = item.children?.find((candidate) => routeMatches(candidate, pathname))
+    if (child) {
+      return child
+    }
+
+    if (routeMatches(item, pathname)) {
+      return item
+    }
+  }
+
+  return undefined
+}
+
+function routeMatches(item: NavigationItem | NavigationChild, pathname: string) {
+  return item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`)
+}
+
+function PermissionDeniedNotice({ label }: { label: string }) {
+  return (
+    <section className="route-denied">
+      <p className="eyebrow">Permission boundary</p>
+      <h1>{label} access denied</h1>
+      <p>Your current Workspace groups do not include permission to open this page.</p>
+    </section>
   )
 }
 

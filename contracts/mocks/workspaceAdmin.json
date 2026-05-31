@@ -17,7 +17,7 @@
       "accountId": "user_demo_admin",
       "displayName": "Demo Workspace Admin",
       "email": "demo.admin@example.invalid",
-      "groupIds": ["workspace_admin"],
+      "groupIds": ["workspace_owner", "workspace_admin"],
       "status": "active",
       "joinedAt": "2026-05-30T12:00:00Z",
       "invitedBy": null,
@@ -26,8 +26,9 @@
     "permissionBoundary": {
       "actorId": "user_demo_admin",
       "workspaceId": "ws_datasentinel_gdpr",
-      "roles": ["workspace_admin"],
+      "roles": ["workspace_owner", "workspace_admin"],
       "allowedActions": [
+        "manage_workspace_ownership",
         "view_workspace_admin",
         "invite_workspace_members",
         "manage_workspace_members",
@@ -50,10 +51,15 @@
         }
       ],
       "visibleScopes": ["workspace:ws_datasentinel_gdpr"],
-      "boundaryFingerprint": "sha256:workspace_admin_demo_boundary",
+      "boundaryFingerprint": "sha256:workspace_owner_admin_demo_boundary",
       "evaluatedAt": "2026-05-30T12:00:00Z"
     },
     "availablePermissions": [
+      {
+        "permission": "manage_workspace_ownership",
+        "label": "Manage Workspace owner",
+        "description": "Transfer owner authority and delete the local Workspace record after confirmation."
+      },
       {
         "permission": "view_workspace_admin",
         "label": "View Workspace admin",
@@ -113,6 +119,26 @@
     "groups": [
       {
         "workspaceId": "ws_datasentinel_gdpr",
+        "groupId": "workspace_owner",
+        "name": "Workspace owners",
+        "description": "Highest Workspace authority for owner transfer and Workspace deletion.",
+        "permissions": [
+          "manage_workspace_ownership",
+          "view_workspace_admin",
+          "invite_workspace_members",
+          "manage_workspace_members",
+          "manage_workspace_groups",
+          "view_workspace_metrics",
+          "view_workspace_audit",
+          "view_governance",
+          "view_assigned_findings",
+          "view_review_support",
+          "review_findings"
+        ],
+        "memberCount": 1
+      },
+      {
+        "workspaceId": "ws_datasentinel_gdpr",
         "groupId": "workspace_admin",
         "name": "Workspace admins",
         "description": "Can manage Workspace members, groups, invitations, audit, governance, and metrics.",
@@ -162,7 +188,7 @@
         "accountId": "user_demo_admin",
         "displayName": "Demo Workspace Admin",
         "email": "demo.admin@example.invalid",
-        "groupIds": ["workspace_admin"],
+        "groupIds": ["workspace_owner", "workspace_admin"],
         "status": "active",
         "joinedAt": "2026-05-30T12:00:00Z",
         "invitedBy": null,
@@ -233,6 +259,7 @@
     ],
     "charts": {
       "membersByGroup": [
+        { "label": "Workspace owners", "value": 1, "tone": "black" },
         { "label": "Workspace admins", "value": 1, "tone": "black" },
         { "label": "Privacy reviewers", "value": 1, "tone": "blue" },
         { "label": "Data stewards", "value": 1, "tone": "green" },

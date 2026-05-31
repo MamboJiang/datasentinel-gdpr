@@ -1,0 +1,44 @@
+---
+title: FAQ
+description: Common questions about DataSentinel usage, safety, and prototype limits.
+---
+
+## Is DataSentinel a GDPR compliance product?
+
+No. DataSentinel is a prelaunch prototype for accountable GDPR-relevant data discovery and review workflows. It does not provide legal advice and does not claim full GDPR compliance.
+
+## Does a delete-candidate decision delete files?
+
+No. Deletion remains simulated in P0. A delete-candidate decision records a human review outcome and audit event, but it does not delete external files.
+
+## Why can I sign in but still see denied actions?
+
+Sign-in identifies you. Workspace membership and permission boundaries decide what you can do. Denied actions are expected when an action is outside your role, Workspace, or prototype boundary.
+
+## Why are snippets redacted?
+
+DataSentinel is designed to support review without exposing raw sensitive content by default. Evidence snippets should be redacted so reviewers can understand context while reducing unnecessary personal-data exposure.
+
+## Can I scan Google Drive files?
+
+Only when the deployment has Google Picker public credentials configured and you select files or folders through the Picker. Drive selections store metadata, not persisted provider tokens. A scan needs a short-lived per-scan token.
+
+## Can I scan any public URL?
+
+No. Direct links must be HTTPS, must not contain embedded credentials, must not point to private or unsupported locations, and must pass file-size and format checks. Google Drive share-page URLs should be added through the Drive Picker flow.
+
+## What happens when a file type is unsupported?
+
+Unsupported or OCR-deferred files should be counted as warnings or deferred inputs. They should not silently disappear, and they should not cause DataSentinel to expose raw content.
+
+## What should I do with unclear findings?
+
+Use the visible review support. If the owner is wrong, reassign when allowed. If policy or risk is unclear, escalate to a supported queue or reviewer.
+
+## What metrics should I check after a scan?
+
+Check scanned files, flagged files, review backlog, high-risk count, owner routing, precision, recall, F1, reproducibility, throughput, and resource intensity.
+
+## Does optional AI make decisions?
+
+No. Optional AI can only support redacted context after deterministic processing and safety checks. It does not decide permissions, ownership, audit facts, legal conclusions, or deletion.

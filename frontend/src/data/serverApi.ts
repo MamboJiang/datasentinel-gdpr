@@ -15,7 +15,9 @@ import type {
   Source,
   WorkspaceAdminSummary,
   WorkspaceDirectory,
+  Workspace,
   WorkspaceGroup,
+  WorkspaceMembership,
   WorkspaceInvitation,
 } from '../types'
 import type { StartScanOptions } from './scanWorkflow'
@@ -228,6 +230,14 @@ export async function createServerWorkspace(input: {
   })
 }
 
+export async function switchServerWorkspace(workspaceId: string): Promise<ApiEnvelope<WorkspaceDirectory>> {
+  return requestEnvelope<WorkspaceDirectory>('/workspaces/current', {
+    body: JSON.stringify({ workspaceId }),
+    headers: jsonHeaders({ idempotencyKey: `workspace_switch_${workspaceId}_${Date.now()}` }),
+    method: 'POST',
+  })
+}
+
 export async function createServerWorkspaceInvitation(input: {
   groupIds: string[]
   workspaceId: string
@@ -282,6 +292,56 @@ export async function deleteServerWorkspaceGroup(input: {
 }): Promise<ApiEnvelope<WorkspaceGroup>> {
   return requestEnvelope<WorkspaceGroup>(`/workspaces/${encodeURIComponent(input.workspaceId)}/groups/${encodeURIComponent(input.groupId)}`, {
     headers: jsonHeaders({ idempotencyKey: `workspace_group_delete_${input.workspaceId}_${input.groupId}_${Date.now()}` }),
+    method: 'DELETE',
+  })
+}
+
+export async function updateServerWorkspaceMember(input: {
+  groupIds: string[]
+  membershipId: string
+  workspaceId: string
+}): Promise<ApiEnvelope<WorkspaceMembership>> {
+  return requestEnvelope<WorkspaceMembership>(`/workspaces/${encodeURIComponent(input.workspaceId)}/members/${encodeURIComponent(input.membershipId)}`, {
+    body: JSON.stringify({
+      groupIds: input.groupIds,
+    }),
+    headers: jsonHeaders({ idempotencyKey: `workspace_member_update_${input.workspaceId}_${input.membershipId}_${Date.now()}` }),
+    method: 'PATCH',
+  })
+}
+
+export async function deleteServerWorkspaceMember(input: {
+  membershipId: string
+  workspaceId: string
+}): Promise<ApiEnvelope<WorkspaceMembership>> {
+  return requestEnvelope<WorkspaceMembership>(`/workspaces/${encodeURIComponent(input.workspaceId)}/members/${encodeURIComponent(input.membershipId)}`, {
+    headers: jsonHeaders({ idempotencyKey: `workspace_member_delete_${input.workspaceId}_${input.membershipId}_${Date.now()}` }),
+    method: 'DELETE',
+  })
+}
+
+export async function transferServerWorkspaceOwner(input: {
+  membershipId: string
+  workspaceId: string
+}): Promise<ApiEnvelope<WorkspaceMembership>> {
+  return requestEnvelope<WorkspaceMembership>(`/workspaces/${encodeURIComponent(input.workspaceId)}/owner-transfer`, {
+    body: JSON.stringify({
+      membershipId: input.membershipId,
+    }),
+    headers: jsonHeaders({ idempotencyKey: `workspace_owner_transfer_${input.workspaceId}_${input.membershipId}_${Date.now()}` }),
+    method: 'POST',
+  })
+}
+
+export async function deleteServerWorkspace(input: {
+  workspaceId: string
+  workspaceName: string
+}): Promise<ApiEnvelope<Workspace>> {
+  return requestEnvelope<Workspace>(`/workspaces/${encodeURIComponent(input.workspaceId)}`, {
+    body: JSON.stringify({
+      workspaceName: input.workspaceName,
+    }),
+    headers: jsonHeaders({ idempotencyKey: `workspace_delete_${input.workspaceId}_${Date.now()}` }),
     method: 'DELETE',
   })
 }

@@ -100,6 +100,7 @@ The account slice replaces the seeded visible actor as the primary user entry po
 - Keep provider secrets, access tokens, refresh tokens, auth state, and PKCE verifier out of frontend payloads.
 - Use a backend-created HttpOnly first-party session cookie for the console.
 - Keep each signed-in user's Sources, scans, findings, audit events, metrics, and evaluation state isolated from other signed-in users in SQLite-backed prelaunch deployments.
+- When a signed-in user has selected a Workspace, keep Sources, scans, findings, audit events, metrics, and evaluation state isolated by that current Workspace instead of copying account state across Workspaces.
 - Show provider setup status when login providers are not configured.
 - Continue exposing review permission boundaries after login; authentication does not grant real deletion or production tenant access.
 - Support logout by invalidating the first-party session.
@@ -111,12 +112,17 @@ The detailed design note is `docs/design/prelaunch-account-system.md`.
 The Workspace slice separates signed-in accounts from Workspace membership. It must:
 
 - Keep newly created accounts outside every Workspace until an invite link is accepted.
-- Let a signed-in account create a new Workspace and become its default `workspace_admin`.
-- Treat Workspace groups as the P0 permission carrier for administrators, privacy reviewers, data stewards, and auditors.
+- Let a signed-in account create a new Workspace and become its default `workspace_owner` and `workspace_admin`.
+- Let Workspace members switch current Workspace from the top-left Workspace menu, with operational data scoped to the selected Workspace.
+- Treat Workspace groups as the P0 permission carrier for owners, administrators, privacy reviewers, data stewards, and auditors.
 - Let Workspace administrators define additional groups, rename groups, and set group permissions from a visible permission catalog.
-- Let Workspace administrators generate invite links with explicit group assignment.
+- Let Workspace administrators change member group assignments and remove members without allowing admin lockout.
+- Let Workspace administrators generate invite links with explicit non-owner group assignment and copy pending invite links.
+- Let Workspace owners transfer Owner authority by entering another active member's email, with submission enabled only after a match and a second confirmation before the transfer.
+- Let Workspace owners delete a Workspace only after exact-name confirmation and a second confirmation, closing local memberships and invitations without deleting external source files.
 - Expose allowed and denied Workspace actions before privileged actions are attempted.
 - Use the top-left Workspace menu to show current Workspace, no-Workspace state, and legacy pending invitations when present.
+- Hide sidebar destinations that are outside the current Workspace permission boundary.
 - Provide a Workspace admin surface with members, editable groups, invitations, permission boundaries, and management charts.
 - Keep real deletion, production tenant access, Microsoft Graph directory sync, legal conclusions, and hidden privileges out of this slice.
 

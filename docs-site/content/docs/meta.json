@@ -1,0 +1,15 @@
+{
+  "title": "DataSentinel",
+  "pages": [
+    "index",
+    "quick-start",
+    "accounts-and-workspaces",
+    "sources",
+    "dashboard-and-scans",
+    "findings-and-review",
+    "audit-and-evaluation",
+    "governance",
+    "safety-and-boundaries",
+    "faq"
+  ]
+}

@@ -1,0 +1,78 @@
+---
+title: Findings and Review
+description: Inspect redacted evidence, understand owner routing, and record accountable human decisions.
+---
+
+Findings are review tasks assembled from redacted evidence, context, policy-pack guidance, owner routing, and audit context.
+
+Every finding should have evidence. If a finding has no evidence card, it should not be treated as review-ready.
+
+## Findings list
+
+Use **Findings** to prioritize review work. Depending on the current data and permissions, rows can show:
+
+- Risk level.
+- Status.
+- Assigned owner.
+- Source or scan context.
+- Evidence signal count.
+- Retention-review state.
+- Review support readiness.
+
+Unknown or unsupported values should render neutrally instead of breaking the table.
+
+## Finding detail
+
+Open a finding to inspect:
+
+- Redacted evidence snippets.
+- Detector or signal type.
+- Evidence location context.
+- Policy-pack context.
+- Risk explanation without legal conclusion.
+- Owner assignment or escalation path.
+- Allowed and denied actions.
+- Audit timeline.
+
+The detail page should make it clear that the evidence supports human review. It should not claim that the automated workflow made a legal decision.
+
+## File review surface
+
+When available, the file review surface lets reviewers focus the relevant evidence location. It should show a redacted view and avoid raw sensitive values.
+
+Use it to confirm that the evidence location matches the finding before submitting a decision.
+
+## Review decisions
+
+The review dialog lists only decisions available for the current finding and actor. Possible decisions include:
+
+| Decision | Use when | Required context |
+| --- | --- | --- |
+| Delete candidate | The reviewer believes cleanup should be considered. | Reason and checklist acknowledgement. No external file deletion occurs. |
+| Keep with reason | The reviewer believes the data should remain for a documented purpose. | Reason, and retention review date when required. |
+| Correct false positive | The evidence does not represent a relevant finding. | Reason and checklist acknowledgement. |
+| Reassign owner | Another owner should review or decide. | Supported transfer target. |
+| Escalate | Privacy, legal, or stewardship review is needed. | Supported escalation queue or target. |
+
+If no decisions are available, the dialog should show a disabled no-available-decisions state tied to the visible permission boundary.
+
+## After submission
+
+An accepted decision should:
+
+- Update the finding status.
+- Create an audit event with actor, timestamp, reason, and resulting status.
+- Update review backlog or outcome metrics when relevant.
+- Preserve deletion as simulated only.
+
+A denied, incomplete, or stale decision should leave source, finding, audit, metric, and evaluation state unchanged.
+
+## Reviewer safety checklist
+
+Before submitting, confirm that:
+
+- Evidence is redacted and relevant.
+- The owner or escalation path makes sense.
+- The action is allowed by your permission boundary.
+- Required reasons and review dates are complete.
+- You are not treating DataSentinel output as legal advice.

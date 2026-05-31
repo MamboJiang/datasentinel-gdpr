@@ -1,5 +1,5 @@
 import { ArrowLeft, CalendarClock, FileSearch, FileText, Flag, ShieldAlert, UserRound, X } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useData } from '../data/useData'
 import type { ReviewDecision } from '../types'
@@ -186,8 +186,10 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
   const [retentionUntil, setRetentionUntil] = useState(getDefaultRetentionDate())
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({})
   const checklistComplete = reviewSupport.checklist.every((item) => !item.required || checkedItems[item.itemId])
-  const targetRequired = decision === 'reassign_owner' || decision === 'escalate'
-  const retentionRequired = decision === 'keep_with_reason'
+  const decisionAvailable = decisions.some((option) => option.decision === decision)
+  const activeDecision = decisionAvailable ? decision : ''
+  const targetRequired = activeDecision === 'reassign_owner' || activeDecision === 'escalate'
+  const retentionRequired = activeDecision === 'keep_with_reason'
   const checkedChecklistIds = Object.entries(checkedItems)
     .filter(([, checked]) => checked)
     .map(([itemId]) => itemId)
@@ -198,8 +200,19 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
     && (!targetRequired || nextAction.length > 0)
     && (!retentionRequired || retentionUntil.length > 0)
 
+  useEffect(() => {
+    if (decisions.length > 0 && !decisions.some((option) => option.decision === decision)) {
+      setDecision(decisions[0].decision)
+      setNextAction('')
+    }
+  }, [decision, decisions])
+
   function submitReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!canSubmit) {
+      return
+    }
+
     reviewFinding({
       findingId,
       decision,
@@ -230,16 +243,22 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
           <label className="form-field">
             <span>Decision</span>
             <select
-              value={decision}
+              disabled={decisions.length === 0}
+              value={activeDecision}
               onChange={(event) => {
+                if (!event.target.value) {
+                  return
+                }
                 setDecision(event.target.value as ReviewDecision)
                 setNextAction('')
               }}
             >
+              {decisions.length === 0 ? <option value="">No available decisions</option> : null}
               {decisions.map((option) => <option key={option.decision} value={option.decision}>{option.label ?? humanize(option.decision)}</option>)}
             </select>
+            {decisions.length === 0 ? <small className="form-help">No review decision is available inside the current permission boundary.</small> : null}
           </label>
-          {decision === 'reassign_owner' ? (
+          {activeDecision === 'reassign_owner' ? (
             <label className="form-field">
               <span>Transfer target</span>
               <select required value={nextAction} onChange={(event) => setNextAction(event.target.value)}>
@@ -248,7 +267,7 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
               </select>
             </label>
           ) : null}
-          {decision === 'escalate' ? (
+          {activeDecision === 'escalate' ? (
             <label className="form-field">
               <span>Escalation queue</span>
               <select required value={nextAction} onChange={(event) => setNextAction(event.target.value)}>
@@ -257,7 +276,7 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
               </select>
             </label>
           ) : null}
-          {decision === 'keep_with_reason' ? (
+          {activeDecision === 'keep_with_reason' ? (
             <label className="form-field">
               <span>Retention review date</span>
               <input required type="date" value={retentionUntil} onChange={(event) => setRetentionUntil(event.target.value)} />

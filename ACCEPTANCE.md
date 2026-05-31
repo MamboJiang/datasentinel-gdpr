@@ -42,6 +42,24 @@ Frontend surface work is ready for final implementation and QA planning when:
 - Both frontend surface contracts remain compatible with `docs/API_CONTRACT.md`, `contracts/openapi.yaml`, `contracts/mocks/`, `docs/DesignSpec.md`, and the current P0 acceptance criteria.
 - Both frontend surface contracts keep developer-facing documentation and engineering instructions English-only, allow user-facing interface copy to be localized through reviewed frontend dictionaries, keep deletion simulated, avoid legal-advice or full-compliance claims, and avoid production Microsoft Graph, OAuth, tenant, AI, parser, OCR, database, queue, or deletion commitments.
 
+## Fumadocs User Documentation Acceptance
+
+The user-facing documentation surface is accepted when:
+
+- `docs/design/fumadocs-user-documentation.md` defines problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
+- `docs-site/` contains a separate Fumadocs and Next.js documentation app rather than changing the existing Vite console framework.
+- The documentation app can be installed and built from `docs-site` with npm scripts.
+- The docs sidebar exposes task-oriented pages for quick start, accounts and Workspaces, sources, dashboard and scans, findings and review, audit and evaluation, governance, safety boundaries, and FAQ.
+- User-facing docs explain DataSentinel's source registration, full-scan, findings review, audit, evaluation, governance, Workspace, and permission-boundary workflows without requiring readers to understand API contracts.
+- User-facing docs state that DataSentinel does not provide legal advice or claim full GDPR compliance.
+- User-facing docs state that deletion is simulated in P0 and source-registration deletion does not delete external files.
+- User-facing docs explain redacted evidence, no raw-content exposure, visible allowed and denied actions, account versus Workspace authorization, and optional AI boundaries.
+- User-facing docs do not invent API fields, endpoints, production Microsoft Graph or tenant integrations, real deletion behavior, provider-token persistence, legal conclusions, or hidden permission powers.
+- `https://founder-force.uk/docs` serves the Fumadocs user guide without changing the `founder-force.uk` prefix.
+- The console account-menu Docs row navigates to the deployed Fumadocs guide instead of rendering an internal placeholder.
+- Docs search uses `/docs/api/search` and does not intercept or replace the product `/api/*` backend route.
+- Generated Fumadocs artifacts and build outputs remain ignored.
+
 ## Backend Post-Source Planning Readiness
 
 Backend work after sample source connection is ready to break into scoped tasks when:
@@ -72,6 +90,7 @@ The first implementation milestone is accepted when:
 - A finding detail view shows redacted evidence, signals, risk explanation, owner assignment, retention status, and audit timeline, and the top title hierarchy shows `Findings / Finding Detail` with `Findings` linking back to the findings list.
 - A reviewer can open a redacted file review surface from a finding detail view and focus the relevant sensitive evidence location without exposing raw sensitive values.
 - A human reviewer can record delete candidate, keep with reason, false positive, reassign, or escalate decisions.
+- The review decision dialog never renders an empty decision selector; it either lists allowed decisions or shows a disabled no-available-decisions state tied to the visible permission boundary.
 - Every review decision creates an audit event with actor, timestamp, reason, and resulting status.
 - A delta scan can run as a changed-file-only workflow against a completed full-scan baseline.
 - Evaluation metrics show precision, recall, F1, reproducibility, throughput, and resource intensity.
@@ -105,25 +124,35 @@ The Google/GitHub account system is accepted when:
 The Workspace administrator and user-group system is accepted when:
 
 - `docs/design/workspace-admin-permission-system.md` defines problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
-- `contracts/openapi.yaml`, `contracts/schemas/workspace.yaml`, `contracts/mocks/workspaceDirectory.json`, `contracts/mocks/workspaceAdmin.json`, `contracts/mocks/workspaceGroup.json`, and `docs/API_CONTRACT.md` document workspace directory, admin summary, group management, invitation creation, and invitation acceptance endpoints.
+- `contracts/openapi.yaml`, `contracts/schemas/workspace.yaml`, `contracts/mocks/workspaceDirectory.json`, `contracts/mocks/workspaceAdmin.json`, `contracts/mocks/workspaceGroup.json`, and `docs/API_CONTRACT.md` document workspace directory, admin summary, owner transfer, Workspace deletion, group management, invitation creation, and invitation acceptance endpoints.
 - A newly created signed-in account has no Workspace membership by default and sees an invitation-required state rather than seeded Workspace access.
-- A signed-in account can open a Workspace creation dialog from the left Workspace menu or no-Workspace state, enter Workspace settings, create a Workspace, and automatically becomes an active `workspace_admin` member of that Workspace.
+- A signed-in account can open a Workspace creation dialog from the left Workspace menu or no-Workspace state, enter Workspace settings, create a Workspace, and automatically becomes an active `workspace_owner` and `workspace_admin` member of that Workspace.
+- Creating or accepting a Workspace makes that Workspace current for the account, and a member can switch current Workspace from the left Workspace menu.
+- Sources, scan state, findings, audit events, metrics, and evaluation are isolated by the current Workspace; creating or switching to a Workspace does not copy operational data from another Workspace.
 - A seeded or invited Workspace admin can open `/workspace/admin` and inspect members, groups, pending invite links, permission boundaries, and workspace-level charts.
 - A Workspace admin can open `/workspace/admin/members` from the sidebar or the Admin page Members panel and search, filter, group, and sort Workspace members by member text, group, status, join date, and last activity.
-- Workspace groups carry explicit permissions for workspace administration, privacy review, data stewardship, and audit read-only access.
+- A Workspace admin with `manage_workspace_members` can change another active member's Workspace groups from `/workspace/admin/members`.
+- A Workspace admin with `manage_workspace_members` can remove an active member from the Workspace, except their own active membership.
+- Member group changes or removals that would leave the Workspace without an active `workspace_admin` member are rejected.
+- Workspace groups carry explicit permissions for workspace ownership, workspace administration, privacy review, data stewardship, and audit read-only access.
 - A Workspace admin can create new Workspace groups, set their names and permissions from the exposed permission catalog, and immediately use them in invite links.
 - Workspace group controls render collapsed by default: the new-group form is hidden behind a single button, existing groups show compact summary cards, and permission editing expands only after the admin clicks a group's edit icon.
 - A Workspace admin can rename groups and change group permissions; permission boundaries use the updated definitions.
 - A Workspace admin can delete non-admin groups; member and pending invite references to the deleted group are removed or revoked when no groups remain.
+- The `workspace_owner` group cannot be invited, deleted, or stripped of the minimum owner-management permissions required for owner transfer and Workspace deletion.
 - The `workspace_admin` group cannot be deleted or stripped of the minimum admin-management permissions required to avoid locking out the Workspace.
 - Permission boundaries expose both allowed and denied Workspace actions, including a visible denial for real deletion.
 - The left workspace menu is backed by Workspace data, shows the current Workspace when available, shows legacy pending invitations or no-Workspace state when unavailable, and opens the Workspace creation dialog from its create action.
-- A Workspace admin can generate a pending invite link with one or more Workspace groups.
+- Sidebar links are hidden when the current Workspace permission boundary does not allow the destination, and expandable sidebar groups show a right-side chevron.
+- A Workspace admin can generate a pending invite link with one or more non-owner Workspace groups and can copy each pending invite link from the invitations list.
 - A signed-in account that opens the invite link can accept it and becomes an active Workspace member exactly once.
 - Already-member, duplicate-acceptance, expired, revoked, or non-admin invitation actions do not create membership or privilege changes.
+- A Workspace owner can transfer owner authority by typing another active member's exact email; the transfer button remains disabled until the email matches, then a second confirmation is required before the target receives `workspace_owner` and `workspace_admin` and the previous owner loses `workspace_owner`.
+- Only a Workspace owner can delete a Workspace, and deletion requires typing the exact Workspace name plus a second confirmation before submission.
+- Workspace deletion removes the Workspace from visible directories, removes active memberships, revokes pending invite links, clears affected current-Workspace selections, and never deletes external source files or production tenant resources.
 - Admin charts render deterministic management data from existing metrics plus Workspace membership and invitation summaries without adding a chart dependency.
 - Workspace permissions do not grant production tenant access, Microsoft Graph access, source-file deletion, legal advice, full GDPR-compliance claims, or hidden powers.
-- Automated tests cover Workspace-less accounts, Workspace creation, admin summary access, group customization, invitation creation, and invitation acceptance.
+- Automated tests cover Workspace-less accounts, Workspace creation, admin summary access, group customization, member management, invitation creation, invitation acceptance, owner transfer, and Workspace deletion confirmation.
 
 ## Prelaunch Source Input Acceptance
 
@@ -375,6 +404,7 @@ The remote preview deployment is accepted when:
 - The remote host serves the frontend through Caddy on port 80 from `/srv/datasentinel/frontend/current`.
 - The remote host proxies `/api/*` through Caddy to a loopback P0 API server.
 - Direct requests for `https://founder-force.uk/` and `https://founder-force.uk/dashboard` return DataSentinel frontend HTML after DNS points to `agent-us`.
+- Direct requests for `https://founder-force.uk/docs` return the Fumadocs user guide after DNS points to `agent-us` and the docs service is running.
 - Direct requests for `https://founder-force.uk/api/health` return a contract health envelope after DNS points to `agent-us` and the API service is running.
 - The preview remains mock-compatible, in-memory, or local-SQLite-backed and adds no production Microsoft Graph, OAuth, tenant, production database, queue, production source connector, or deletion service.
 - The previous Caddyfile is saved before modification, the release symlink allows asset rollback, and the API service can be stopped independently.

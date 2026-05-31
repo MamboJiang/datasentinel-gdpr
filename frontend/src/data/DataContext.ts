@@ -5,6 +5,8 @@ import type {
   CreateWorkspaceInvitationInput,
   CreateWorkspaceInput,
   DeleteWorkspaceGroupInput,
+  DeleteWorkspaceInput,
+  DeleteWorkspaceMemberInput,
   EvaluationSummary,
   Finding,
   FindingSummary,
@@ -21,6 +23,8 @@ import type {
   WorkspaceGroupInput,
   WorkspaceInvitation,
   UpdateWorkspaceGroupInput,
+  UpdateWorkspaceMemberInput,
+  TransferWorkspaceOwnerInput,
 } from '../types'
 import type { StartScanOptions } from './scanWorkflow'
 import type { CreateSourceInput } from './serverApi'
@@ -53,11 +57,16 @@ export type DataContextValue = {
   testSourceConnection: (sourceId: string) => void
   reviewFinding: (input: ReviewInput) => void
   createWorkspace: (input: CreateWorkspaceInput) => void
+  switchWorkspace: (workspaceId: string) => Promise<boolean>
   createWorkspaceInvitation: (input: CreateWorkspaceInvitationInput) => Promise<WorkspaceInvitation | null>
   acceptWorkspaceInvitation: (invitationId: string) => Promise<boolean>
   createWorkspaceGroup: (input: WorkspaceGroupInput) => Promise<WorkspaceGroup | null>
   updateWorkspaceGroup: (input: UpdateWorkspaceGroupInput) => Promise<WorkspaceGroup | null>
   deleteWorkspaceGroup: (input: DeleteWorkspaceGroupInput) => Promise<boolean>
+  updateWorkspaceMember: (input: UpdateWorkspaceMemberInput) => Promise<boolean>
+  deleteWorkspaceMember: (input: DeleteWorkspaceMemberInput) => Promise<boolean>
+  transferWorkspaceOwner: (input: TransferWorkspaceOwnerInput) => Promise<boolean>
+  deleteWorkspace: (input: DeleteWorkspaceInput) => Promise<boolean>
   dismissNotification: (notificationId: string) => void
   clearNotifications: () => void
 }
