@@ -23,7 +23,6 @@ type DocsViewLike = {
   setEnableDrives: (enabled: boolean) => DocsViewLike
   setIncludeFolders: (included: boolean) => DocsViewLike
   setMode: (mode: string) => DocsViewLike
-  setParent: (parentId: string) => DocsViewLike
   setSelectFolderEnabled: (enabled: boolean) => DocsViewLike
 }
 
@@ -48,7 +47,7 @@ type GoogleLike = {
     }
   }
   picker?: {
-    Action: { PICKED: string }
+    Action: { CANCEL?: string, PICKED: string }
     DocsView: new (viewId: string) => DocsViewLike
     DocsViewMode: { LIST: string }
     Document: { ID: string, MIME_TYPE: string, NAME: string, URL: string }
@@ -62,6 +61,21 @@ type GoogleLike = {
 type GapiLike = {
   load: (name: string, callback: () => void) => void
 }
+
+export type PickerResponseFields = {
+  actionKey: string
+  cancelAction?: string
+  documentsKey: string
+  idKey: string
+  mimeTypeKey: string
+  nameKey: string
+  pickedAction: string
+  urlKey: string
+}
+
+export type PickerResponseResult =
+  | { state: 'cancelled' | 'invalid' | 'pending' }
+  | { items: GoogleDrivePickedItem[], state: 'picked' }
 
 declare global {
   interface Window {
@@ -142,27 +156,50 @@ function showPicker(config: GoogleDrivePickerConfig, mode: GoogleDrivePickerMode
 
   return new Promise((resolve, reject) => {
     const docsView = new picker.DocsView(mode === 'folders' ? picker.ViewId.FOLDERS : picker.ViewId.DOCS)
-      .setIncludeFolders(mode === 'folders')
+      .setIncludeFolders(mode !== 'files')
       .setMode(picker.DocsViewMode.LIST)
-      .setParent('root')
       .setSelectFolderEnabled(mode === 'folders')
 
+    let finished = false
     const builder = new picker.PickerBuilder()
       .addView(docsView)
       .setOAuthToken(accessToken)
       .setDeveloperKey(apiKey)
       .setAppId(appId)
       .setCallback((data) => {
-        if (data[picker.Response.ACTION] !== picker.Action.PICKED) {
+        if (finished) {
+          return
+        }
+
+        const result = parseGoogleDrivePickerResponse(data, {
+          actionKey: picker.Response.ACTION,
+          cancelAction: picker.Action.CANCEL,
+          documentsKey: picker.Response.DOCUMENTS,
+          idKey: picker.Document.ID,
+          mimeTypeKey: picker.Document.MIME_TYPE,
+          nameKey: picker.Document.NAME,
+          pickedAction: picker.Action.PICKED,
+          urlKey: picker.Document.URL,
+        })
+
+        if (result.state === 'pending') {
+          return
+        }
+
+        if (result.state === 'cancelled') {
+          finished = true
           resolve([])
           return
         }
-        const documents = data[picker.Response.DOCUMENTS]
-        if (!Array.isArray(documents)) {
+
+        finished = true
+        if (result.state === 'invalid') {
           reject(new Error('Google Picker returned no selected documents.'))
           return
         }
-        resolve(documents.map((item) => pickedItem(item, picker)))
+        if (result.state === 'picked') {
+          resolve(result.items)
+        }
       })
 
     if (mode === 'files') {
@@ -173,13 +210,33 @@ function showPicker(config: GoogleDrivePickerConfig, mode: GoogleDrivePickerMode
   })
 }
 
-function pickedItem(item: unknown, picker: NonNullable<GoogleLike['picker']>): GoogleDrivePickedItem {
-  const document = item as Record<string, unknown>
-  const url = document[picker.Document.URL]
+export function parseGoogleDrivePickerResponse(data: Record<string, unknown>, fields: PickerResponseFields): PickerResponseResult {
+  const action = data[fields.actionKey] ?? data.action
+  if (action === fields.cancelAction || action === 'cancel') {
+    return { state: 'cancelled' }
+  }
+  if (action !== fields.pickedAction && action !== 'picked') {
+    return { state: 'pending' }
+  }
+
+  const documents = data[fields.documentsKey] ?? data.docs
+  if (!Array.isArray(documents)) {
+    return { state: 'invalid' }
+  }
+
   return {
-    id: String(document[picker.Document.ID] ?? ''),
-    mimeType: String(document[picker.Document.MIME_TYPE] ?? ''),
-    name: String(document[picker.Document.NAME] ?? 'Google Drive item'),
+    items: documents.map((item) => pickedItem(item, fields)),
+    state: 'picked',
+  }
+}
+
+function pickedItem(item: unknown, fields: PickerResponseFields): GoogleDrivePickedItem {
+  const document = item as Record<string, unknown>
+  const url = document[fields.urlKey]
+  return {
+    id: String(document[fields.idKey] ?? ''),
+    mimeType: String(document[fields.mimeTypeKey] ?? ''),
+    name: String(document[fields.nameKey] ?? 'Google Drive item'),
     ...(typeof url === 'string' ? { url } : {}),
   }
 }

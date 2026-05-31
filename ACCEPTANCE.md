@@ -108,10 +108,11 @@ Google Drive and direct-link source input are accepted when:
 - Remote file-link scans require HTTPS, no embedded credentials, a public-resolving host, text-like content, and the prelaunch size limit.
 - Google Drive and Google Docs share-page URLs are rejected as direct links and must be added through Google Drive Picker.
 - The Sources page can select Google Drive files or a folder through Google Picker when host credentials are configured.
+- Google Picker intermediate callbacks do not close the source setup flow; picked files or folders remain visible in the Add Source dialog before registration.
 - Google Drive source registration stores selected item metadata but not access tokens.
 - Google Drive full scans require a short-lived per-scan access token and reject missing tokens without changing scan, finding, audit, metric, or evaluation state.
 - Source scanning reads file content only during scan execution and persists metadata, redacted evidence, findings, metrics, and audit events rather than raw source bodies.
-- Automated tests cover Picker config redaction, empty-project source registration readiness, remote-link redaction/no-raw-content behavior, Google Drive share-link rejection, and missing Drive token rejection.
+- Automated tests cover Picker config redaction, Picker picked/cancel/pending callback handling, empty-project source registration readiness, remote-link redaction/no-raw-content behavior, Google Drive share-link rejection, and missing Drive token rejection.
 
 ## OpenRouter AI Assistive Processing Acceptance
 
