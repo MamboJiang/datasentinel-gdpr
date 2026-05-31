@@ -18,6 +18,7 @@ MAX_DOCUMENT_BYTES = 1_000_000
 MAX_SOURCE_FILES = 500
 GOOGLE_FOLDER_MIME = "application/vnd.google-apps.folder"
 GOOGLE_API_BASE = "https://www.googleapis.com/drive/v3/files"
+GOOGLE_DRIVE_SHARE_HOSTS = {"drive.google.com", "docs.google.com"}
 
 
 @dataclass(frozen=True)
@@ -73,6 +74,8 @@ def validate_remote_source_url(url: str) -> None:
         raise SourceReadIssue("Remote file links must not contain credentials.", "#/config/url")
     if not parsed.hostname:
         raise SourceReadIssue("Remote file link host is required.", "#/config/url")
+    if parsed.hostname.lower() in GOOGLE_DRIVE_SHARE_HOSTS:
+        raise SourceReadIssue("Google Drive share links must be added through the Google Drive Picker, not Direct link.", "#/config/url")
     _validate_public_host(parsed.hostname)
 
 

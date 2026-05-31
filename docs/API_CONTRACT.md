@@ -340,7 +340,7 @@ The contract represents the source as `sourceType = organizer_sample_repo` and e
 
 Source records may include optional `config` for connector-specific metadata:
 
-- `remote_file_link` stores `config.url` as a direct HTTPS file URL. The backend validates that the URL is HTTPS, has no embedded credentials, resolves to public IP addresses, and points to text-like content within the prelaunch size limit before extraction.
+- `remote_file_link` stores `config.url` as a direct HTTPS file URL. The backend validates that the URL is HTTPS, has no embedded credentials, resolves to public IP addresses, is not a Google Drive or Google Docs share page, and points to text-like content within the prelaunch size limit before extraction.
 - `google_drive_selection` stores `config.items`, an array of Google Picker selected item metadata such as `id`, `name`, `mimeType`, and optional `url`. The backend uses this metadata only with a per-scan `authorization.googleDriveAccessToken`.
 - `local_repo` stores `config.rootPath` for host-mounted folders that pass the configured allowed-root policy.
 

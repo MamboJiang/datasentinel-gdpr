@@ -54,7 +54,7 @@ detecting_signals -> failed
 
 Guards:
 
-- `remote_file_link` requires an HTTPS URL with no embedded credentials and a host that resolves to public addresses.
+- `remote_file_link` requires an HTTPS URL with no embedded credentials and a host that resolves to public addresses. Google Drive or Google Docs share pages are not direct file links and must use `google_drive_selection`.
 - `google_drive_selection` requires configured Picker public credentials and selected Drive items before registration.
 - Google Drive scan execution requires `authorization.googleDriveAccessToken`.
 - Folder traversal stops at the prelaunch file limit.
