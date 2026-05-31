@@ -80,17 +80,17 @@ export function EvaluationPage() {
             <div><span>{t('Predicted positives')}</span><strong>{matrix?.predictedPositiveFiles ?? '—'}</strong></div>
             <div><span>{t('True positives')}</span><strong>{matrix?.truePositives ?? '—'}</strong></div>
             <div><span>{t('True negatives')}</span><strong>{matrix?.trueNegatives ?? '—'}</strong></div>
-            <div><span>{t('Review throughput')}</span><strong>{quality?.review.reviewThroughputPerDay ?? '—'} / {t('day')}</strong></div>
+            <div><span>{t('Review throughput')}</span><strong>{quality?.review?.reviewThroughputPerDay ?? '—'} / {t('day')}</strong></div>
           </div>
         </section>
 
         <section className="panel">
           <SectionHeader title="Safety boundaries" />
           <dl className="definition-list">
-            <div><dt>{t('Raw content exposed')}</dt><dd>{quality?.safetyBoundaries.rawContentExposed ? t('Yes') : t('No')}</dd></div>
-            <div><dt>{t('Legal conclusion provided')}</dt><dd>{quality?.safetyBoundaries.legalConclusionProvided ? t('Yes') : t('No')}</dd></div>
-            <div><dt>{t('Deletion executed')}</dt><dd>{quality?.safetyBoundaries.deletionExecuted ? t('Yes') : t('No')}</dd></div>
-            <div><dt>{t('Model calls')}</dt><dd>{quality?.safetyBoundaries.modelCalls ?? 0}</dd></div>
+            <div><dt>{t('Raw content exposed')}</dt><dd>{quality?.safetyBoundaries?.rawContentExposed ? t('Yes') : t('No')}</dd></div>
+            <div><dt>{t('Legal conclusion provided')}</dt><dd>{quality?.safetyBoundaries?.legalConclusionProvided ? t('Yes') : t('No')}</dd></div>
+            <div><dt>{t('Deletion executed')}</dt><dd>{quality?.safetyBoundaries?.deletionExecuted ? t('Yes') : t('No')}</dd></div>
+            <div><dt>{t('Model calls')}</dt><dd>{quality?.safetyBoundaries?.modelCalls ?? 0}</dd></div>
           </dl>
         </section>
       </div>

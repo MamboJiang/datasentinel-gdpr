@@ -41,7 +41,9 @@ The future product experience should make GDPR data cleanup feel like an account
 | --- | --- |
 | Public Project Homepage | Introduce DataSentinel, explain the workflow, and link into the internal dashboard without showing the app shell. |
 | Sign-In Gate | Let users start Google or GitHub login when configured, and show setup status when providers are unavailable. |
-| App Shell, Workspace, and Account Menus | Show a page-title-focused top bar with notifications, keep workspace context in the top-left sidebar control, keep authenticated account controls in the bottom-left sidebar menu, and support sidebar collapse. |
+| App Shell, Workspace, and Account Menus | Show a page-title-focused top bar that can render route hierarchy with clickable non-current levels, keep an interactive session notification center and auto-dismissing latest-message preview, keep workspace context in the top-left sidebar control, keep authenticated account controls in the bottom-left sidebar menu, and support sidebar collapse. |
+| Workspace Admin | Show Workspace member summary, collapsed group controls, invite links, permission boundaries, and management charts; new-group and per-group edit forms open only after an explicit admin action. |
+| Workspace Members | Let admins browse all Workspace members with search, filters, grouping, and sorting by group, status, join date, and last activity. |
 | Source Connector | Select or register an allowed source and start full or delta scans. |
 | Admin Dashboard | Show decision-oriented scan coverage, review queue, high-risk queue, owner routing, latest scan status, and pipeline health without overloading one panel. |
 | Findings Table | Show risk-ranked findings filtered by owner, scan, status, or risk level. |
@@ -82,6 +84,7 @@ The account interaction is documented in `docs/design/prelaunch-account-system.m
 - If no valid session exists, the app renders a sign-in gate backed by `/api/auth/providers`.
 - Google and GitHub buttons navigate to backend login routes; the frontend does not receive provider tokens.
 - The account menu renders the safe session profile and exposes logout through `/api/auth/logout`.
+- Signed-in Sources, findings, audit, metrics, and evaluation views render the current account's API state only; another account's object ids must resolve as empty or not found.
 - Permission-boundary surfaces remain visible after login because authentication is not production authorization.
 - The signed-in empty state must avoid fake findings before a source has been configured and scanned.
 
@@ -98,13 +101,16 @@ The full-scan start interaction connects Source Connector and Admin Dashboard su
 
 ## Prelaunch Source Input Interaction
 
-The source-input interaction is documented in `docs/design/google-drive-source-integration.md`.
+The source-input interaction is documented in `docs/design/google-drive-source-integration.md` and `docs/design/local-format-recognition-difficulty.md`.
 
 - The Source Connector offers direct HTTPS file links, Google Drive selected files/folders, and host-allowed local paths as explicit modes.
 - Google Drive selection opens the official Picker UI when host public credentials are configured.
 - Drive file/folder selections store metadata only; the browser keeps the short-lived access token in memory and sends it only when starting a scan.
 - Direct HTTPS links are treated as one-file sources and must show connection or scan errors when the URL fails policy checks.
+- PDF files are accepted only when they have an extractable text layer; DOCX, XLSX, and PPTX are accepted through deterministic Office Open XML extraction; image files are scanned through local OCR when available; VTT/SRT transcripts are scanned as video transcript text; image-only or unreadable PDFs and raw video media remain OCR-deferred in prelaunch.
+- The Sources page shows the current prelaunch supported file-type list below the source table or empty state.
 - The UI states that DataSentinel reads source content during scan execution and stores metadata, redacted evidence, findings, and audit events.
+- Source deletion removes the registration from DataSentinel state and must not claim to delete external files.
 - Source setup and empty states must avoid fake prefilled source rows or seeded findings in prelaunch mode.
 - The UI must avoid raw source content, provider tokens, client secrets, legal conclusions, deletion execution, and broad tenant-access claims.
 
@@ -114,7 +120,7 @@ The inventory and extraction interaction extends the Dashboard latest-scan and p
 
 - Running scan state shows inventory and extraction stages as partial work with recoverable warnings in the pipeline summary.
 - Inventory details show candidate files, fingerprinted files, sample-family distribution, skipped files, and source snapshot identity.
-- Extraction details show processed files, successful files, unsupported or OCR-deferred files, redacted evidence candidates, and supported extraction methods.
+- Extraction details show processed files, successful files, unsupported or OCR-deferred files, redacted evidence candidates, supported extraction methods, recognition difficulty, and format counts.
 - The UI explicitly shows that raw source content is not exposed.
 - Completed scan state marks inventory and extraction as complete while preserving duration, throughput, and deterministic evaluation readiness.
 - The UI must avoid presenting extraction warnings as legal conclusions or deletion instructions.

@@ -72,6 +72,7 @@ Side effects:
 - Set short-lived signed auth transaction cookie during login start.
 - Exchange authorization code on the backend only.
 - Store local account profile and session metadata only.
+- Use the local `userId` as the owner scope for SQLite-backed prelaunch Sources and workflow state.
 - Discard provider access tokens after identity lookup.
 - Set HttpOnly first-party session cookie.
 - Clear session cookie on logout.
@@ -83,6 +84,7 @@ Failure paths:
 - State mismatch rejects before provider token exchange.
 - Token exchange failure rejects without creating a local account or session.
 - Missing/expired session returns authenticated `false` on `/api/auth/session`.
+- Cross-account Source or Finding identifiers return not found or the current account's empty state.
 
 Rollback path:
 
@@ -108,5 +110,6 @@ Rollback path:
 - A successful callback creates one local user identity, one active session, and an HttpOnly session cookie.
 - `/api/auth/session` returns the current user profile when the session cookie is valid and returns authenticated `false` when it is missing or expired.
 - Logout invalidates the local session and clears the browser cookie.
+- SQLite-backed Sources, scans, findings, audit events, metrics, and evaluation state are isolated by the current session user.
 - Provider access tokens and client secrets are never returned in API payloads, frontend state, logs, mocks, or docs.
 - Existing review permission boundaries still expose allowed and denied actions; auth does not imply real deletion rights.

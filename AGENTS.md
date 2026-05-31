@@ -54,6 +54,10 @@ Frontend agents may build UI against mock payloads before backend endpoints exis
 - Optional objects may be `null` or omitted when the backend cannot know the value yet.
 - Error responses must use `application/problem+json` as documented.
 
+## Engineering Limits
+
+- Treat a single file or class exceeding 1200 lines as a hard-stop signal that requires splitting or explicit user confirmation before continuing.
+
 ## Branch Ownership
 
 - `contract/*`: API contract, mocks, shared docs.

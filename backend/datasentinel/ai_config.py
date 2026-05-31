@@ -148,7 +148,7 @@ def settings_from_env(env: Mapping[str, str] | None = None) -> AiSettings:
             max_prompt_tokens=_integer(values, "DATASENTINEL_AI_MAX_PROMPT_TOKENS", 6000),
             max_completion_tokens=_integer(values, "DATASENTINEL_AI_MAX_COMPLETION_TOKENS", 350),
             request_timeout_seconds=float(_decimal(values, "DATASENTINEL_AI_TIMEOUT_SECONDS", "20")),
-            ocr_mode=_text(values, "DATASENTINEL_OCR_MODE", "deferred").lower(),
+            ocr_mode=_text(values, "DATASENTINEL_OCR_MODE", "local").lower(),
         ),
     )
 

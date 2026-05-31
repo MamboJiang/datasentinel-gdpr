@@ -22,15 +22,24 @@ describe('server API loading', () => {
 
   it('loads an authenticated empty prelaunch project without requesting a blank finding detail', async () => {
     const fallback = getEmptyData()
+    const partialMetrics = {
+      ...fallback.metrics,
+      aggregation: {
+        estimatedCostUsd: 0,
+        modelCalls: 0,
+      },
+    }
     const payloads = new Map<string, unknown>([
       ['/sources', []],
       ['/scans/current', fallback.scan],
       ['/findings', []],
       ['/audit/events', []],
-      ['/admin/metrics', fallback.metrics],
+      ['/admin/metrics', partialMetrics],
       ['/evaluation/runs/latest', fallback.evaluation],
       ['/governance/config', fallback.governanceConfig],
       ['/users/me/permissions', fallback.permissionBoundary],
+      ['/workspaces', fallback.workspaceDirectory],
+      ['/workspaces/current/admin', fallback.workspaceAdmin],
     ])
     const requestedPaths: string[] = []
 
@@ -57,6 +66,7 @@ describe('server API loading', () => {
     expect(data.findings).toEqual([])
     expect(data.findingDetail.findingId).toBe('')
     expect(data.reviewSupport.findingId).toBe('')
+    expect(data.metrics.aggregation).toBeUndefined()
     expect(requestedPaths).not.toContain('/findings/')
     expect(requestedPaths).not.toContain('/findings//review-support')
   })

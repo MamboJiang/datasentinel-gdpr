@@ -29,7 +29,7 @@ CreateSourceRequest:
     config:
       type: object
       additionalProperties: true
-      description: Source-specific configuration. For `remote_file_link`, use `url`. For `google_drive_selection`, use selected `items` returned by Google Picker. For `local_repo`, use `rootPath`.
+      description: Source-specific configuration. For `remote_file_link`, use `url` for a supported text-like file or PDF text layer. For `google_drive_selection`, use selected `items` returned by Google Picker. For `local_repo`, use `rootPath`.
     masterOfDataUserId: { type: [string, "null"] }
 SourceEnvelope:
   type: object
@@ -144,6 +144,28 @@ Scan:
         ocrDeferredFiles: { type: integer, minimum: 0 }
         redactedEvidenceCandidates: { type: integer, minimum: 0 }
         rawContentExposed: { type: boolean }
+        aiAssistanceUsed: { type: boolean }
+        modelCalls: { type: integer, minimum: 0 }
+        recognitionDifficulty:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+          properties:
+            easy: { type: integer, minimum: 0 }
+            moderate: { type: integer, minimum: 0 }
+            hard: { type: integer, minimum: 0 }
+            unsupported: { type: integer, minimum: 0 }
+        formatCounts:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              format: { type: string }
+              difficulty: { type: string }
+              method: { type: string }
+              files: { type: integer, minimum: 0 }
         methods:
           type: array
           items:

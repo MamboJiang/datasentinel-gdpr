@@ -2,9 +2,9 @@
 
 ## Current Technical Scope
 
-This repository is initialized for documentation, collaboration, contract-first parallel delivery, and a controlled remote frontend plus P0 API preview. The approved technical baseline is the tolerant REST contract in `contracts/openapi.yaml`, its split schemas in `contracts/schemas/`, mock fixtures in `contracts/mocks/`, the local Python API server, optional local SQLite persistence for demo API state, the prelaunch Google/GitHub account boundary, the optional OpenRouter AI assistive boundary, and the deployment path documented in `docs/DEPLOYMENT.md`.
+This repository is initialized for documentation, collaboration, contract-first parallel delivery, and a controlled remote frontend plus P0 API preview. The approved technical baseline is the tolerant REST contract in `contracts/openapi.yaml`, its split schemas in `contracts/schemas/`, mock fixtures in `contracts/mocks/`, the local Python API server, optional local SQLite persistence for demo API state, the prelaunch Google/GitHub account boundary, the Workspace admin permission boundary, the optional OpenRouter AI assistive boundary, and the deployment path documented in `docs/DEPLOYMENT.md`.
 
-No production database, queue, enterprise SSO, production RBAC, broad production file-source connector, or deletion-capable deployment path is approved yet. The approved local storage boundary is the stdlib `sqlite3` file store documented in `docs/design/local-sqlite-persistence.md`; it is optional, local to the API process, and limited to restart-safe P0 and prelaunch state. The approved external API boundaries are Google/GitHub OAuth for sign-in, Google Drive Picker and Drive API reads for user-selected files/folders, direct HTTPS text-like file reads, and the optional OpenRouter assistive AI path documented in `docs/design/openrouter-ai-processing.md`; OpenRouter is disabled unless explicitly configured and must not receive raw personal data.
+No production database, queue, enterprise SSO, production RBAC, broad production file-source connector, or source-file deletion-capable deployment path is approved yet. The approved local storage boundary is the stdlib `sqlite3` file store documented in `docs/design/local-sqlite-persistence.md`; it is optional, local to the API process, and limited to restart-safe P0, prelaunch state, and local Workspace membership/invitation state. The approved external API boundaries are Google/GitHub OAuth for sign-in, Google Drive Picker and Drive API reads for user-selected files/folders, direct HTTPS text-like/PDF text-layer file reads, and the optional OpenRouter assistive AI path documented in `docs/design/openrouter-ai-processing.md`; OpenRouter is disabled unless explicitly configured and must not receive raw personal data.
 
 ## Technical Principles
 
@@ -110,7 +110,25 @@ Technical constraints:
 - The browser session is represented by an HttpOnly first-party cookie.
 - `/api/auth/providers`, `/api/auth/session`, and `/api/auth/logout` use the normal envelope shape; login and callback routes are redirects.
 - `DATASENTINEL_AUTH_REQUIRED=true` protects workflow endpoints in prelaunch deployments. Development can keep it false for local contract testing.
+- SQLite-backed prelaunch state uses the first-party session `userId` as the owner scope for Sources, scans, findings, audit events, metrics, and evaluation. Payload fields and compatibility headers must not override this owner scope.
+- Legacy global SQLite source and workflow rows are quarantined outside authenticated account scopes during schema migration.
 - Authentication does not change review permission boundaries, source connector permissions, deletion boundaries, or GDPR legal-advice constraints.
+
+## Workspace Admin Permission Technical Slice
+
+The approved Workspace implementation is a local P0 RBAC and invitation boundary documented in `docs/design/workspace-admin-permission-system.md`.
+
+Technical constraints:
+
+- Authentication creates or reads an account identity only; Workspace access requires active membership.
+- `POST /api/workspaces` creates a local P0 Workspace and one active creator membership in `workspace_admin`.
+- Workspace groups carry explicit permissions from the exposed permission catalog and are evaluated with deny-by-default behavior.
+- The local API exposes Workspace directory, admin summary, group create/update/delete, invite-link generation, and invitation accept endpoints using the standard envelope and problem-details error format.
+- Group deletion removes the group reference from memberships and pending invite links; the protected `workspace_admin` group cannot be deleted or stripped of required admin-management permissions.
+- SQLite-backed deployments may persist local Workspace membership and invitation state, but this remains a prelaunch store and not production tenant authorization.
+- The frontend Workspace menu and `/workspace/admin` route consume contract data and tolerate no-Workspace, non-admin, empty, and denied states.
+- Invitation acceptance must be idempotent at the membership level and must not create duplicate memberships.
+- Workspace permissions do not enable production Microsoft Graph, enterprise directory sync, tenant provisioning, billing, source-file deletion, hidden permission data, legal advice, or full GDPR-compliance claims.
 
 ## Prelaunch Source Input Technical Slice
 
@@ -118,13 +136,16 @@ The approved source-input implementation is a prelaunch boundary for direct HTTP
 
 Technical constraints:
 
-- `remote_file_link` uses `config.url`, requires HTTPS, rejects embedded credentials, rejects private-address hosts, rejects Google Drive or Google Docs share pages, and supports only text-like content within the prelaunch size limit.
+- `remote_file_link` uses `config.url`, requires HTTPS, rejects embedded credentials, rejects private-address hosts, rejects Google Drive or Google Docs share pages, and supports only text-like content, PDF text layers, Office Open XML content, supported image files, supported transcript files, or recognized raw video media. Extractable files must stay within the prelaunch size limit; raw video media is reported as hard/OCR-deferred.
 - `google_drive_selection` uses Google Picker in the browser to collect selected item metadata and Google Identity Services to obtain a short-lived access token for scan execution.
 - The backend exposes `/api/integrations/google-drive/picker-config` for browser-safe Picker setup state behind the prelaunch session boundary; it must not expose client secrets or provider tokens.
 - Google Drive scans receive `authorization.googleDriveAccessToken` only in the scan request and must not persist it.
 - The scanner reads source content into memory during scan execution and persists redacted evidence, finding, metric, and audit state only.
 - Google Workspace documents may be exported to text-like content; folder traversal is bounded by the prelaunch file limit.
-- Production refresh-token storage, background Drive crawling, Microsoft Graph, tenant-wide source discovery, file upload storage, parser/OCR expansion, and deletion integrations are not added in this slice.
+- PDF extraction is limited to existing text layers through the prelaunch document-reader boundary; OCR remains deferred.
+- DOCX, XLSX, and PPTX extraction uses bounded stdlib ZIP/XML parsing, records recognition difficulty, and does not call OpenRouter by default.
+- Source-registration deletion removes only DataSentinel metadata and must not mutate or delete source files in Google Drive, direct-link locations, or host-mounted roots.
+- Production refresh-token storage, background Drive crawling, Microsoft Graph, tenant-wide source discovery, file upload storage, broad parser/OCR expansion beyond PDF text layers, and source-file deletion integrations are not added in this slice.
 
 ## Context and Risk Judgment Technical Slice
 

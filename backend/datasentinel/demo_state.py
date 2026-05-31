@@ -53,9 +53,7 @@ class DemoState:
         self.ai_runtime = ai_runtime or AiRuntime.from_env()
         self.scan = copy.deepcopy(load_mock("scanStatus.json")["data"])
         self.findings = copy.deepcopy(load_mock("myFindings.json")["data"])
-        self.finding_details = {
-            load_mock("findingDetail.json")["data"]["findingId"]: copy.deepcopy(load_mock("findingDetail.json")["data"])
-        }
+        self.finding_details = {load_mock("findingDetail.json")["data"]["findingId"]: copy.deepcopy(load_mock("findingDetail.json")["data"])}
         self.audit_events = copy.deepcopy(load_mock("auditEvents.json")["data"])
         self.metrics = copy.deepcopy(load_mock("adminMetrics.json")["data"])
         self.evaluation = copy.deepcopy(load_mock("evaluationLatest.json")["data"])
@@ -67,8 +65,7 @@ class DemoState:
         self._refresh_ai_runtime_metadata()
 
     def health(self, trace_id: str) -> dict[str, Any]:
-        data = {"ok": True, "server": "datasentinel-agent-us", "ai": self.ai_runtime.summary()}
-        return response(200, envelope(data, trace_id), trace_id)
+        return response(200, envelope({"ok": True, "server": "datasentinel-agent-us", "ai": self.ai_runtime.summary()}, trace_id), trace_id)
 
     def get_scan(self, scan_id: str, trace_id: str, path: str) -> dict[str, Any]:
         self._finish_scan_if_ready()
@@ -251,8 +248,11 @@ class DemoState:
         summary = self.ai_runtime.summary()
         self._attach_ai_runtime(self.scan, summary)
         self.metrics["aiProcessing"] = copy.deepcopy(summary)
-        self.metrics.setdefault("aggregation", {})["modelCalls"] = summary["modelCalls"]
-        self.metrics.setdefault("aggregation", {})["estimatedCostUsd"] = summary["estimatedCostUsd"]
+        aggregation = self.metrics.get("aggregation")
+        if isinstance(aggregation, dict) and all(key in aggregation for key in ("inputStages", "scanCoverage", "risk", "ownerBacklog", "outcomes", "audit", "warnings")):
+            aggregation.update({"modelCalls": summary["modelCalls"], "estimatedCostUsd": summary["estimatedCostUsd"]})
+        else:
+            self.metrics.pop("aggregation", None)
         self.evaluation["aiProcessing"] = copy.deepcopy(summary)
         self.evaluation.setdefault("resourceIntensity", {})["modelCalls"] = summary["modelCalls"]
         self.evaluation.setdefault("resourceIntensity", {})["estimatedCostUsd"] = summary["estimatedCostUsd"]

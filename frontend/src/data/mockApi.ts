@@ -8,6 +8,8 @@ import permissionBoundaryEnvelope from '../../../contracts/mocks/permissionBound
 import reviewSupportEnvelope from '../../../contracts/mocks/reviewSupport.json'
 import scanEnvelope from '../../../contracts/mocks/scanStatus.json'
 import sourcesEnvelope from '../../../contracts/mocks/sources.json'
+import workspaceAdminEnvelope from '../../../contracts/mocks/workspaceAdmin.json'
+import workspaceDirectoryEnvelope from '../../../contracts/mocks/workspaceDirectory.json'
 import {
   buildAuditRecordingSummary,
   collectFindingTimelineEvents,
@@ -29,6 +31,8 @@ import type {
   GovernanceConfig,
   PermissionBoundary,
   ReviewSupport,
+  WorkspaceAdminSummary,
+  WorkspaceDirectory,
 } from '../types'
 
 export type MockData = {
@@ -43,6 +47,8 @@ export type MockData = {
   governanceConfig: GovernanceConfig
   permissionBoundary: PermissionBoundary
   reviewSupport: ReviewSupport
+  workspaceDirectory: WorkspaceDirectory
+  workspaceAdmin: WorkspaceAdminSummary
   meta: Meta
 }
 
@@ -60,6 +66,8 @@ const fixtures: MockData = {
   governanceConfig: governanceConfigEnvelope.data,
   permissionBoundary: permissionBoundaryEnvelope.data,
   reviewSupport: reviewSupportEnvelope.data as ReviewSupport,
+  workspaceDirectory: workspaceDirectoryEnvelope.data as WorkspaceDirectory,
+  workspaceAdmin: workspaceAdminEnvelope.data as WorkspaceAdminSummary,
   meta: sourcesEnvelope.meta,
 }
 

@@ -10,6 +10,7 @@ Source of truth:
 - Mock payloads: `contracts/mocks/`.
 - Design rationale: `docs/design/frontend-backend-delivery-contract.md`.
 - Adaptive governance rationale: `docs/design/adaptive-governance-review-control.md`.
+- Workspace admin rationale: `docs/design/workspace-admin-permission-system.md`.
 
 ## Standard Basis
 
@@ -84,7 +85,8 @@ Requests should send:
 - `X-Contract-Version: 0.1.0`
 - `X-Actor-Id: user_demo_admin` or a seeded demo user.
 - `Idempotency-Key` for review actions and scan start requests when available.
-- Authenticated prelaunch requests should rely on the first-party HttpOnly session cookie created by the auth callback. `X-Actor-Id` remains a development compatibility header and is not authentication.
+- Authenticated prelaunch requests should rely on the first-party HttpOnly session cookie created by the auth callback. SQLite-backed prelaunch Sources, scans, findings, audit events, metrics, and evaluation state are scoped to that session user. `X-Actor-Id` remains a development compatibility header and is not authentication.
+- Workspace requests use the first-party account identity plus explicit Workspace membership. Authentication alone does not grant Workspace access.
 
 Responses should include:
 
@@ -122,9 +124,18 @@ Errors use `application/problem+json`.
 | `GET` | `/api/auth/callback/{provider}` | Complete provider callback, create a first-party session, and redirect back to the app. |
 | `GET` | `/api/auth/session` | Read current first-party session and safe user profile. |
 | `POST` | `/api/auth/logout` | Revoke the current first-party session and clear the session cookie. |
+| `GET` | `/api/workspaces` | List Workspaces visible to the current account and any legacy account-targeted pending invitations. |
+| `POST` | `/api/workspaces` | Create a Workspace and add the creator as a `workspace_admin` member. |
+| `GET` | `/api/workspaces/current/admin` | Read Workspace admin summary, groups, members, invitations, permission boundary, and charts for the current Workspace context. |
+| `POST` | `/api/workspaces/{workspaceId}/groups` | Create a Workspace group with a name, description, and explicit permission set. |
+| `PATCH` | `/api/workspaces/{workspaceId}/groups/{groupId}` | Update a Workspace group's visible name, description, and permissions. |
+| `DELETE` | `/api/workspaces/{workspaceId}/groups/{groupId}` | Delete a non-admin Workspace group and remove its references from members and pending invite links. |
+| `POST` | `/api/workspaces/{workspaceId}/invitations` | Generate a Workspace invitation link for a group set. |
+| `POST` | `/api/workspaces/invitations/{invitationId}/accept` | Accept a pending Workspace invitation link as the current signed-in account. |
 | `GET` | `/api/integrations/google-drive/picker-config` | Read session-protected Google Drive Picker browser setup state without secrets. |
 | `GET` | `/api/sources` | List configured sources. |
 | `POST` | `/api/sources` | Create a mock, local, direct-link, or Google Drive selected source. |
+| `DELETE` | `/api/sources/{sourceId}` | Delete a DataSentinel source registration without deleting external source files. |
 | `POST` | `/api/sources/{sourceId}/connect-test` | Validate source reachability. |
 | `POST` | `/api/scans/full` | Start a full scan for a connected or mock-ready source. |
 | `POST` | `/api/scans/delta` | Start a delta scan. |
@@ -163,6 +174,57 @@ Auth payloads:
 - User profile exposes local `userId`, `provider`, `providerSubject`, `displayName`, optional `email`, and optional `avatarUrl`.
 - Provider access tokens, refresh tokens, client secrets, auth state, and PKCE verifier are never returned.
 
+Account-scoped state:
+
+- When `DATASENTINEL_AUTH_REQUIRED=true`, protected SQLite-backed routes resolve the owner scope from the first-party session `userId`.
+- Source list/mutation routes, scan routes, finding routes, audit, metrics, and evaluation return only the current account's state.
+- Cross-account source and finding identifiers behave as not found or as the current account's empty state.
+- Request payloads and compatibility headers cannot override the owner scope.
+
+### Workspace Membership and Invitations
+
+Accounts and Workspaces are separate. A newly created account starts without Workspace membership unless it accepts an invitation link or is represented by seeded demo membership. Workspace groups carry permissions inside a Workspace; they do not grant production tenant, provider, source-file deletion, or legal-advice powers.
+
+Workspace creation:
+
+- `POST /api/workspaces` accepts `name` and optional `description`.
+- The creator becomes an active member of the new Workspace with the `workspace_admin` group.
+- The new Workspace receives the default P0 group definitions for admin, privacy reviewer, data steward, and auditor.
+- Workspace creation does not create a production tenant, external directory, source connector, billing object, email domain, or deletion capability.
+
+Workspace payloads:
+
+- `WorkspaceDirectory` exposes visible Workspaces, current Workspace ID when membership exists, legacy account-targeted pending invitations when present, and whether a Workspace is required before using the console.
+- `WorkspaceAdminSummary` exposes the current Workspace, current membership, permission catalog, groups, members, invitations, Workspace permission boundary, and chart data.
+- `WorkspaceGroup` exposes group ID, Workspace ID, visible name, description, explicit permissions, and member count.
+- `WorkspaceInvitation` exposes invitation status, invite path, invited groups, inviter, creation time, and expiry time. Provider tokens, auth secrets, and hidden directory data are never returned.
+
+Workspace permission actions are open strings, but group mutation accepts only the exposed P0 permission catalog. Known P0 actions include `view_workspace_admin`, `invite_workspace_members`, `manage_workspace_members`, `manage_workspace_groups`, `view_workspace_audit`, `view_workspace_metrics`, `view_assigned_findings`, `view_review_support`, `review_findings`, `view_owned_sources`, `view_governance`, and denied `execute_real_deletion`.
+
+Workspace group state:
+
+`group_defined -> group_updated -> group_deleted`
+
+Group command guards and side effects:
+
+- Group creation, update, and deletion require `manage_workspace_groups`.
+- Group creation and update reject missing names, duplicate names within a Workspace, and unknown permissions.
+- Updating a group preserves `groupId`, so memberships and invite links continue referencing the same group.
+- The `workspace_admin` group cannot be deleted and must retain `view_workspace_admin` and `manage_workspace_groups`.
+- Deleting a non-admin group removes that `groupId` from active memberships and invitation group lists.
+- Pending invite links with no remaining groups after deletion become `revoked`.
+
+Invitation state:
+
+`workspace_unassigned -> invitation_pending -> workspace_member_active`
+
+Failure paths:
+
+- Non-admin invitation creation returns `403` problem details and changes no state.
+- Empty group list returns `422` problem details and changes no state.
+- Each invitation creation generates a new pending link unless validation fails.
+- Expired, revoked, already accepted, or already-member invitation acceptance returns problem details and changes no state.
+
 ### Optional AI Processing Metadata
 
 `GET /api/health`, scan payloads, admin metrics, and evaluation summaries may include optional `ai` or `aiProcessing` metadata. This metadata is informational and must never include the OpenRouter API key or raw source content.
@@ -187,7 +249,7 @@ Representative shape:
   "tierPlan": [
     { "tier": "source_policy_context", "provider": "local_policy_pack", "mode": "deterministic", "status": "enabled", "atlasStages": [1] },
     { "tier": "metadata_inventory", "provider": "local", "mode": "deterministic", "status": "enabled", "atlasStages": [2] },
-    { "tier": "ocr", "provider": "local_tesseract", "mode": "deferred", "status": "deferred", "atlasStages": [2] },
+    { "tier": "ocr", "provider": "local_tesseract", "mode": "local", "status": "local_available", "atlasStages": [2] },
     { "tier": "grep_rules", "provider": "local_regex", "mode": "deterministic", "status": "enabled", "atlasStages": [3] },
     { "tier": "policy_context_risk", "provider": "local_policy_pack", "mode": "deterministic", "status": "enabled", "atlasStages": [4] },
     { "tier": "ai_context", "provider": "openrouter", "mode": "assistive", "status": "configured", "atlasStages": [4], "role": "redacted_context_support_only" },
@@ -340,9 +402,11 @@ The contract represents the source as `sourceType = organizer_sample_repo` and e
 
 Source records may include optional `config` for connector-specific metadata:
 
-- `remote_file_link` stores `config.url` as a direct HTTPS file URL. The backend validates that the URL is HTTPS, has no embedded credentials, resolves to public IP addresses, is not a Google Drive or Google Docs share page, and points to text-like content within the prelaunch size limit before extraction.
+- `remote_file_link` stores `config.url` as a direct HTTPS file URL. The backend validates that the URL is HTTPS, has no embedded credentials, resolves to public IP addresses, is not a Google Drive or Google Docs share page, and points to supported text-like content, a PDF text layer, Office Open XML content, supported image content, supported transcript content, or recognized raw video media. Extractable files must stay within the prelaunch size limit; raw video media is reported as hard/OCR-deferred until an approved processor exists.
 - `google_drive_selection` stores `config.items`, an array of Google Picker selected item metadata such as `id`, `name`, `mimeType`, and optional `url`. The backend uses this metadata only with a per-scan `authorization.googleDriveAccessToken`.
 - `local_repo` stores `config.rootPath` for host-mounted folders that pass the configured allowed-root policy.
+
+`DELETE /api/sources/{sourceId}` removes only the DataSentinel source registration row. It must not delete, mutate, or revoke any file in Google Drive, a remote HTTPS location, or a host-mounted source directory.
 
 `GET /api/integrations/google-drive/picker-config` requires the first-party session cookie when `DATASENTINEL_AUTH_REQUIRED=true` and returns browser-safe Picker setup state:
 
@@ -365,6 +429,15 @@ Source records may include optional `config` for connector-specific metadata:
 The endpoint may return `configured = false` with `null` browser setup fields and a `missing` list. It must never return Google client secrets, GitHub credentials, provider access tokens, refresh tokens, auth transaction state, raw source content, or unredacted personal data.
 
 Prelaunch source scans read raw source content only inside the scan process. Public payloads may expose source metadata, counts, warnings, redacted snippets, findings, metrics, and audit events; they must not expose raw file bodies, page images, provider tokens, refresh tokens, client secrets, legal conclusions, or deletion execution.
+
+`contentExtraction` may include optional `recognitionDifficulty`, `formatCounts`, `aiAssistanceUsed`, and `modelCalls` fields. Difficulty tiers are:
+
+- `easy`: direct UTF-8 text-like extraction.
+- `moderate`: deterministic structured extraction such as PDF text layers, DOCX/XLSX/PPTX Office Open XML text, and VTT/SRT video transcript text.
+- `hard`: image OCR, OCR-deferred, raw video media, or richer-parser-needed inputs.
+- `unsupported`: unknown, unsafe, over-limit, malformed, or unsupported formats.
+
+Normal deterministic source scans must keep `aiAssistanceUsed = false` and `modelCalls = 0`; OpenRouter remains only an explicit assistive boundary for redacted evidence.
 
 ## Mock Payloads
 

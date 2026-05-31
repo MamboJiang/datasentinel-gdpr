@@ -27,6 +27,12 @@ def make_handler(app: SourceHttpApp | None = None) -> type[BaseHTTPRequestHandle
         def do_POST(self) -> None:
             self._handle()
 
+        def do_PATCH(self) -> None:
+            self._handle()
+
+        def do_DELETE(self) -> None:
+            self._handle()
+
         def _handle(self) -> None:
             length = int(self.headers.get("Content-Length") or "0")
             body = self.rfile.read(length) if length else None

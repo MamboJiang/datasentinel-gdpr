@@ -28,7 +28,8 @@ Provide a prototype workflow that shows how an organization can discover GDPR-re
 - User-control concept for visible allowed actions, denied actions, and reason requirements.
 - Optional AI-assist concept for redacted, deterministic evidence that needs context support after OCR and grep-style rules.
 - Prelaunch account concept for Google and GitHub login through backend-owned OAuth, first-party sessions, visible user profile, and logout.
-- Prelaunch source-input concept for Google Drive selected files or folders and direct HTTPS file links without long-term raw source-file storage.
+- Workspace administration concept for Workspace-scoped admins, user groups, invitation-based membership, visible permission boundaries, and operational charts.
+- Prelaunch source-input concept for Google Drive selected files or folders, direct HTTPS file links, PDF text-layer extraction, and source-registration deletion without long-term raw source-file storage or source-file deletion.
 
 ## Backend Planning Sequence After Sample Source Connection
 
@@ -98,11 +99,28 @@ The account slice replaces the seeded visible actor as the primary user entry po
 - Let a user sign in with Google or GitHub when provider credentials are configured.
 - Keep provider secrets, access tokens, refresh tokens, auth state, and PKCE verifier out of frontend payloads.
 - Use a backend-created HttpOnly first-party session cookie for the console.
+- Keep each signed-in user's Sources, scans, findings, audit events, metrics, and evaluation state isolated from other signed-in users in SQLite-backed prelaunch deployments.
 - Show provider setup status when login providers are not configured.
 - Continue exposing review permission boundaries after login; authentication does not grant real deletion or production tenant access.
 - Support logout by invalidating the first-party session.
 
 The detailed design note is `docs/design/prelaunch-account-system.md`.
+
+## Workspace Admin Permission Slice
+
+The Workspace slice separates signed-in accounts from Workspace membership. It must:
+
+- Keep newly created accounts outside every Workspace until an invite link is accepted.
+- Let a signed-in account create a new Workspace and become its default `workspace_admin`.
+- Treat Workspace groups as the P0 permission carrier for administrators, privacy reviewers, data stewards, and auditors.
+- Let Workspace administrators define additional groups, rename groups, and set group permissions from a visible permission catalog.
+- Let Workspace administrators generate invite links with explicit group assignment.
+- Expose allowed and denied Workspace actions before privileged actions are attempted.
+- Use the top-left Workspace menu to show current Workspace, no-Workspace state, and legacy pending invitations when present.
+- Provide a Workspace admin surface with members, editable groups, invitations, permission boundaries, and management charts.
+- Keep real deletion, production tenant access, Microsoft Graph directory sync, legal conclusions, and hidden privileges out of this slice.
+
+The detailed design note is `docs/design/workspace-admin-permission-system.md`.
 
 ## Prelaunch Source Input Slice
 
@@ -111,11 +129,14 @@ The source-input slice lets signed-in users scan real files without uploading ra
 - Let a user register a direct HTTPS file link or select Google Drive files/folders through Google Picker.
 - Store only source metadata and selected Drive item metadata during registration.
 - Use a short-lived Google Drive access token only when a scan starts, and never persist provider tokens.
+- Extract text-layer PDFs, Office Open XML files, supported images through host-local OCR, and VTT/SRT transcripts during scan execution when selected/local/linked files have usable text; keep image-only PDFs and raw video media OCR-deferred when the required processor is unavailable.
+- Show recognition difficulty for easy text, moderate structured documents, hard OCR-deferred inputs, and unsupported formats.
+- Let users remove DataSentinel source registrations without deleting external source files.
 - Read file content only inside the scan process and persist redacted evidence, findings, metrics, and audit events instead of raw file bodies.
 - Reject unsafe direct links, unsupported files, missing Drive tokens, and over-limit inputs before mutating workflow state.
-- Keep legal conclusions, full-compliance claims, provider secrets, refresh tokens, real deletion, and production tenant connectors out of this slice.
+- Keep legal conclusions, full-compliance claims, provider secrets, refresh tokens, source-file deletion, and production tenant connectors out of this slice.
 
-The detailed design note is `docs/design/google-drive-source-integration.md`.
+The detailed design notes are `docs/design/google-drive-source-integration.md`, `docs/design/local-format-recognition-difficulty.md`, and `docs/design/image-video-recognition-boundary.md`.
 
 ## Context and Risk Judgment Slice
 

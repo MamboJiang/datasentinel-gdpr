@@ -5,15 +5,16 @@ from __future__ import annotations
 import ipaddress
 import json
 import socket
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-SUPPORTED_SUFFIXES = {".txt", ".csv", ".tsv", ".json", ".md", ".log", ".xml", ".html"}
-TEXT_CONTENT_TYPES = {"text/", "application/json", "application/xml", "application/x-ndjson"}
+from .source_format_recognition import DOWNLOAD_ACCEPT_HEADER, SUPPORTED_PDF_SUFFIXES, SUPPORTED_SUFFIXES, DocumentExtractionIssue, PdfReader as DefaultPdfReader, SourceDocument, SourceDocumentBatch, build_document_batch, extract_document_content
+from .source_media_recognition import is_video_media
+
+PdfReader = DefaultPdfReader
 MAX_DOCUMENT_BYTES = 1_000_000
 MAX_SOURCE_FILES = 500
 GOOGLE_FOLDER_MIME = "application/vnd.google-apps.folder"
@@ -21,31 +22,20 @@ GOOGLE_API_BASE = "https://www.googleapis.com/drive/v3/files"
 GOOGLE_DRIVE_SHARE_HOSTS = {"drive.google.com", "docs.google.com"}
 
 
-@dataclass(frozen=True)
-class SourceDocument:
-    name: str
-    source_path: str
-    text: str
-    size_bytes: int
-    family: str
-
-
-@dataclass(frozen=True)
-class SourceDocumentBatch:
-    documents: list[SourceDocument]
-    total_files: int
-    total_bytes: int
-    unsupported_files: int
-    warnings: list[str]
-    family: str
-    extraction_method: str
-
-
 class SourceReadIssue(Exception):
-    def __init__(self, detail: str, pointer: str = "#/sourceId") -> None:
+    def __init__(
+        self,
+        detail: str,
+        pointer: str = "#/sourceId",
+        *,
+        recognition_difficulty: str = "unsupported",
+        ocr_deferred: bool = False,
+    ) -> None:
         super().__init__(detail)
         self.detail = detail
         self.pointer = pointer
+        self.recognition_difficulty = recognition_difficulty
+        self.ocr_deferred = ocr_deferred
 
 
 def read_source_documents(source: dict[str, Any], scan_payload: dict[str, Any]) -> SourceDocumentBatch:
@@ -83,31 +73,49 @@ def _read_local_source(source: dict[str, Any]) -> SourceDocumentBatch:
     root = Path((source.get("config") or {}).get("rootPath", "")).expanduser()
     files = [candidate for candidate in root.rglob("*") if candidate.is_file()] if root.is_dir() else []
     documents: list[SourceDocument] = []
+    warnings: list[str] = []
+    failure_difficulties: list[str] = []
     unsupported = 0
+    ocr_deferred = 0
     total_bytes = 0
 
     for file_path in files[:MAX_SOURCE_FILES]:
         size = file_path.stat().st_size
         total_bytes += size
-        if file_path.suffix.lower() not in SUPPORTED_SUFFIXES or size > MAX_DOCUMENT_BYTES:
+        if file_path.suffix.lower() not in SUPPORTED_SUFFIXES:
             unsupported += 1
+            failure_difficulties.append("unsupported")
             continue
-        documents.append(SourceDocument(
-            name=file_path.name,
-            source_path=str(file_path),
-            text=file_path.read_text(encoding="utf-8", errors="ignore"),
-            size_bytes=size,
-            family="Local_Source",
-        ))
+        if size > MAX_DOCUMENT_BYTES:
+            unsupported += 1
+            deferred = is_video_media("", file_path.suffix.lower())
+            ocr_deferred += 1 if deferred else 0
+            failure_difficulties.append("ocr_deferred" if deferred else "unsupported")
+            continue
+        try:
+            documents.append(_document_from_bytes(
+                body=file_path.read_bytes(),
+                content_type="application/pdf" if file_path.suffix.lower() in SUPPORTED_PDF_SUFFIXES else "text/plain",
+                family="Local_Source",
+                name=file_path.name,
+                source_path=str(file_path),
+            ))
+        except SourceReadIssue as issue:
+            unsupported += 1
+            ocr_deferred += 1 if issue.ocr_deferred else 0
+            failure_difficulties.append("ocr_deferred" if issue.ocr_deferred else issue.recognition_difficulty)
+            warnings.append(issue.detail)
 
-    return SourceDocumentBatch(
+    return build_document_batch(
         documents=documents,
         total_files=len(files),
         total_bytes=total_bytes,
         unsupported_files=unsupported,
-        warnings=_unsupported_warnings(unsupported),
+        warnings=warnings + _unsupported_warnings(unsupported),
         family="Local_Source",
-        extraction_method="local_text",
+        extraction_method="local_mixed_text",
+        ocr_deferred_files=ocr_deferred,
+        failure_difficulties=failure_difficulties,
     )
 
 
@@ -119,14 +127,37 @@ def _read_remote_link_source(source: dict[str, Any]) -> SourceDocumentBatch:
     name = str(config.get("fileName") or Path(urlparse(final_url).path).name or source["name"])
 
     if len(body) > MAX_DOCUMENT_BYTES:
-        return _unsupported_batch("Remote_File", len(body), "Remote file exceeds the prelaunch 1 MB text extraction limit.")
+        video_media = is_video_media(content_type, Path(name).suffix.lower())
+        return _unsupported_batch(
+            "Remote_File",
+            len(body),
+            "Remote video media requires an approved video processor before scanning." if video_media else "Remote file exceeds the prelaunch 1 MB text extraction limit.",
+            recognition_difficulty="hard" if video_media else "unsupported",
+            ocr_deferred=video_media,
+        )
 
-    if not _content_type_supported(content_type) and Path(name).suffix.lower() not in SUPPORTED_SUFFIXES:
+    try:
+        document = _document_from_bytes(
+            body=body,
+            content_type=content_type,
+            family="Remote_File",
+            name=name,
+            source_path=final_url,
+        )
+    except SourceReadIssue as issue:
+        return _unsupported_batch(
+            "Remote_File",
+            len(body),
+            issue.detail,
+            recognition_difficulty=issue.recognition_difficulty,
+            ocr_deferred=issue.ocr_deferred,
+        )
+
+    if not document.text:
         return _unsupported_batch("Remote_File", len(body), "Remote file MIME type is not supported for text extraction.")
 
-    text = body.decode("utf-8", errors="ignore")
-    return SourceDocumentBatch(
-        documents=[SourceDocument(name=name, source_path=final_url, text=text, size_bytes=len(body), family="Remote_File")],
+    return build_document_batch(
+        documents=[document],
         total_files=1,
         total_bytes=len(body),
         unsupported_files=0,
@@ -144,9 +175,11 @@ def _read_google_drive_source(source: dict[str, Any], access_token: str) -> Sour
     client = DriveClient(access_token)
     documents: list[SourceDocument] = []
     warnings: list[str] = []
+    failure_difficulties: list[str] = []
     total_files = 0
     total_bytes = 0
     unsupported = 0
+    ocr_deferred = 0
 
     for item in items:
         if len(documents) + unsupported >= MAX_SOURCE_FILES:
@@ -155,6 +188,7 @@ def _read_google_drive_source(source: dict[str, Any], access_token: str) -> Sour
         file_id = item.get("id") if isinstance(item, dict) else None
         if not isinstance(file_id, str) or not file_id:
             unsupported += 1
+            failure_difficulties.append("unsupported")
             continue
         for metadata in client.iter_item(file_id):
             if len(documents) + unsupported >= MAX_SOURCE_FILES:
@@ -165,13 +199,15 @@ def _read_google_drive_source(source: dict[str, Any], access_token: str) -> Sour
                 document = client.read_text_document(metadata)
             except SourceReadIssue as issue:
                 unsupported += 1
+                ocr_deferred += 1 if issue.ocr_deferred else 0
+                failure_difficulties.append("ocr_deferred" if issue.ocr_deferred else issue.recognition_difficulty)
                 warnings.append(issue.detail)
                 continue
             total_bytes += document.size_bytes
             documents.append(document)
 
     warnings.extend(_unsupported_warnings(unsupported))
-    return SourceDocumentBatch(
+    return build_document_batch(
         documents=documents,
         total_files=total_files,
         total_bytes=total_bytes,
@@ -179,6 +215,8 @@ def _read_google_drive_source(source: dict[str, Any], access_token: str) -> Sour
         warnings=warnings,
         family="Google_Drive",
         extraction_method="google_drive_export",
+        ocr_deferred_files=ocr_deferred,
+        failure_difficulties=failure_difficulties,
     )
 
 
@@ -211,22 +249,26 @@ class DriveClient:
             raise SourceReadIssue("Google Drive folders are inventory containers, not text documents.")
 
         if mime_type.startswith("application/vnd.google-apps."):
-            body = self._export(str(metadata["id"]), _export_mime_type(mime_type))
+            content_type = _export_mime_type(mime_type)
+            body = self._export(str(metadata["id"]), content_type)
         else:
+            content_type = mime_type
             body = self._download(str(metadata["id"]))
 
         if len(body) > MAX_DOCUMENT_BYTES:
-            raise SourceReadIssue(f"{name} exceeds the prelaunch 1 MB text extraction limit.")
+            video_media = is_video_media(content_type, Path(name).suffix.lower())
+            raise SourceReadIssue(
+                f"{name} requires an approved video processor before scanning." if video_media else f"{name} exceeds the prelaunch 1 MB text extraction limit.",
+                recognition_difficulty="hard" if video_media else "unsupported",
+                ocr_deferred=video_media,
+            )
 
-        if not _content_type_supported(mime_type) and not mime_type.startswith("application/vnd.google-apps.") and Path(name).suffix.lower() not in SUPPORTED_SUFFIXES:
-            raise SourceReadIssue(f"{name} is not a supported text-like file.")
-
-        return SourceDocument(
+        return _document_from_bytes(
+            body=body,
+            content_type=content_type,
+            family="Google_Drive",
             name=name,
             source_path=str(metadata.get("webViewLink") or f"google-drive://{metadata['id']}"),
-            text=body.decode("utf-8", errors="ignore"),
-            size_bytes=len(body),
-            family="Google_Drive",
         )
 
     def _metadata(self, file_id: str) -> dict[str, Any]:
@@ -283,7 +325,7 @@ class SafeRedirectHandler(HTTPRedirectHandler):
 
 
 def _download_url(url: str) -> tuple[bytes, str, str]:
-    request = Request(url, headers={"Accept": "text/*, application/json, application/xml;q=0.9, */*;q=0.1", "User-Agent": "DataSentinelPrelaunch/0.1"})
+    request = Request(url, headers={"Accept": DOWNLOAD_ACCEPT_HEADER, "User-Agent": "DataSentinelPrelaunch/0.1"})
     try:
         with build_opener(SafeRedirectHandler()).open(request, timeout=15) as response:
             final_url = response.geturl()
@@ -302,8 +344,33 @@ def _google_drive_access_token(scan_payload: dict[str, Any]) -> str | None:
     return token.strip() if isinstance(token, str) and token.strip() else None
 
 
-def _content_type_supported(content_type: str) -> bool:
-    return any(content_type.startswith(prefix) for prefix in TEXT_CONTENT_TYPES)
+def _document_from_bytes(
+    *,
+    body: bytes,
+    content_type: str,
+    family: str,
+    name: str,
+    source_path: str,
+) -> SourceDocument:
+    try:
+        extracted = extract_document_content(body=body, content_type=content_type, name=name, pdf_reader=PdfReader)
+    except DocumentExtractionIssue as issue:
+        raise SourceReadIssue(
+            issue.detail,
+            recognition_difficulty=issue.recognition_difficulty,
+            ocr_deferred=issue.ocr_deferred,
+        ) from issue
+
+    return SourceDocument(
+        name=name,
+        source_path=source_path,
+        text=extracted.text,
+        size_bytes=len(body),
+        family=family,
+        file_format=extracted.file_format,
+        extraction_method=extracted.extraction_method,
+        recognition_difficulty=extracted.recognition_difficulty,
+    )
 
 
 def _export_mime_type(mime_type: str) -> str:
@@ -312,8 +379,25 @@ def _export_mime_type(mime_type: str) -> str:
     return "text/plain"
 
 
-def _unsupported_batch(family: str, total_bytes: int, warning: str) -> SourceDocumentBatch:
-    return SourceDocumentBatch([], 1, total_bytes, 1, [warning], family, "unsupported")
+def _unsupported_batch(
+    family: str,
+    total_bytes: int,
+    warning: str,
+    *,
+    recognition_difficulty: str = "unsupported",
+    ocr_deferred: bool = False,
+) -> SourceDocumentBatch:
+    return build_document_batch(
+        documents=[],
+        total_files=1,
+        total_bytes=total_bytes,
+        unsupported_files=1,
+        warnings=[warning],
+        family=family,
+        extraction_method="unsupported",
+        ocr_deferred_files=1 if ocr_deferred else 0,
+        failure_difficulties=["ocr_deferred" if ocr_deferred else recognition_difficulty],
+    )
 
 
 def _unsupported_warnings(count: int) -> list[str]:

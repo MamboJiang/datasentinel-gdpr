@@ -93,6 +93,49 @@ export function getEmptyData(): MockData {
       availableDecisions: [],
       checklist: [],
     },
+    workspaceDirectory: {
+      account: {
+        accountId: '',
+        displayName: '',
+        email: null,
+      },
+      currentWorkspaceId: null,
+      workspaces: [],
+      pendingInvitations: [],
+      workspaceRequired: true,
+    },
+    workspaceAdmin: {
+      workspace: null,
+      currentMembership: null,
+      permissionBoundary: {
+        actorId: '',
+        workspaceId: null,
+        roles: [],
+        allowedActions: [],
+        deniedActions: [
+          {
+            action: 'view_workspace_admin',
+            reason: 'Join a Workspace before opening administrator controls.',
+          },
+          {
+            action: 'execute_real_deletion',
+            reason: 'Real deletion is disabled.',
+          },
+        ],
+        visibleScopes: [],
+      },
+      availablePermissions: [],
+      groups: [],
+      members: [],
+      invitations: [],
+      charts: {
+        membersByGroup: [],
+        invitationStatus: [],
+        reviewLoad: [],
+        riskOverview: [],
+        scanCoverage: [],
+      },
+    },
     meta: {
       contractVersion: '0.1.0',
       generatedAt: new Date().toISOString(),

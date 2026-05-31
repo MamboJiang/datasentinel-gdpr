@@ -1,4 +1,4 @@
-import { CheckCircle2, Cloud, Database, FolderOpen, Link2, Plus, RotateCw, ScanSearch, X } from 'lucide-react'
+import { CheckCircle2, Cloud, Database, FileText, FolderOpen, Link2, Plus, RotateCw, ScanSearch, Trash2, X } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useData } from '../data/useData'
 import { canStartDeltaScan, isSourceScanReady } from '../data/scanWorkflow'
@@ -8,9 +8,30 @@ import { Button, EmptyState, PageHeader, StatusBadge } from '../components/ui'
 import { loadGoogleDrivePickerConfig, type GoogleDrivePickerConfig } from '../data/serverApi'
 import { useI18n } from '../i18n'
 
+const SUPPORTED_FILE_TYPES = [
+  'TXT',
+  'CSV',
+  'TSV',
+  'JSON',
+  'Markdown',
+  'LOG',
+  'XML',
+  'HTML',
+  'PDF text layer',
+  'DOCX',
+  'XLSX',
+  'PPTX',
+  'PNG/JPG image OCR',
+  'TIFF/BMP/WEBP image OCR',
+  'VTT/SRT video transcripts',
+  'Google Docs export',
+  'Google Sheets export',
+  'Google Slides export',
+]
+
 export function SourcesPage() {
   const { t } = useI18n()
-  const { sources, scan, governanceConfig, createSource, startScan, testSourceConnection } = useData()
+  const { sources, scan, governanceConfig, createSource, deleteSource, startScan, testSourceConnection } = useData()
   const [sourceDialogOpen, setSourceDialogOpen] = useState(false)
   const scanIsRunning = scan.status === 'running'
 
@@ -87,6 +108,19 @@ export function SourcesPage() {
                         >
                           <RotateCw aria-hidden="true" size={16} /> {t('Delta scan')}
                         </button>
+                        <button
+                          className="button button-ghost"
+                          disabled={scanIsRunning}
+                          title={scanIsRunning ? t('Source deletion is disabled while a scan is running') : t('Delete source registration')}
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(t('Delete this source registration? Source files are not deleted.'))) {
+                              deleteSource(source.sourceId)
+                            }
+                          }}
+                        >
+                          <Trash2 aria-hidden="true" size={16} /> {t('Delete')}
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -95,6 +129,22 @@ export function SourcesPage() {
             </tbody>
           </table>
         </div> : <EmptyState title="No sources configured" description="Add Google Drive, a direct HTTPS file link, or an allowed local path, then start a scan." />}
+      </section>
+
+      <section className="supported-formats" aria-labelledby="supported-file-types-title">
+        <div className="supported-formats-heading">
+          <FileText aria-hidden="true" size={18} />
+          <div>
+            <h2 id="supported-file-types-title">{t('Supported file types')}</h2>
+            <p>{t('Current prelaunch scanners read these formats during scan execution only.')}</p>
+          </div>
+        </div>
+        <div className="supported-format-list" aria-label={t('Currently supported file types')}>
+          {SUPPORTED_FILE_TYPES.map((type) => <span key={type}>{t(type)}</span>)}
+        </div>
+        <p className="supported-formats-note">
+          {t('Legacy binary Office files, image-only PDFs, OCR failures, and raw video media are hard/OCR-deferred or unsupported. Deterministic scans do not use AI by default.')}
+        </p>
       </section>
 
       {sourceDialogOpen ? <SourceDialog onClose={() => setSourceDialogOpen(false)} onCreate={createSource} /> : null}

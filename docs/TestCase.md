@@ -60,6 +60,30 @@
 | AUTH-009 | Render authenticated console with no findings | The frontend shows operational empty states and source setup actions instead of fake examples. |
 | AUTH-010 | Start server with `DATASENTINEL_ENABLE_DEMO_FIXTURES=false` | Sources, findings, audit, metrics, and evaluation start empty until a configured local source is scanned. |
 | AUTH-011 | Restart a SQLite-backed preview after disabling demo fixtures | Historical seeded demo sources and workflow documents are removed while real registered local sources and account/session records remain. |
+| AUTH-012 | Sign in as Account A and Account B against the same SQLite preview | Account B cannot list, delete, scan, connect-test, review, or open Account A's Sources or Findings. |
+| AUTH-013 | Start a SQLite preview after legacy global rows exist | Legacy global source and workflow rows are hidden from authenticated account scopes. |
+
+## Workspace Admin Permission Checks
+
+| ID | Scenario | Expected Result |
+| --- | --- | --- |
+| WORKSPACE-001 | Call `GET /api/workspaces` as a newly created account with no membership | The response has no current Workspace, no Workspace list, and `workspaceRequired = true`. |
+| WORKSPACE-001A | Call `POST /api/workspaces` as a signed-in account | The response includes the new Workspace and the creator becomes an active `workspace_admin` member. |
+| WORKSPACE-002 | Call `GET /api/workspaces/current/admin` as a Workspace admin | The response includes Workspace, current membership, members, groups, permission catalog, invitations, permission boundary, and chart data. |
+| WORKSPACE-003 | Call `GET /api/workspaces/current/admin` as a non-admin or Workspace-less account | The response exposes denied admin actions and no mutation capability. |
+| WORKSPACE-004 | Generate an invite link as a Workspace admin | The server returns a pending invitation with invite path, invited groups, inviter, expiry, and no provider secrets. |
+| WORKSPACE-005 | Create an invitation as a non-admin | The server returns `application/problem+json` and no invitation or membership changes. |
+| WORKSPACE-006 | Accept a pending invite link as a signed-in account | The account becomes an active Workspace member exactly once. |
+| WORKSPACE-007 | Accept an invitation twice, after expiry, after revocation, or as an existing member | The server returns problem details and does not create duplicate membership. |
+| WORKSPACE-008 | Render the Workspace menu | The menu shows current Workspace for members and pending/no-Workspace state for accounts without membership. |
+| WORKSPACE-008A | Click the Workspace menu create action | A Workspace creation dialog opens with name, description, creator-role, and default-group settings before creation. |
+| WORKSPACE-009 | Render `/workspace/admin` | Admin charts render member/group/invitation/review metrics without a charting dependency or legal-compliance claim. |
+| WORKSPACE-010 | Create a Workspace group as an admin | The server returns the new group with a generated ID, visible name, description, explicit permissions, and zero initial members. |
+| WORKSPACE-011 | Rename or re-permission a Workspace group as an admin | The group keeps its ID and permission boundaries use the updated permissions. |
+| WORKSPACE-012 | Delete a non-admin Workspace group | The group disappears from admin summary, members lose that group reference, and pending invite links with no remaining groups are revoked. |
+| WORKSPACE-013 | Render `/workspace/admin` group controls | The new-group form and per-group permission editors are collapsed by default; only a new-group button and compact group cards are visible until the admin opens a form or card edit icon. |
+| WORKSPACE-014 | Open `/workspace/admin/members` from sidebar or Admin Members panel | The Members page lists all Workspace members and supports search, group filtering, status filtering, grouping, and sorting by name, primary group, status, joined date, and last activity. |
+| WORKSPACE-013 | Delete `workspace_admin` or remove its required admin-management permissions | The server returns problem details and no lockout-causing change is persisted. |
 
 ## Local SQLite Persistence Checks
 
@@ -80,11 +104,18 @@
 | SRCIN-003 | Scan a direct HTTPS text file with detectable personal-data patterns | The scan produces findings with redacted evidence and no raw source body or unredacted personal data in public payloads. |
 | SRCIN-004 | Register a non-HTTPS, credential-bearing, Google Drive share-page, private-address, over-limit, or unsupported direct file link | The backend rejects the connection or scan before creating workflow output. |
 | SRCIN-005 | Load an authenticated empty prelaunch project with no findings, then register a source | The frontend treats the API as available and does not request a blank finding detail before source registration. |
+| SRCIN-005A | Open the Sources page | The page shows the current prelaunch supported file types below the source inventory surface. |
 | SRCIN-006 | Select Google Drive files through Picker | The source stores selected item metadata and keeps the access token out of persisted source state. |
 | SRCIN-007 | Receive a non-terminal Google Picker callback before the final picked action | The Add Source dialog remains open and waits for the final picked or cancelled action. |
 | SRCIN-008 | Select a Google Drive folder through Picker | The selected folder appears in the Add Source dialog, and the scan enumerates descendant files up to the prelaunch limit. |
 | SRCIN-009 | Start a Google Drive scan without a per-scan access token | The backend returns `application/problem+json` and leaves scan, finding, audit, metric, and evaluation state unchanged. |
 | SRCIN-010 | Review public payloads after remote-link or Drive scans | Payloads expose metadata, warnings, redacted snippets, findings, metrics, and audit events only; raw file bodies, provider tokens, refresh tokens, client secrets, legal conclusions, and deletion execution are absent. |
+| SRCIN-011 | Scan a PDF that has an extractable text layer and detectable personal-data patterns | The scan produces findings with redacted evidence and does not expose raw extracted PDF text in public payloads. |
+| SRCIN-012 | Delete a source from the Sources page or `DELETE /api/sources/{sourceId}` | The source registration is removed from DataSentinel state, derived scan/finding state for that deleted source is cleared, external source files are not deleted, and a repeated delete returns not found. |
+| SRCIN-013 | Scan DOCX, XLSX, and PPTX files with detectable personal-data patterns | The scan produces redacted findings from deterministic Office Open XML extraction and reports moderate recognition difficulty. |
+| SRCIN-014 | Inspect `contentExtraction` after a deterministic scan | The payload includes difficulty and format counts, `aiAssistanceUsed = false`, `modelCalls = 0`, and no raw source text. |
+| SRCIN-015 | Scan an image file with host OCR available | The scanner extracts OCR text during scan execution, creates only redacted findings, reports `image_ocr` and hard difficulty, and keeps model calls at zero. |
+| SRCIN-016 | Scan a VTT/SRT transcript and a raw video file | The transcript can produce redacted findings, while raw video media is counted as hard/OCR-deferred until an approved video processor exists. |
 
 ## OpenRouter AI Assistive Processing Checks
 
@@ -174,6 +205,7 @@
 | FINDASM-007 | Verify ownerless fallback | Missing source owner metadata routes evidence cards to escalation instead of leaving findings unowned. |
 | FINDASM-008 | Verify audit and evaluation traceability | Finding assembly creates an audit-visible event and evaluation stores a finding-assembly rules hash. |
 | FINDASM-009 | Verify resource and cost boundary | Finding assembly keeps model calls and estimated paid-service cost at zero. |
+| FINDASM-010 | Open a finding detail from the Findings list | The top title hierarchy reads `Findings / Finding Detail`; `Findings` is hover-underlined and navigates back to `/findings`, while `Finding Detail` is the non-clickable current level. |
 | FINDASM-010 | Reject assembly for not-ready source | A not-ready source cannot create scan, inventory, extraction, context/risk, owner-assignment, finding-assembly, finding, evidence-card, or audit state changes. |
 
 ## Review Support and Permission Boundary Checks
@@ -293,7 +325,7 @@
 
 These are not implementation tests yet. They define the areas that future tests should cover:
 
-- App shell behavior for page-title-focused top bar, top-right notifications, top-left workspace menu visibility, bottom-left account menu visibility, sidebar collapse, menu open, keyboard close, and platform-status display.
+- App shell behavior for page-title-focused top bar, top-right timestamped notification center, auto-dismissing latest-message preview that does not mutate the notification center, dismiss/clear notification actions, no bottom toast overlay, top-left workspace menu visibility, bottom-left account menu visibility, sidebar collapse, menu open, keyboard close, and platform-status display.
 - Public homepage behavior for root-route rendering, dashboard navigation, scroll-linked parallax, and reduced-motion fallback.
 - File review behavior for format-specific anchors, renderer fallback, keyboard navigation, and redacted preview highlighting.
 - Full-scan behavior with controlled sample files.

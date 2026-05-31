@@ -82,6 +82,14 @@ class PrelaunchState(DemoState):
         self.review_support = _review_support("")
         self.permission_boundary = _permission_boundary()
 
+    def source_deleted(self, source_id: str) -> None:
+        if self.scan.get("sourceId") != source_id:
+            return
+
+        self._pending_result = None
+        self._running_started_at = None
+        self._clear_seeded_workflow()
+
 
 def _scan_source(source: dict[str, Any], governance: dict[str, Any], scan_type: str, payload: dict[str, Any]) -> dict[str, Any]:
     batch = read_source_documents(source, payload)
@@ -162,6 +170,8 @@ def _finding(scan_id: str, source: dict[str, Any], document: SourceDocument, sig
 
 def _scan(scan_id: str, source: dict[str, Any], scan_type: str, batch: SourceDocumentBatch, findings: list[dict[str, Any]], signal_count: int, policy_version: str) -> dict[str, Any]:
     warnings = batch.warnings
+    extraction_methods = batch.method_counts or [{"method": batch.extraction_method, "files": len(batch.documents), "status": "completed"}]
+    recognition_difficulty = batch.recognition_difficulty or {"easy": 0, "moderate": len(batch.documents), "hard": 0, "unsupported": batch.unsupported_files}
     return {
         "scanId": scan_id,
         "sourceId": source["sourceId"],
@@ -178,7 +188,7 @@ def _scan(scan_id: str, source: dict[str, Any], scan_type: str, batch: SourceDoc
         "reproducibilityFingerprint": "sha256:" + hashlib.sha256(f"{source['sourceId']}:{batch.total_files}:{signal_count}".encode("utf-8")).hexdigest()[:24],
         "pipelineStages": [{"stage": stage, "status": "completed", "warnings": warnings if stage == "extracting_content" else []} for stage in ["source_ready", "inventorying_files", "extracting_content", "detecting_signals", "judging_context_risk", "assigning_owner", "assembling_findings", "preparing_review_support", "recording_audit_events"]],
         "fileInventory": {"status": "completed", "sourceSnapshotId": f"snapshot_{source['sourceId']}_{scan_id}", "inventoryFingerprint": f"sha256:{scan_id}_inventory", "totalCandidateFiles": batch.total_files, "fingerprintedFiles": batch.total_files, "skippedFiles": 0, "totalBytes": batch.total_bytes, "permissionSnapshots": batch.total_files, "sampleFamilies": [{"family": batch.family, "candidateFiles": batch.total_files, "processedFiles": len(batch.documents), "flaggedFiles": len(findings), "bytes": batch.total_bytes}], "warnings": []},
-        "contentExtraction": {"status": "completed", "extractionFingerprint": f"sha256:{scan_id}_{batch.extraction_method}", "processedFiles": batch.total_files, "successfulFiles": len(batch.documents), "warningFiles": batch.unsupported_files, "unsupportedFiles": batch.unsupported_files, "ocrDeferredFiles": 0, "redactedEvidenceCandidates": signal_count, "rawContentExposed": False, "methods": [{"method": batch.extraction_method, "files": len(batch.documents), "status": "completed"}], "warnings": warnings},
+        "contentExtraction": {"status": "completed", "extractionFingerprint": f"sha256:{scan_id}_{batch.extraction_method}", "processedFiles": batch.total_files, "successfulFiles": len(batch.documents), "warningFiles": batch.unsupported_files, "unsupportedFiles": batch.unsupported_files, "ocrDeferredFiles": batch.ocr_deferred_files, "redactedEvidenceCandidates": signal_count, "rawContentExposed": False, "methods": extraction_methods, "formatCounts": batch.format_counts or [], "recognitionDifficulty": recognition_difficulty, "aiAssistanceUsed": False, "modelCalls": 0, "warnings": warnings},
         "signalDetection": {"status": "completed", "detectorRulesVersion": "prelaunch-local-v1", "detectorRulesHash": f"sha256:{scan_id}_signals", "evidenceRequirements": ["redacted_snippet", "detector_signal", "owner_assignment", "policy_version"], "evaluatedEvidenceCandidates": signal_count, "detectedSignals": signal_count, "redactedSignals": signal_count, "findingsWithSignals": len(findings), "rawContentExposed": False, "signalTypeCounts": [], "warnings": []},
         "contextRisk": {"status": "completed", "policyPackVersion": policy_version, "riskRulesFingerprint": f"sha256:{scan_id}_risk", "assessedEvidenceCandidates": signal_count, "contextClassifiedFindings": len(findings), "riskAssessedFindings": len(findings), "highRiskFindings": sum(1 for item in findings if item["riskLevel"] == "high"), "mediumRiskFindings": sum(1 for item in findings if item["riskLevel"] == "medium"), "lowRiskFindings": 0, "retentionReviewFiles": len(findings), "humanReviewRequiredFindings": len(findings), "legalConclusionProvided": False, "contextCategories": [], "warnings": []},
         "ownerAssignment": {"status": "completed", "policyPackVersion": policy_version, "organizationModelVersion": "prelaunch", "ownerResolutionStrategy": "source_master_of_data", "assignmentRulesFingerprint": f"sha256:{scan_id}_owner", "humanReviewRequiredFindings": len(findings), "assignedFindings": len(findings), "directOwnerAssignments": 0, "masterOfDataAssignments": len(findings), "escalationAssignments": 0, "unownedFindings": 0, "transferOptionCount": 0, "escalationOptionCount": 1, "sourceOwnerAvailable": True, "warnings": []},

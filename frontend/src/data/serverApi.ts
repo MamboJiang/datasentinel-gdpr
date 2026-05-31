@@ -13,6 +13,10 @@ import type {
   ReviewSupport,
   Scan,
   Source,
+  WorkspaceAdminSummary,
+  WorkspaceDirectory,
+  WorkspaceGroup,
+  WorkspaceInvitation,
 } from '../types'
 import type { StartScanOptions } from './scanWorkflow'
 
@@ -76,6 +80,8 @@ export async function loadServerData(fallback: MockData): Promise<MockData> {
     evaluationEnvelope,
     governanceEnvelope,
     permissionEnvelope,
+    workspaceDirectoryEnvelope,
+    workspaceAdminEnvelope,
   ] = await Promise.all([
     requestEnvelope<Source[]>('/sources'),
     requestEnvelope<Scan>('/scans/current'),
@@ -85,6 +91,8 @@ export async function loadServerData(fallback: MockData): Promise<MockData> {
     requestEnvelope<EvaluationSummary>('/evaluation/runs/latest'),
     requestEnvelope<GovernanceConfig>('/governance/config'),
     requestEnvelope<PermissionBoundary>('/users/me/permissions'),
+    requestEnvelope<WorkspaceDirectory>('/workspaces'),
+    requestEnvelope<WorkspaceAdminSummary>('/workspaces/current/admin'),
   ])
   const primaryFindingId = findingsEnvelope.data[0]?.findingId ?? fallback.findingDetail.findingId
   const [findingEnvelope, reviewSupportEnvelope] = primaryFindingId
@@ -110,11 +118,13 @@ export async function loadServerData(fallback: MockData): Promise<MockData> {
         }
       : fallback.findingDetails,
     auditEvents: auditEventsEnvelope.data,
-    metrics: metricsEnvelope.data,
+    metrics: normalizeAdminMetrics(metricsEnvelope.data),
     evaluation: evaluationEnvelope.data,
     governanceConfig: governanceEnvelope.data,
     permissionBoundary: permissionEnvelope.data,
     reviewSupport: reviewSupportEnvelope.data,
+    workspaceDirectory: workspaceDirectoryEnvelope.data,
+    workspaceAdmin: workspaceAdminEnvelope.data,
     meta: combineMeta([
       sourcesEnvelope.meta,
       scanEnvelope.meta,
@@ -124,10 +134,35 @@ export async function loadServerData(fallback: MockData): Promise<MockData> {
       evaluationEnvelope.meta,
       governanceEnvelope.meta,
       permissionEnvelope.meta,
+      workspaceDirectoryEnvelope.meta,
+      workspaceAdminEnvelope.meta,
       findingEnvelope.meta,
       reviewSupportEnvelope.meta,
     ]),
   }
+}
+
+function normalizeAdminMetrics(metrics: AdminMetrics): AdminMetrics {
+  if (!metrics.aggregation || isStructuredAggregation(metrics.aggregation)) {
+    return metrics
+  }
+
+  const metricsWithoutAggregation = { ...metrics }
+  delete metricsWithoutAggregation.aggregation
+  return metricsWithoutAggregation
+}
+
+function isStructuredAggregation(aggregation: AdminMetrics['aggregation']) {
+  return Boolean(
+    aggregation
+    && Array.isArray(aggregation.inputStages)
+    && aggregation.scanCoverage
+    && aggregation.risk
+    && aggregation.ownerBacklog
+    && aggregation.outcomes
+    && aggregation.audit
+    && Array.isArray(aggregation.warnings),
+  )
 }
 
 export async function startServerScan(options: StartScanOptions): Promise<ApiEnvelope<Scan>> {
@@ -163,6 +198,13 @@ export async function createServerSource(input: CreateSourceInput): Promise<ApiE
   })
 }
 
+export async function deleteServerSource(sourceId: string): Promise<ApiEnvelope<Source>> {
+  return requestEnvelope<Source>(`/sources/${encodeURIComponent(sourceId)}`, {
+    headers: jsonHeaders({ idempotencyKey: `delete_source_${sourceId}_${Date.now()}` }),
+    method: 'DELETE',
+  })
+}
+
 export async function loadGoogleDrivePickerConfig(): Promise<ApiEnvelope<GoogleDrivePickerConfig>> {
   return requestEnvelope<GoogleDrivePickerConfig>('/integrations/google-drive/picker-config')
 }
@@ -171,6 +213,83 @@ export async function reviewServerFinding(input: ReviewInput): Promise<ApiEnvelo
   return requestEnvelope<ReviewRecord>(`/findings/${input.findingId}/review`, {
     body: JSON.stringify(input),
     headers: jsonHeaders({ idempotencyKey: input.idempotencyKey ?? `review_${input.findingId}_${Date.now()}` }),
+    method: 'POST',
+  })
+}
+
+export async function createServerWorkspace(input: {
+  description?: string
+  name: string
+}): Promise<ApiEnvelope<WorkspaceDirectory>> {
+  return requestEnvelope<WorkspaceDirectory>('/workspaces', {
+    body: JSON.stringify(input),
+    headers: jsonHeaders({ idempotencyKey: `workspace_create_${input.name}` }),
+    method: 'POST',
+  })
+}
+
+export async function createServerWorkspaceInvitation(input: {
+  groupIds: string[]
+  workspaceId: string
+}): Promise<ApiEnvelope<WorkspaceInvitation>> {
+  return requestEnvelope<WorkspaceInvitation>(`/workspaces/${encodeURIComponent(input.workspaceId)}/invitations`, {
+    body: JSON.stringify({
+      groupIds: input.groupIds,
+    }),
+    headers: jsonHeaders({ idempotencyKey: `workspace_invite_link_${input.workspaceId}_${Date.now()}` }),
+    method: 'POST',
+  })
+}
+
+export async function createServerWorkspaceGroup(input: {
+  description?: string
+  name: string
+  permissions: string[]
+  workspaceId: string
+}): Promise<ApiEnvelope<WorkspaceGroup>> {
+  return requestEnvelope<WorkspaceGroup>(`/workspaces/${encodeURIComponent(input.workspaceId)}/groups`, {
+    body: JSON.stringify({
+      description: input.description,
+      name: input.name,
+      permissions: input.permissions,
+    }),
+    headers: jsonHeaders({ idempotencyKey: `workspace_group_create_${input.workspaceId}_${input.name}` }),
+    method: 'POST',
+  })
+}
+
+export async function updateServerWorkspaceGroup(input: {
+  description?: string
+  groupId: string
+  name: string
+  permissions: string[]
+  workspaceId: string
+}): Promise<ApiEnvelope<WorkspaceGroup>> {
+  return requestEnvelope<WorkspaceGroup>(`/workspaces/${encodeURIComponent(input.workspaceId)}/groups/${encodeURIComponent(input.groupId)}`, {
+    body: JSON.stringify({
+      description: input.description,
+      name: input.name,
+      permissions: input.permissions,
+    }),
+    headers: jsonHeaders({ idempotencyKey: `workspace_group_update_${input.workspaceId}_${input.groupId}_${Date.now()}` }),
+    method: 'PATCH',
+  })
+}
+
+export async function deleteServerWorkspaceGroup(input: {
+  groupId: string
+  workspaceId: string
+}): Promise<ApiEnvelope<WorkspaceGroup>> {
+  return requestEnvelope<WorkspaceGroup>(`/workspaces/${encodeURIComponent(input.workspaceId)}/groups/${encodeURIComponent(input.groupId)}`, {
+    headers: jsonHeaders({ idempotencyKey: `workspace_group_delete_${input.workspaceId}_${input.groupId}_${Date.now()}` }),
+    method: 'DELETE',
+  })
+}
+
+export async function acceptServerWorkspaceInvitation(invitationId: string): Promise<ApiEnvelope<WorkspaceDirectory>> {
+  return requestEnvelope<WorkspaceDirectory>(`/workspaces/invitations/${encodeURIComponent(invitationId)}/accept`, {
+    body: '{}',
+    headers: jsonHeaders({ idempotencyKey: `workspace_accept_${invitationId}` }),
     method: 'POST',
   })
 }
