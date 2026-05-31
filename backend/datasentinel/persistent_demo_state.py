@@ -7,6 +7,7 @@ import time
 from typing import Any, Protocol
 
 from .demo_state import DemoState
+from .deterministic_signals import safe_public_source_path, sanitize_public_signal
 from .prelaunch_state import PrelaunchState
 from .source_store import SourceStore
 
@@ -106,12 +107,13 @@ class PersistentPrelaunchState(PrelaunchState):
         if saved:
             self._restore_state(saved)
             self._clear_missing_source_workflow()
+            self._sanitize_persisted_findings()
             self._refresh_ai_runtime_metadata()
         self._save_state()
 
     def start_scan(self, scan_type: str, payload: dict[str, Any], trace_id: str, path: str) -> dict[str, Any]:
         result = super().start_scan(scan_type, payload, trace_id, path)
-        if result["status"] < 400:
+        if result["status"] < 400 or self.scan.get("status") == "failed":
             self._running_started_epoch = time.time() if self.scan["status"] == "running" else None
             self._save_state()
         return result
@@ -159,9 +161,25 @@ class PersistentPrelaunchState(PrelaunchState):
             self._running_started_at = None
             self._clear_seeded_workflow()
 
+    def _sanitize_persisted_findings(self) -> None:
+        for finding in self.findings:
+            _sanitize_finding_record(finding)
+        for finding in self.finding_details.values():
+            _sanitize_finding_record(finding)
+
     def _save_state(self) -> None:
         snapshot = {field: copy.deepcopy(getattr(self, field)) for field in WORKFLOW_FIELDS}
         snapshot["pendingResult"] = copy.deepcopy(self._pending_result)
         snapshot["runningStartedEpoch"] = self._running_started_epoch
         snapshot["stateStoreVersion"] = "sqlite-prelaunch-state-v1"
         self.workflow_store.save(snapshot)
+
+
+def _sanitize_finding_record(finding: dict[str, Any]) -> None:
+    source_path = finding.get("sourcePath")
+    if isinstance(source_path, str):
+        finding["sourcePath"] = safe_public_source_path(source_path)
+
+    signals = finding.get("signals")
+    if isinstance(signals, list):
+        finding["signals"] = [sanitize_public_signal(signal) if isinstance(signal, dict) else signal for signal in signals]

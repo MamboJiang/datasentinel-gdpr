@@ -84,6 +84,7 @@ The account interaction is documented in `docs/design/prelaunch-account-system.m
 - If no valid session exists, the app renders a sign-in gate backed by `/api/auth/providers`.
 - Google and GitHub buttons navigate to backend login routes; the frontend does not receive provider tokens.
 - The account menu renders the safe session profile and exposes logout through `/api/auth/logout`.
+- The account menu platform status tile renders the current project-server connection state from the frontend data provider instead of static health copy.
 - Signed-in Sources, findings, audit, metrics, and evaluation views render the current account's API state only; another account's object ids must resolve as empty or not found.
 - Permission-boundary surfaces remain visible after login because authentication is not production authorization.
 - The signed-in empty state must avoid fake findings before a source has been configured and scanned.
@@ -101,11 +102,12 @@ The full-scan start interaction connects Source Connector and Admin Dashboard su
 
 ## Prelaunch Source Input Interaction
 
-The source-input interaction is documented in `docs/design/google-drive-source-integration.md` and `docs/design/local-format-recognition-difficulty.md`.
+The source-input interaction is documented in `docs/design/google-drive-source-integration.md`, `docs/design/local-format-recognition-difficulty.md`, and `docs/design/source-scan-failure-state.md`.
 
 - The Source Connector offers direct HTTPS file links, Google Drive selected files/folders, and host-allowed local paths as explicit modes.
 - Google Drive selection opens the official Picker UI when host public credentials are configured.
 - Drive file/folder selections store metadata only; the browser keeps the short-lived access token in memory and sends it only when starting a scan.
+- Saved Google Drive sources require a current in-memory Picker token before scan controls are enabled, and source-read failures clear visible scan-derived findings instead of falling back to local mock findings.
 - Direct HTTPS links are treated as one-file sources and must show connection or scan errors when the URL fails policy checks.
 - PDF files are accepted only when they have an extractable text layer; DOCX, XLSX, and PPTX are accepted through deterministic Office Open XML extraction; image files are scanned through local OCR when available; VTT/SRT transcripts are scanned as video transcript text; image-only or unreadable PDFs and raw video media remain OCR-deferred in prelaunch.
 - The Sources page shows the current prelaunch supported file-type list below the source table or empty state.
@@ -142,9 +144,10 @@ The signal-detection interaction extends the Dashboard latest-scan and pipeline 
 
 - Running scan state shows deterministic signal detection as pending until extraction is ready.
 - Completed scan state shows detector rules version/hash, evidence requirements, detected/redacted signal counts, findings-with-signals count, and signal-type counts.
+- Completed sample-form scans show findings for labeled contact, identity, government ID, employment, education, financial, online/device, location, vehicle, health, biometric, genetic, special-category, family/minor, credential, incident, and access fields when completed values exist.
 - The pipeline summary shows `detecting_signals` after `extracting_content` and before `judging_context_risk`.
 - Finding details continue to show redacted detector evidence with detector, confidence, snippet, and location when available.
-- The UI must avoid raw source content, unredacted personal data, detector secrets, legal conclusions, deletion instructions, or claims of GDPR compliance.
+- The UI must avoid raw source content, raw source URLs, absolute host paths, adjacent raw match context, unredacted personal data, detector secrets, legal conclusions, deletion instructions, or claims of GDPR compliance.
 
 ## Context and Risk Judgment Interaction
 

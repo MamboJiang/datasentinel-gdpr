@@ -5,6 +5,12 @@ description: Register supported sources, understand scan readiness, and remove D
 
 Sources are the places DataSentinel can inspect during a scan. A source registration stores metadata that lets the product describe the source and decide whether scanning is allowed.
 
+<DocsScreenshot
+  src="/docs/media/sources-list.png"
+  alt="Sources page showing configured sources, readiness status, source type, root label, owner, and scan actions."
+  caption="The Sources table should make readiness and allowed actions obvious before a scan starts. Removing a source removes the DataSentinel registration, not the external file."
+/>
+
 ## Supported prelaunch source types
 
 Depending on deployment setup, DataSentinel can work with:
@@ -28,6 +34,16 @@ The prelaunch scanner is designed for controlled and bounded input. Supported or
 - Raw video media as recognized but OCR-deferred until an approved video processor exists.
 
 Image-only or unreadable PDFs, unsupported files, private addresses, credential-bearing URLs, over-limit inputs, and missing Drive tokens should be rejected or marked as deferred before workflow state changes.
+
+## Readiness signals
+
+| Field | What it tells you | Safe next action |
+| --- | --- | --- |
+| Source type | Which input path DataSentinel will use. | Confirm it matches the source you intended to register. |
+| Status | Whether the source is ready, mocked, denied, warning, or incomplete. | Start a scan only when the row is ready and your permission boundary allows it. |
+| Root label | Human-readable source scope. | Use it to identify the source without exposing raw URLs or host paths. |
+| Owner or steward | Who receives review work when routing succeeds. | Confirm the owner or escalation route before relying on review metrics. |
+| Row actions | Test connection, full scan, delta scan, or delete registration. | Use disabled or denied actions as boundary information, not as UI failure. |
 
 ## Register a direct HTTPS link
 

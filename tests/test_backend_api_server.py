@@ -15,7 +15,10 @@ from backend.datasentinel.auth_support import cookie_value, unsign
 from backend.datasentinel import build_default_app, make_handler
 from backend.datasentinel.source_http import SourceHttpApp, build_sqlite_app
 from backend.datasentinel.source_documents import SourceDocument, SourceDocumentBatch
+from backend.datasentinel.deterministic_signals import detect_signals
+from backend.datasentinel.persistent_demo_state import PersistentPrelaunchState
 from backend.datasentinel.sqlite_store import SQLiteAuthStore, SQLiteDocumentStore
+from backend.datasentinel.source_store import SourceStore
 
 
 class FakeOAuthTransport:
@@ -67,6 +70,18 @@ def start_github_session(app: SourceHttpApp) -> str:
     session_cookies = [item for item in callback["headers"]["Set-Cookie"] if item.startswith(f"{SESSION_COOKIE}=")]
     assert session_cookies
     return session_cookies[0]
+
+
+class MemoryWorkflowStore:
+    def __init__(self, snapshot: dict[str, object]) -> None:
+        self.snapshot = snapshot
+        self.saved: dict[str, object] | None = None
+
+    def load(self) -> dict[str, object]:
+        return self.snapshot
+
+    def save(self, payload: dict[str, object]) -> None:
+        self.saved = payload
 
 
 def create_sqlite_session(db_path: Path, user_id: str, subject: str) -> str:
@@ -341,6 +356,7 @@ class BackendApiServerTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             root = Path(directory) / "source"
             root.mkdir()
+            (root / "placeholder.txt").write_text("placeholder", encoding="utf-8")
             db_path = Path(directory) / "datasentinel.sqlite3"
             seeded = build_sqlite_app(db_path)
             created = seeded.handle(
@@ -373,6 +389,57 @@ class BackendApiServerTests(unittest.TestCase):
             self.assertEqual(findings["body"]["data"], [])
             self.assertEqual(audit_events["body"]["data"], [])
             self.assertEqual(metrics["body"]["data"]["flaggedFiles"], 0)
+
+    def test_prelaunch_empty_findings_pagination_uses_real_total(self) -> None:
+        with TemporaryDirectory() as directory:
+            db_path = Path(directory) / "datasentinel.sqlite3"
+
+            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+                app = build_sqlite_app(db_path)
+                findings = app.handle("GET", "/api/findings", "trace_empty_pagination")
+
+        self.assertEqual(findings["body"]["data"], [])
+        self.assertEqual(findings["body"]["pagination"]["total"], 0)
+
+    def test_prelaunch_restored_findings_are_sanitized_before_public_response(self) -> None:
+        snapshot = {
+            "scan": {"scanId": "current", "sourceId": "", "status": "idle", "stage": "not_started", "progress": 0},
+            "findings": [{
+                "findingId": "finding_old",
+                "fileName": "Supplier_Onboarding_Example_A.pdf",
+                "sourcePath": "https://drive.google.com/file/d/raw-file-id/view?usp=drivesdk",
+                "riskLevel": "medium",
+                "riskScore": 64,
+                "status": "assigned",
+            }],
+            "finding_details": {
+                "finding_old": {
+                    "findingId": "finding_old",
+                    "fileName": "Supplier_Onboarding_Example_A.pdf",
+                    "sourcePath": "https://drive.google.com/file/d/raw-file-id/view?usp=drivesdk",
+                    "riskLevel": "medium",
+                    "riskScore": 64,
+                    "status": "assigned",
+                    "signals": [{
+                        "type": "email",
+                        "detector": "email_pattern",
+                        "confidence": 0.91,
+                        "snippet": "Tax ID DE123456789 contact [REDACTED_EMAIL] 12 Vendor Street",
+                    }],
+                },
+            },
+        }
+        state = PersistentPrelaunchState(SourceStore(), MemoryWorkflowStore(snapshot))
+        findings = state.list_findings("trace_restore_findings")
+        detail = state.get_finding("finding_old", "trace_restore_detail", "/api/findings/finding_old")
+        serialized = json.dumps({"findings": findings["body"], "detail": detail["body"]})
+
+        self.assertEqual(findings["body"]["pagination"]["total"], 1)
+        self.assertIn("source_reference:", serialized)
+        self.assertIn("Email: [REDACTED_EMAIL]", serialized)
+        self.assertNotIn("https://drive.google.com", serialized)
+        self.assertNotIn("DE123456789", serialized)
+        self.assertNotIn("12 Vendor Street", serialized)
 
     def test_google_drive_picker_config_exposes_only_public_setup(self) -> None:
         app = auth_app()
@@ -513,17 +580,213 @@ class BackendApiServerTests(unittest.TestCase):
         self.assertIn("[REDACTED_PHONE]", serialized)
         self.assertNotIn("+491711234567", serialized)
 
+    def test_prelaunch_signal_detection_covers_form_fields_with_safe_snippets(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory) / "source"
+            root.mkdir()
+            (root / "placeholder.txt").write_text("placeholder", encoding="utf-8")
+            db_path = Path(directory) / "datasentinel.sqlite3"
+
+            def fake_reader(source: dict[str, object], payload: dict[str, object]) -> SourceDocumentBatch:
+                return SourceDocumentBatch(
+                    documents=[
+                        SourceDocument("Training_Evaluation_Example_A.pdf", "https://drive.example/training-a", "Participant: Lina Becker\nComments: Follow up on payroll dashboard access.", 100, "Drive"),
+                        SourceDocument("IT_Access_Request_Example_A.pdf", "https://drive.example/it-a", "Employee: Marco Klein\nEmployee ID: E-31705\nAccess Level: Admin\nJustification: Needs billing system access.", 100, "Drive"),
+                        SourceDocument("Incident_Report_Example_A.pdf", "https://drive.example/incident-a", "Reported By: Sofia Roth\nDescription: Lost badge in reception area.\nCorrective Action: Replace badge.", 100, "Drive"),
+                        SourceDocument("Expense_Report_Example_A.pdf", "https://drive.example/expense-a", "Employee Name: Noah Weber\nEmployee ID: E-20491\nAmount: 24.90 EUR", 100, "Drive"),
+                        SourceDocument("Supplier_Onboarding_Example_A.pdf", "https://drive.example/supplier-a", "Contact Email: supplier.owner@example.org\nTax ID: DE123456789\nAddress: 12 Vendor Street", 100, "Drive"),
+                    ],
+                    total_files=5,
+                    total_bytes=500,
+                    unsupported_files=0,
+                    warnings=[],
+                    family="Drive",
+                    extraction_method="google_drive_text",
+                )
+
+            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+                app = build_sqlite_app(db_path, [root])
+                app.handle(
+                    "POST",
+                    "/api/sources",
+                    "trace_form_source_create",
+                    json.dumps({
+                        "sourceId": "source_form_fields",
+                        "name": "Form field source",
+                        "sourceType": "local_repo",
+                        "rootLabel": str(root),
+                        "config": {"rootPath": str(root)},
+                    }),
+                    "application/json",
+                )
+                app.handle("POST", "/api/sources/source_form_fields/connect-test", "trace_form_connect")
+                with mock.patch("backend.datasentinel.prelaunch_state.read_source_documents", fake_reader):
+                    started = app.handle(
+                        "POST",
+                        "/api/scans/full",
+                        "trace_form_scan",
+                        json.dumps({"sourceId": "source_form_fields"}),
+                        "application/json",
+                    )
+                    time.sleep(1.1)
+                    scan = app.handle("GET", f"/api/scans/{started['body']['data']['scanId']}", "trace_form_scan_done")
+                    findings = app.handle("GET", "/api/findings", "trace_form_findings")
+                    first_detail = app.handle("GET", f"/api/findings/{findings['body']['data'][0]['findingId']}", "trace_form_detail")
+                    serialized = json.dumps({"scan": scan["body"], "detail": first_detail["body"], "findings": findings["body"]})
+
+        signal_types = {item["type"] for item in scan["body"]["data"]["signalDetection"]["signalTypeCounts"]}
+
+        self.assertEqual(len(findings["body"]["data"]), 5)
+        self.assertEqual(findings["body"]["pagination"]["total"], 5)
+        self.assertTrue({"person_name", "employee_id", "incident_context", "expense_amount", "tax_id"}.issubset(signal_types))
+        self.assertIn("[REDACTED_", serialized)
+        for raw_value in [
+            "Lina Becker",
+            "Follow up on payroll dashboard access",
+            "Marco Klein",
+            "E-31705",
+            "Sofia Roth",
+            "Lost badge in reception area",
+            "Noah Weber",
+            "E-20491",
+            "24.90 EUR",
+            "supplier.owner@example.org",
+            "DE123456789",
+            "12 Vendor Street",
+            "https://drive.example",
+        ]:
+            self.assertNotIn(raw_value, serialized)
+
+    def test_prelaunch_detector_covers_broad_personal_data_categories_without_raw_values(self) -> None:
+        text = "\n".join([
+            "Full Name: Alex Morgan",
+            "Date of Birth: 1991-03-14",
+            "Passport Number: C01X00T55",
+            "National ID: 123-45-6789",
+            "Driver License: D1234567",
+            "Credit Card: 4111 1111 1111 1111",
+            "Bank Account: DE89370400440532013000",
+            "GPS Location: 52.5200, 13.4050",
+            "IP Address: 203.0.113.9",
+            "Device ID: 00:1A:2B:3C:4D:5E",
+            "Username: @alex_private",
+            "Password: hunter2-secret",
+            "Medical Record: MRN-881199",
+            "Diagnosis: asthma treatment plan",
+            "Fingerprint Template: enrolled",
+            "DNA Profile: carrier screening",
+            "Ethnicity: Hispanic",
+            "Political Opinion: local party volunteer",
+            "Religion: Buddhist",
+            "Trade Union Membership: Unite",
+            "Sexual Orientation: bisexual",
+            "Criminal Conviction: spent conviction disclosed",
+            "Emergency Contact: Jamie Morgan",
+            "Student ID: S-88721",
+            "Salary: 82000 EUR",
+            "Profile URL: https://www.linkedin.com/in/alex-morgan",
+            "License Plate: B DS 2049",
+        ])
+
+        signals = detect_signals(text)
+        signal_types = {signal["type"] for signal in signals}
+        serialized = json.dumps(signals)
+
+        self.assertTrue({
+            "account_handle",
+            "bank_account",
+            "biometric_data",
+            "credential_secret",
+            "criminal_record",
+            "date_of_birth",
+            "device_identifier",
+            "driver_license",
+            "family_data",
+            "genetic_data",
+            "health_data",
+            "location_data",
+            "medical_identifier",
+            "national_identifier",
+            "online_identifier",
+            "passport_number",
+            "payment_card",
+            "political_opinion",
+            "race_ethnicity",
+            "religious_belief",
+            "salary_compensation",
+            "sex_life_orientation",
+            "student_identifier",
+            "trade_union",
+            "url",
+            "license_plate",
+        }.issubset(signal_types))
+        self.assertNotIn("phone_number", signal_types)
+        for raw_value in [
+            "Alex Morgan",
+            "1991-03-14",
+            "C01X00T55",
+            "123-45-6789",
+            "D1234567",
+            "4111 1111 1111 1111",
+            "DE89370400440532013000",
+            "52.5200, 13.4050",
+            "203.0.113.9",
+            "00:1A:2B:3C:4D:5E",
+            "@alex_private",
+            "hunter2-secret",
+            "MRN-881199",
+            "asthma treatment plan",
+            "Hispanic",
+            "local party volunteer",
+            "Buddhist",
+            "Unite",
+            "bisexual",
+            "spent conviction disclosed",
+            "Jamie Morgan",
+            "S-88721",
+            "82000 EUR",
+            "linkedin.com/in/alex-morgan",
+            "B DS 2049",
+        ]:
+            self.assertNotIn(raw_value, serialized)
+
     def test_google_drive_scan_requires_per_scan_access_token(self) -> None:
         with TemporaryDirectory() as directory:
             db_path = Path(directory) / "datasentinel.sqlite3"
+            local_root = Path(directory) / "local"
+            local_root.mkdir()
+            (local_root / "contacts.txt").write_text("Contact Email: stale@example.org", encoding="utf-8")
             with mock.patch.dict("os.environ", {
                 "DATASENTINEL_ENABLE_DEMO_FIXTURES": "false",
                 "GOOGLE_CLIENT_ID": "google-client-id",
                 "GOOGLE_PICKER_API_KEY": "picker-public-key",
                 "GOOGLE_CLOUD_PROJECT_NUMBER": "1234567890",
             }):
-                app = build_sqlite_app(db_path)
-                created = app.handle(
+                app = build_sqlite_app(db_path, [local_root])
+                app.handle(
+                    "POST",
+                    "/api/sources",
+                    "trace_drive_local_create",
+                    json.dumps({
+                        "sourceId": "source_local_before_drive",
+                        "name": "Local before Drive",
+                        "sourceType": "local_repo",
+                        "rootLabel": str(local_root),
+                        "config": {"rootPath": str(local_root)},
+                    }),
+                    "application/json",
+                )
+                app.handle("POST", "/api/sources/source_local_before_drive/connect-test", "trace_drive_local_connect")
+                app.handle(
+                    "POST",
+                    "/api/scans/full",
+                    "trace_drive_local_scan",
+                    json.dumps({"sourceId": "source_local_before_drive"}),
+                    "application/json",
+                )
+                time.sleep(1.1)
+                stale_findings = app.handle("GET", "/api/findings", "trace_drive_stale_findings")
+                created_drive = app.handle(
                     "POST",
                     "/api/sources",
                     "trace_drive_create",
@@ -543,10 +806,18 @@ class BackendApiServerTests(unittest.TestCase):
                     json.dumps({"sourceId": "source_drive"}),
                     "application/json",
                 )
+                current_scan = app.handle("GET", "/api/scans/current", "trace_drive_failed_scan")
+                findings = app.handle("GET", "/api/findings", "trace_drive_findings_after_failure")
+                listed_sources = app.handle("GET", "/api/sources", "trace_drive_sources_after_failure")
 
-        self.assertEqual(created["body"]["data"]["status"], "connected")
+        drive_source = next(source for source in listed_sources["body"]["data"] if source["sourceId"] == "source_drive")
+        self.assertGreater(len(stale_findings["body"]["data"]), 0)
+        self.assertEqual(created_drive["body"]["data"]["status"], "authorization_required")
         self.assertEqual(rejected["status"], 409)
         self.assertIn("short-lived access token", rejected["body"]["detail"])
+        self.assertEqual(current_scan["body"]["data"]["status"], "failed")
+        self.assertEqual(findings["body"]["data"], [])
+        self.assertEqual(drive_source["status"], "authorization_required")
 
     def test_source_registration_strips_runtime_tokens_from_config(self) -> None:
         with TemporaryDirectory() as directory:

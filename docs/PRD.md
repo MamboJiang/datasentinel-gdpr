@@ -153,7 +153,8 @@ The next implementation slice connects content extraction to redacted detector e
 - Add an explicit signal-detection stage after content extraction and before context/risk judgment.
 - Use extracted text only inside the internal processing boundary.
 - Preserve detector rules version/hash, active policy-pack evidence requirements, evaluated evidence-candidate count, redacted signal count, findings-with-signals count, and signal-type counts.
-- Expose redacted evidence signals for finding cards without raw extracted text, file bodies, page images, or unredacted personal data.
+- Expose redacted evidence signals for finding cards without raw extracted text, file bodies, page images, raw source URLs, absolute host paths, adjacent raw match context, or unredacted personal data.
+- Detect completed labeled sample-form fields and common personal-data identifiers across contact, identity, government ID, employment, education, financial, online/device, location, vehicle, health, biometric, genetic, special-category, family/minor, credential, incident, and access workflows in addition to direct email, phone, URL, handle, SSN/NINO, IP, MAC, UUID, coordinate, payment-card, and IBAN-like patterns.
 - Keep deterministic processing, model calls, and estimated paid-service cost at zero for P0.
 - Leave risk scoring, owner routing, and human review decisions in their downstream stages.
 

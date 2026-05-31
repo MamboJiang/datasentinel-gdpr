@@ -164,7 +164,8 @@ Technical constraints:
 - Deterministic signal detection is an explicit workflow boundary after `extracting_content`; it is not context/risk judgment, owner routing, legal review, or deletion handling.
 - The stage consumes internal extracted text/evidence candidates, detector rules version/hash, and active policy-pack evidence requirements.
 - The stage exposes `signalDetection` as a scan summary with detector rules version/hash, evidence requirements, evaluated evidence-candidate count, detected/redacted signal count, findings-with-signals count, signal-type counts, warnings, and `rawContentExposed = false`.
-- Public payloads must not expose raw extracted text, full file content, page images, detector secrets, or unredacted personal data.
+- Public payloads must not expose raw extracted text, full file content, page images, detector secrets, raw source URLs, absolute source paths, adjacent unredacted match context, or unredacted personal data.
+- The prelaunch detector set covers completed labeled form fields for names, dates of birth, employee/student/government identifiers, passport and driver-license fields, payment and bank data, online and device identifiers, location data, vehicle plates, access context, incident context, supplier tax IDs/addresses, health, biometric, genetic, race/ethnicity, political, religious, trade-union, sexual-orientation, criminal-record, family/minor, compensation, credential-secret, and free-text review comments in addition to email, phone, URL, handle, SSN/NINO, IP, MAC, UUID, coordinate, payment-card, and IBAN-like patterns.
 - Evaluation must preserve a signal-detection rules hash, deterministic reproducibility, zero model calls, and zero estimated paid-service cost.
 - Production NER, OCR, parser, Microsoft Graph, OAuth, directory, notification, ticketing, and deletion integrations are not added in this slice.
 
@@ -322,7 +323,7 @@ The approved first server integration is a stdlib Python HTTP server with no add
 
 Technical constraints:
 
-- The frontend calls `/api` first and falls back to local mock workflow when the server is unavailable.
+- The frontend calls `/api` first and falls back to local mock workflow only when the server is unavailable; `application/problem+json` command rejections remain server responses and must not trigger mock scanning.
 - Vite proxies `/api` to `127.0.0.1:8000` in development.
 - Caddy proxies `/api/*` to the loopback API process on `agent-us`.
 - `--db-path` or `DATASENTINEL_DB_PATH` may point the API server to a local SQLite file for restart-safe P0 state.

@@ -3,8 +3,10 @@ import type { LucideIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../data/AuthContext'
+import { useData } from '../data/useData'
 import { utilityRoutes } from '../data/sessionSimulation'
 import { isLanguagePreferenceCode, languagePreferenceOptions, useI18n } from '../i18n'
+import { getPlatformStatusView } from './platformStatus'
 import './AccountMenu.css'
 
 type ThemeMode = 'system' | 'light' | 'dark'
@@ -46,8 +48,10 @@ export function AccountMenu({
 }) {
   const { language, setLanguage, t } = useI18n()
   const { session } = useAuth()
+  const { serverConnection } = useData()
   const [themeMode, setThemeMode] = useState<ThemeMode>(getStoredThemeMode)
   const selectedLanguage = languagePreferenceOptions.find(({ code }) => code === language) ?? languagePreferenceOptions[0]
+  const platformStatus = getPlatformStatusView(serverConnection.status)
   const account = session.user ?? {
     displayName: 'Not signed in',
     email: null,
@@ -150,9 +154,14 @@ export function AccountMenu({
             ) : null}
 
             {statusRoute ? (
-              <Link className="platform-status" to={statusRoute.path} onClick={onClose}>
+              <Link
+                aria-label={`${t('Platform Status')}: ${t(platformStatus.label)}`}
+                className={`platform-status platform-status-${platformStatus.tone}`}
+                to={statusRoute.path}
+                onClick={onClose}
+              >
                 <span>{t('Platform Status')}</span>
-                <strong>{t('All systems normal.')}</strong>
+                <strong>{t(platformStatus.label)}</strong>
                 <i aria-hidden="true" />
               </Link>
             ) : null}

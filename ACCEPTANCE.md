@@ -50,6 +50,12 @@ The user-facing documentation surface is accepted when:
 - `docs-site/` contains a separate Fumadocs and Next.js documentation app rather than changing the existing Vite console framework.
 - The documentation app can be installed and built from `docs-site` with npm scripts.
 - The docs sidebar exposes task-oriented pages for quick start, accounts and Workspaces, sources, dashboard and scans, findings and review, audit and evaluation, governance, safety boundaries, and FAQ.
+- The docs sidebar does not duplicate task pages with separate top-level shortcut links for the same destinations.
+- The docs homepage presents a prominent quick-start CTA, visible first-review workflow, task cards, role-oriented paths, and safety boundary summary.
+- The docs homepage renders without the Fumadocs sidebar, while nested docs pages keep sidebar navigation.
+- The Quick Start page presents the first review loop as a scannable step path with readiness checks and next-page links.
+- Key user-guide pages include cropped, non-sensitive product screenshots plus tables that explain visible fields, metrics, and next actions.
+- Screenshot assets are served from the docs prefix and do not require a root-level static route that could collide with the product frontend.
 - User-facing docs explain DataSentinel's source registration, full-scan, findings review, audit, evaluation, governance, Workspace, and permission-boundary workflows without requiring readers to understand API contracts.
 - User-facing docs state that DataSentinel does not provide legal advice or claim full GDPR compliance.
 - User-facing docs state that deletion is simulated in P0 and source-registration deletion does not delete external files.
@@ -82,6 +88,7 @@ The first implementation milestone is accepted when:
 - New operation feedback appears in a small top-right notification preview, auto-dismisses after a few seconds, and does not open, close, clear, dismiss, or reorder the session notification center.
 - On desktop, the sidebar can be resized with a pointer or keyboard-accessible separator, collapses when dragged below the configured threshold, caps expansion at the configured maximum width, and keeps the content area aligned without overlap.
 - Account menu actions open local utility routes or local UI states for account settings, theme, language preference, feedback, homepage, changelog, help, docs, platform status, prototype plan, and session boundary without adding production authentication, billing, support, monitoring, tenant, external translation service, or external feedback integration.
+- The account menu platform status tile shows whether the frontend data provider is checking, connected to, or disconnected from the project API server; it must not show a static all-systems-normal message when the server is unavailable.
 - The account menu language preference lists EU language options, persists the selected code locally, updates core user-facing UI copy through static frontend dictionaries, keeps developer-facing docs and code comments English-only, and does not call a backend or translation service.
 - A full scan can be started on a controlled sample source or a prelaunch connected source.
 - Starting a full scan uses an explicit `sourceId`, is allowed only for the controlled `mock_ready` sample source or approved prelaunch source types, and records scan-start and scan-completion audit events in the workflow.
@@ -170,7 +177,7 @@ Google Drive and direct-link source input are accepted when:
 - The Sources page can select Google Drive files or a folder through Google Picker when host credentials are configured.
 - Google Picker intermediate callbacks do not close the source setup flow; picked files or folders remain visible in the Add Source dialog before registration.
 - Google Drive source registration stores selected item metadata but not access tokens.
-- Google Drive full scans require a short-lived per-scan access token and reject missing tokens without changing scan, finding, audit, metric, or evaluation state.
+- Google Drive full scans require a short-lived per-scan access token; missing or expired tokens reject the scan, put the workflow into a failed source-unavailable state, clear visible scan-derived findings, and never fall back to local mock findings.
 - PDF files with an extractable text layer can be scanned from local, direct-link, or Google Drive selected sources without storing raw PDF bodies or raw extracted text.
 - DOCX, XLSX, and PPTX files can be scanned deterministically from local, direct-link, or Google Drive selected sources without storing raw Office XML or raw extracted text.
 - PNG, JPG/JPEG, TIFF, BMP, and WEBP image files can be scanned through host-local Tesseract OCR when `DATASENTINEL_OCR_MODE=local` and the host binary is available, without storing raw images or raw OCR text.
@@ -179,7 +186,8 @@ Google Drive and direct-link source input are accepted when:
 - Image-only or unreadable PDFs are reported as unsupported/OCR-deferred prelaunch inputs rather than silent successes.
 - The Sources page can delete a DataSentinel source registration, clears DataSentinel scan/finding state derived from that deleted registration, and the backend `DELETE /api/sources/{sourceId}` route does not delete external source files.
 - Source scanning reads file content only during scan execution and persists metadata, redacted evidence, findings, metrics, and audit events rather than raw source bodies.
-- Automated tests cover Picker config redaction, Picker picked/cancel/pending callback handling, empty-project source registration readiness, remote-link redaction/no-raw-content behavior, Google Drive share-link rejection, PDF text-layer scanning without raw-text persistence, DOCX/XLSX/PPTX deterministic extraction with difficulty counts, local image OCR with redaction, video transcript scanning, raw video media deferred handling, source-registration deletion, and missing Drive token rejection.
+- Prelaunch finding payloads and console views use safe source references or source names instead of raw external source URLs or absolute host paths.
+- Automated tests cover Picker config redaction, Picker picked/cancel/pending callback handling, empty-project source registration readiness, remote-link redaction/no-raw-content behavior, Google Drive share-link rejection, safe source-reference display, PDF text-layer scanning without raw-text persistence, DOCX/XLSX/PPTX deterministic extraction with difficulty counts, local image OCR with redaction, video transcript scanning, raw video media deferred handling, source-registration deletion, Drive token failure clearing stale findings, frontend no-mock-fallback command rejection, and real findings pagination totals.
 
 ## OpenRouter AI Assistive Processing Acceptance
 
@@ -244,9 +252,11 @@ The deterministic signal-detection stage is accepted when:
 - Running scans show signal detection as pending until extraction completes.
 - Completed scans expose a `signalDetection` summary with detector rules version/hash, active evidence requirements, evaluated evidence candidates, detected signals, redacted signals, findings-with-signals, signal-type counts, warnings, and `rawContentExposed = false`.
 - Finding details expose only redacted signal snippets with detector, confidence, and location when available; no raw extracted text, file bodies, page images, detector secrets, or unredacted personal data crosses public payloads.
+- Completed labeled forms can produce findings from contact, identity, government ID, employment, education, financial, online/device, location, vehicle, health, biometric, genetic, special-category, family/minor, credential, incident, and access fields even when no email address is present; snippets expose only labels and redaction markers, not adjacent raw source context.
+- Deterministic pattern rules cover email, phone, SSN/NINO, IP, MAC, UUID, personal-profile URL, account handle, coordinates, Luhn-valid payment cards, and IBAN-like values without emitting matched values.
 - Admin metrics expose signal counts, and evaluation preserves a signal-detection rules hash plus deterministic reproducibility, zero model calls, and zero estimated paid-service cost.
 - Not-ready sources cannot create scan, inventory, extraction, signal-detection, finding, audit, metric, or evaluation state changes.
-- Automated behavior tests cover running, completed, redaction boundary, rules hash, metrics, evaluation traceability, and not-ready-source paths.
+- Automated behavior tests cover running, completed, sample form-field coverage, redaction boundary, rules hash, metrics, evaluation traceability, and not-ready-source paths.
 
 ## Context and Risk Judgment Acceptance
 

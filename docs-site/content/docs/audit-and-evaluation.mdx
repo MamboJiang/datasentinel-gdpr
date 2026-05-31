@@ -5,6 +5,12 @@ description: Use audit events and evaluation metrics to verify accountability, q
 
 Audit and evaluation are first-class product surfaces. They show what happened and how well the workflow performed.
 
+<DocsScreenshot
+  src="/docs/media/audit-trail.png"
+  alt="Audit trail showing workflow events, outcomes, actors, timestamps, and linked scan or finding references."
+  caption="Audit events turn scan and review work into an accountability record. Use them to verify actor, outcome, timestamp, and affected object."
+/>
+
 ## Audit Trail
 
 The Audit Trail records workflow events such as:
@@ -21,6 +27,16 @@ Events should show structured context such as action, outcome, actor, object typ
 
 Human-entered text should be sanitized before it appears in audit payloads or UI surfaces.
 
+## Audit event fields
+
+| Field | Why it matters | What to check |
+| --- | --- | --- |
+| Event type | Names the workflow action. | Scan, assignment, evidence assembly, and review events are represented separately. |
+| Outcome | Shows accepted, completed, denied, or escalated state. | Denied or escalated actions remain visible instead of disappearing. |
+| Actor | Identifies whether the system or a human acted. | Human review decisions have a human actor and required reason when accepted. |
+| Object reference | Links the event to a scan, source, finding, or review. | References match the visible finding or source you are investigating. |
+| Timestamp | Orders workflow events. | Review decisions happen after scan and evidence assembly events. |
+
 ## Finding timeline
 
 Each finding detail page can show a scoped audit timeline. Use it to understand:
@@ -35,15 +51,21 @@ Each finding detail page can show a scoped audit timeline. Use it to understand:
 
 Evaluation helps the team and reviewers inspect scan quality. The surface can show:
 
-- Precision.
-- Recall.
-- F1.
-- Reproducibility.
-- Throughput.
-- Resource intensity.
-- Model-call count.
-- Estimated paid-service cost.
-- Rules or pipeline traceability.
+<DocsScreenshot
+  src="/docs/media/evaluation-metrics.png"
+  alt="Evaluation page showing precision, recall, F1 score, reproducibility, throughput, paid-service cost, and reproducibility hashes."
+  caption="Evaluation summarizes quality and resource intensity. It is evidence about the run, not a legal-compliance certificate."
+/>
+
+| Metric | What it means | Expected P0 interpretation |
+| --- | --- | --- |
+| Precision | Share of flagged items that were relevant. | Helps spot noisy evidence or overly broad rules. |
+| Recall | Share of expected relevant items found. | Helps detect missed categories or unsupported file paths. |
+| F1 score | Balance between precision and recall. | Useful for comparing scan versions or policy packs. |
+| Reproducibility | Whether the same inputs produce stable results. | Deterministic runs should stay reproducible. |
+| Throughput | Files processed per second. | Useful for capacity and demo readiness, not compliance. |
+| Resource intensity | Memory, CPU, model calls, and paid-service cost. | Deterministic P0 runs should show zero model calls and zero paid-service cost. |
+| Traceability hashes | Versions of dataset, rules, config, and evaluation. | Use them to compare whether two runs used the same basis. |
 
 Evaluation metrics are product evidence, not a compliance certificate.
 

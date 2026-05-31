@@ -29,13 +29,16 @@
 | --- | --- | --- |
 | USERDOC-001 | Install the Fumadocs docs app | `npm install` succeeds from `docs-site` and creates only docs-site dependency artifacts. |
 | USERDOC-002 | Build the Fumadocs docs app | `npm run build` succeeds from `docs-site`. |
-| USERDOC-003 | Review docs navigation | The sidebar contains quick start, accounts and Workspaces, sources, dashboard and scans, findings and review, audit and evaluation, governance, safety boundaries, and FAQ pages. |
+| USERDOC-003 | Review docs navigation | The sidebar contains quick start, accounts and Workspaces, sources, dashboard and scans, findings and review, audit and evaluation, governance, safety boundaries, and FAQ pages without duplicate top-level shortcuts to the same destinations. |
 | USERDOC-004 | Review user-facing workflow coverage | The docs explain source registration, full scans, findings review, human decisions, audit, evaluation, governance, Workspace scoping, and permission boundaries in user language. |
 | USERDOC-005 | Review safety copy | The docs state no legal advice, no full GDPR compliance claim, deletion simulated in P0, no raw-content exposure, and no provider-token persistence. |
 | USERDOC-006 | Review scope discipline | The docs do not invent API fields, endpoints, production Microsoft Graph access, tenant integrations, real deletion behavior, legal conclusions, or hidden permission powers. |
 | USERDOC-007 | Request `https://founder-force.uk/docs` | The response serves the Fumadocs user guide under the existing domain prefix. |
 | USERDOC-008 | Open the console account menu and click Docs | The browser performs a document navigation to `/docs` and renders the deployed Fumadocs guide. |
 | USERDOC-009 | Request `https://founder-force.uk/docs/api/search` | The response comes from the docs search route, while `https://founder-force.uk/api/health` still comes from the product API. |
+| USERDOC-010 | Review `/docs` and `/docs/quick-start` visually | The homepage shows a prominent quick-start CTA, first-review workflow preview, task cards, and safety summary; Quick Start shows an eight-step path and readiness checks. |
+| USERDOC-011 | Compare homepage and nested docs layouts | `/docs` renders as a standalone homepage without the Fumadocs sidebar, while `/docs/quick-start` keeps sidebar navigation. |
+| USERDOC-012 | Review screenshot and data aids | Quick Start, Sources, Dashboard and Scans, Findings and Review, and Audit and Evaluation include cropped non-sensitive screenshots plus tables that explain fields, metrics, and next actions; screenshot URLs are served under `/docs/media/`. |
 
 ## Backend Planning Checks
 
@@ -139,10 +142,12 @@
 | SRCIN-006 | Select Google Drive files through Picker | The source stores selected item metadata and keeps the access token out of persisted source state. |
 | SRCIN-007 | Receive a non-terminal Google Picker callback before the final picked action | The Add Source dialog remains open and waits for the final picked or cancelled action. |
 | SRCIN-008 | Select a Google Drive folder through Picker | The selected folder appears in the Add Source dialog, and the scan enumerates descendant files up to the prelaunch limit. |
-| SRCIN-009 | Start a Google Drive scan without a per-scan access token | The backend returns `application/problem+json` and leaves scan, finding, audit, metric, and evaluation state unchanged. |
-| SRCIN-010 | Review public payloads after remote-link or Drive scans | Payloads expose metadata, warnings, redacted snippets, findings, metrics, and audit events only; raw file bodies, provider tokens, refresh tokens, client secrets, legal conclusions, and deletion execution are absent. |
+| SRCIN-009 | Start a Google Drive scan without a per-scan access token after previous findings exist | The backend returns `application/problem+json`, records a failed source-unavailable scan state, clears visible scan-derived findings, and does not delete external source files. |
+| SRCIN-009A | Trigger a server-side scan rejection from the frontend | The frontend shows the project-server rejection reason and does not mark the server disconnected or run the local mock scan workflow. |
+| SRCIN-010 | Review public payloads after remote-link or Drive scans | Payloads expose metadata, warnings, redacted snippets, findings, metrics, and audit events only; raw file bodies, raw source URLs, absolute host paths, provider tokens, refresh tokens, client secrets, legal conclusions, and deletion execution are absent. |
 | SRCIN-011 | Scan a PDF that has an extractable text layer and detectable personal-data patterns | The scan produces findings with redacted evidence and does not expose raw extracted PDF text in public payloads. |
-| SRCIN-012 | Delete a source from the Sources page or `DELETE /api/sources/{sourceId}` | The source registration is removed from DataSentinel state, derived scan/finding state for that deleted source is cleared, external source files are not deleted, and a repeated delete returns not found. |
+| SRCIN-012 | Review source references after local, direct-link, or Google Drive scans | Public findings and console views show a safe source reference or source name, not a raw external URL or absolute host file path. |
+| SRCIN-012A | Delete a source from the Sources page or `DELETE /api/sources/{sourceId}` | The source registration is removed from DataSentinel state, derived scan/finding state for that deleted source is cleared, external source files are not deleted, and a repeated delete returns not found. |
 | SRCIN-013 | Scan DOCX, XLSX, and PPTX files with detectable personal-data patterns | The scan produces redacted findings from deterministic Office Open XML extraction and reports moderate recognition difficulty. |
 | SRCIN-014 | Inspect `contentExtraction` after a deterministic scan | The payload includes difficulty and format counts, `aiAssistanceUsed = false`, `modelCalls = 0`, and no raw source text. |
 | SRCIN-015 | Scan an image file with host OCR available | The scanner extracts OCR text during scan execution, creates only redacted findings, reports `image_ocr` and hard difficulty, and keeps model calls at zero. |
@@ -193,10 +198,12 @@
 | SIGNAL-001 | Start a full scan | The running scan includes `signalDetection.status = pending` and the `detecting_signals` stage after `extracting_content`. |
 | SIGNAL-002 | Complete a full scan | The completed scan includes detector rules version/hash, evidence requirements, evaluated evidence candidates, detected/redacted signal counts, findings-with-signals count, and signal-type counts. |
 | SIGNAL-003 | Verify redaction boundary | Finding details expose only redacted signal snippets and no public payload contains raw extracted text, full file bodies, page images, or unredacted personal data. |
-| SIGNAL-004 | Verify policy evidence requirements | `signalDetection.evidenceRequirements` matches the active policy pack evidence requirements when available. |
-| SIGNAL-005 | Verify evaluation traceability | Evaluation stores the signal-detection rules hash and includes `signal_detection:completed` in the quality-basis input stages. |
-| SIGNAL-006 | Verify resource and cost boundary | Signal detection keeps model calls and estimated paid-service cost at zero. |
-| SIGNAL-007 | Reject signal detection for not-ready source | A not-ready source cannot create scan, extraction, signal-detection, finding, audit, metric, or evaluation state changes. |
+| SIGNAL-004 | Scan completed labeled sample forms without email addresses | Training, IT access, incident, expense, supplier, HR, identity, education, health, special-category, family/minor, credential, online/device, location, vehicle, and financial fields can produce findings while snippets expose only labels and redaction markers. |
+| SIGNAL-004A | Scan deterministic regex-friendly identifiers | Email, phone, SSN/NINO, IP, MAC, UUID, personal-profile URL, account handle, coordinates, Luhn-valid payment cards, and IBAN-like values produce redacted signals without emitting matched values. |
+| SIGNAL-005 | Verify policy evidence requirements | `signalDetection.evidenceRequirements` matches the active policy pack evidence requirements when available. |
+| SIGNAL-006 | Verify evaluation traceability | Evaluation stores the signal-detection rules hash and includes `signal_detection:completed` in the quality-basis input stages. |
+| SIGNAL-007 | Verify resource and cost boundary | Signal detection keeps model calls and estimated paid-service cost at zero. |
+| SIGNAL-008 | Reject signal detection for not-ready source | A not-ready source cannot create scan, extraction, signal-detection, finding, audit, metric, or evaluation state changes. |
 
 ## Context and Risk Judgment Checks
 
@@ -356,7 +363,7 @@
 
 These are not implementation tests yet. They define the areas that future tests should cover:
 
-- App shell behavior for page-title-focused top bar, top-right timestamped notification center, auto-dismissing latest-message preview that does not mutate the notification center, dismiss/clear notification actions, no bottom toast overlay, top-left workspace menu visibility, bottom-left account menu visibility, sidebar collapse, menu open, keyboard close, and platform-status display.
+- App shell behavior for page-title-focused top bar, top-right timestamped notification center, auto-dismissing latest-message preview that does not mutate the notification center, dismiss/clear notification actions, no bottom toast overlay, top-left workspace menu visibility, bottom-left account menu visibility, sidebar collapse, menu open, keyboard close, and account-menu server connection display.
 - Public homepage behavior for root-route rendering, dashboard navigation, scroll-linked parallax, and reduced-motion fallback.
 - File review behavior for format-specific anchors, renderer fallback, keyboard navigation, and redacted preview highlighting.
 - Full-scan behavior with controlled sample files.

@@ -1,6 +1,7 @@
 import { FileText, Highlighter, LocateFixed, ShieldCheck, X } from 'lucide-react'
 import { useState } from 'react'
 import type { Finding, Signal } from '../types'
+import { safeFindingSourceLabel } from './findingDisplay'
 import { humanize } from './formatters'
 import { RiskBadge } from './ui'
 
@@ -46,7 +47,7 @@ export function FileReviewEditor({
           <div>
             <p className="eyebrow">File review</p>
             <h2 id="file-editor-title">{finding.fileName}</h2>
-            <span>{finding.sourcePath ?? 'Source path is not available'}</span>
+            <span>{safeFindingSourceLabel(finding)}</span>
           </div>
           <div className="file-editor-header-actions">
             <RiskBadge riskLevel={finding.riskLevel} score={finding.riskScore} />

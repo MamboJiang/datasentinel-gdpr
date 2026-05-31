@@ -1,7 +1,8 @@
 import { CheckCircle2, Cloud, Database, FileText, FolderOpen, Link2, Plus, RotateCw, ScanSearch, Trash2, X } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useData } from '../data/useData'
-import { canStartDeltaScan, isSourceScanReady } from '../data/scanWorkflow'
+import { canStartDeltaScan } from '../data/scanWorkflow'
+import { canStartSourceScan, sourceScanBlockReason } from '../data/sourceScanReadiness'
 import { pickGoogleDriveItems, type GoogleDrivePickedItem, type GoogleDrivePickerMode } from '../data/googleDrivePicker'
 import { humanize } from '../components/formatters'
 import { Button, EmptyState, PageHeader, StatusBadge } from '../components/ui'
@@ -31,7 +32,7 @@ const SUPPORTED_FILE_TYPES = [
 
 export function SourcesPage() {
   const { t } = useI18n()
-  const { sources, scan, governanceConfig, createSource, deleteSource, startScan, testSourceConnection } = useData()
+  const { sources, scan, governanceConfig, createSource, deleteSource, runtimeAuthorizedSourceIds, startScan, testSourceConnection } = useData()
   const [sourceDialogOpen, setSourceDialogOpen] = useState(false)
   const scanIsRunning = scan.status === 'running'
 
@@ -64,8 +65,9 @@ export function SourcesPage() {
             </thead>
             <tbody>
               {sources.map((source) => {
-                const scanReady = isSourceScanReady(source, governanceConfig)
+                const scanReady = canStartSourceScan(source, governanceConfig, runtimeAuthorizedSourceIds)
                 const deltaReady = scanReady && !scanIsRunning && canStartDeltaScan(scan, source.sourceId)
+                const scanBlockReason = sourceScanBlockReason(source, governanceConfig, runtimeAuthorizedSourceIds)
 
                 return (
                   <tr key={source.sourceId}>
@@ -93,7 +95,7 @@ export function SourcesPage() {
                         <button
                           className="button button-ghost"
                           disabled={!scanReady || scanIsRunning}
-                          title={scanReady ? undefined : t('Scan requires a connected source')}
+                          title={scanReady ? undefined : t(scanBlockReason ?? 'Scan requires a connected source')}
                           type="button"
                           onClick={() => startScan({ scanType: 'full', sourceId: source.sourceId })}
                         >

@@ -105,7 +105,7 @@ class DemoState:
 
     def list_findings(self, trace_id: str) -> dict[str, Any]:
         self._finish_scan_if_ready()
-        pagination = {"limit": 25, "offset": 0, "total": max(len(self.findings), 17), "nextCursor": None}
+        pagination = {"limit": 25, "offset": 0, "total": len(self.findings), "nextCursor": None}
         return response(200, envelope(self.findings, trace_id, pagination=pagination), trace_id)
 
     def get_finding(self, finding_id: str, trace_id: str, path: str) -> dict[str, Any]:
@@ -267,10 +267,11 @@ class DemoState:
             None,
         )
         connectable_types = {"local_repo", "remote_file_link", "google_drive_selection"}
+        ready_statuses = {"connected", "authorization_required"} if source.get("sourceType") == "google_drive_selection" else {"connected"}
         return bool(adapter) and (
             source.get("status") == "mock_ready" and adapter.get("status") == "mock_ready"
             or source.get("sourceType") in connectable_types
-            and source.get("status") == "connected"
+            and source.get("status") in ready_statuses
             and adapter.get("status") == "connected"
         )
 

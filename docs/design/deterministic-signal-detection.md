@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-After inventory and extraction, DataSentinel needs an explicit deterministic signal-detection stage before context/risk judgment. The Atlas requires evidence-first discovery: rules should detect concrete evidence such as email addresses, employee IDs, IBAN-like values, signatures, access roles, reimbursement data, and feedback comments before risk, owner routing, or review guidance is shown.
+After inventory and extraction, DataSentinel needs an explicit deterministic signal-detection stage before context/risk judgment. The Atlas requires evidence-first discovery: rules should detect concrete evidence such as email addresses, employee IDs, government identifiers, online identifiers, location data, financial data, special-category indicators, signatures, access roles, reimbursement data, and feedback comments before risk, owner routing, or review guidance is shown.
 
 This P0 slice stays fixture-backed and deterministic. It does not add runtime parsers, OCR, NER, LLMs, production storage, Microsoft Graph, OAuth, tenant access, deletion, or a new public endpoint.
 
@@ -14,6 +14,7 @@ In scope:
 - A visible `detecting_signals` pipeline stage after `extracting_content` and before `judging_context_risk`.
 - Detector rules version/hash, active policy evidence requirements, evaluated evidence-candidate count, redacted signal count, findings-with-signals count, signal-type counts, warnings, and `rawContentExposed = false`.
 - Finding evidence cards continue to expose redacted signal details through existing finding payloads.
+- Prelaunch rules cover labeled names, dates of birth, employee/student/government identifiers, passport and driver-license fields, payment and bank data, online and device identifiers, location data, vehicle plates, access context, incident descriptions, supplier tax IDs/addresses, health, biometric, genetic, race/ethnicity, political, religious, trade-union, sexual-orientation, criminal-record, family/minor, compensation, credential-secret, and feedback-comment fields in addition to email, phone, URL, handle, SSN/NINO, IP, MAC, UUID, coordinate, payment-card, and IBAN-like patterns.
 - Evaluation and admin metrics preserve signal-detection rules traceability.
 
 Out of scope:
@@ -25,6 +26,8 @@ Out of scope:
 ## Research Basis
 
 - `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md` requires deterministic evidence before AI/context judgment and human-accountable decisions.
+- GDPR Article 4 identifies names, identification numbers, location data, online identifiers, and physical, physiological, genetic, mental, economic, cultural, or social identity factors as personal-data identifiers.
+- GDPR Article 9 identifies special categories including racial or ethnic origin, political opinions, religious or philosophical beliefs, trade-union membership, genetic data, biometric data, health data, sex life, and sexual orientation.
 - GDPR Article 5 principles on data minimisation, integrity/confidentiality, and accountability support exposing only redacted evidence and rule fingerprints.
 - European Commission GDPR principles guidance identifies minimisation, storage limitation, integrity/confidentiality, and accountability as processing constraints.
 - EDPB right-of-access guidance reinforces that data-subject workflows require prepared procedures and evidence handling, not ad hoc search output.
@@ -90,7 +93,7 @@ Finding details continue to expose redacted `signals` with detector, confidence,
 ## Privacy and Security Boundaries
 
 - Raw extracted text, full source content, page images, credentials, detector secrets, and unredacted personal data must not cross the public API boundary.
-- Signal snippets must be redacted before they are assembled into evidence cards.
+- Signal snippets must be redacted before they are assembled into evidence cards and must not include adjacent raw source context around the match.
 - Human-entered reasons remain handled by the audit sanitization boundary, not by detector output.
 - Signal detection is evidence generation, not legal advice and not deletion execution.
 
@@ -109,7 +112,8 @@ Remove optional `scan.signalDetection`, optional signal counters, `signalDetecti
 - Running scans expose `signalDetection.status = pending` while extraction is incomplete.
 - Completed scans expose `detecting_signals` between `extracting_content` and `judging_context_risk`.
 - Completed scans expose detector rules version/hash, policy evidence requirements, evaluated evidence candidates, detected/redacted signal counts, findings-with-signals count, signal-type counts, warnings, and `rawContentExposed = false`.
-- Finding details expose only redacted signal snippets; no raw extracted text, full file bodies, page images, or unredacted personal data appear in public payloads.
+- Finding details expose only redacted signal snippets; no raw extracted text, full file bodies, page images, adjacent raw match context, source URLs, absolute source paths, or unredacted personal data appear in public payloads or UI surfaces.
+- Labeled forms with completed identifiers, contact, employment, financial, location, online/device, health, biometric, genetic, special-category, family/minor, credential, and incident/access fields produce findings even when the file contains no email address.
 - Admin metrics expose signal counts, and evaluation preserves the signal-detection rules hash.
 - Not-ready sources cannot create extraction, signal-detection, finding, audit, metric, or evaluation state.
 - Automated behavior tests cover running pending state, completed signal counts, redaction boundary, rules hash, metrics, evaluation traceability, and not-ready-source continuity.
