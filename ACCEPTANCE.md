@@ -99,20 +99,23 @@ The Google/GitHub account system is accepted when:
 
 Google Drive and direct-link source input are accepted when:
 
-- The design note `docs/design/google-drive-source-integration.md` defines problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
+- The design notes `docs/design/google-drive-source-integration.md` and `docs/design/pdf-source-text-extraction-and-source-deletion.md` define problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
 - `contracts/openapi.yaml`, `contracts/schemas/common.yaml`, `contracts/schemas/source-scan.yaml`, and `docs/API_CONTRACT.md` document Google Drive Picker public config, remote-link source config, Drive selected-item config, and per-scan short-lived authorization.
 - Runtime configuration uses ignored environment variables for Google Picker public credentials: `GOOGLE_PICKER_API_KEY` and `GOOGLE_CLOUD_PROJECT_NUMBER`.
 - `/api/integrations/google-drive/picker-config` reports Picker setup state behind the prelaunch session boundary without exposing Google client secrets, provider tokens, refresh tokens, or GitHub credentials.
 - An authenticated empty prelaunch project can still register sources when there are no findings or finding detail records yet.
 - The Sources page can register a `remote_file_link` with `config.url` and no fake prefilled source examples.
-- Remote file-link scans require HTTPS, no embedded credentials, a public-resolving host, text-like content, and the prelaunch size limit.
+- Remote file-link scans require HTTPS, no embedded credentials, a public-resolving host, supported text-like content or a PDF text layer, and the prelaunch size limit.
 - Google Drive and Google Docs share-page URLs are rejected as direct links and must be added through Google Drive Picker.
 - The Sources page can select Google Drive files or a folder through Google Picker when host credentials are configured.
 - Google Picker intermediate callbacks do not close the source setup flow; picked files or folders remain visible in the Add Source dialog before registration.
 - Google Drive source registration stores selected item metadata but not access tokens.
 - Google Drive full scans require a short-lived per-scan access token and reject missing tokens without changing scan, finding, audit, metric, or evaluation state.
+- PDF files with an extractable text layer can be scanned from local, direct-link, or Google Drive selected sources without storing raw PDF bodies or raw extracted text.
+- Image-only or unreadable PDFs are reported as unsupported/OCR-deferred prelaunch inputs rather than silent successes.
+- The Sources page can delete a DataSentinel source registration, and the backend `DELETE /api/sources/{sourceId}` route does not delete external source files.
 - Source scanning reads file content only during scan execution and persists metadata, redacted evidence, findings, metrics, and audit events rather than raw source bodies.
-- Automated tests cover Picker config redaction, Picker picked/cancel/pending callback handling, empty-project source registration readiness, remote-link redaction/no-raw-content behavior, Google Drive share-link rejection, and missing Drive token rejection.
+- Automated tests cover Picker config redaction, Picker picked/cancel/pending callback handling, empty-project source registration readiness, remote-link redaction/no-raw-content behavior, Google Drive share-link rejection, PDF text-layer scanning without raw-text persistence, source-registration deletion, and missing Drive token rejection.
 
 ## OpenRouter AI Assistive Processing Acceptance
 

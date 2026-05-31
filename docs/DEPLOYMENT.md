@@ -33,11 +33,19 @@ Run from the repository root on `agent-us`:
 
 ```bash
 mkdir -p /srv/datasentinel/data
+python3 -m pip install --user -r requirements.txt
 python3 -m backend.datasentinel.db_tool init --db-path /srv/datasentinel/data/datasentinel.sqlite3
 python3 -m backend.datasentinel.source_server --host 127.0.0.1 --port 8000 --db-path /srv/datasentinel/data/datasentinel.sqlite3
 ```
 
-For a persistent preview, run the server command under the host's service manager and keep it bound to `127.0.0.1`. The P0 API is contract-backed and may use the local SQLite file for restart-safe demo state. It must not be exposed as a production source connector, production database, or deletion-capable service.
+`requirements.txt` includes the PDF text-layer extraction dependency used by prelaunch source scans. Install it on the same Python environment that runs the API service.
+On Ubuntu/Debian hosts where Python reports an externally managed environment, either install into a virtual environment and point the service at that Python, or use the host-approved user-site override:
+
+```bash
+python3 -m pip install --user --break-system-packages -r requirements.txt
+```
+
+For a persistent preview, run the server command under the host's service manager and keep it bound to `127.0.0.1`. The P0 API is contract-backed and may use the local SQLite file for restart-safe demo state. It must not be exposed as a production source connector, production database, or source-file deletion-capable service.
 
 The server can still run in memory for local debugging by omitting `--db-path`. `DATASENTINEL_DB_PATH` may also provide the database path when service-manager configuration is cleaner than command-line arguments.
 
@@ -182,7 +190,7 @@ curl -s https://founder-force.uk/dashboard | grep DataSentinel
 
 If `founder-force.uk` is Cloudflare-proxied, its DNS origin record must point to `52.159.109.133` before the domain can reach the `agent-us` Caddy site.
 
-The remote API is a P0 contract server. It may serve mock-compatible envelopes, in-memory scan/review state, or the approved local SQLite state file only. It must not connect to production file sources, call Microsoft Graph, mutate source files, use OAuth or tenant credentials, add a production database or queue, or perform deletion. If OpenRouter AI assistive mode is enabled, it must remain redacted-evidence-only, fail-closed, and capped by the configured project budget.
+The remote API is a P0 contract server. It may serve mock-compatible envelopes, in-memory scan/review state, or the approved local SQLite state file only. It must not connect to production file sources, call Microsoft Graph, mutate source files, use OAuth or tenant credentials, add a production database or queue, or perform source-file deletion. Source-registration deletion is allowed because it removes DataSentinel metadata only. If OpenRouter AI assistive mode is enabled, it must remain redacted-evidence-only, fail-closed, and capped by the configured project budget.
 
 ## Rollback
 

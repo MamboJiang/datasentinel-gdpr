@@ -4,7 +4,7 @@ DataSentinel GDPR is a hackathon project concept for GDPR-relevant data discover
 
 The project goal is to help an organization identify, classify, route, review, and audit personal-data findings across distributed file sources such as OneDrive, SharePoint, shared drives, and local sample repositories.
 
-This repository now contains a local prelaunch prototype: a Vite frontend, a stdlib Python API server, local SQLite state, optional OpenRouter AI metadata, backend-owned Google/GitHub sign-in, and prelaunch source input for Google Drive selections or direct HTTPS file links. It is not a production GDPR compliance system.
+This repository now contains a local prelaunch prototype: a Vite frontend, a stdlib Python API server, local SQLite state, optional OpenRouter AI metadata, backend-owned Google/GitHub sign-in, PDF text-layer extraction, and prelaunch source input for Google Drive selections or direct HTTPS file links. It is not a production GDPR compliance system.
 
 ## Product Thesis
 

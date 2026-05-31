@@ -29,7 +29,7 @@ CreateSourceRequest:
     config:
       type: object
       additionalProperties: true
-      description: Source-specific configuration. For `remote_file_link`, use `url`. For `google_drive_selection`, use selected `items` returned by Google Picker. For `local_repo`, use `rootPath`.
+      description: Source-specific configuration. For `remote_file_link`, use `url` for a supported text-like file or PDF text layer. For `google_drive_selection`, use selected `items` returned by Google Picker. For `local_repo`, use `rootPath`.
     masterOfDataUserId: { type: [string, "null"] }
 SourceEnvelope:
   type: object

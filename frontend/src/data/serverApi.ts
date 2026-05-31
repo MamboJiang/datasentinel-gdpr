@@ -163,6 +163,13 @@ export async function createServerSource(input: CreateSourceInput): Promise<ApiE
   })
 }
 
+export async function deleteServerSource(sourceId: string): Promise<ApiEnvelope<Source>> {
+  return requestEnvelope<Source>(`/sources/${encodeURIComponent(sourceId)}`, {
+    headers: jsonHeaders({ idempotencyKey: `delete_source_${sourceId}_${Date.now()}` }),
+    method: 'DELETE',
+  })
+}
+
 export async function loadGoogleDrivePickerConfig(): Promise<ApiEnvelope<GoogleDrivePickerConfig>> {
   return requestEnvelope<GoogleDrivePickerConfig>('/integrations/google-drive/picker-config')
 }

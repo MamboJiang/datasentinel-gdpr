@@ -376,6 +376,52 @@ class BackendApiServerTests(unittest.TestCase):
         self.assertEqual(rejected["status"], 422)
         self.assertIn("Google Drive Picker", rejected["body"]["errors"][0]["detail"])
 
+    def test_prelaunch_mode_scans_pdf_text_layer_without_storing_raw_text(self) -> None:
+        class FakePdfReader:
+            def __init__(self, stream: object, strict: bool = False) -> None:
+                self.pages = [mock.Mock(extract_text=lambda: "Passenger support phone +491711234567")]
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory) / "source"
+            root.mkdir()
+            (root / "ticket.pdf").write_bytes(b"%PDF-1.6\nplaceholder")
+            db_path = Path(directory) / "datasentinel.sqlite3"
+            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+                app = build_sqlite_app(db_path, [root])
+                created = app.handle(
+                    "POST",
+                    "/api/sources",
+                    "trace_pdf_source_create",
+                    json.dumps({
+                        "sourceId": "source_pdf_text",
+                        "name": "PDF text source",
+                        "sourceType": "local_repo",
+                        "rootLabel": str(root),
+                        "config": {"rootPath": str(root)},
+                    }),
+                    "application/json",
+                )
+                connected = app.handle("POST", "/api/sources/source_pdf_text/connect-test", "trace_pdf_source_connect", "{}", "application/json")
+                with mock.patch("backend.datasentinel.source_documents.PdfReader", FakePdfReader):
+                    started = app.handle(
+                        "POST",
+                        "/api/scans/full",
+                        "trace_pdf_scan",
+                        json.dumps({"sourceId": "source_pdf_text"}),
+                        "application/json",
+                    )
+                    time.sleep(1.1)
+                    findings = app.handle("GET", "/api/findings", "trace_pdf_findings")
+                    detail = app.handle("GET", f"/api/findings/{findings['body']['data'][0]['findingId']}", "trace_pdf_detail")
+                    serialized = json.dumps(detail["body"])
+
+        self.assertEqual(created["status"], 201)
+        self.assertEqual(connected["body"]["data"]["connectionStatus"], "connected")
+        self.assertEqual(started["status"], 202)
+        self.assertEqual(len(findings["body"]["data"]), 1)
+        self.assertIn("[REDACTED_PHONE]", serialized)
+        self.assertNotIn("+491711234567", serialized)
+
     def test_google_drive_scan_requires_per_scan_access_token(self) -> None:
         with TemporaryDirectory() as directory:
             db_path = Path(directory) / "datasentinel.sqlite3"
@@ -460,6 +506,34 @@ class BackendApiServerTests(unittest.TestCase):
                 "url": "https://drive.google.com/file/d/drive-file-id/view",
             }],
         )
+
+    def test_source_delete_removes_registration_from_sqlite_store(self) -> None:
+        with TemporaryDirectory() as directory:
+            db_path = Path(directory) / "datasentinel.sqlite3"
+            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+                app = build_sqlite_app(db_path)
+                created = app.handle(
+                    "POST",
+                    "/api/sources",
+                    "trace_delete_source_create",
+                    json.dumps({
+                        "sourceId": "source_delete_me",
+                        "name": "Delete Me",
+                        "sourceType": "remote_file_link",
+                        "rootLabel": "https://example.com/delete-me.txt",
+                        "config": {"url": "https://example.com/delete-me.txt"},
+                    }),
+                    "application/json",
+                )
+                deleted = app.handle("DELETE", "/api/sources/source_delete_me", "trace_delete_source")
+                listed = app.handle("GET", "/api/sources", "trace_delete_source_list")
+                missing = app.handle("DELETE", "/api/sources/source_delete_me", "trace_delete_source_missing")
+
+        self.assertEqual(created["status"], 201)
+        self.assertEqual(deleted["status"], 200)
+        self.assertEqual(deleted["body"]["data"]["sourceId"], "source_delete_me")
+        self.assertNotIn("source_delete_me", {source["sourceId"] for source in listed["body"]["data"]})
+        self.assertEqual(missing["status"], 404)
 
     def test_created_local_source_cannot_spoof_connected_status(self) -> None:
         with TemporaryDirectory() as directory:
@@ -569,6 +643,46 @@ class BackendApiServerTests(unittest.TestCase):
 
                 self.assertEqual(response.status, 200)
                 self.assertTrue(payload["data"]["ok"])
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join(timeout=5)
+
+    def test_server_deletes_source_over_real_http(self) -> None:
+        with TemporaryDirectory() as directory:
+            db_path = Path(directory) / "datasentinel.sqlite3"
+            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+                server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(build_sqlite_app(db_path)))
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                address = server.server_address
+                create_body = json.dumps({
+                    "sourceId": "source_http_delete",
+                    "name": "HTTP Delete",
+                    "sourceType": "remote_file_link",
+                    "rootLabel": "https://example.com/http-delete.txt",
+                    "config": {"url": "https://example.com/http-delete.txt"},
+                })
+                connection = http.client.HTTPConnection(address[0], address[1], timeout=5)
+                try:
+                    connection.request("POST", "/api/sources", body=create_body, headers={"Content-Type": "application/json"})
+                    created = connection.getresponse()
+                    created.read()
+                finally:
+                    connection.close()
+
+                connection = http.client.HTTPConnection(address[0], address[1], timeout=5)
+                try:
+                    connection.request("DELETE", "/api/sources/source_http_delete")
+                    deleted = connection.getresponse()
+                    payload = json.loads(deleted.read().decode("utf-8"))
+                finally:
+                    connection.close()
+
+                self.assertEqual(created.status, 201)
+                self.assertEqual(deleted.status, 200)
+                self.assertEqual(payload["data"]["sourceId"], "source_http_delete")
             finally:
                 server.shutdown()
                 server.server_close()

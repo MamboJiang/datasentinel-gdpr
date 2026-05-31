@@ -56,6 +56,24 @@ class SourceApi:
         }
         return response(201, envelope(self.store.add(source), trace_id), trace_id)
 
+    def delete_source(self, source_id: str, trace_id: str, path: str | None = None) -> dict[str, Any]:
+        deleted = self.store.delete(source_id)
+        if not deleted:
+            return response(
+                404,
+                problem(
+                    status=404,
+                    title="Source not found",
+                    detail="The requested source registration does not exist.",
+                    instance=path or f"/api/sources/{source_id}",
+                    trace_id=trace_id,
+                    code="source-not-found",
+                ),
+                trace_id,
+                content_type="application/problem+json",
+            )
+        return response(200, envelope(deleted, trace_id), trace_id)
+
     def connection_envelope(self, source_id: str, trace_id: str) -> dict[str, Any]:
         data, partial, warnings = self.service.connection_result(source_id)
         return envelope(data, trace_id, partial=partial, warnings=warnings)

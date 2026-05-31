@@ -31,6 +31,7 @@ export type DataContextValue = {
   getFinding: (findingId: string) => Finding | undefined
   getReviewSupport: (findingId: string) => ReviewSupport
   createSource: (input: CreateSourceInput) => void
+  deleteSource: (sourceId: string) => void
   startScan: (options: StartScanOptions) => void
   testSourceConnection: (sourceId: string) => void
   reviewFinding: (input: ReviewInput) => void

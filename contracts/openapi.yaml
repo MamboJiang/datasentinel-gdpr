@@ -105,6 +105,20 @@ paths:
                 $ref: "./schemas/source-scan.yaml#/SourceEnvelope"
         default:
           $ref: "#/components/responses/Problem"
+  /sources/{sourceId}:
+    delete:
+      operationId: deleteSource
+      parameters:
+        - $ref: "#/components/parameters/SourceId"
+      responses:
+        "200":
+          description: Deleted source registration. External source files are not deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/source-scan.yaml#/SourceEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
   /sources/{sourceId}/connect-test:
     post:
       operationId: testSourceConnection

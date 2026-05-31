@@ -63,3 +63,7 @@ class SourceStore:
         stored = copy.deepcopy(source)
         self._sources[stored["sourceId"]] = stored
         return copy.deepcopy(stored)
+
+    def delete(self, source_id: str) -> dict[str, Any] | None:
+        source = self._sources.pop(source_id, None)
+        return copy.deepcopy(source) if source else None

@@ -1,4 +1,4 @@
-import { CheckCircle2, Cloud, Database, FolderOpen, Link2, Plus, RotateCw, ScanSearch, X } from 'lucide-react'
+import { CheckCircle2, Cloud, Database, FolderOpen, Link2, Plus, RotateCw, ScanSearch, Trash2, X } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useData } from '../data/useData'
 import { canStartDeltaScan, isSourceScanReady } from '../data/scanWorkflow'
@@ -10,7 +10,7 @@ import { useI18n } from '../i18n'
 
 export function SourcesPage() {
   const { t } = useI18n()
-  const { sources, scan, governanceConfig, createSource, startScan, testSourceConnection } = useData()
+  const { sources, scan, governanceConfig, createSource, deleteSource, startScan, testSourceConnection } = useData()
   const [sourceDialogOpen, setSourceDialogOpen] = useState(false)
   const scanIsRunning = scan.status === 'running'
 
@@ -86,6 +86,19 @@ export function SourcesPage() {
                           onClick={() => startScan({ baselineScanId: scan.deltaScan?.baselineScanId ?? scan.scanId, scanType: 'delta', sourceId: source.sourceId })}
                         >
                           <RotateCw aria-hidden="true" size={16} /> {t('Delta scan')}
+                        </button>
+                        <button
+                          className="button button-ghost"
+                          disabled={scanIsRunning}
+                          title={scanIsRunning ? t('Source deletion is disabled while a scan is running') : t('Delete source registration')}
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(t('Delete this source registration? Source files are not deleted.'))) {
+                              deleteSource(source.sourceId)
+                            }
+                          }}
+                        >
+                          <Trash2 aria-hidden="true" size={16} /> {t('Delete')}
                         </button>
                       </div>
                     </td>

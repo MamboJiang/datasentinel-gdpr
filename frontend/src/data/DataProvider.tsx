@@ -5,7 +5,7 @@ import { recordHumanReviewDecision } from './humanReviewDecision'
 import { getInitialMockData } from './mockApi'
 import { buildReviewSupport } from './reviewSupport'
 import { completeScanWorkflow, getSourceConnectionMessage, startScanWorkflow, type StartScanOptions } from './scanWorkflow'
-import { createServerSource, loadServerData, reviewServerFinding, startServerScan, testServerSourceConnection, type CreateSourceInput } from './serverApi'
+import { createServerSource, deleteServerSource, loadServerData, reviewServerFinding, startServerScan, testServerSourceConnection, type CreateSourceInput } from './serverApi'
 import type {
   Finding,
   ReviewInput,
@@ -156,6 +156,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function deleteSource(sourceId: string) {
+    if (!serverAvailable.current) {
+      setToast('Project server unavailable; source deletion requires the API server.')
+      return
+    }
+
+    try {
+      const result = await deleteServerSource(sourceId)
+      delete googleDriveAccessTokens.current[sourceId]
+      setData((current) => ({
+        ...current,
+        meta: result.meta,
+        sources: current.sources.filter((source) => source.sourceId !== sourceId),
+      }))
+      setToast(`${result.data.name} source registration deleted.`)
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : 'Source deletion failed.')
+    }
+  }
+
   async function reviewFinding(input: ReviewInput) {
     if (serverAvailable.current) {
       try {
@@ -239,6 +259,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         getFinding,
         getReviewSupport,
         createSource,
+        deleteSource,
         startScan,
         testSourceConnection,
         reviewFinding,

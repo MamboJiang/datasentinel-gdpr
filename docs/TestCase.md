@@ -85,6 +85,8 @@
 | SRCIN-008 | Select a Google Drive folder through Picker | The selected folder appears in the Add Source dialog, and the scan enumerates descendant files up to the prelaunch limit. |
 | SRCIN-009 | Start a Google Drive scan without a per-scan access token | The backend returns `application/problem+json` and leaves scan, finding, audit, metric, and evaluation state unchanged. |
 | SRCIN-010 | Review public payloads after remote-link or Drive scans | Payloads expose metadata, warnings, redacted snippets, findings, metrics, and audit events only; raw file bodies, provider tokens, refresh tokens, client secrets, legal conclusions, and deletion execution are absent. |
+| SRCIN-011 | Scan a PDF that has an extractable text layer and detectable personal-data patterns | The scan produces findings with redacted evidence and does not expose raw extracted PDF text in public payloads. |
+| SRCIN-012 | Delete a source from the Sources page or `DELETE /api/sources/{sourceId}` | The source registration is removed from DataSentinel state, external source files are not deleted, and a repeated delete returns not found. |
 
 ## OpenRouter AI Assistive Processing Checks
 

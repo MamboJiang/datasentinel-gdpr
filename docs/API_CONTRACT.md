@@ -125,6 +125,7 @@ Errors use `application/problem+json`.
 | `GET` | `/api/integrations/google-drive/picker-config` | Read session-protected Google Drive Picker browser setup state without secrets. |
 | `GET` | `/api/sources` | List configured sources. |
 | `POST` | `/api/sources` | Create a mock, local, direct-link, or Google Drive selected source. |
+| `DELETE` | `/api/sources/{sourceId}` | Delete a DataSentinel source registration without deleting external source files. |
 | `POST` | `/api/sources/{sourceId}/connect-test` | Validate source reachability. |
 | `POST` | `/api/scans/full` | Start a full scan for a connected or mock-ready source. |
 | `POST` | `/api/scans/delta` | Start a delta scan. |
@@ -340,9 +341,11 @@ The contract represents the source as `sourceType = organizer_sample_repo` and e
 
 Source records may include optional `config` for connector-specific metadata:
 
-- `remote_file_link` stores `config.url` as a direct HTTPS file URL. The backend validates that the URL is HTTPS, has no embedded credentials, resolves to public IP addresses, is not a Google Drive or Google Docs share page, and points to text-like content within the prelaunch size limit before extraction.
+- `remote_file_link` stores `config.url` as a direct HTTPS file URL. The backend validates that the URL is HTTPS, has no embedded credentials, resolves to public IP addresses, is not a Google Drive or Google Docs share page, and points to supported text-like content or a PDF text layer within the prelaunch size limit before extraction.
 - `google_drive_selection` stores `config.items`, an array of Google Picker selected item metadata such as `id`, `name`, `mimeType`, and optional `url`. The backend uses this metadata only with a per-scan `authorization.googleDriveAccessToken`.
 - `local_repo` stores `config.rootPath` for host-mounted folders that pass the configured allowed-root policy.
+
+`DELETE /api/sources/{sourceId}` removes only the DataSentinel source registration row. It must not delete, mutate, or revoke any file in Google Drive, a remote HTTPS location, or a host-mounted source directory.
 
 `GET /api/integrations/google-drive/picker-config` requires the first-party session cookie when `DATASENTINEL_AUTH_REQUIRED=true` and returns browser-safe Picker setup state:
 

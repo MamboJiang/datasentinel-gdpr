@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from io import BytesIO
 import ipaddress
 import json
 import socket
@@ -12,8 +13,16 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-SUPPORTED_SUFFIXES = {".txt", ".csv", ".tsv", ".json", ".md", ".log", ".xml", ".html"}
+try:
+    from pypdf import PdfReader
+except Exception:  # pragma: no cover - exercised when optional runtime dependency is absent
+    PdfReader = None  # type: ignore[assignment]
+
+SUPPORTED_TEXT_SUFFIXES = {".txt", ".csv", ".tsv", ".json", ".md", ".log", ".xml", ".html"}
+SUPPORTED_PDF_SUFFIXES = {".pdf"}
+SUPPORTED_SUFFIXES = SUPPORTED_TEXT_SUFFIXES | SUPPORTED_PDF_SUFFIXES
 TEXT_CONTENT_TYPES = {"text/", "application/json", "application/xml", "application/x-ndjson"}
+PDF_CONTENT_TYPES = {"application/pdf"}
 MAX_DOCUMENT_BYTES = 1_000_000
 MAX_SOURCE_FILES = 500
 GOOGLE_FOLDER_MIME = "application/vnd.google-apps.folder"
@@ -83,6 +92,7 @@ def _read_local_source(source: dict[str, Any]) -> SourceDocumentBatch:
     root = Path((source.get("config") or {}).get("rootPath", "")).expanduser()
     files = [candidate for candidate in root.rglob("*") if candidate.is_file()] if root.is_dir() else []
     documents: list[SourceDocument] = []
+    warnings: list[str] = []
     unsupported = 0
     total_bytes = 0
 
@@ -92,22 +102,26 @@ def _read_local_source(source: dict[str, Any]) -> SourceDocumentBatch:
         if file_path.suffix.lower() not in SUPPORTED_SUFFIXES or size > MAX_DOCUMENT_BYTES:
             unsupported += 1
             continue
-        documents.append(SourceDocument(
-            name=file_path.name,
-            source_path=str(file_path),
-            text=file_path.read_text(encoding="utf-8", errors="ignore"),
-            size_bytes=size,
-            family="Local_Source",
-        ))
+        try:
+            documents.append(_document_from_bytes(
+                body=file_path.read_bytes(),
+                content_type="application/pdf" if file_path.suffix.lower() in SUPPORTED_PDF_SUFFIXES else "text/plain",
+                family="Local_Source",
+                name=file_path.name,
+                source_path=str(file_path),
+            ))
+        except SourceReadIssue as issue:
+            unsupported += 1
+            warnings.append(issue.detail)
 
     return SourceDocumentBatch(
         documents=documents,
         total_files=len(files),
         total_bytes=total_bytes,
         unsupported_files=unsupported,
-        warnings=_unsupported_warnings(unsupported),
+        warnings=warnings + _unsupported_warnings(unsupported),
         family="Local_Source",
-        extraction_method="local_text",
+        extraction_method="local_mixed_text",
     )
 
 
@@ -121,12 +135,22 @@ def _read_remote_link_source(source: dict[str, Any]) -> SourceDocumentBatch:
     if len(body) > MAX_DOCUMENT_BYTES:
         return _unsupported_batch("Remote_File", len(body), "Remote file exceeds the prelaunch 1 MB text extraction limit.")
 
-    if not _content_type_supported(content_type) and Path(name).suffix.lower() not in SUPPORTED_SUFFIXES:
+    try:
+        document = _document_from_bytes(
+            body=body,
+            content_type=content_type,
+            family="Remote_File",
+            name=name,
+            source_path=final_url,
+        )
+    except SourceReadIssue as issue:
+        return _unsupported_batch("Remote_File", len(body), issue.detail)
+
+    if not document.text:
         return _unsupported_batch("Remote_File", len(body), "Remote file MIME type is not supported for text extraction.")
 
-    text = body.decode("utf-8", errors="ignore")
     return SourceDocumentBatch(
-        documents=[SourceDocument(name=name, source_path=final_url, text=text, size_bytes=len(body), family="Remote_File")],
+        documents=[document],
         total_files=1,
         total_bytes=len(body),
         unsupported_files=0,
@@ -211,22 +235,21 @@ class DriveClient:
             raise SourceReadIssue("Google Drive folders are inventory containers, not text documents.")
 
         if mime_type.startswith("application/vnd.google-apps."):
-            body = self._export(str(metadata["id"]), _export_mime_type(mime_type))
+            content_type = _export_mime_type(mime_type)
+            body = self._export(str(metadata["id"]), content_type)
         else:
+            content_type = mime_type
             body = self._download(str(metadata["id"]))
 
         if len(body) > MAX_DOCUMENT_BYTES:
             raise SourceReadIssue(f"{name} exceeds the prelaunch 1 MB text extraction limit.")
 
-        if not _content_type_supported(mime_type) and not mime_type.startswith("application/vnd.google-apps.") and Path(name).suffix.lower() not in SUPPORTED_SUFFIXES:
-            raise SourceReadIssue(f"{name} is not a supported text-like file.")
-
-        return SourceDocument(
+        return _document_from_bytes(
+            body=body,
+            content_type=content_type,
+            family="Google_Drive",
             name=name,
             source_path=str(metadata.get("webViewLink") or f"google-drive://{metadata['id']}"),
-            text=body.decode("utf-8", errors="ignore"),
-            size_bytes=len(body),
-            family="Google_Drive",
         )
 
     def _metadata(self, file_id: str) -> dict[str, Any]:
@@ -304,6 +327,51 @@ def _google_drive_access_token(scan_payload: dict[str, Any]) -> str | None:
 
 def _content_type_supported(content_type: str) -> bool:
     return any(content_type.startswith(prefix) for prefix in TEXT_CONTENT_TYPES)
+
+
+def _pdf_content_type_supported(content_type: str) -> bool:
+    return content_type in PDF_CONTENT_TYPES
+
+
+def _document_from_bytes(
+    *,
+    body: bytes,
+    content_type: str,
+    family: str,
+    name: str,
+    source_path: str,
+) -> SourceDocument:
+    suffix = Path(name).suffix.lower()
+    if _pdf_content_type_supported(content_type) or suffix in SUPPORTED_PDF_SUFFIXES:
+        text = _extract_pdf_text(body, name)
+    elif _content_type_supported(content_type) or suffix in SUPPORTED_TEXT_SUFFIXES:
+        text = body.decode("utf-8", errors="ignore")
+    else:
+        raise SourceReadIssue(f"{name} is not a supported text-like file.")
+
+    return SourceDocument(
+        name=name,
+        source_path=source_path,
+        text=text,
+        size_bytes=len(body),
+        family=family,
+    )
+
+
+def _extract_pdf_text(body: bytes, name: str) -> str:
+    if PdfReader is None:
+        raise SourceReadIssue(f"{name} is a PDF, but PDF text extraction is not installed on this host.")
+
+    try:
+        reader = PdfReader(BytesIO(body), strict=False)
+        text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    except Exception as error:
+        raise SourceReadIssue(f"{name} PDF text extraction failed.") from error
+
+    if not text.strip():
+        raise SourceReadIssue(f"{name} has no extractable PDF text layer; OCR is not enabled in prelaunch.")
+
+    return text
 
 
 def _export_mime_type(mime_type: str) -> str:

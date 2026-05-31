@@ -104,7 +104,9 @@ The source-input interaction is documented in `docs/design/google-drive-source-i
 - Google Drive selection opens the official Picker UI when host public credentials are configured.
 - Drive file/folder selections store metadata only; the browser keeps the short-lived access token in memory and sends it only when starting a scan.
 - Direct HTTPS links are treated as one-file sources and must show connection or scan errors when the URL fails policy checks.
+- PDF files are accepted only when they have an extractable text layer; image-only or unreadable PDFs remain OCR-deferred in prelaunch.
 - The UI states that DataSentinel reads source content during scan execution and stores metadata, redacted evidence, findings, and audit events.
+- Source deletion removes the registration from DataSentinel state and must not claim to delete external files.
 - Source setup and empty states must avoid fake prefilled source rows or seeded findings in prelaunch mode.
 - The UI must avoid raw source content, provider tokens, client secrets, legal conclusions, deletion execution, and broad tenant-access claims.
 

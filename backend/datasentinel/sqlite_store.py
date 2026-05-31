@@ -113,6 +113,16 @@ class SQLiteDocumentStore:
                     (source["sourceId"], _dump(source), now),
                 )
 
+    def delete_source(self, source_id: str) -> dict[str, Any] | None:
+        existing = self.get_source(source_id)
+        if not existing:
+            return None
+
+        with self._lock:
+            with self._connection() as connection:
+                connection.execute("DELETE FROM source_records WHERE source_id = ?", (source_id,))
+        return existing
+
     def get_workflow_document(self, key: str) -> dict[str, Any] | None:
         with self._connection() as connection:
             row = connection.execute(
@@ -224,6 +234,10 @@ class SQLiteSourceStore:
         stored = copy.deepcopy(source)
         self.documents.upsert_source(stored)
         return copy.deepcopy(stored)
+
+    def delete(self, source_id: str) -> dict[str, Any] | None:
+        source = self.documents.delete_source(source_id)
+        return copy.deepcopy(source) if source else None
 
 
 class SQLiteWorkflowStore:

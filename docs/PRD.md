@@ -28,7 +28,7 @@ Provide a prototype workflow that shows how an organization can discover GDPR-re
 - User-control concept for visible allowed actions, denied actions, and reason requirements.
 - Optional AI-assist concept for redacted, deterministic evidence that needs context support after OCR and grep-style rules.
 - Prelaunch account concept for Google and GitHub login through backend-owned OAuth, first-party sessions, visible user profile, and logout.
-- Prelaunch source-input concept for Google Drive selected files or folders and direct HTTPS file links without long-term raw source-file storage.
+- Prelaunch source-input concept for Google Drive selected files or folders, direct HTTPS file links, PDF text-layer extraction, and source-registration deletion without long-term raw source-file storage or source-file deletion.
 
 ## Backend Planning Sequence After Sample Source Connection
 
@@ -111,9 +111,11 @@ The source-input slice lets signed-in users scan real files without uploading ra
 - Let a user register a direct HTTPS file link or select Google Drive files/folders through Google Picker.
 - Store only source metadata and selected Drive item metadata during registration.
 - Use a short-lived Google Drive access token only when a scan starts, and never persist provider tokens.
+- Extract text-layer PDFs during scan execution when the selected/local/linked file has embedded text; keep image-only PDFs OCR-deferred.
+- Let users remove DataSentinel source registrations without deleting external source files.
 - Read file content only inside the scan process and persist redacted evidence, findings, metrics, and audit events instead of raw file bodies.
 - Reject unsafe direct links, unsupported files, missing Drive tokens, and over-limit inputs before mutating workflow state.
-- Keep legal conclusions, full-compliance claims, provider secrets, refresh tokens, real deletion, and production tenant connectors out of this slice.
+- Keep legal conclusions, full-compliance claims, provider secrets, refresh tokens, source-file deletion, and production tenant connectors out of this slice.
 
 The detailed design note is `docs/design/google-drive-source-integration.md`.
 

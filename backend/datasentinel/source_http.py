@@ -134,6 +134,10 @@ class SourceHttpApp:
                 return payload_response
             return self.source_api.create_source(payload_response["payload"], trace_id)
 
+        source_id = _match(route, "/sources/")
+        if method == "DELETE" and source_id and "/" not in source_id:
+            return self.source_api.delete_source(source_id, trace_id, f"/api{route}")
+
         source_connect = _match(route, "/sources/", "/connect-test")
         if method == "POST" and source_connect:
             return self.source_api.test_connection(source_connect, trace_id, f"/api{route}")
