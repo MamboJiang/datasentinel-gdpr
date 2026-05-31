@@ -82,6 +82,7 @@
 | SRCIN-003 | Scan a direct HTTPS text file with detectable personal-data patterns | The scan produces findings with redacted evidence and no raw source body or unredacted personal data in public payloads. |
 | SRCIN-004 | Register a non-HTTPS, credential-bearing, Google Drive share-page, private-address, over-limit, or unsupported direct file link | The backend rejects the connection or scan before creating workflow output. |
 | SRCIN-005 | Load an authenticated empty prelaunch project with no findings, then register a source | The frontend treats the API as available and does not request a blank finding detail before source registration. |
+| SRCIN-005A | Open the Sources page | The page shows the current prelaunch supported file types below the source inventory surface. |
 | SRCIN-006 | Select Google Drive files through Picker | The source stores selected item metadata and keeps the access token out of persisted source state. |
 | SRCIN-007 | Receive a non-terminal Google Picker callback before the final picked action | The Add Source dialog remains open and waits for the final picked or cancelled action. |
 | SRCIN-008 | Select a Google Drive folder through Picker | The selected folder appears in the Add Source dialog, and the scan enumerates descendant files up to the prelaunch limit. |

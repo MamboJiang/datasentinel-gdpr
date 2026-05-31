@@ -1,4 +1,4 @@
-import { CheckCircle2, Cloud, Database, FolderOpen, Link2, Plus, RotateCw, ScanSearch, Trash2, X } from 'lucide-react'
+import { CheckCircle2, Cloud, Database, FileText, FolderOpen, Link2, Plus, RotateCw, ScanSearch, Trash2, X } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useData } from '../data/useData'
 import { canStartDeltaScan, isSourceScanReady } from '../data/scanWorkflow'
@@ -7,6 +7,21 @@ import { humanize } from '../components/formatters'
 import { Button, EmptyState, PageHeader, StatusBadge } from '../components/ui'
 import { loadGoogleDrivePickerConfig, type GoogleDrivePickerConfig } from '../data/serverApi'
 import { useI18n } from '../i18n'
+
+const SUPPORTED_FILE_TYPES = [
+  'TXT',
+  'CSV',
+  'TSV',
+  'JSON',
+  'Markdown',
+  'LOG',
+  'XML',
+  'HTML',
+  'PDF text layer',
+  'Google Docs export',
+  'Google Sheets export',
+  'Google Slides export',
+]
 
 export function SourcesPage() {
   const { t } = useI18n()
@@ -108,6 +123,22 @@ export function SourcesPage() {
             </tbody>
           </table>
         </div> : <EmptyState title="No sources configured" description="Add Google Drive, a direct HTTPS file link, or an allowed local path, then start a scan." />}
+      </section>
+
+      <section className="supported-formats" aria-labelledby="supported-file-types-title">
+        <div className="supported-formats-heading">
+          <FileText aria-hidden="true" size={18} />
+          <div>
+            <h2 id="supported-file-types-title">{t('Supported file types')}</h2>
+            <p>{t('Current prelaunch scanners read these formats during scan execution only.')}</p>
+          </div>
+        </div>
+        <div className="supported-format-list" aria-label={t('Currently supported file types')}>
+          {SUPPORTED_FILE_TYPES.map((type) => <span key={type}>{t(type)}</span>)}
+        </div>
+        <p className="supported-formats-note">
+          {t('Image-only PDFs and other binary Office files are OCR-deferred or unsupported in this prelaunch build.')}
+        </p>
       </section>
 
       {sourceDialogOpen ? <SourceDialog onClose={() => setSourceDialogOpen(false)} onCreate={createSource} /> : null}

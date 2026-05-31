@@ -108,6 +108,7 @@ Google Drive and direct-link source input are accepted when:
 - `/api/integrations/google-drive/picker-config` reports Picker setup state behind the prelaunch session boundary without exposing Google client secrets, provider tokens, refresh tokens, or GitHub credentials.
 - An authenticated empty prelaunch project can still register sources when there are no findings or finding detail records yet.
 - The Sources page can register a `remote_file_link` with `config.url` and no fake prefilled source examples.
+- The Sources page shows the current prelaunch supported file types below the source inventory surface.
 - Remote file-link scans require HTTPS, no embedded credentials, a public-resolving host, supported text-like content or a PDF text layer, and the prelaunch size limit.
 - Google Drive and Google Docs share-page URLs are rejected as direct links and must be added through Google Drive Picker.
 - The Sources page can select Google Drive files or a folder through Google Picker when host credentials are configured.
