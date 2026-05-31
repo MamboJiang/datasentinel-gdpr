@@ -1,5 +1,5 @@
 import { ArrowLeft, CalendarClock, FileSearch, FileText, Flag, ShieldAlert, UserRound, X } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useData } from '../data/useData'
 import type { ReviewDecision } from '../types'
@@ -178,30 +178,52 @@ export function FindingDetailPage() {
 }
 
 function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () => void }) {
-  const { getReviewSupport, reviewFinding } = useData()
-  const reviewSupport = getReviewSupport(findingId)
+  const { getReviewSupport, loadReviewSupport, reviewFinding } = useData()
+  const [reviewSupport, setReviewSupport] = useState(() => getReviewSupport(findingId))
   const decisions = reviewSupport.availableDecisions
   const [decision, setDecision] = useState<ReviewDecision>(decisions[0]?.decision ?? 'escalate')
   const [reason, setReason] = useState('')
   const [nextAction, setNextAction] = useState('')
   const [retentionUntil, setRetentionUntil] = useState(getDefaultRetentionDate())
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({})
-  const checklistComplete = reviewSupport.checklist.every((item) => !item.required || checkedItems[item.itemId])
   const decisionAvailable = decisions.some((option) => option.decision === decision)
   const activeDecision = decisionAvailable ? decision : decisions[0]?.decision ?? ''
   const activeNextAction = decisionAvailable ? nextAction : ''
   const targetRequired = activeDecision === 'reassign_owner' || activeDecision === 'escalate'
   const retentionRequired = activeDecision === 'keep_with_reason'
+  const activeChecklist = reviewSupport.checklist.filter((item) => !item.decision || item.decision === activeDecision)
   const checkedChecklistIds = Object.entries(checkedItems)
     .filter(([, checked]) => checked)
     .map(([itemId]) => itemId)
   const canSubmit =
     decisions.length > 0
     && activeDecision.length > 0
-    && checklistComplete
+    && activeChecklist.every((item) => !item.required || checkedItems[item.itemId])
     && reason.trim().length > 0
     && (!targetRequired || activeNextAction.length > 0)
     && (!retentionRequired || retentionUntil.length > 0)
+
+  useEffect(() => {
+    let active = true
+    setReviewSupport(getReviewSupport(findingId))
+    void loadReviewSupport(findingId).then((nextReviewSupport) => {
+      if (active) {
+        setReviewSupport(nextReviewSupport)
+      }
+    })
+    return () => {
+      active = false
+    }
+  }, [findingId])
+
+  useEffect(() => {
+    if (decisions.some((option) => option.decision === decision)) {
+      return
+    }
+
+    setDecision(decisions[0]?.decision ?? 'escalate')
+    setNextAction('')
+  }, [decision, decisions])
 
   function submitReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -284,7 +306,7 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
           </label>
           <div className="review-checklist">
             <strong>Required checklist</strong>
-            {reviewSupport.checklist.map((item) => (
+            {activeChecklist.map((item) => (
               <label key={item.itemId}>
                 <input checked={Boolean(checkedItems[item.itemId])} onChange={(event) => setCheckedItems((current) => ({ ...current, [item.itemId]: event.target.checked }))} type="checkbox" />
                 <span>{item.label}</span>

@@ -16,6 +16,7 @@ from .workspace_commands import (
     group_with_name,
     parse_group_payload,
     parse_member_group_payload,
+    parse_workspace_settings_payload,
     require_workspace_permission,
     slug,
     stored_group,
@@ -100,6 +101,7 @@ class WorkspaceService:
             "slug": workspace_slug,
             "status": "active",
             "plan": "Prelaunch",
+            "headerLabel": "Prelaunch",
             "description": description,
             "createdAt": now,
         })
@@ -142,6 +144,46 @@ class WorkspaceService:
         self.store.save(state)
         return self.directory(actor, trace_id)
 
+    def update_workspace_settings(
+        self,
+        workspace_id: str,
+        payload: dict[str, Any],
+        actor: dict[str, Any],
+        trace_id: str,
+        path: str,
+    ) -> dict[str, Any]:
+        state = self.store.load()
+        access_problem = require_workspace_permission(state, workspace_id, actor, "manage_workspace_settings", path, trace_id)
+        if access_problem:
+            return access_problem
+
+        target_workspace = workspace(state, workspace_id)
+        if not target_workspace:
+            return workspace_problem(404, "Workspace was not found.", path, trace_id, "#/workspaceId")
+
+        parsed = parse_workspace_settings_payload(payload, path, trace_id)
+        if "body" in parsed:
+            return parsed
+
+        if "name" in parsed:
+            next_slug = slug(parsed["name"])
+            duplicate = next((
+                item for item in state["workspaces"]
+                if item["workspaceId"] != workspace_id
+                and item.get("status") == "active"
+                and item.get("slug") == next_slug
+            ), None)
+            if duplicate:
+                return workspace_problem(409, "A Workspace with this name already exists.", path, trace_id, "#/name")
+            target_workspace["name"] = parsed["name"]
+            target_workspace["slug"] = next_slug
+        if "description" in parsed:
+            target_workspace["description"] = parsed["description"]
+        if "headerLabel" in parsed:
+            target_workspace["headerLabel"] = parsed["headerLabel"]
+        self.store.save(state)
+        return response(200, envelope(workspace_summary(state, target_workspace), trace_id), trace_id)
+
     def admin_summary(self, actor: dict[str, Any], metrics: dict[str, Any], trace_id: str) -> dict[str, Any]:
         state = self.store.load()
         membership = current_membership(state, actor["accountId"])
@@ -166,6 +208,24 @@ class WorkspaceService:
             "invitations": invitations,
             "charts": charts(workspace_groups, invitations, metrics),
         }, trace_id), trace_id)
+
+    def workflow_context(self, actor: dict[str, Any]) -> dict[str, Any]:
+        state = self.store.load()
+        membership = current_membership(state, actor["accountId"])
+        current_workspace = workspace(state, membership["workspaceId"]) if membership else None
+        boundary = permission_boundary(state, actor, membership)
+        workspace_id = current_workspace["workspaceId"] if current_workspace and current_workspace.get("status") == "active" else None
+        workspace_members = memberships(state, workspace_id) if workspace_id else []
+        workspace_groups = groups(state, workspace_id) if workspace_id else []
+
+        return {
+            "actor": account_payload(actor),
+            "workspace": copy.deepcopy(current_workspace) if workspace_id else None,
+            "membership": copy.deepcopy(membership) if workspace_id else None,
+            "permissionBoundary": boundary,
+            "members": workspace_members,
+            "groups": workspace_groups,
+        }
 
     def create_group(
         self,

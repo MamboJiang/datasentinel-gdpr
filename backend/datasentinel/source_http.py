@@ -159,10 +159,12 @@ class SourceHttpApp:
             return self.workspace_service.transfer_owner(workspace_owner_transfer, payload_response["payload"], actor, trace_id, f"/api{route}")
 
         workspace_item = _workspace_item_match(route)
-        if method == "DELETE" and workspace_item:
+        if workspace_item and method in {"PATCH", "DELETE"}:
             payload_response = self._json_body(body, content_type, route, trace_id)
             if "body" in payload_response:
                 return payload_response
+            if method == "PATCH":
+                return self.workspace_service.update_workspace_settings(workspace_item, payload_response["payload"], actor, trace_id, f"/api{route}")
             return self.workspace_service.delete_workspace(workspace_item, payload_response["payload"], actor, trace_id, f"/api{route}")
 
         workspace_group_collection = _match(route, "/workspaces/", "/groups")
@@ -204,20 +206,44 @@ class SourceHttpApp:
             return self.workspace_service.create_invitation(workspace_invitation, payload_response["payload"], actor, trace_id, f"/api{route}")
 
         source_api, demo_state = self._scoped_runtime(headers, actor)
+        workflow_context = self.workspace_service.workflow_context(actor)
+        workflow_access_context = workflow_context if isinstance(demo_state, PrelaunchState) else None
 
         if method == "GET" and route == "/integrations/google-drive/picker-config":
             return picker_config_response(trace_id)
 
         if method == "GET" and route == "/sources":
-            return source_api.list_sources(trace_id)
+            result = source_api.list_sources(trace_id)
+            result["body"]["data"] = _visible_sources(result["body"]["data"], workflow_access_context) if workflow_access_context else result["body"]["data"]
+            return result
 
         if method == "POST" and route == "/sources":
             payload_response = self._json_body(body, content_type, route, trace_id)
             if "body" in payload_response:
                 return payload_response
-            return source_api.create_source(payload_response["payload"], trace_id)
+            assigned_payload = _source_assignment_payload(payload_response["payload"], workflow_context, trace_id, f"/api{route}")
+            if "body" in assigned_payload:
+                return assigned_payload
+            return source_api.create_source(assigned_payload["payload"], trace_id)
 
         source_id = _match(route, "/sources/")
+        if method == "PATCH" and source_id and "/" not in source_id:
+            access_problem = _require_source_admin(workflow_context, trace_id, f"/api{route}")
+            if access_problem:
+                return access_problem
+            payload_response = self._json_body(body, content_type, route, trace_id)
+            if "body" in payload_response:
+                return payload_response
+            assigned_payload = _source_assignment_payload(payload_response["payload"], workflow_context, trace_id, f"/api{route}")
+            if "body" in assigned_payload:
+                return assigned_payload
+            result = source_api.update_source(source_id, assigned_payload["payload"], trace_id, f"/api{route}")
+            if result["status"] < 400:
+                source_assignment_changed = getattr(demo_state, "source_assignment_changed", None)
+                if callable(source_assignment_changed):
+                    source_assignment_changed(result["body"]["data"])
+            return result
+
         if method == "DELETE" and source_id and "/" not in source_id:
             result = source_api.delete_source(source_id, trace_id, f"/api{route}")
             if result["status"] < 400:
@@ -234,6 +260,11 @@ class SourceHttpApp:
             payload_response = self._json_body(body, content_type, route, trace_id)
             if "body" in payload_response:
                 return payload_response
+            source_id_for_scan = payload_response["payload"].get("sourceId")
+            if isinstance(source_id_for_scan, str):
+                source = source_api.store.get(source_id_for_scan)
+                if workflow_access_context and source and source not in _visible_sources([source], workflow_access_context):
+                    return _source_access_problem(trace_id, f"/api{route}")
             scan_type = "delta" if route.endswith("/delta") else "full"
             return demo_state.start_scan(scan_type, payload_response["payload"], trace_id, f"/api{route}")
 
@@ -246,11 +277,11 @@ class SourceHttpApp:
             return demo_state.get_scan(scan_id, trace_id, f"/api{route}")
 
         if method == "GET" and route == "/findings":
-            return demo_state.list_findings(trace_id)
+            return demo_state.list_findings(trace_id, workflow_access_context)
 
         review_support = _match(route, "/findings/", "/review-support")
         if method == "GET" and review_support:
-            return demo_state.finding_review_support(review_support, trace_id, f"/api{route}")
+            return demo_state.finding_review_support(review_support, trace_id, f"/api{route}", workflow_access_context)
 
         review_finding = _match(route, "/findings/", "/review")
         if method == "POST" and review_finding:
@@ -258,11 +289,11 @@ class SourceHttpApp:
             if "body" in payload_response:
                 return payload_response
             payload = {**payload_response["payload"], "findingId": review_finding}
-            return demo_state.review_finding(review_finding, payload, trace_id, f"/api{route}")
+            return demo_state.review_finding(review_finding, payload, trace_id, f"/api{route}", workflow_access_context)
 
         finding_id = _match(route, "/findings/")
         if method == "GET" and finding_id:
-            return demo_state.get_finding(finding_id, trace_id, f"/api{route}")
+            return demo_state.get_finding(finding_id, trace_id, f"/api{route}", workflow_access_context)
 
         if method == "GET" and route == "/audit/events":
             return demo_state.audit_event_list(trace_id)
@@ -286,7 +317,7 @@ class SourceHttpApp:
             return demo_state.governance_preview(trace_id)
 
         if method == "GET" and route == "/users/me/permissions":
-            return demo_state.permissions(trace_id)
+            return demo_state.permissions(trace_id, workflow_context)
 
         return response(
             404,
@@ -384,6 +415,142 @@ class SourceHttpApp:
         if isinstance(user, dict) and isinstance(user.get("userId"), str) and user["userId"]:
             return f"account:{user['userId']}"
         return "anonymous"
+
+
+def _source_assignment_payload(
+    payload: dict[str, Any],
+    workflow_context: dict[str, Any],
+    trace_id: str,
+    path: str,
+) -> dict[str, Any]:
+    next_payload = dict(payload)
+    members = workflow_context.get("members") if isinstance(workflow_context.get("members"), list) else []
+    members_by_id = {member["accountId"]: member for member in members if isinstance(member.get("accountId"), str)}
+    assignment_field_present = "assignedOwnerUserId" in payload
+    selected_owner = _optional_text(payload.get("assignedOwnerUserId")) if assignment_field_present else None
+    actor_id = (workflow_context.get("actor") or {}).get("accountId")
+
+    if not assignment_field_present and isinstance(actor_id, str) and actor_id in members_by_id:
+        assignment_field_present = True
+        selected_owner = actor_id
+
+    if selected_owner and selected_owner not in members_by_id:
+        return response(
+            422,
+            problem(
+                status=422,
+                title="Request validation failed",
+                detail="Source owner must be an active member of the current Workspace.",
+                instance=path,
+                trace_id=trace_id,
+                code="validation-error",
+                errors=[{"pointer": "#/assignedOwnerUserId", "detail": "Source owner must be an active member of the current Workspace."}],
+            ),
+            trace_id,
+            content_type="application/problem+json",
+        )
+
+    if assignment_field_present:
+        next_payload["assignedOwnerUserId"] = selected_owner
+        next_payload["masterOfDataUserId"] = selected_owner
+        if selected_owner:
+            next_payload["assignedOwner"] = _member_owner(members_by_id[selected_owner], "direct_owner", "Source owner selected in Workspace Sources.")
+        else:
+            next_payload["assignedOwner"] = None
+
+    fallback = _fallback_steward(members) if not selected_owner else None
+    next_payload["fallbackOwner"] = fallback
+    return {"payload": next_payload}
+
+
+def _optional_text(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    return text or None
+
+
+def _fallback_steward(members: list[dict[str, Any]]) -> dict[str, Any] | None:
+    steward = next((member for member in members if "data_steward" in member.get("groupIds", [])), None)
+    return _member_owner(steward, "data_steward_fallback", "No direct Source owner was selected; Data Steward fallback owns orphan findings.") if steward else None
+
+
+def _member_owner(member: dict[str, Any], assignment_type: str, reason: str) -> dict[str, Any]:
+    return {
+        "userId": member["accountId"],
+        "displayName": member.get("displayName") or member["accountId"],
+        "email": member.get("email"),
+        "assignmentType": assignment_type,
+        "assignmentReason": reason,
+        "assignmentSource": "source_assignment" if assignment_type == "direct_owner" else "data_steward_fallback",
+    }
+
+
+def _visible_sources(sources: list[dict[str, Any]], workflow_context: dict[str, Any]) -> list[dict[str, Any]]:
+    if not workflow_context.get("workspace"):
+        return sources
+
+    boundary = workflow_context.get("permissionBoundary") or {}
+    allowed = set(boundary.get("allowedActions") or [])
+    if "view_workspace_admin" in allowed:
+        return sources
+
+    if not ({"view_owned_sources", "view_assigned_findings"} & allowed):
+        return []
+
+    actor_id = ((workflow_context.get("actor") or {}).get("accountId"))
+    return [source for source in sources if _source_owner_id(source) == actor_id]
+
+
+def _source_owner_id(source: dict[str, Any]) -> str | None:
+    owner = source.get("assignedOwner")
+    if isinstance(owner, dict) and isinstance(owner.get("userId"), str):
+        return owner["userId"]
+    if isinstance(source.get("assignedOwnerUserId"), str) and source["assignedOwnerUserId"].strip():
+        return source["assignedOwnerUserId"].strip()
+    fallback = source.get("fallbackOwner")
+    if isinstance(fallback, dict) and isinstance(fallback.get("userId"), str):
+        return fallback["userId"]
+    if isinstance(source.get("masterOfDataUserId"), str) and source["masterOfDataUserId"].strip():
+        return source["masterOfDataUserId"].strip()
+    return None
+
+
+def _require_source_admin(workflow_context: dict[str, Any], trace_id: str, path: str) -> dict[str, Any] | None:
+    boundary = workflow_context.get("permissionBoundary") or {}
+    if "view_workspace_admin" in set(boundary.get("allowedActions") or []):
+        return None
+    return response(
+        403,
+        problem(
+            status=403,
+            title="Workspace permission required",
+            detail="Workspace admin permission is required to edit Source assignment.",
+            instance=path,
+            trace_id=trace_id,
+            code="workspace-permission-required",
+            errors=[{"pointer": "#/sourceId", "detail": "Workspace admin permission is required to edit Source assignment."}],
+        ),
+        trace_id,
+        content_type="application/problem+json",
+    )
+
+
+def _source_access_problem(trace_id: str, path: str) -> dict[str, Any]:
+    return response(
+        403,
+        problem(
+            status=403,
+            title="Source permission required",
+            detail="The current Workspace member cannot access this Source.",
+            instance=path,
+            trace_id=trace_id,
+            code="source-permission-required",
+            errors=[{"pointer": "#/sourceId", "detail": "The current Workspace member cannot access this Source."}],
+        ),
+        trace_id,
+        content_type="application/problem+json",
+    )
 
 
 def build_default_app() -> SourceHttpApp:

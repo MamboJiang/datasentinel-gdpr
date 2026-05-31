@@ -8,6 +8,9 @@ Workspace:
     slug: { type: string }
     status: { type: string }
     plan: { type: string }
+    headerLabel:
+      type: string
+      description: Compact Workspace label shown in the application shell. Empty string hides the label.
     description: { type: string }
     createdAt: { type: string, format: date-time }
     deletedAt: { type: [string, "null"], format: date-time }
@@ -199,6 +202,23 @@ SwitchWorkspaceRequest:
   additionalProperties: true
   properties:
     workspaceId: { type: string }
+UpdateWorkspaceSettingsRequest:
+  type: object
+  minProperties: 1
+  additionalProperties: true
+  properties:
+    name:
+      type: string
+      maxLength: 80
+      description: Workspace display name shown in the application shell.
+    description:
+      type: string
+      maxLength: 240
+      description: Workspace introduction shown in the application shell and Workspace admin summary.
+    headerLabel:
+      type: string
+      maxLength: 24
+      description: Compact Workspace label shown in the application shell. Empty string hides the label.
 CreateWorkspaceGroupRequest:
   type: object
   required: [name, permissions]

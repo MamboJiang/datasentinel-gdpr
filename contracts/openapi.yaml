@@ -116,6 +116,26 @@ paths:
               schema:
                 $ref: "./schemas/workspace.yaml#/WorkspaceAdminSummaryEnvelope"
   /workspaces/{workspaceId}:
+    patch:
+      operationId: updateWorkspaceSettings
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/workspace.yaml#/UpdateWorkspaceSettingsRequest"
+      responses:
+        "200":
+          description: Workspace profile settings updated inside the actor's permission boundary.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/workspace.yaml#/WorkspaceEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
     delete:
       operationId: deleteWorkspace
       parameters:
@@ -338,6 +358,26 @@ paths:
         default:
           $ref: "#/components/responses/Problem"
   /sources/{sourceId}:
+    patch:
+      operationId: updateSource
+      parameters:
+        - $ref: "#/components/parameters/SourceId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/source-scan.yaml#/UpdateSourceRequest"
+      responses:
+        "200":
+          description: Source metadata updated. Source files are not mutated.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/source-scan.yaml#/SourceEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
     delete:
       operationId: deleteSource
       parameters:

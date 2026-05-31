@@ -3,6 +3,7 @@ import type { CreateWorkspaceInput, Workspace, WorkspaceGroup, WorkspaceGroupInp
 
 const adminPermissions = [
   'view_workspace_admin',
+  'manage_workspace_settings',
   'invite_workspace_members',
   'manage_workspace_members',
   'manage_workspace_groups',
@@ -30,6 +31,11 @@ export const workspacePermissionOptions = [
     permission: 'view_workspace_admin',
     label: 'View Workspace admin',
     description: 'Open the Workspace administration surface and inspect visible control-plane state.',
+  },
+  {
+    permission: 'manage_workspace_settings',
+    label: 'Manage Workspace settings',
+    description: 'Change Workspace name and description shown in the application shell.',
   },
   {
     permission: 'invite_workspace_members',
@@ -85,7 +91,7 @@ export const workspacePermissionOptions = [
 
 export function applyLocalWorkspaceCreation(current: MockData, input: CreateWorkspaceInput): MockData {
   const now = new Date().toISOString()
-  const slug = input.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'workspace'
+  const slug = workspaceSlug(input.name)
   const workspaceId = `ws_${slug}_${Date.now()}`
   const workspace: Workspace = {
     workspaceId,
@@ -93,6 +99,7 @@ export function applyLocalWorkspaceCreation(current: MockData, input: CreateWork
     slug,
     status: 'active',
     plan: 'Prelaunch',
+    headerLabel: 'Prelaunch',
     description: input.description || 'Privacy operations workspace',
     createdAt: now,
     memberCount: 1,
@@ -157,6 +164,40 @@ export function applyLocalWorkspaceCreation(current: MockData, input: CreateWork
       },
     },
   }
+}
+
+export function applyLocalWorkspaceSettingsUpdate(
+  current: MockData,
+  workspaceId: string,
+  settings: { description?: string; headerLabel?: string; name?: string },
+): MockData {
+  const updateWorkspace = (workspace: Workspace) => (
+    workspace.workspaceId === workspaceId
+      ? {
+          ...workspace,
+          description: settings.description ?? workspace.description,
+          headerLabel: settings.headerLabel ?? workspace.headerLabel,
+          name: settings.name ?? workspace.name,
+          slug: settings.name ? workspaceSlug(settings.name) : workspace.slug,
+        }
+      : workspace
+  )
+
+  return {
+    ...current,
+    workspaceDirectory: {
+      ...current.workspaceDirectory,
+      workspaces: current.workspaceDirectory.workspaces.map(updateWorkspace),
+    },
+    workspaceAdmin: {
+      ...current.workspaceAdmin,
+      workspace: current.workspaceAdmin.workspace ? updateWorkspace(current.workspaceAdmin.workspace) : null,
+    },
+  }
+}
+
+function workspaceSlug(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'workspace'
 }
 
 export function buildLocalWorkspaceGroup(current: MockData, input: WorkspaceGroupInput): WorkspaceGroup {

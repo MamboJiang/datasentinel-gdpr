@@ -72,7 +72,17 @@ describe('review support and permission boundary workflow', () => {
 
   it('builds finding-specific decisions, checklist, transfer options, and denied actions from the active governance model', () => {
     const completed = completeStartedScan()
-    const finding = completed.findingDetails.finding_001
+    const finding = {
+      ...completed.findingDetails.finding_001,
+      owner: {
+        assignmentReason: 'Assigned Source owner receives this review.',
+        assignmentSource: 'source_assignment',
+        assignmentType: 'direct_owner',
+        displayName: 'Anna Privacy Reviewer',
+        email: 'anna.reviewer@example.invalid',
+        userId: 'user_anna',
+      },
+    }
     const support = buildReviewSupport({
       actorId: 'user_anna',
       finding,
@@ -96,6 +106,7 @@ describe('review support and permission boundary workflow', () => {
       'confirm_permission_boundary',
       'confirm_retention_context',
       'consider_escalation_path',
+      'confirm_delete_candidate',
     ])
     expect(support.transferOptions).toEqual([
       {
@@ -122,6 +133,66 @@ describe('review support and permission boundary workflow', () => {
     ])
     expect(serialized).not.toContain('@example.com')
     expect(serialized).not.toContain('DE89')
+  })
+
+  it('uses active Workspace members for finding transfer targets without governance fixture fallback', () => {
+    const completed = completeStartedScan()
+    const finding = {
+      ...completed.findingDetails.finding_001,
+      owner: {
+        assignmentReason: 'Assigned Source owner receives this review.',
+        assignmentSource: 'source_assignment',
+        assignmentType: 'direct_owner',
+        displayName: 'Anna Privacy Reviewer',
+        email: 'anna.reviewer@example.invalid',
+        userId: 'user_anna',
+      },
+    }
+    const workspaceMembers = [
+      {
+        accountId: 'user_anna',
+        displayName: 'Anna Privacy Reviewer',
+        email: 'anna.reviewer@example.invalid',
+        groupIds: ['privacy_reviewer'],
+        invitedBy: null,
+        joinedAt: startedAt,
+        lastActiveAt: completedAt,
+        membershipId: 'mem_anna',
+        status: 'active',
+        workspaceId: 'ws_datasentinel_gdpr',
+      },
+      {
+        accountId: 'user_marta',
+        displayName: 'Marta Data Steward',
+        email: 'marta.steward@example.invalid',
+        groupIds: ['data_steward'],
+        invitedBy: 'user_demo_admin',
+        joinedAt: startedAt,
+        lastActiveAt: completedAt,
+        membershipId: 'mem_marta',
+        status: 'active',
+        workspaceId: 'ws_datasentinel_gdpr',
+      },
+    ]
+
+    const support = buildReviewSupport({
+      actorId: 'user_anna',
+      finding,
+      governanceConfig: completed.governanceConfig,
+      occurredAt: completedAt,
+      workspaceMembers,
+    })
+    const emptyWorkspaceSupport = buildReviewSupport({
+      actorId: 'user_anna',
+      finding,
+      governanceConfig: completed.governanceConfig,
+      occurredAt: completedAt,
+      workspaceMembers: [],
+    })
+
+    expect(support.transferOptions?.map((option) => option.userId)).toEqual(['user_marta'])
+    expect(support.transferOptions?.map((option) => option.userId)).not.toContain('user_markus')
+    expect(emptyWorkspaceSupport.transferOptions).toEqual([])
   })
 
   it('rejects decisions outside the permission boundary or without required human context', () => {

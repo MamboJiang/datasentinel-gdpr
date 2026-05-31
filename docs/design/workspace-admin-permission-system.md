@@ -20,7 +20,7 @@ The P0 implementation must prove the workflow without adding production tenant p
 3. Let a signed-in account create a new Workspace; the creator becomes an active `workspace_owner` and `workspace_admin` member of that Workspace.
 4. Use workspace groups as the P0 role mechanism:
    - `workspace_owner`: highest Workspace authority; transfer owner authority, delete the Workspace record after exact-name confirmation, and retain admin membership.
-   - `workspace_admin`: manage members, manage groups, invite members, view workspace admin charts, view audit/evaluation/governance.
+   - `workspace_admin`: manage profile settings, manage members, manage groups, invite members, view workspace admin charts, view audit/evaluation/governance.
    - `privacy_reviewer`: view assigned findings, submit allowed human-review decisions, view review support.
    - `data_steward`: view owned sources/findings, act on delegated stewardship decisions.
    - `auditor`: read audit, evaluation, governance, and permission boundaries without mutating workflow state.
@@ -38,7 +38,7 @@ The P0 implementation must prove the workflow without adding production tenant p
 16. Keep charts deterministic and local to the P0 contract. Do not add a charting dependency; render accessible bars and progress rows with existing React/CSS.
 17. Hide sidebar destinations whose required actions are outside the current Workspace permission boundary.
 18. Update backend demo routes and mock payloads so frontend and backend remain aligned through envelopes.
-19. Add tests for workspace-less accounts, workspace creation, workspace switching, workspace-scoped operational isolation, admin invitation creation, invitation acceptance, admin summary visibility, group customization, member management, member-directory browsing, Owner transfer, and exact-name Workspace deletion.
+19. Add tests for workspace-less accounts, workspace creation, workspace switching, workspace-scoped operational isolation, Workspace profile customization, admin invitation creation, invitation acceptance, admin summary visibility, group customization, member management, member-directory browsing, Owner transfer, and exact-name Workspace deletion.
 
 ## Options
 
@@ -91,10 +91,11 @@ Guards:
 - Invitation creation requires `invite_workspace_members`.
 - Invitation group IDs cannot include `workspace_owner`; Owner authority must move through the owner-transfer command.
 - Owner transfer and Workspace deletion require `manage_workspace_ownership`.
+- Workspace profile setting updates require `manage_workspace_settings`.
 - Group creation, update, and deletion require `manage_workspace_groups`.
 - Group permissions must come from the exposed Workspace permission catalog.
-- The `workspace_owner` group cannot be deleted and must retain owner-management, admin-view, and member-management permissions.
-- The `workspace_admin` group cannot be deleted and must retain admin view plus group-management permissions.
+- The `workspace_owner` group cannot be deleted and must retain owner-management, admin-view, settings-management, and member-management permissions.
+- The `workspace_admin` group cannot be deleted and must retain admin view, settings-management, and group-management permissions.
 - Invitation acceptance requires a signed-in account and the invite link ID.
 - Workspace switching requires an active membership in the target Workspace.
 - Accepted, expired, or revoked invitations cannot create another membership.
@@ -114,6 +115,7 @@ Transitions:
 - `workspace_unassigned -> invitation_pending` when a workspace admin generates an invite link.
 - `invitation_pending -> invitation_pending` when an admin copies a pending invite link; no server state changes.
 - `workspace_member_active -> workspace_member_active` on `account_switches_workspace`; only the account's selected Workspace changes.
+- `workspace_member_active -> workspace_member_active` when an admin changes Workspace profile settings.
 - `workspace_member_active -> workspace_member_active` when an admin creates or updates a Workspace group.
 - `workspace_member_active -> workspace_member_active` when an admin deletes a non-admin group and group references are removed from memberships and pending invite links.
 - `workspace_member_active -> workspace_member_active` when an admin changes a member's group assignments.
@@ -133,6 +135,7 @@ Side effects:
 - Creating a Workspace records the Workspace, default P0 groups, and one active creator membership with `workspace_owner` and `workspace_admin`.
 - Accepting an invitation creates one active membership and records group assignment.
 - Creating a Workspace, accepting an invitation, or switching Workspaces updates the account's current Workspace selection.
+- Updating Workspace profile settings changes shell display fields only; it does not alter plan, membership, source scope, or permissions.
 - Operational source, scan, finding, audit, metric, and evaluation state resolves to the selected `workspace:{workspaceId}` owner scope when a current Workspace exists.
 - Creating a group records its Workspace, generated opaque group ID, name, description, explicit permissions, and zero initial members.
 - Updating a group changes its visible name, description, and explicit permissions while preserving group ID references.
@@ -169,10 +172,10 @@ Rollback path:
 
 ## Impact Surface
 
-- API contract and mock payloads gain workspace directory, admin summary, owner transfer, Workspace deletion, group create/update/delete, member update/delete, invitation create, and invitation accept shapes.
+- API contract and mock payloads gain workspace directory, admin summary, profile settings, owner transfer, Workspace deletion, group create/update/delete, member update/delete, invitation create, and invitation accept shapes.
 - Backend local API gains workspace state, current Workspace selection, Workspace switch, and Workspace-scoped operational owner resolution.
 - Frontend shell consumes workspace data for the top-left workspace menu and opens the Workspace creation dialog from that menu.
-- Frontend navigation gains `/workspace/admin` and a nested `/workspace/admin/members` entry, and hides entries outside the current Workspace permission boundary.
+- Frontend navigation gains `/workspace/admin`, nested `/workspace/admin/members`, and nested `/workspace/admin/groups` entries, and hides entries outside the current Workspace permission boundary.
 - Frontend data context gains workspace summary, group actions, and invitation actions.
 - Acceptance, PRD, TRD, governance, frontend console contract, and test cases gain workspace-admin requirements.
 
@@ -181,16 +184,18 @@ Rollback path:
 - A newly signed-in account with no membership receives an empty workspace list and no current workspace.
 - A signed-in account can open a creation dialog from the Workspace menu or no-Workspace state, create a Workspace, and becomes its active `workspace_owner` and `workspace_admin` member.
 - A workspace admin can see member, group, invitation, and chart data for the current workspace.
+- A workspace admin with settings permission can customize the compact Workspace label shown in the sidebar; setting it to an empty string hides the tag.
 - A workspace member can switch among their Workspaces from the top-left Workspace menu.
 - Switching Workspaces shows that Workspace's independent sources, findings, scan state, audit events, metrics, and evaluation state; data is not copied from the previous Workspace.
 - A workspace admin can open a dedicated Members page from the sidebar or Admin Members panel and browse members with search, filtering, grouping, and sorting.
+- A workspace admin can open a dedicated Group controls page from the sidebar or Admin Group controls panel and manage group definitions there.
 - A workspace admin with member-management permission can update a member's groups from the Members page.
 - A workspace admin with member-management permission can remove a member from the Workspace unless the target is the admin's own active membership.
 - Last-admin member group changes or removals are rejected.
 - Last-owner member group changes or removals are rejected.
-- A workspace admin can create a group by choosing a name and permissions from the exposed permission catalog.
-- A workspace admin can rename a group and change its permission set; permission-boundary calculations use the updated group definition.
-- A workspace admin can delete a non-admin group; members and pending invite links no longer reference it.
+- A workspace admin can create a group on `/workspace/admin/groups` by choosing a name and permissions from the exposed permission catalog.
+- A workspace admin can rename a group and change its permission set on `/workspace/admin/groups`; permission-boundary calculations use the updated group definition.
+- A workspace admin can delete a non-admin group from `/workspace/admin/groups`; members and pending invite links no longer reference it.
 - Deleting the `workspace_owner` group or removing its required owner-management permissions is rejected.
 - Deleting the `workspace_admin` group or removing its required admin-management permissions is rejected.
 - A non-admin member can see their denied admin actions instead of hidden privilege.

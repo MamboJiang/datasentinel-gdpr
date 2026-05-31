@@ -6,6 +6,7 @@
       "slug": "datasentinel-gdpr",
       "status": "active",
       "plan": "Prelaunch",
+      "headerLabel": "Prelaunch",
       "description": "Privacy operations workspace",
       "createdAt": "2026-05-30T12:00:00Z",
       "memberCount": 4,
@@ -30,6 +31,7 @@
       "allowedActions": [
         "manage_workspace_ownership",
         "view_workspace_admin",
+        "manage_workspace_settings",
         "invite_workspace_members",
         "manage_workspace_members",
         "manage_workspace_groups",
@@ -64,6 +66,11 @@
         "permission": "view_workspace_admin",
         "label": "View Workspace admin",
         "description": "Open the Workspace administration surface and inspect visible control-plane state."
+      },
+      {
+        "permission": "manage_workspace_settings",
+        "label": "Manage Workspace settings",
+        "description": "Change Workspace name and description shown in the application shell."
       },
       {
         "permission": "invite_workspace_members",
@@ -125,6 +132,7 @@
         "permissions": [
           "manage_workspace_ownership",
           "view_workspace_admin",
+          "manage_workspace_settings",
           "invite_workspace_members",
           "manage_workspace_members",
           "manage_workspace_groups",
@@ -144,15 +152,14 @@
         "description": "Can manage Workspace members, groups, invitations, audit, governance, and metrics.",
         "permissions": [
           "view_workspace_admin",
+          "manage_workspace_settings",
           "invite_workspace_members",
           "manage_workspace_members",
           "manage_workspace_groups",
           "view_workspace_metrics",
           "view_workspace_audit",
           "view_governance",
-          "view_assigned_findings",
-          "view_review_support",
-          "review_findings"
+          "view_owned_sources"
         ],
         "memberCount": 1
       },

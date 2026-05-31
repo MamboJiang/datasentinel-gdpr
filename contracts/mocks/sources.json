@@ -7,6 +7,15 @@
       "status": "mock_ready",
       "rootLabel": "a-klumpp/GDPR-data-samples",
       "masterOfDataUserId": "user_anna",
+      "assignedOwnerUserId": "user_anna",
+      "assignedOwner": {
+        "userId": "user_anna",
+        "displayName": "Anna Privacy Reviewer",
+        "email": "anna.reviewer@example.invalid",
+        "assignmentType": "direct_owner",
+        "assignmentReason": "Source owner selected in Workspace Sources.",
+        "assignmentSource": "source_assignment"
+      },
       "referenceUrl": "https://github.com/a-klumpp/GDPR-data-samples",
       "sampleFamilies": ["Expense_Report", "IT_Access_Request", "Incident_Report", "Supplier_Onboarding", "Training_Evaluation"]
     },
@@ -16,7 +25,16 @@
       "sourceType": "sharepoint_mock",
       "status": "mocked",
       "rootLabel": "SharePoint Finance",
-      "masterOfDataUserId": "user_anna"
+      "masterOfDataUserId": "user_anna",
+      "assignedOwnerUserId": "user_anna",
+      "assignedOwner": {
+        "userId": "user_anna",
+        "displayName": "Anna Privacy Reviewer",
+        "email": "anna.reviewer@example.invalid",
+        "assignmentType": "direct_owner",
+        "assignmentReason": "Source owner selected in Workspace Sources.",
+        "assignmentSource": "source_assignment"
+      }
     }
   ],
   "meta": {

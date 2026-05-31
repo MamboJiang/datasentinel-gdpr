@@ -9,6 +9,15 @@ Source:
     status: { type: string, example: "connected" }
     rootLabel: { type: [string, "null"] }
     masterOfDataUserId: { type: [string, "null"] }
+    assignedOwnerUserId: { type: [string, "null"] }
+    assignedOwner:
+      anyOf:
+        - $ref: "./finding-review.yaml#/Owner"
+        - type: "null"
+    fallbackOwner:
+      anyOf:
+        - $ref: "./finding-review.yaml#/Owner"
+        - type: "null"
     referenceUrl: { type: [string, "null"], format: uri }
     sampleFamilies:
       type: array
@@ -30,7 +39,18 @@ CreateSourceRequest:
       type: object
       additionalProperties: true
       description: Source-specific configuration. For `remote_file_link`, use `url` for a supported text-like file or PDF text layer. For `google_drive_selection`, use selected `items` returned by Google Picker. For `local_repo`, use `rootPath`.
+    assignedOwnerUserId:
+      type: [string, "null"]
+      description: Optional active Workspace member account ID selected as the direct Source owner.
     masterOfDataUserId: { type: [string, "null"] }
+UpdateSourceRequest:
+  type: object
+  additionalProperties: true
+  properties:
+    name: { type: string }
+    assignedOwnerUserId:
+      type: [string, "null"]
+      description: Optional active Workspace member account ID selected as the direct Source owner. Null clears the direct owner and enables fallback routing.
 SourceEnvelope:
   type: object
   required: [data, meta]

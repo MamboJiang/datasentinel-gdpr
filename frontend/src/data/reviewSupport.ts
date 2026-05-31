@@ -7,6 +7,7 @@ import type {
   ReviewSupport,
   ReviewSupportSummary,
   FindingAssemblySummary,
+  WorkspaceMembership,
 } from '../types'
 
 type ReviewSupportState = 'pending' | 'completed'
@@ -24,6 +25,7 @@ type ReviewSupportInput = {
   finding: Finding
   governanceConfig: GovernanceConfig
   occurredAt: string
+  workspaceMembers?: WorkspaceMembership[]
 }
 
 type ValidationResult = {
@@ -40,7 +42,7 @@ const p0ReviewDecisions: ReviewDecision[] = [
 ]
 
 const decisionLabels: Record<ReviewDecision, string> = {
-  delete_candidate: 'Mark as deletion candidate',
+  delete_candidate: 'Approve delete (mark candidate)',
   keep_with_reason: 'Keep with business reason',
   correct_false_positive: 'Correct false positive',
   reassign_owner: 'Transfer to another owner',
@@ -71,14 +73,21 @@ export function buildPermissionBoundary({
   finding,
   governanceConfig,
   occurredAt,
+  workspaceMembers,
 }: ReviewSupportInput): PermissionBoundary {
-  const profile = actorProfiles[actorId] ?? {
+  const workspaceMember = workspaceMembers?.find((member) => member.accountId === actorId)
+  const profile = workspaceMember ? {
+    roles: workspaceMember.groupIds,
+    visibleScopes: ['assigned_findings', `workspace:${workspaceMember.workspaceId}`],
+  } : actorProfiles[actorId] ?? {
     roles: ['viewer'],
     visibleScopes: ['assigned_findings'],
   }
   const policyDecisions = getPolicyDecisions(governanceConfig)
   const ownsFinding = finding.owner?.userId === actorId
-  const canReview = ownsFinding || profile.roles.includes('reviewer') || profile.roles.includes('master_of_data')
+  const canReview = workspaceMember
+    ? ownsFinding && canReceiveReview(workspaceMember)
+    : ownsFinding || profile.roles.includes('reviewer') || profile.roles.includes('master_of_data')
   const allowedActions = canReview
     ? ['view_assigned_findings', ...policyDecisions]
     : ['view_assigned_findings']
@@ -163,7 +172,7 @@ export function buildReviewSupport(input: ReviewSupportInput): ReviewSupport {
     plainLanguageSummary: buildPlainLanguageSummary(input.finding, input.governanceConfig),
     availableDecisions,
     checklist: buildChecklist(input.finding),
-    transferOptions: actorActions.has('reassign_owner') ? buildTransferOptions(input.governanceConfig, input.finding) : [],
+    transferOptions: actorActions.has('reassign_owner') ? buildTransferOptions(input.governanceConfig, input.finding, input.workspaceMembers) : [],
     escalationOptions: actorActions.has('escalate') ? buildEscalationOptions(input.governanceConfig) : [],
     permissionBoundary,
   }
@@ -194,7 +203,7 @@ export function validateReviewInput(input: ReviewInput, reviewSupport: ReviewSup
   }
 
   const missingChecklistItem = reviewSupport.checklist
-    .filter((item) => item.required)
+    .filter((item) => item.required && (!item.decision || item.decision === input.decision))
     .find((item) => !(input.checklistItemIds ?? []).includes(item.itemId))
 
   if (missingChecklistItem) {
@@ -275,7 +284,7 @@ function buildPlainLanguageSummary(finding: Finding, governanceConfig: Governanc
 }
 
 function buildChecklist(finding: Finding): ReviewSupport['checklist'] {
-  const checklist = [
+  const checklist: ReviewSupport['checklist'] = [
     {
       itemId: 'review_redacted_evidence',
       label: 'Review the redacted evidence card and file anchor before deciding.',
@@ -309,11 +318,29 @@ function buildChecklist(finding: Finding): ReviewSupport['checklist'] {
     })
   }
 
+  checklist.push({
+    decision: 'delete_candidate',
+    itemId: 'confirm_delete_candidate',
+    label: 'Confirm this only marks the file as a deletion candidate and does not execute deletion.',
+    required: true,
+  })
+
   return checklist
 }
 
-function buildTransferOptions(governanceConfig: GovernanceConfig, finding: Finding): ReviewSupport['transferOptions'] {
+function buildTransferOptions(governanceConfig: GovernanceConfig, finding: Finding, workspaceMembers?: WorkspaceMembership[]): ReviewSupport['transferOptions'] {
   const ownerId = finding.owner?.userId
+  const activeWorkspaceTargets = (workspaceMembers ?? [])
+    .filter((member) => member.status === 'active' && member.accountId !== ownerId && canReceiveReview(member))
+    .map((member) => ({
+      userId: member.accountId,
+      displayName: member.displayName,
+      reason: member.email ? `${member.email} · active Workspace member` : 'Active Workspace member',
+    }))
+
+  if (workspaceMembers !== undefined) {
+    return activeWorkspaceTargets
+  }
 
   return (governanceConfig.organizationModel.delegationTargets ?? [])
     .filter((target) => target.userId !== ownerId)
@@ -322,6 +349,10 @@ function buildTransferOptions(governanceConfig: GovernanceConfig, finding: Findi
       displayName: target.displayName,
       reason: target.reason ?? 'Allowed by organization delegation rules.',
     }))
+}
+
+function canReceiveReview(member: WorkspaceMembership): boolean {
+  return member.groupIds.some((groupId) => ['workspace_owner', 'privacy_reviewer', 'data_steward', 'dpo_legal'].includes(groupId))
 }
 
 function buildEscalationOptions(governanceConfig: GovernanceConfig): ReviewSupport['escalationOptions'] {

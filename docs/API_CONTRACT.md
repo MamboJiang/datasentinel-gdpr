@@ -128,6 +128,7 @@ Errors use `application/problem+json`.
 | `POST` | `/api/workspaces` | Create a Workspace and add the creator as `workspace_owner` and `workspace_admin`. |
 | `POST` | `/api/workspaces/current` | Switch the signed-in account's current Workspace context. |
 | `GET` | `/api/workspaces/current/admin` | Read Workspace admin summary, groups, members, invitations, permission boundary, and charts for the current Workspace context. |
+| `PATCH` | `/api/workspaces/{workspaceId}` | Update Workspace profile settings, including name, introduction, and sidebar label, inside the admin permission boundary. |
 | `DELETE` | `/api/workspaces/{workspaceId}` | Soft-delete a Workspace after exact-name confirmation by the current Workspace owner. |
 | `POST` | `/api/workspaces/{workspaceId}/owner-transfer` | Transfer Workspace owner authority to an active member. |
 | `POST` | `/api/workspaces/{workspaceId}/groups` | Create a Workspace group with a name, description, and explicit permission set. |
@@ -140,13 +141,14 @@ Errors use `application/problem+json`.
 | `GET` | `/api/integrations/google-drive/picker-config` | Read session-protected Google Drive Picker browser setup state without secrets. |
 | `GET` | `/api/sources` | List configured sources. |
 | `POST` | `/api/sources` | Create a mock, local, direct-link, or Google Drive selected source. |
+| `PATCH` | `/api/sources/{sourceId}` | Update Source metadata such as the direct Source owner. |
 | `DELETE` | `/api/sources/{sourceId}` | Delete a DataSentinel source registration without deleting external source files. |
 | `POST` | `/api/sources/{sourceId}/connect-test` | Validate source reachability. |
 | `POST` | `/api/scans/full` | Start a full scan for a connected or mock-ready source. |
 | `POST` | `/api/scans/delta` | Start a delta scan. |
 | `GET` | `/api/scans/{scanId}` | Read scan status and progress. |
 | `GET` | `/api/scans/{scanId}/summary` | Read KPI summary for one scan. |
-| `GET` | `/api/findings` | List findings for admin or owner views. |
+| `GET` | `/api/findings` | List findings visible to the assigned owner or supported fallback route. |
 | `GET` | `/api/findings/{findingId}` | Read an evidence card. |
 | `POST` | `/api/findings/{findingId}/review` | Record a human review decision. |
 | `GET` | `/api/audit/events` | List audit events. |
@@ -185,6 +187,9 @@ Account and Workspace-scoped state:
 - When the account has an active current Workspace, Source list/mutation routes, scan routes, finding routes, audit, metrics, and evaluation resolve the owner scope from `workspace:{workspaceId}` instead of the account.
 - Switching Workspace context changes the operational owner scope for subsequent Source, scan, finding, audit, metric, and evaluation reads and writes.
 - Source list/mutation routes, scan routes, finding routes, audit, metrics, and evaluation return only the current account or current Workspace state.
+- Source records may include `assignedOwnerUserId`, `assignedOwner`, and `fallbackOwner`. When provided, `assignedOwnerUserId` must identify an active member of the current Workspace.
+- Explicitly clearing `assignedOwnerUserId` leaves the Source without a direct owner and enables Data Steward fallback routing when available. It must not expose resulting findings to all Workspace members.
+- Workspace Admin permission can edit Source owner metadata, but Workspace Admin membership alone does not grant business review-decision authority.
 - Cross-account source and finding identifiers behave as not found or as the current account's empty state.
 - Request payloads and compatibility headers cannot override the owner scope.
 
@@ -211,11 +216,21 @@ Workspace switching:
 Workspace payloads:
 
 - `WorkspaceDirectory` exposes visible Workspaces, current Workspace ID when membership exists, legacy account-targeted pending invitations when present, and whether a Workspace is required before using the console.
+- `Workspace.name` and `Workspace.description` define the visible shell Workspace profile. `Workspace.headerLabel` may still appear in legacy payloads for compatibility, but the frontend no longer exposes it as a sidebar property.
 - `WorkspaceAdminSummary` exposes the current Workspace, current membership, permission catalog, groups, members, invitations, Workspace permission boundary, and chart data.
 - `WorkspaceGroup` exposes group ID, Workspace ID, visible name, description, explicit permissions, and member count.
 - `WorkspaceInvitation` exposes invitation status, invite path, invited groups, inviter, creation time, and expiry time. Provider tokens, auth secrets, and hidden directory data are never returned.
 
-Workspace permission actions are open strings, but group mutation accepts only the exposed P0 permission catalog. Known P0 actions include `manage_workspace_ownership`, `view_workspace_admin`, `invite_workspace_members`, `manage_workspace_members`, `manage_workspace_groups`, `view_workspace_audit`, `view_workspace_metrics`, `view_assigned_findings`, `view_review_support`, `review_findings`, `view_owned_sources`, `view_governance`, and denied `execute_real_deletion`.
+Workspace permission actions are open strings, but group mutation accepts only the exposed P0 permission catalog. Known P0 actions include `manage_workspace_ownership`, `view_workspace_admin`, `manage_workspace_settings`, `invite_workspace_members`, `manage_workspace_members`, `manage_workspace_groups`, `view_workspace_audit`, `view_workspace_metrics`, `view_assigned_findings`, `view_review_support`, `review_findings`, `view_owned_sources`, `view_governance`, and denied `execute_real_deletion`.
+
+Workspace profile settings:
+
+- `PATCH /api/workspaces/{workspaceId}` accepts `name` and `description`; legacy clients may still send `headerLabel`. At least one supported field must be present.
+- `name` is required when present, normalized to collapsed whitespace, limited to 80 characters, and updates the Workspace slug when there is no active slug conflict.
+- `description` is normalized to collapsed whitespace and limited to 240 characters.
+- Legacy `headerLabel` is normalized to collapsed whitespace and limited to 24 characters when present.
+- Updating Workspace profile settings requires `manage_workspace_settings`.
+- Workspace profile updates do not change membership, source scope, permissions, billing, tenant, or legal status.
 
 Workspace group state:
 
@@ -226,8 +241,8 @@ Group command guards and side effects:
 - Group creation, update, and deletion require `manage_workspace_groups`.
 - Group creation and update reject missing names, duplicate names within a Workspace, and unknown permissions.
 - Updating a group preserves `groupId`, so memberships and invite links continue referencing the same group.
-- The `workspace_owner` group cannot be deleted and must retain `manage_workspace_ownership`, `view_workspace_admin`, and `manage_workspace_members`.
-- The `workspace_admin` group cannot be deleted and must retain `view_workspace_admin` and `manage_workspace_groups`.
+- The `workspace_owner` group cannot be deleted and must retain `manage_workspace_ownership`, `view_workspace_admin`, `manage_workspace_settings`, and `manage_workspace_members`.
+- The `workspace_admin` group cannot be deleted and must retain `view_workspace_admin`, `manage_workspace_settings`, and `manage_workspace_groups`.
 - Deleting a non-admin group removes that `groupId` from active memberships and invitation group lists.
 - Pending invite links with no remaining groups after deletion become `revoked`.
 
@@ -327,7 +342,7 @@ Start guard:
 
 - `POST /api/scans/full` requires `sourceId`.
 - P0 accepts full-scan start for the controlled `mock_ready` organizer sample source, connected local prelaunch sources, connected direct HTTPS file links, and Google Drive selected sources with current per-scan authorization.
-- `google_drive_selection` scans require `authorization.googleDriveAccessToken` in the scan request. The token is a short-lived per-scan value and must not be stored by the server; saved Drive sources may report `authorization_required` until a current Picker token is available in the browser session.
+- `google_drive_selection` scans require `authorization.googleDriveAccessToken` in the scan request. The token is a short-lived per-scan value and must not be stored by the server; persisted Drive source records may report `authorization_required` while clients may present the same source as connected for the current browser session when they hold a fresh in-memory Picker token.
 - A source that is missing, unreadable, expired-token, or not scan-ready must not surface stale findings. Backend implementations should return `application/problem+json`; source-read failures may record a failed source-unavailable scan state with zero findings.
 - Accepted scan starts should be idempotent when `Idempotency-Key` is present.
 - `POST /api/scans/delta` requires `sourceId` and a completed selected-source baseline; when `baselineScanId` is provided it must match an available baseline. Missing, running, not-ready, or mismatched baselines must not create scan, audit, finding, metric, or evaluation state changes.
@@ -397,11 +412,13 @@ Submit guards:
 - The submitted decision must be present in the actor's current review-support `availableDecisions`.
 - Required review-support checklist items must be acknowledged before submission.
 - `keep_with_reason` requires `retentionUntil` as the next retention review date.
+- Accepted `keep_with_reason` decisions set the finding review status to `retained` and the finding retention state to `retained_until_review` in both detail and list payloads.
 - `reassign_owner` requires a transfer target.
 - `escalate` requires an escalation queue.
 - Repeated submissions with the same idempotency context must not create duplicate audit events or metrics.
 - Denied or incomplete submissions must not create finding, audit, source, metric, or deletion state changes.
 - `delete_candidate` is a review status only in P0 and must return or record `deletionExecuted = false` when that boundary is represented.
+- `delete_candidate` requires an explicit checklist confirmation that the action only marks a deletion candidate and does not execute deletion.
 
 Accepted review responses may include optional `targetId`, `targetLabel`, `retentionUntil`, `idempotencyKey`, `policyPackVersion`, `permissionBoundaryFingerprint`, and `reviewSupportRulesFingerprint` fields. Audit events for accepted decisions should preserve the same policy and permission context when available.
 
@@ -449,6 +466,14 @@ Source records may include optional `config` for connector-specific metadata:
 - `remote_file_link` stores `config.url` as a direct HTTPS file URL. The backend validates that the URL is HTTPS, has no embedded credentials, resolves to public IP addresses, is not a Google Drive or Google Docs share page, and points to supported text-like content, a PDF text layer, Office Open XML content, supported image content, supported transcript content, or recognized raw video media. Extractable files must stay within the prelaunch size limit; raw video media is reported as hard/OCR-deferred until an approved processor exists.
 - `google_drive_selection` stores `config.items`, an array of Google Picker selected item metadata such as `id`, `name`, `mimeType`, and optional `url`. The backend uses this metadata only with a per-scan `authorization.googleDriveAccessToken`.
 - `local_repo` stores `config.rootPath` for host-mounted folders that pass the configured allowed-root policy.
+
+Source records may also include owner-routing metadata:
+
+- `assignedOwnerUserId`: active Workspace member account ID selected as direct Source owner, or `null`.
+- `assignedOwner`: copied display/email snapshot for the direct Source owner.
+- `fallbackOwner`: copied display/email snapshot for fallback Data Steward routing when no direct owner is selected.
+
+`PATCH /api/sources/{sourceId}` accepts `name` and `assignedOwnerUserId`. It updates DataSentinel metadata only and must not mutate, delete, or revoke external source files.
 
 `DELETE /api/sources/{sourceId}` removes only the DataSentinel source registration row. It must not delete, mutate, or revoke any file in Google Drive, a remote HTTPS location, or a host-mounted source directory.
 

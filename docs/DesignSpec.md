@@ -41,9 +41,10 @@ The future product experience should make GDPR data cleanup feel like an account
 | --- | --- |
 | Public Project Homepage | Introduce DataSentinel, explain the workflow, and link into the internal dashboard without showing the app shell. |
 | Sign-In Gate | Let users start Google or GitHub login when configured, and show setup status when providers are unavailable. |
-| App Shell, Workspace, and Account Menus | Show a page-title-focused top bar that can render route hierarchy with clickable non-current levels, keep an interactive session notification center and auto-dismissing latest-message preview, keep workspace context in the top-left sidebar control, keep authenticated account controls in the bottom-left sidebar menu, and support sidebar collapse. |
-| Workspace Admin | Show Workspace member summary, collapsed group controls, invite links, permission boundaries, and management charts; new-group and per-group edit forms open only after an explicit admin action. |
+| App Shell, Workspace, and Account Menus | Show a page-title-focused top bar that can render route hierarchy with clickable non-current levels, keep an interactive session notification center and auto-dismissing latest-message preview, keep workspace context and current membership groups in the top-left sidebar control, keep authenticated account controls in the bottom-left sidebar menu, and support sidebar collapse. |
+| Workspace Admin | Show compact member and group summaries, compact invite-link rows, permission boundaries, management charts, Workspace profile settings for name/introduction, and the Danger Zone as the final page section; member and group panels link to dedicated admin subpages. |
 | Workspace Members | Let admins browse all Workspace members with search, filters, grouping, and sorting by group, status, join date, and last activity. |
+| Workspace Group Controls | Let admins create groups, rename groups, edit permissions from the catalog, and delete allowed groups from a dedicated `/workspace/admin/groups` subpage. |
 | Source Connector | Select or register an allowed source and start full or delta scans. |
 | Admin Dashboard | Show decision-oriented scan coverage, review queue, high-risk queue, owner routing, latest scan status, and pipeline health without overloading one panel. |
 | Findings Table | Show risk-ranked findings filtered by owner, scan, status, or risk level. |
@@ -105,9 +106,12 @@ The full-scan start interaction connects Source Connector and Admin Dashboard su
 The source-input interaction is documented in `docs/design/google-drive-source-integration.md`, `docs/design/local-format-recognition-difficulty.md`, and `docs/design/source-scan-failure-state.md`.
 
 - The Source Connector offers direct HTTPS file links, Google Drive selected files/folders, and host-allowed local paths as explicit modes.
+- Source setup offers an optional direct owner dropdown backed by active Workspace members; admin Source rows expose edit controls for changing that owner.
 - Google Drive selection opens the official Picker UI when host public credentials are configured.
 - Drive file/folder selections store metadata only; the browser keeps the short-lived access token in memory and sends it only when starting a scan.
-- Saved Google Drive sources require a current in-memory Picker token before scan controls are enabled, and source-read failures clear visible scan-derived findings instead of falling back to local mock findings.
+- Saved Google Drive sources require a current in-memory Picker token before scan controls are enabled; when that token exists, the Sources row presents the source as connected for the current browser session even though the persisted server record does not store the token.
+- Source-read failures clear visible scan-derived findings instead of falling back to local mock findings.
+- Scan-derived findings inherit the selected Source owner or Data Steward fallback, and non-assigned Workspace members do not see those findings.
 - Direct HTTPS links are treated as one-file sources and must show connection or scan errors when the URL fails policy checks.
 - PDF files are accepted only when they have an extractable text layer; DOCX, XLSX, and PPTX are accepted through deterministic Office Open XML extraction; image files are scanned through local OCR when available; VTT/SRT transcripts are scanned as video transcript text; image-only or unreadable PDFs and raw video media remain OCR-deferred in prelaunch.
 - The Sources page shows the current prelaunch supported file-type list below the source table or empty state.
@@ -200,11 +204,12 @@ The human-review decision interaction connects review support to outcome state, 
 - The Review Dialog submits only decisions exposed by current finding-specific review support.
 - Required checklist items must be acknowledged before submit.
 - The retain decision shows and requires a retention review date.
-- Transfer and escalation decisions show only supported owner or queue targets.
+- Retained decisions update both review status and retention badge state so list/detail surfaces do not continue to show `Needs Review` for a retained finding.
+- Transfer and escalation decisions show only supported owner or queue targets, with Workspace member transfer options preferred over static demo delegation rows when available.
 - Accepted decisions update the visible finding status, audit timeline, global audit list, review backlog, and outcome metrics.
 - Repeated submissions with the same command key do not duplicate audit events or metrics.
 - Denied, incomplete, or stale decisions show a neutral rejection and leave visible state unchanged.
-- Delete candidate remains a review status only; the UI must not imply source-file deletion or deletion execution.
+- Delete candidate requires explicit confirmation and remains a review status only; the UI must not imply source-file deletion or deletion execution.
 - The UI must avoid legal conclusions, raw source content, unredacted personal data, hidden permission decisions, production authorization assumptions, and deletion execution.
 
 ## Audit Event Recording Interaction

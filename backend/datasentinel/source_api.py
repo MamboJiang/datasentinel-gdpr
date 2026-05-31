@@ -50,11 +50,58 @@ class SourceApi:
             "status": _initial_status(payload),
             **({"rootLabel": payload["rootLabel"]} if "rootLabel" in payload else {}),
             **({"masterOfDataUserId": payload["masterOfDataUserId"]} if "masterOfDataUserId" in payload else {}),
+            **({"assignedOwnerUserId": payload["assignedOwnerUserId"]} if "assignedOwnerUserId" in payload else {}),
+            **({"assignedOwner": payload["assignedOwner"]} if "assignedOwner" in payload else {}),
+            **({"fallbackOwner": payload["fallbackOwner"]} if "fallbackOwner" in payload else {}),
             **({"referenceUrl": payload["referenceUrl"]} if "referenceUrl" in payload else {}),
             **({"sampleFamilies": payload["sampleFamilies"]} if "sampleFamilies" in payload else {}),
             **({"config": safe_config} if safe_config else {}),
         }
         return response(201, envelope(self.store.add(source), trace_id), trace_id)
+
+    def update_source(self, source_id: str, payload: dict[str, Any], trace_id: str, path: str | None = None) -> dict[str, Any]:
+        existing = self.store.get(source_id)
+        if not existing:
+            return response(
+                404,
+                problem(
+                    status=404,
+                    title="Source not found",
+                    detail="The requested source registration does not exist.",
+                    instance=path or f"/api/sources/{source_id}",
+                    trace_id=trace_id,
+                    code="source-not-found",
+                ),
+                trace_id,
+                content_type="application/problem+json",
+            )
+
+        updated = dict(existing)
+
+        if "name" in payload:
+            name = str(payload.get("name") or "").strip()
+            if not name:
+                return response(
+                    422,
+                    problem(
+                        status=422,
+                        title="Request validation failed",
+                        detail="Source name is required.",
+                        instance=path or f"/api/sources/{source_id}",
+                        trace_id=trace_id,
+                        code="validation-error",
+                        errors=[{"pointer": "#/name", "detail": "Source name is required."}],
+                    ),
+                    trace_id,
+                    content_type="application/problem+json",
+                )
+            updated["name"] = name
+
+        for key in ("rootLabel", "masterOfDataUserId", "assignedOwnerUserId", "assignedOwner", "fallbackOwner"):
+            if key in payload:
+                updated[key] = payload[key]
+
+        return response(200, envelope(self.store.add(updated), trace_id), trace_id)
 
     def delete_source(self, source_id: str, trace_id: str, path: str | None = None) -> dict[str, Any]:
         deleted = self.store.delete(source_id)

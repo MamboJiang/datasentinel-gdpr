@@ -1,13 +1,14 @@
-import { CheckCircle2, Cloud, Database, FileText, FolderOpen, Link2, Plus, RotateCw, ScanSearch, Trash2, X } from 'lucide-react'
+import { CheckCircle2, Cloud, Database, FileText, FolderOpen, Link2, Pencil, Plus, RotateCw, ScanSearch, Trash2, X } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useData } from '../data/useData'
 import { canStartDeltaScan } from '../data/scanWorkflow'
-import { canStartSourceScan, sourceScanBlockReason } from '../data/sourceScanReadiness'
+import { canStartSourceScan, sourceDisplayStatus, sourceScanBlockReason } from '../data/sourceScanReadiness'
 import { pickGoogleDriveItems, type GoogleDrivePickedItem, type GoogleDrivePickerMode } from '../data/googleDrivePicker'
 import { humanize } from '../components/formatters'
 import { Button, EmptyState, PageHeader, StatusBadge } from '../components/ui'
 import { loadGoogleDrivePickerConfig, type GoogleDrivePickerConfig } from '../data/serverApi'
 import { useI18n } from '../i18n'
+import type { Source } from '../types'
 
 const SUPPORTED_FILE_TYPES = [
   'TXT',
@@ -32,8 +33,9 @@ const SUPPORTED_FILE_TYPES = [
 
 export function SourcesPage() {
   const { t } = useI18n()
-  const { sources, scan, governanceConfig, createSource, deleteSource, runtimeAuthorizedSourceIds, startScan, testSourceConnection } = useData()
+  const { sources, scan, governanceConfig, createSource, deleteSource, runtimeAuthorizedSourceIds, startScan, testSourceConnection, updateSource, workspaceAdmin } = useData()
   const [sourceDialogOpen, setSourceDialogOpen] = useState(false)
+  const [editingSource, setEditingSource] = useState<Source | null>(null)
   const scanIsRunning = scan.status === 'running'
 
   return (
@@ -41,7 +43,10 @@ export function SourcesPage() {
       <PageHeader
         eyebrow="Discovery inputs"
         title="Sources"
-        actions={<Button icon={Plus} onClick={() => setSourceDialogOpen(true)}>Add source</Button>}
+        actions={<Button icon={Plus} onClick={() => {
+          setEditingSource(null)
+          setSourceDialogOpen(true)
+        }}>Add source</Button>}
       />
 
       <section className="panel table-panel">
@@ -59,7 +64,7 @@ export function SourcesPage() {
                 <th>{t('Type')}</th>
                 <th>{t('Status')}</th>
                 <th>{t('Root label')}</th>
-                <th>{t('Master of data')}</th>
+                <th>{t('Source owner')}</th>
                 <th><span className="sr-only">{t('Actions')}</span></th>
               </tr>
             </thead>
@@ -84,11 +89,21 @@ export function SourcesPage() {
                       </div>
                     </td>
                     <td>{humanize(source.sourceType)}</td>
-                    <td><StatusBadge value={source.status} /></td>
+                    <td><StatusBadge value={sourceDisplayStatus(source, runtimeAuthorizedSourceIds)} /></td>
                     <td>{source.rootLabel ?? t('Not available')}</td>
-                    <td>{source.masterOfDataUserId ?? t('Unassigned')}</td>
+                    <td>{sourceOwnerLabel(source, t)}</td>
                     <td>
                       <div className="row-actions">
+                        <button
+                          className="button button-ghost"
+                          type="button"
+                          onClick={() => {
+                            setEditingSource(source)
+                            setSourceDialogOpen(true)
+                          }}
+                        >
+                          <Pencil aria-hidden="true" size={16} /> {t('Edit')}
+                        </button>
                         <button className="button button-ghost" type="button" onClick={() => testSourceConnection(source.sourceId)}>
                           <CheckCircle2 aria-hidden="true" size={16} /> {t('Test connection')}
                         </button>
@@ -149,29 +164,44 @@ export function SourcesPage() {
         </p>
       </section>
 
-      {sourceDialogOpen ? <SourceDialog onClose={() => setSourceDialogOpen(false)} onCreate={createSource} /> : null}
+      {sourceDialogOpen ? (
+        <SourceDialog
+          members={workspaceAdmin.members}
+          onClose={() => setSourceDialogOpen(false)}
+          onCreate={createSource}
+          onUpdate={updateSource}
+          source={editingSource}
+        />
+      ) : null}
     </>
   )
 }
 
 function SourceDialog({
+  members,
   onClose,
   onCreate,
+  onUpdate,
+  source,
 }: {
+  members: ReturnType<typeof useData>['workspaceAdmin']['members']
   onClose: () => void
   onCreate: ReturnType<typeof useData>['createSource']
+  onUpdate: ReturnType<typeof useData>['updateSource']
+  source: Source | null
 }) {
+  const editing = Boolean(source)
   const [mode, setMode] = useState<'drive' | 'local' | 'remote'>('remote')
-  const [name, setName] = useState('')
+  const [name, setName] = useState(source?.name ?? '')
   const [rootPath, setRootPath] = useState('')
   const [remoteUrl, setRemoteUrl] = useState('')
-  const [ownerId, setOwnerId] = useState('')
+  const [ownerId, setOwnerId] = useState(source?.assignedOwnerUserId ?? source?.assignedOwner?.userId ?? '')
   const [driveConfig, setDriveConfig] = useState<GoogleDrivePickerConfig | null>(null)
   const [driveItems, setDriveItems] = useState<GoogleDrivePickedItem[]>([])
   const [driveAccessToken, setDriveAccessToken] = useState<string | undefined>()
   const [driveError, setDriveError] = useState<string | null>(null)
   const [driveLoading, setDriveLoading] = useState(false)
-  const canSubmit = canSubmitSource(mode, name, rootPath, remoteUrl, driveItems, driveAccessToken)
+  const canSubmit = editing ? name.trim().length >= 2 : canSubmitSource(mode, name, rootPath, remoteUrl, driveItems, driveAccessToken)
 
   useEffect(() => {
     let active = true
@@ -198,7 +228,17 @@ function SourceDialog({
     }
 
     const normalizedName = name.trim()
-    const normalizedOwner = ownerId.trim() || undefined
+    const normalizedOwner = ownerId.trim() || null
+
+    if (source) {
+      onUpdate({
+        assignedOwnerUserId: normalizedOwner,
+        name: normalizedName,
+        sourceId: source.sourceId,
+      })
+      onClose()
+      return
+    }
 
     if (mode === 'remote') {
       const normalizedUrl = remoteUrl.trim()
@@ -207,6 +247,7 @@ function SourceDialog({
         name: normalizedName,
         sourceType: 'remote_file_link',
         rootLabel: normalizedUrl,
+        assignedOwnerUserId: normalizedOwner,
         masterOfDataUserId: normalizedOwner,
         config: { url: normalizedUrl },
       })
@@ -221,6 +262,7 @@ function SourceDialog({
         name: normalizedName,
         sourceType: 'google_drive_selection',
         rootLabel: driveItems.map((item) => item.name).join(', '),
+        assignedOwnerUserId: normalizedOwner,
         masterOfDataUserId: normalizedOwner,
         config: { items: driveItems },
       })
@@ -235,6 +277,7 @@ function SourceDialog({
       sourceType: 'local_repo',
       status: 'registered',
       rootLabel: normalizedRoot,
+      assignedOwnerUserId: normalizedOwner,
       masterOfDataUserId: normalizedOwner,
       config: { rootPath: normalizedRoot },
     })
@@ -271,27 +314,27 @@ function SourceDialog({
         <div className="dialog-header">
           <div>
             <p className="eyebrow">Source setup</p>
-            <h2 id="source-dialog-title">Add source</h2>
+            <h2 id="source-dialog-title">{editing ? 'Edit source' : 'Add source'}</h2>
           </div>
           <button className="icon-button" type="button" aria-label="Close source dialog" onClick={onClose}><X aria-hidden="true" size={18} /></button>
         </div>
         <form onSubmit={submit}>
-          <div className="segmented-control" role="tablist" aria-label="Source type">
+          {!editing ? <div className="segmented-control" role="tablist" aria-label="Source type">
             <button className={mode === 'remote' ? 'active' : ''} type="button" onClick={() => setMode('remote')}><Link2 aria-hidden="true" size={16} /> Direct link</button>
             <button className={mode === 'drive' ? 'active' : ''} type="button" onClick={() => setMode('drive')}><Cloud aria-hidden="true" size={16} /> Google Drive</button>
             <button className={mode === 'local' ? 'active' : ''} type="button" onClick={() => setMode('local')}><Database aria-hidden="true" size={16} /> Local path</button>
-          </div>
+          </div> : null}
           <label className="form-field">
             <span>Source name</span>
             <input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder="Name this source" />
           </label>
-          {mode === 'remote' ? (
+          {!editing && mode === 'remote' ? (
             <label className="form-field">
               <span>HTTPS file URL</span>
               <input value={remoteUrl} onChange={(event) => setRemoteUrl(event.target.value)} placeholder="Paste an HTTPS file URL" />
             </label>
           ) : null}
-          {mode === 'drive' ? (
+          {!editing && mode === 'drive' ? (
             <div className="dialog-stack">
               <div className="drive-actions">
                 <button className="button button-ghost" disabled={!driveConfig?.configured || driveLoading} type="button" onClick={() => chooseDriveItems('files')}>
@@ -315,15 +358,22 @@ function SourceDialog({
               {driveError ? <p className="form-error">{driveError}</p> : null}
             </div>
           ) : null}
-          {mode === 'local' ? (
+          {!editing && mode === 'local' ? (
             <label className="form-field">
               <span>Allowed absolute path</span>
               <input value={rootPath} onChange={(event) => setRootPath(event.target.value)} placeholder="Enter an allowed absolute path" />
             </label>
           ) : null}
           <label className="form-field">
-            <span>Master of Data user ID</span>
-            <input value={ownerId} onChange={(event) => setOwnerId(event.target.value)} placeholder="Optional owner identifier" />
+            <span>Source owner</span>
+            <select value={ownerId} onChange={(event) => setOwnerId(event.target.value)}>
+              <option value="">No direct owner</option>
+              {members.map((member) => (
+                <option key={member.membershipId} value={member.accountId}>
+                  {member.displayName}{member.email ? ` · ${member.email}` : ''}
+                </option>
+              ))}
+            </select>
           </label>
           <div className="dialog-notice">
             <CheckCircle2 aria-hidden="true" size={17} />
@@ -331,12 +381,28 @@ function SourceDialog({
           </div>
           <div className="dialog-actions">
             <Button variant="ghost" onClick={onClose}>Cancel</Button>
-            <Button disabled={!canSubmit} type="submit">Register source</Button>
+            <Button disabled={!canSubmit} type="submit">{editing ? 'Save source' : 'Register source'}</Button>
           </div>
         </form>
       </section>
     </div>
   )
+}
+
+function sourceOwnerLabel(source: Source, t: (value: string) => string): string {
+  if (source.assignedOwner?.displayName) {
+    return source.assignedOwner.displayName
+  }
+  if (source.assignedOwnerUserId) {
+    return source.assignedOwnerUserId
+  }
+  if (source.fallbackOwner?.displayName) {
+    return `${source.fallbackOwner.displayName} (${t('fallback')})`
+  }
+  if (source.masterOfDataUserId) {
+    return source.masterOfDataUserId
+  }
+  return t('Unassigned')
 }
 
 function canSubmitSource(

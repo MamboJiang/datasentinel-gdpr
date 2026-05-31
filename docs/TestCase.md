@@ -95,15 +95,16 @@
 | WORKSPACE-005 | Create an invitation as a non-admin | The server returns `application/problem+json` and no invitation or membership changes. |
 | WORKSPACE-006 | Accept a pending invite link as a signed-in account | The account becomes an active Workspace member exactly once. |
 | WORKSPACE-007 | Accept an invitation twice, after expiry, after revocation, or as an existing member | The server returns problem details and does not create duplicate membership. |
-| WORKSPACE-008 | Render the Workspace menu | The menu shows current Workspace for members and pending/no-Workspace state for accounts without membership. |
+| WORKSPACE-008 | Render the Workspace menu | The menu shows current Workspace and current membership groups for members, and pending/no-Workspace state for accounts without membership. |
 | WORKSPACE-008A | Click the Workspace menu create action | A Workspace creation dialog opens with name, description, creator-role, and default-group settings before creation. |
 | WORKSPACE-008B | Click a non-current Workspace in the Workspace menu | The menu switches current Workspace and reloads Workspace-scoped operational state. |
 | WORKSPACE-008C | Render the sidebar as a non-admin Workspace member | Links requiring denied Workspace actions are hidden, and expandable links show a right-side chevron. |
-| WORKSPACE-009 | Render `/workspace/admin` | Admin charts render member/group/invitation/review metrics without a charting dependency or legal-compliance claim. |
+| WORKSPACE-008D | Update the Workspace profile as an admin with `manage_workspace_settings` | The Workspace menu and Admin header show the new name and introduction, the profile editor does not expose a Sidebar label field, and membership group display remains in the compact Workspace menu pill without changing membership or operational scope. |
+| WORKSPACE-009 | Render `/workspace/admin` | Admin charts and compact member/group summaries render without a charting dependency or legal-compliance claim. |
 | WORKSPACE-010 | Create a Workspace group as an admin | The server returns the new group with a generated ID, visible name, description, explicit permissions, and zero initial members. |
 | WORKSPACE-011 | Rename or re-permission a Workspace group as an admin | The group keeps its ID and permission boundaries use the updated permissions. |
 | WORKSPACE-012 | Delete a non-admin Workspace group | The group disappears from admin summary, members lose that group reference, and pending invite links with no remaining groups are revoked. |
-| WORKSPACE-013 | Render `/workspace/admin` group controls | The new-group form and per-group permission editors are collapsed by default; only a new-group button and compact group cards are visible until the admin opens a form or card edit icon. |
+| WORKSPACE-013 | Open `/workspace/admin/groups` from sidebar or Admin Group controls panel | The new-group form and per-group permission editors are collapsed by default; only a new-group button and compact group cards are visible until the admin opens a form or card edit icon. |
 | WORKSPACE-014 | Open `/workspace/admin/members` from sidebar or Admin Members panel | The Members page lists all Workspace members and supports search, group filtering, status filtering, grouping, and sorting by name, primary group, status, joined date, and last activity. |
 | WORKSPACE-015 | Update a member's groups as an admin with `manage_workspace_members` | The member's permission boundary changes to the selected valid groups. |
 | WORKSPACE-016 | Remove a Workspace member as an admin with `manage_workspace_members` | The member is no longer active in admin summary and their selected Workspace is cleared when needed. |
@@ -135,11 +136,13 @@
 | --- | --- | --- |
 | SRCIN-001 | Call `GET /api/integrations/google-drive/picker-config` with a valid first-party session cookie | The response reports `configured`, `clientId`, `apiKey`, `appId`, scopes, and missing browser setup fields without returning client secrets or provider tokens. |
 | SRCIN-002 | Register a direct HTTPS file link | The source is created as `remote_file_link` with `config.url` and can become scan-ready when the URL passes policy checks. |
+| SRCIN-002A | Register a source with an active Workspace member selected as direct owner | The Source response includes `assignedOwnerUserId` and an owner display snapshot from the current Workspace membership. |
+| SRCIN-002B | Edit a Source owner as a Workspace admin | The Source owner changes to the selected active member or clears to fallback without mutating external source files. |
 | SRCIN-003 | Scan a direct HTTPS text file with detectable personal-data patterns | The scan produces findings with redacted evidence and no raw source body or unredacted personal data in public payloads. |
 | SRCIN-004 | Register a non-HTTPS, credential-bearing, Google Drive share-page, private-address, over-limit, or unsupported direct file link | The backend rejects the connection or scan before creating workflow output. |
 | SRCIN-005 | Load an authenticated empty prelaunch project with no findings, then register a source | The frontend treats the API as available and does not request a blank finding detail before source registration. |
 | SRCIN-005A | Open the Sources page | The page shows the current prelaunch supported file types below the source inventory surface. |
-| SRCIN-006 | Select Google Drive files through Picker | The source stores selected item metadata and keeps the access token out of persisted source state. |
+| SRCIN-006 | Select Google Drive files through Picker | The source stores selected item metadata, keeps the access token out of persisted source state, and shows connected in the Sources table while the browser session still holds the token. |
 | SRCIN-007 | Receive a non-terminal Google Picker callback before the final picked action | The Add Source dialog remains open and waits for the final picked or cancelled action. |
 | SRCIN-008 | Select a Google Drive folder through Picker | The selected folder appears in the Add Source dialog, and the scan enumerates descendant files up to the prelaunch limit. |
 | SRCIN-009 | Start a Google Drive scan without a per-scan access token after previous findings exist | The backend returns `application/problem+json`, records a failed source-unavailable scan state, clears visible scan-derived findings, and does not delete external source files. |
@@ -148,6 +151,7 @@
 | SRCIN-011 | Scan a PDF that has an extractable text layer and detectable personal-data patterns | The scan produces findings with redacted evidence and does not expose raw extracted PDF text in public payloads. |
 | SRCIN-012 | Review source references after local, direct-link, or Google Drive scans | Public findings and console views show a safe source reference or source name, not a raw external URL or absolute host file path. |
 | SRCIN-012A | Delete a source from the Sources page or `DELETE /api/sources/{sourceId}` | The source registration is removed from DataSentinel state, derived scan/finding state for that deleted source is cleared, external source files are not deleted, and a repeated delete returns not found. |
+| SRCIN-012B | Scan a Source assigned to one Workspace member, then list findings as another member | Only the assigned owner or fallback route sees the finding; unrelated Workspace members receive an empty list or not found. |
 | SRCIN-013 | Scan DOCX, XLSX, and PPTX files with detectable personal-data patterns | The scan produces redacted findings from deterministic Office Open XML extraction and reports moderate recognition difficulty. |
 | SRCIN-014 | Inspect `contentExtraction` after a deterministic scan | The payload includes difficulty and format counts, `aiAssistanceUsed = false`, `modelCalls = 0`, and no raw source text. |
 | SRCIN-015 | Scan an image file with host OCR available | The scanner extracts OCR text during scan execution, creates only redacted findings, reports `image_ocr` and hard difficulty, and keeps model calls at zero. |
@@ -256,6 +260,7 @@
 | REVIEW-004 | Verify all P0 decisions | Allowed reviewer support can show `delete_candidate`, `keep_with_reason`, `correct_false_positive`, `reassign_owner`, and `escalate`. |
 | REVIEW-005 | Verify reason requirement | Every available review decision requires a human reason before submission. |
 | REVIEW-006 | Verify permission denial | A denied actor receives no review decisions and a review attempt is rejected without state changes. |
+| REVIEW-006A | Open review support for an assigned finding | Transfer options come from active Workspace members rather than static demo delegation rows. |
 | REVIEW-007 | Verify target validation | Reassign and escalate decisions require a target owner or escalation queue. |
 | REVIEW-008 | Verify no real deletion | `execute_real_deletion` remains a denied action with a visible reason. |
 | REVIEW-009 | Verify audit and evaluation traceability | Review support exposes a rules hash that evaluation preserves while keeping model calls and estimated paid-service cost at zero. |
@@ -267,7 +272,8 @@
 | ID | Scenario | Expected Result |
 | --- | --- | --- |
 | HREV-001 | Submit allowed delete candidate decision | The finding status becomes `delete_candidate`, one review record and one audit event are created, and `deletionExecuted` remains `false`. |
-| HREV-002 | Submit allowed retain decision | The finding status becomes `retained`, the reason and retention review date are recorded, and no source file is changed. |
+| HREV-001A | Submit delete candidate without explicit deletion-candidate confirmation | The request is rejected and no finding, audit, metric, source, or deletion state changes. |
+| HREV-002 | Submit allowed retain decision | The finding status becomes `retained`, the list and detail retention state becomes `retained_until_review`, the reason and retention review date are recorded, and no source file is changed. |
 | HREV-003 | Submit false positive correction | The finding status becomes `false_positive`, the reason is preserved for audit and evaluation context, and detector rules are not changed. |
 | HREV-004 | Submit owner reassignment | The finding status remains reviewable as `assigned`, the delegated owner is recorded, and the audit event names the transfer target. |
 | HREV-005 | Submit escalation | The finding status becomes `escalated`, the escalation queue is recorded, and the audit event names the queue target. |

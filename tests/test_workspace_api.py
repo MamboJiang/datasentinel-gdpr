@@ -204,6 +204,64 @@ class WorkspaceApiTests(unittest.TestCase):
         self.assertGreaterEqual(len(data["charts"]["membersByGroup"]), 4)
         self.assertIn("execute_real_deletion", {item["action"] for item in data["permissionBoundary"]["deniedActions"]})
 
+    def test_workspace_admin_can_customize_workspace_profile(self) -> None:
+        with TemporaryDirectory() as directory:
+            db_path = Path(directory) / "datasentinel.sqlite3"
+            admin_cookie = create_session(db_path, "user_demo_admin", "demo.admin@example.invalid")
+            reviewer_cookie = create_session(db_path, "user_anna", "anna.reviewer@example.invalid")
+            with mock.patch.dict("os.environ", {"DATASENTINEL_AUTH_REQUIRED": "true"}):
+                app = build_sqlite_app(db_path)
+                updated = app.handle(
+                    "PATCH",
+                    "/api/workspaces/ws_datasentinel_gdpr",
+                    "trace_workspace_profile_update",
+                    json.dumps({
+                        "description": "Production privacy operations",
+                        "headerLabel": "Pilot",
+                        "name": "Acme Privacy Ops",
+                    }),
+                    "application/json",
+                    {"Cookie": admin_cookie},
+                )
+                directory_response = app.handle("GET", "/api/workspaces", "trace_workspace_profile_directory", None, None, {"Cookie": admin_cookie})
+                hidden = app.handle(
+                    "PATCH",
+                    "/api/workspaces/ws_datasentinel_gdpr",
+                    "trace_workspace_header_hide",
+                    json.dumps({"headerLabel": "   "}),
+                    "application/json",
+                    {"Cookie": admin_cookie},
+                )
+                denied = app.handle(
+                    "PATCH",
+                    "/api/workspaces/ws_datasentinel_gdpr",
+                    "trace_workspace_header_denied",
+                    json.dumps({"headerLabel": "Reviewer"}),
+                    "application/json",
+                    {"Cookie": reviewer_cookie},
+                )
+                too_long = app.handle(
+                    "PATCH",
+                    "/api/workspaces/ws_datasentinel_gdpr",
+                    "trace_workspace_header_long",
+                    json.dumps({"headerLabel": "This label is definitely too long"}),
+                    "application/json",
+                    {"Cookie": admin_cookie},
+                )
+
+        self.assertEqual(updated["status"], 200)
+        self.assertEqual(updated["body"]["data"]["name"], "Acme Privacy Ops")
+        self.assertEqual(updated["body"]["data"]["slug"], "acme-privacy-ops")
+        self.assertEqual(updated["body"]["data"]["description"], "Production privacy operations")
+        self.assertEqual(updated["body"]["data"]["headerLabel"], "Pilot")
+        self.assertEqual(directory_response["body"]["data"]["workspaces"][0]["name"], "Acme Privacy Ops")
+        self.assertEqual(directory_response["body"]["data"]["workspaces"][0]["description"], "Production privacy operations")
+        self.assertEqual(directory_response["body"]["data"]["workspaces"][0]["headerLabel"], "Pilot")
+        self.assertEqual(hidden["body"]["data"]["headerLabel"], "")
+        self.assertEqual(hidden["body"]["data"]["name"], "Acme Privacy Ops")
+        self.assertEqual(denied["status"], 403)
+        self.assertEqual(too_long["status"], 422)
+
     def test_workspace_admin_can_customize_groups_names_and_permissions(self) -> None:
         with TemporaryDirectory() as directory:
             db_path = Path(directory) / "datasentinel.sqlite3"

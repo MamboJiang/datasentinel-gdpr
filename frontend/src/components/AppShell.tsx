@@ -65,10 +65,11 @@ const navigation: NavigationItem[] = [
     requiredAny: ['view_workspace_admin'],
     children: [
       { to: '/workspace/admin/members', label: 'Members', icon: UsersRound, requiredAny: ['view_workspace_admin'] },
+      { to: '/workspace/admin/groups', label: 'Group controls', icon: ShieldCheck, requiredAny: ['view_workspace_admin'] },
     ],
   },
   { to: '/sources', label: 'Sources', icon: Database, requiredAny: ['view_owned_sources', 'view_workspace_admin'] },
-  { to: '/findings', label: 'Findings', icon: FileSearch, requiredAny: ['view_assigned_findings', 'view_workspace_admin'] },
+  { to: '/findings', label: 'Findings', icon: FileSearch, requiredAny: ['view_assigned_findings'] },
   { to: '/audit', label: 'Audit trail', icon: Activity, requiredAny: ['view_workspace_audit', 'view_workspace_admin'] },
   { to: '/evaluation', label: 'Evaluation', icon: Gauge, requiredAny: ['view_workspace_metrics', 'view_workspace_admin'] },
   { to: '/governance', label: 'Governance', icon: Settings2, requiredAny: ['view_governance', 'view_workspace_admin'] },
@@ -79,6 +80,13 @@ function getPageTitleSegments(pathname: string): PageTitleSegment[] {
     return [
       { label: 'Workspace admin', to: '/workspace/admin' },
       { label: 'Members' },
+    ]
+  }
+
+  if (pathname.startsWith('/workspace/admin/groups')) {
+    return [
+      { label: 'Workspace admin', to: '/workspace/admin' },
+      { label: 'Group controls' },
     ]
   }
 
@@ -104,6 +112,10 @@ function workspaceInitialsFor(name: string | undefined) {
   return name
     ? name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
     : 'WS'
+}
+
+function membershipGroupLabel(groupId: string, groups: Array<{ groupId: string; name: string }>) {
+  return groups.find((group) => group.groupId === groupId)?.name ?? groupId
 }
 
 export function AppShell() {
@@ -152,6 +164,9 @@ export function AppShell() {
     ?? workspaceDirectory.workspaces.find((workspace) => workspace.workspaceId === workspaceDirectory.currentWorkspaceId)
     ?? workspaceAdmin.workspace
   const workspaceInitials = workspaceInitialsFor(currentWorkspace?.name)
+  const currentGroupLabels = workspaceAdmin.currentMembership?.groupIds.map((groupId) => membershipGroupLabel(groupId, workspaceAdmin.groups)) ?? []
+  const currentGroupsLabel = currentGroupLabels.length > 0 ? currentGroupLabels.join(' · ') : t('Invitation required')
+  const currentGroupsPillLabel = currentGroupLabels.length > 1 ? `${currentGroupLabels[0]} +${currentGroupLabels.length - 1}` : currentGroupLabels[0]
   const currentRoles = workspaceAdmin.currentMembership?.groupIds.join(', ') ?? 'Invitation required'
   const routeNavigation = navigationEntryForPath(location.pathname)
   const routeDenied = Boolean(
@@ -275,9 +290,9 @@ export function AppShell() {
             <span className="workspace-avatar" aria-hidden="true">{workspaceInitials}</span>
             <span className="workspace-trigger-copy">
               <strong>{currentWorkspace?.name ?? t('No workspace')}</strong>
-              <span>{currentWorkspace ? t('Privacy workspace') : t('Invitation required')}</span>
+              <span>{currentWorkspace ? (currentWorkspace.description ?? t('Privacy workspace')) : t('Invitation required')}</span>
             </span>
-            <span className="workspace-plan">{currentWorkspace?.plan ?? t('None')}</span>
+            {currentWorkspace && currentGroupsPillLabel ? <span className="workspace-plan" title={currentGroupsLabel}>{currentGroupsPillLabel}</span> : null}
             <ChevronsUpDown aria-hidden="true" size={16} />
           </button>
           <button className="sidebar-close" type="button" aria-label={t('Close navigation')} onClick={() => setMobileOpen(false)}>
@@ -316,9 +331,8 @@ export function AppShell() {
                     <span className="workspace-option-avatar" aria-hidden="true">{workspaceInitialsFor(workspace.name)}</span>
                     <span>
                       <strong>{workspace.name}</strong>
-                      <small>{t(workspace.description ?? currentRoles)}</small>
+                      <small>{workspace.description ?? t(currentRoles)}</small>
                     </span>
-                    <span className="workspace-plan">{workspace.plan}</span>
                     {workspace.workspaceId === workspaceDirectory.currentWorkspaceId ? <Check aria-hidden="true" size={15} /> : null}
                   </button>
                 ))}
