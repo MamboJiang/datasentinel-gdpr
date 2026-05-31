@@ -79,7 +79,7 @@ The first implementation milestone is accepted when:
 
 The Google/GitHub account system is accepted when:
 
-- The design note `docs/design/prelaunch-account-system.md` defines problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
+- The design notes `docs/design/prelaunch-account-system.md` and `docs/design/account-scoped-prelaunch-state.md` define problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
 - `contracts/openapi.yaml`, `contracts/schemas/common.yaml`, and `docs/API_CONTRACT.md` document provider list, login redirect, callback, session read, and logout endpoints.
 - Runtime configuration uses ignored environment variables for Google client ID/secret, GitHub client ID/secret, redirect base URL, session secret, cookie security, and auth-required mode.
 - Prelaunch deployments can set `DATASENTINEL_ENABLE_DEMO_FIXTURES=false` so the signed-in console starts from empty state and configured local sources instead of seeded demo findings.
@@ -90,10 +90,13 @@ The Google/GitHub account system is accepted when:
 - Successful provider callback creates a first-party HttpOnly session cookie and a safe local user profile.
 - `/api/auth/session` returns authenticated state and safe profile fields without provider tokens.
 - `POST /api/auth/logout` revokes the local session and clears the session cookie.
+- SQLite-backed prelaunch Sources, scans, findings, audit events, metrics, and evaluation state are scoped to the current session user.
+- A different signed-in account cannot list, delete, scan, connect-test, review, or open another account's Source or Finding.
+- Legacy global SQLite source and workflow rows are quarantined outside authenticated account scopes instead of being exposed to every signed-in user.
 - The unauthenticated console shows a sign-in gate instead of seeded demo findings.
 - The authenticated console account menu uses the current session profile instead of a hard-coded demo actor.
 - Authentication does not grant real deletion, Microsoft Graph access, tenant access, legal conclusions, or hidden permission powers.
-- Automated backend tests cover provider setup, unconfigured rejection, state mismatch rejection, session read, logout, and auth-required workflow protection.
+- Automated backend tests cover provider setup, unconfigured rejection, state mismatch rejection, session read, logout, auth-required workflow protection, account-scoped Sources, and account-scoped findings.
 
 ## Prelaunch Source Input Acceptance
 

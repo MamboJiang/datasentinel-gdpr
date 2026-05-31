@@ -60,6 +60,8 @@
 | AUTH-009 | Render authenticated console with no findings | The frontend shows operational empty states and source setup actions instead of fake examples. |
 | AUTH-010 | Start server with `DATASENTINEL_ENABLE_DEMO_FIXTURES=false` | Sources, findings, audit, metrics, and evaluation start empty until a configured local source is scanned. |
 | AUTH-011 | Restart a SQLite-backed preview after disabling demo fixtures | Historical seeded demo sources and workflow documents are removed while real registered local sources and account/session records remain. |
+| AUTH-012 | Sign in as Account A and Account B against the same SQLite preview | Account B cannot list, delete, scan, connect-test, review, or open Account A's Sources or Findings. |
+| AUTH-013 | Start a SQLite preview after legacy global rows exist | Legacy global source and workflow rows are hidden from authenticated account scopes. |
 
 ## Local SQLite Persistence Checks
 

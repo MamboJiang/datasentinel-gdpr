@@ -22,6 +22,8 @@ The browser receives only a DataSentinel first-party HttpOnly session cookie plu
 
 `X-Actor-Id` may still exist for local development compatibility. It is not authentication and must not override a valid authenticated session in prelaunch mode.
 
+SQLite-backed prelaunch Sources, scans, findings, audit events, metrics, and evaluation state must be scoped by the first-party session `userId`. Cross-account object identifiers must resolve as not found or current-account empty state. Legacy global rows are quarantined outside authenticated account scopes during migration.
+
 Enterprise SSO, SCIM, production RBAC, tenant provisioning, and production authorization policy are deferred.
 
 ## Role Simulation

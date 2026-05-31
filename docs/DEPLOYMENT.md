@@ -49,6 +49,8 @@ For a persistent preview, run the server command under the host's service manage
 
 The server can still run in memory for local debugging by omitting `--db-path`. `DATASENTINEL_DB_PATH` may also provide the database path when service-manager configuration is cleaner than command-line arguments.
 
+When account-scoped schema migration runs, historical global source and workflow rows are moved to a `legacy_shared` owner scope. Signed-in users start from their own account scope and do not see those legacy rows unless an operator performs a manual migration.
+
 ## Prelaunch Account Configuration
 
 Google and GitHub sign-in are optional locally and required only when `DATASENTINEL_AUTH_REQUIRED=true`.

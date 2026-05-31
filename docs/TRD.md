@@ -110,6 +110,8 @@ Technical constraints:
 - The browser session is represented by an HttpOnly first-party cookie.
 - `/api/auth/providers`, `/api/auth/session`, and `/api/auth/logout` use the normal envelope shape; login and callback routes are redirects.
 - `DATASENTINEL_AUTH_REQUIRED=true` protects workflow endpoints in prelaunch deployments. Development can keep it false for local contract testing.
+- SQLite-backed prelaunch state uses the first-party session `userId` as the owner scope for Sources, scans, findings, audit events, metrics, and evaluation. Payload fields and compatibility headers must not override this owner scope.
+- Legacy global SQLite source and workflow rows are quarantined outside authenticated account scopes during schema migration.
 - Authentication does not change review permission boundaries, source connector permissions, deletion boundaries, or GDPR legal-advice constraints.
 
 ## Prelaunch Source Input Technical Slice

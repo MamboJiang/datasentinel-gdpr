@@ -98,6 +98,7 @@ The account slice replaces the seeded visible actor as the primary user entry po
 - Let a user sign in with Google or GitHub when provider credentials are configured.
 - Keep provider secrets, access tokens, refresh tokens, auth state, and PKCE verifier out of frontend payloads.
 - Use a backend-created HttpOnly first-party session cookie for the console.
+- Keep each signed-in user's Sources, scans, findings, audit events, metrics, and evaluation state isolated from other signed-in users in SQLite-backed prelaunch deployments.
 - Show provider setup status when login providers are not configured.
 - Continue exposing review permission boundaries after login; authentication does not grant real deletion or production tenant access.
 - Support logout by invalidating the first-party session.

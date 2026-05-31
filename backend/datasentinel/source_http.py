@@ -11,7 +11,7 @@ from .auth import AuthService
 from .demo_state import DemoState
 from .envelope import envelope, problem, response
 from .google_drive_config import picker_config_response
-from .persistent_demo_state import PersistentDemoState
+from .persistent_demo_state import PersistentDemoState, PersistentPrelaunchState
 from .prelaunch_state import PrelaunchState
 from .source_api import SourceApi
 from .source_connection import ConnectionPolicy, SourceConnectionService
@@ -25,10 +25,14 @@ class SourceHttpApp:
         source_api: SourceApi | None = None,
         demo_state: DemoState | None = None,
         auth_service: AuthService | None = None,
+        sqlite_documents: SQLiteDocumentStore | None = None,
+        allowed_roots: list[Path | str] | None = None,
     ) -> None:
         self.source_api = source_api or SourceApi()
         self.demo_state = demo_state or (DemoState(self.source_api.store) if demo_fixtures_enabled() else PrelaunchState(self.source_api.store))
         self.auth_service = auth_service or AuthService()
+        self.sqlite_documents = sqlite_documents
+        self.allowed_roots = allowed_roots or []
 
     @classmethod
     def with_roots(cls, allowed_roots: list[Path | str]) -> "SourceHttpApp":
@@ -46,13 +50,8 @@ class SourceHttpApp:
     ) -> "SourceHttpApp":
         roots = allowed_roots or []
         documents = SQLiteDocumentStore(db_path)
-        store = SQLiteSourceStore(documents, allowed_roots=roots)
-        policy = ConnectionPolicy.with_roots(roots)
-        source_api = SourceApi(SourceConnectionService(store, policy), store)
-        workflow_store = SQLiteWorkflowStore(documents)
         auth_service = AuthService(SQLiteAuthStore(documents))
-        state = PersistentDemoState(store, workflow_store) if demo_fixtures_enabled() else PrelaunchState(store)
-        return cls(source_api, state, auth_service)
+        return cls(auth_service=auth_service, sqlite_documents=documents, allowed_roots=roots)
 
     def handle(
         self,
@@ -122,47 +121,49 @@ class SourceHttpApp:
         if auth_required:
             return auth_required
 
+        source_api, demo_state = self._scoped_runtime(headers)
+
         if method == "GET" and route == "/integrations/google-drive/picker-config":
             return picker_config_response(trace_id)
 
         if method == "GET" and route == "/sources":
-            return self.source_api.list_sources(trace_id)
+            return source_api.list_sources(trace_id)
 
         if method == "POST" and route == "/sources":
             payload_response = self._json_body(body, content_type, route, trace_id)
             if "body" in payload_response:
                 return payload_response
-            return self.source_api.create_source(payload_response["payload"], trace_id)
+            return source_api.create_source(payload_response["payload"], trace_id)
 
         source_id = _match(route, "/sources/")
         if method == "DELETE" and source_id and "/" not in source_id:
-            return self.source_api.delete_source(source_id, trace_id, f"/api{route}")
+            return source_api.delete_source(source_id, trace_id, f"/api{route}")
 
         source_connect = _match(route, "/sources/", "/connect-test")
         if method == "POST" and source_connect:
-            return self.source_api.test_connection(source_connect, trace_id, f"/api{route}")
+            return source_api.test_connection(source_connect, trace_id, f"/api{route}")
 
         if method == "POST" and route in {"/scans/full", "/scans/delta"}:
             payload_response = self._json_body(body, content_type, route, trace_id)
             if "body" in payload_response:
                 return payload_response
             scan_type = "delta" if route.endswith("/delta") else "full"
-            return self.demo_state.start_scan(scan_type, payload_response["payload"], trace_id, f"/api{route}")
+            return demo_state.start_scan(scan_type, payload_response["payload"], trace_id, f"/api{route}")
 
         scan_summary = _match(route, "/scans/", "/summary")
         if method == "GET" and scan_summary:
-            return self.demo_state.get_scan_summary(trace_id)
+            return demo_state.get_scan_summary(trace_id)
 
         scan_id = _match(route, "/scans/")
         if method == "GET" and scan_id:
-            return self.demo_state.get_scan(scan_id, trace_id, f"/api{route}")
+            return demo_state.get_scan(scan_id, trace_id, f"/api{route}")
 
         if method == "GET" and route == "/findings":
-            return self.demo_state.list_findings(trace_id)
+            return demo_state.list_findings(trace_id)
 
         review_support = _match(route, "/findings/", "/review-support")
         if method == "GET" and review_support:
-            return self.demo_state.finding_review_support(review_support, trace_id, f"/api{route}")
+            return demo_state.finding_review_support(review_support, trace_id, f"/api{route}")
 
         review_finding = _match(route, "/findings/", "/review")
         if method == "POST" and review_finding:
@@ -170,35 +171,35 @@ class SourceHttpApp:
             if "body" in payload_response:
                 return payload_response
             payload = {**payload_response["payload"], "findingId": review_finding}
-            return self.demo_state.review_finding(review_finding, payload, trace_id, f"/api{route}")
+            return demo_state.review_finding(review_finding, payload, trace_id, f"/api{route}")
 
         finding_id = _match(route, "/findings/")
         if method == "GET" and finding_id:
-            return self.demo_state.get_finding(finding_id, trace_id, f"/api{route}")
+            return demo_state.get_finding(finding_id, trace_id, f"/api{route}")
 
         if method == "GET" and route == "/audit/events":
-            return self.demo_state.audit_event_list(trace_id)
+            return demo_state.audit_event_list(trace_id)
 
         if method == "GET" and route == "/admin/metrics":
-            return self.demo_state.admin_metrics(trace_id)
+            return demo_state.admin_metrics(trace_id)
 
         if method == "GET" and route == "/evaluation/runs/latest":
-            return self.demo_state.latest_evaluation(trace_id)
+            return demo_state.latest_evaluation(trace_id)
 
         if method == "GET" and route == "/governance/config":
-            return self.demo_state.governance(trace_id)
+            return demo_state.governance(trace_id)
 
         if method == "GET" and route == "/governance/policy-packs/active":
-            return self.demo_state.active_policy_pack(trace_id)
+            return demo_state.active_policy_pack(trace_id)
 
         if method == "POST" and route == "/governance/changes/preview":
             payload_response = self._json_body(body, content_type, route, trace_id)
             if "body" in payload_response:
                 return payload_response
-            return self.demo_state.governance_preview(trace_id)
+            return demo_state.governance_preview(trace_id)
 
         if method == "GET" and route == "/users/me/permissions":
-            return self.demo_state.permissions(trace_id)
+            return demo_state.permissions(trace_id)
 
         return response(
             404,
@@ -272,6 +273,25 @@ class SourceHttpApp:
             )
 
         return {"payload": payload}
+
+    def _scoped_runtime(self, headers: dict[str, str]) -> tuple[SourceApi, DemoState]:
+        if not self.sqlite_documents:
+            return self.source_api, self.demo_state
+
+        owner_id = self._request_owner_id(headers)
+        store = SQLiteSourceStore(self.sqlite_documents, allowed_roots=self.allowed_roots, owner_id=owner_id)
+        policy = ConnectionPolicy.with_roots(self.allowed_roots)
+        source_api = SourceApi(SourceConnectionService(store, policy), store)
+        workflow_store = SQLiteWorkflowStore(self.sqlite_documents, owner_id)
+        state = PersistentDemoState(store, workflow_store) if demo_fixtures_enabled() else PersistentPrelaunchState(store, workflow_store)
+        return source_api, state
+
+    def _request_owner_id(self, headers: dict[str, str]) -> str:
+        session = self.auth_service.session_payload(headers)
+        user = session.get("user") if session.get("authenticated") else None
+        if isinstance(user, dict) and isinstance(user.get("userId"), str) and user["userId"]:
+            return user["userId"]
+        return "anonymous"
 
 
 def build_default_app() -> SourceHttpApp:

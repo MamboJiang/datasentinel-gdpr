@@ -82,6 +82,7 @@ The account interaction is documented in `docs/design/prelaunch-account-system.m
 - If no valid session exists, the app renders a sign-in gate backed by `/api/auth/providers`.
 - Google and GitHub buttons navigate to backend login routes; the frontend does not receive provider tokens.
 - The account menu renders the safe session profile and exposes logout through `/api/auth/logout`.
+- Signed-in Sources, findings, audit, metrics, and evaluation views render the current account's API state only; another account's object ids must resolve as empty or not found.
 - Permission-boundary surfaces remain visible after login because authentication is not production authorization.
 - The signed-in empty state must avoid fake findings before a source has been configured and scanned.
 

@@ -84,7 +84,7 @@ Requests should send:
 - `X-Contract-Version: 0.1.0`
 - `X-Actor-Id: user_demo_admin` or a seeded demo user.
 - `Idempotency-Key` for review actions and scan start requests when available.
-- Authenticated prelaunch requests should rely on the first-party HttpOnly session cookie created by the auth callback. `X-Actor-Id` remains a development compatibility header and is not authentication.
+- Authenticated prelaunch requests should rely on the first-party HttpOnly session cookie created by the auth callback. SQLite-backed prelaunch Sources, scans, findings, audit events, metrics, and evaluation state are scoped to that session user. `X-Actor-Id` remains a development compatibility header and is not authentication.
 
 Responses should include:
 
@@ -163,6 +163,13 @@ Auth payloads:
 - Session read exposes `authenticated`, optional `user`, and optional `expiresAt`.
 - User profile exposes local `userId`, `provider`, `providerSubject`, `displayName`, optional `email`, and optional `avatarUrl`.
 - Provider access tokens, refresh tokens, client secrets, auth state, and PKCE verifier are never returned.
+
+Account-scoped state:
+
+- When `DATASENTINEL_AUTH_REQUIRED=true`, protected SQLite-backed routes resolve the owner scope from the first-party session `userId`.
+- Source list/mutation routes, scan routes, finding routes, audit, metrics, and evaluation return only the current account's state.
+- Cross-account source and finding identifiers behave as not found or as the current account's empty state.
+- Request payloads and compatibility headers cannot override the owner scope.
 
 ### Optional AI Processing Metadata
 
