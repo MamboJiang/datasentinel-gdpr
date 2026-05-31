@@ -9,6 +9,21 @@ The Dashboard is the operating view for scan and review status. It should help y
 2. What needs human attention?
 3. What can be proven about the workflow?
 
+<DocsScreenshot
+  src="/docs/media/dashboard-overview.png"
+  alt="Dashboard with scan coverage, needs review, high-risk queue, owner routing, latest scan progress, and review focus."
+  caption="Use the Dashboard as the operating view: coverage and throughput show scan state, while review focus shows where human attention is still required."
+/>
+
+## Dashboard data map
+
+| Area | What it shows | How to use it |
+| --- | --- | --- |
+| Metric cards | Scan coverage, needs review, high-risk queue, owner-routed count. | Decide whether the scan is complete and whether review work is growing. |
+| Latest scan | Progress, processed files, duration, throughput, warnings. | Confirm that the workflow finished and whether any partial-data warnings need follow-up. |
+| Review focus | High-risk findings, owner decisions, review decisions, escalation routes. | Choose the next review surface before opening the Findings page. |
+| Pipeline summary | Stage status and warnings. | Verify that readiness, inventory, extraction, signal detection, review support, audit, and metrics ran as expected. |
+
 ## Full scans
 
 A full scan is the initial discovery workflow for a selected source. It can be started from the Dashboard when a default ready source exists or from the Sources page for a selected ready source.
@@ -34,18 +49,14 @@ DataSentinel represents scanning as accountable stages. A completed or running s
 
 ## Key Dashboard indicators
 
-Review these indicators before moving into findings:
-
-- Scanned files.
-- Flagged files.
-- Scanned volume.
-- Progress percentage.
-- Scan time.
-- Review backlog.
-- High-risk findings.
-- Retention-review count.
-- Owner-routed findings.
-- Recognition difficulty and unsupported/deferred file counts when provided.
+| Indicator | Healthy signal | Follow up when |
+| --- | --- | --- |
+| Scanned files and volume | Counts match the expected source scope. | Counts are unexpectedly low, high, or missing. |
+| Progress percentage | Completed scans reach 100%. | A scan stays running or fails without a visible warning. |
+| Duration and throughput | Values are visible enough to compare runs. | Throughput drops sharply or duration is missing. |
+| Warnings | Warning count is zero or explainable. | Unsupported, OCR-deferred, missing-token, or partial extraction warnings appear. |
+| Review backlog | Open decisions are visible and routable. | High-risk or retention-review work has no owner or escalation path. |
+| Resource intensity | Deterministic P0 work shows zero model calls and zero paid-service cost. | Optional AI or paid-service usage appears unexpectedly. |
 
 ## Warnings and partial data
 

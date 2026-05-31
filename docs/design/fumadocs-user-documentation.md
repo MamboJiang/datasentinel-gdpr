@@ -30,6 +30,9 @@ These references justify using a separate Next/Fumadocs documentation app instea
 | No user docs site | Documentation app added | Fumadocs dependencies are scoped to `docs-site` | Docs app scaffolded | New Next/Fumadocs files exist outside the Vite console |
 | Docs app scaffolded | User-guide pages added | Pages describe accepted product behavior and boundaries only | Content ready | MDX pages and sidebar metadata exist |
 | Content ready | Build requested | Dependencies installed and MDX compiles | Build verified | Static/server build succeeds |
+| Build verified | Onboarding design improved | Changes stay within accepted product behavior | Onboarding ready | Landing and quick-start pages show clear first actions |
+| Onboarding ready | Homepage layout simplified | The change is limited to docs routes | Homepage ready | `/docs` renders without the docs sidebar while nested guide pages keep it |
+| Homepage ready | Visual documentation added | Screenshots are cropped and non-sensitive | Visual guide ready | Key pages show screenshots and tables for visible fields, metrics, and next actions |
 | Build verified | Deploy requested | `agent-us` Caddy and Node runtime are available | Deployed | `/docs*` routes proxy to the docs service |
 | Deployed | Account menu Docs clicked | Browser is inside the console | Docs visible | The click performs a document navigation to `/docs` |
 | Deployed | Docs search requested | Search endpoint stays outside product `/api/*` | Search results visible | Search uses `/docs/api/search` |
@@ -40,6 +43,10 @@ These references justify using a separate Next/Fumadocs documentation app instea
 
 - Adds `docs-site/` as an isolated Next.js and Fumadocs application.
 - Adds user-facing MDX guide content under `docs-site/content/docs/`.
+- Adds reusable docs landing components for the guide home and quick-start pages.
+- Renders the docs homepage as a standalone landing page while keeping Fumadocs sidebar navigation on nested docs pages.
+- Adds cropped, non-sensitive product screenshots under `docs-site/public/images/docs/`.
+- Serves those screenshot assets under `/docs/media/*` so production routing stays inside the docs prefix.
 - Adds docs-specific package dependencies and scripts in `docs-site/package.json`.
 - Adds Tailwind v4 PostCSS processing for Fumadocs UI styles in `docs-site/postcss.config.mjs`.
 - Adds `.source/` to `.gitignore` for Fumadocs generated source artifacts.
@@ -64,6 +71,11 @@ The rollback does not require database migration, contract version changes, or s
 - A user can run the documentation app locally from `docs-site` with npm scripts.
 - The docs app uses Fumadocs and Next.js rather than a custom static page.
 - The docs sidebar exposes task-oriented pages for quick start, accounts/workspaces, sources, scans, findings/review, audit/evaluation, governance, safety, and FAQ.
+- The docs sidebar does not duplicate task pages with separate top-level shortcut links for the same destinations.
+- The docs homepage exposes an obvious quick-start CTA, task cards, role-oriented paths, and safety boundaries.
+- The docs homepage renders without the docs sidebar, and nested docs pages retain sidebar navigation.
+- The quick-start page presents the first review loop as a short checklist rather than long prose.
+- Quick Start, Sources, Dashboard and Scans, Findings and Review, and Audit and Evaluation include screenshots and tables that make visible fields, metrics, and next actions easier to scan.
 - User-facing documentation states that DataSentinel does not provide legal advice or full GDPR compliance claims.
 - User-facing documentation states that deletion is simulated in P0 and external files are not deleted.
 - User-facing documentation explains redacted evidence, visible permission boundaries, audit events, evaluation metrics, and Workspace scoping.

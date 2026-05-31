@@ -64,6 +64,7 @@ type ConnectionResult = {
 }
 
 type ProblemDetails = {
+  code?: string
   detail?: string
   title?: string
   traceId?: string
@@ -71,6 +72,24 @@ type ProblemDetails = {
 
 const apiBase = (import.meta.env.VITE_DATASENTINEL_API_BASE ?? '/api').replace(/\/$/, '')
 const actorId = 'user_demo_admin'
+
+export class ApiRequestError extends Error {
+  code?: string
+  problem: ProblemDetails
+  status: number
+
+  constructor(message: string, status: number, problem: ProblemDetails) {
+    super(message)
+    this.name = 'ApiRequestError'
+    this.status = status
+    this.problem = problem
+    this.code = problem.code
+  }
+}
+
+export function isApiRequestError(error: unknown): error is ApiRequestError {
+  return error instanceof ApiRequestError
+}
 
 export async function loadServerData(fallback: MockData): Promise<MockData> {
   const [
@@ -363,7 +382,7 @@ async function requestEnvelope<T>(path: string, init: RequestInit = {}): Promise
 
   if (!response.ok) {
     const problem = await readProblem(response)
-    throw new Error(problem.detail ?? problem.title ?? `API request failed with ${response.status}`)
+    throw new ApiRequestError(problem.detail ?? problem.title ?? `API request failed with ${response.status}`, response.status, problem)
   }
 
   return response.json() as Promise<ApiEnvelope<T>>

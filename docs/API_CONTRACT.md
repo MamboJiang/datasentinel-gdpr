@@ -326,9 +326,9 @@ The processing order is `source_policy_context -> metadata_inventory -> text_lay
 Start guard:
 
 - `POST /api/scans/full` requires `sourceId`.
-- P0 accepts full-scan start for the controlled `mock_ready` organizer sample source, connected local prelaunch sources, connected direct HTTPS file links, and connected Google Drive selected sources.
-- `google_drive_selection` scans require `authorization.googleDriveAccessToken` in the scan request. The token is a short-lived per-scan value and must not be stored by the server.
-- A source that is missing, unreadable, or not scan-ready must not create a scan record; backend implementations should return `application/problem+json`, and mock UI implementations should show a neutral denial message.
+- P0 accepts full-scan start for the controlled `mock_ready` organizer sample source, connected local prelaunch sources, connected direct HTTPS file links, and Google Drive selected sources with current per-scan authorization.
+- `google_drive_selection` scans require `authorization.googleDriveAccessToken` in the scan request. The token is a short-lived per-scan value and must not be stored by the server; saved Drive sources may report `authorization_required` until a current Picker token is available in the browser session.
+- A source that is missing, unreadable, expired-token, or not scan-ready must not surface stale findings. Backend implementations should return `application/problem+json`; source-read failures may record a failed source-unavailable scan state with zero findings.
 - Accepted scan starts should be idempotent when `Idempotency-Key` is present.
 - `POST /api/scans/delta` requires `sourceId` and a completed selected-source baseline; when `baselineScanId` is provided it must match an available baseline. Missing, running, not-ready, or mismatched baselines must not create scan, audit, finding, metric, or evaluation state changes.
 

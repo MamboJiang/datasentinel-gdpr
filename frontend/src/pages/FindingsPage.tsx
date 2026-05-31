@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useData } from '../data/useData'
 import { humanize } from '../components/formatters'
+import { safeFindingSourceLabel } from '../components/findingDisplay'
 import { EmptyState, PageHeader, RiskBadge, StatusBadge } from '../components/ui'
 
 export function FindingsPage() {
@@ -13,7 +14,7 @@ export function FindingsPage() {
 
   const visibleFindings = useMemo(() => {
     return findings.filter((finding) => {
-      const matchesQuery = `${finding.fileName} ${finding.sourcePath ?? ''} ${finding.contextCategory ?? ''}`.toLowerCase().includes(query.toLowerCase())
+      const matchesQuery = `${finding.fileName} ${safeFindingSourceLabel(finding)} ${finding.contextCategory ?? ''}`.toLowerCase().includes(query.toLowerCase())
       const matchesRisk = risk === 'all' || finding.riskLevel === risk
       const matchesStatus = status === 'all' || finding.status === status
       return matchesQuery && matchesRisk && matchesStatus
@@ -32,7 +33,7 @@ export function FindingsPage() {
           <label className="search-field">
             <Search aria-hidden="true" size={17} />
             <span className="sr-only">Search findings</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search file, path, or context" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search file, source, or context" />
           </label>
           <div className="filter-selects">
             <Filter aria-hidden="true" size={17} />
@@ -80,7 +81,7 @@ export function FindingsPage() {
                     <td>
                       <Link className="table-primary table-link" to={`/findings/${finding.findingId}`}>
                         <div className="file-avatar"><FileSearch aria-hidden="true" size={16} /></div>
-                        <div><strong>{finding.fileName}</strong><span>{finding.sourcePath}</span></div>
+                        <div><strong>{finding.fileName}</strong><span>{safeFindingSourceLabel(finding)}</span></div>
                       </Link>
                     </td>
                     <td>{finding.evidenceSignalCount ?? finding.personalDataTypes?.length ?? 0} signals</td>

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getEmptyData } from './emptyData'
-import { loadServerData, switchServerWorkspace } from './serverApi'
+import { isApiRequestError, loadServerData, startServerScan, switchServerWorkspace } from './serverApi'
 
 function envelope(data: unknown) {
   return {
@@ -93,5 +93,27 @@ describe('server API loading', () => {
 
     expect(requests).toEqual([{ body: JSON.stringify({ workspaceId: 'ws_target' }), path: '/workspaces/current' }])
     expect(switched.data.currentWorkspaceId).toBe('ws_target')
+  })
+
+  it('preserves API rejection status so callers do not treat command rejection as server outage', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      code: 'command-rejected',
+      detail: 'Google Drive scans require a short-lived access token.',
+      title: 'Command rejected',
+    }), {
+      headers: { 'Content-Type': 'application/problem+json' },
+      status: 409,
+    })))
+
+    await expect(startServerScan({ scanType: 'full', sourceId: 'source_drive' })).rejects.toMatchObject({
+      message: 'Google Drive scans require a short-lived access token.',
+      status: 409,
+    })
+
+    try {
+      await startServerScan({ scanType: 'full', sourceId: 'source_drive' })
+    } catch (error) {
+      expect(isApiRequestError(error)).toBe(true)
+    }
   })
 })

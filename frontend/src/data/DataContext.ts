@@ -35,6 +35,14 @@ export type AppNotification = {
   createdAt: string
 }
 
+export type ServerConnectionStatus = 'checking' | 'connected' | 'disconnected'
+
+export type ServerConnection = {
+  checkedAt: string | null
+  message: string
+  status: ServerConnectionStatus
+}
+
 export type DataContextValue = {
   sources: Source[]
   scan: Scan
@@ -48,6 +56,8 @@ export type DataContextValue = {
   workspaceDirectory: WorkspaceDirectory
   workspaceAdmin: WorkspaceAdminSummary
   meta: Meta
+  serverConnection: ServerConnection
+  runtimeAuthorizedSourceIds: string[]
   notifications: AppNotification[]
   getFinding: (findingId: string) => Finding | undefined
   getReviewSupport: (findingId: string) => ReviewSupport

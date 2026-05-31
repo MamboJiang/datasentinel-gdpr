@@ -1,54 +1,19 @@
 ---
 title: DataSentinel User Guide
 description: Learn how to use DataSentinel to discover GDPR-relevant data, review evidence, route ownership, and keep an audit-ready record.
+full: true
 ---
 
-DataSentinel is a prelaunch GDPR data discovery prototype for teams that need an accountable way to inspect distributed file sources. It helps users connect allowed sources, run scans, review redacted evidence, assign responsibility, record human decisions, and inspect audit and evaluation metrics.
+<HomeTopBar />
 
-This guide is written for people using the product interface. It avoids engineering internals and focuses on what you can see, decide, and verify in the console.
+<GuideHero />
 
-## What DataSentinel helps you do
+<FastTrack />
 
-| Need | DataSentinel surface | Outcome |
-| --- | --- | --- |
-| Understand current scan coverage | Dashboard | Scan progress, scanned files, flagged files, scanned volume, review backlog, and owner-routing summaries. |
-| Register a supported source | Sources | A DataSentinel source registration that can be tested, scanned, or removed without deleting external files. |
-| Review evidence safely | Findings and Finding Detail | Redacted evidence, signals, policy context, owner assignment, retention status, and action boundaries. |
-| Make accountable decisions | Review dialog | A human decision with a reason, checklist acknowledgement, resulting status, and audit event. |
-| Prove what happened | Audit Trail | Structured scan, routing, review, and workflow events with actor and timestamp context. |
-| Measure quality | Evaluation | Precision, recall, F1, reproducibility, throughput, and resource-intensity signals. |
-| Configure review rules | Governance | Active policy pack, organization model, source adapters, and permission boundaries. |
+<VisualTour />
 
-## Who this guide is for
+<SurfaceCards />
 
-- File owners who receive assigned findings.
-- Masters of Data or department data stewards who coordinate review work.
-- Privacy, legal, or DPO reviewers who inspect evidence and decisions.
-- IT administrators who manage workspaces, source registration, and user groups.
-- Auditors who need to inspect the trail of scan and review activity.
+<UserTracks />
 
-## Product boundaries
-
-DataSentinel is not a legal-advice tool and does not claim full GDPR compliance. It supports human review by showing evidence, policy-pack context, permission boundaries, and evaluation metrics.
-
-Deletion remains simulated in the P0 prototype. A delete-candidate decision records a review outcome, but it does not delete files from Google Drive, direct-link sources, local sources, or any external system.
-
-## Typical workflow
-
-1. Sign in if the deployment requires authentication.
-2. Join or create a Workspace.
-3. Register a supported source.
-4. Start a full scan when the source is ready.
-5. Use the Dashboard to follow scan progress and review priority areas.
-6. Open Findings to inspect assigned or high-risk items.
-7. Open a finding detail page to review redacted evidence, owner routing, retention context, and permissions.
-8. Record a human decision with the required reason.
-9. Confirm that the Audit Trail contains the scan and review events.
-10. Use Evaluation to inspect scan quality and resource intensity.
-
-## First pages to read
-
-- [Quick Start](/docs/quick-start) gives a short path through the console.
-- [Sources](/docs/sources) explains supported source registration and scan readiness.
-- [Findings and Review](/docs/findings-and-review) explains evidence cards and human decisions.
-- [Safety and Boundaries](/docs/safety-and-boundaries) summarizes privacy, permission, deletion, and legal boundaries.
+<SafetyBand />

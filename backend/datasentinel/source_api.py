@@ -83,7 +83,9 @@ class SourceApi:
             payload = self.connection_envelope(source_id, trace_id)
             data = payload["data"]
             if data.get("reachable") and data.get("connectionStatus") == "connected":
-                self.store.add({key: value for key, value in data.items() if key not in {"reachable", "connectionStatus", "capabilities", "diagnostics"}} | {"status": "connected"})
+                capabilities = data.get("capabilities") if isinstance(data.get("capabilities"), dict) else {}
+                status = "authorization_required" if capabilities.get("requiresPerScanAccessToken") else "connected"
+                self.store.add({key: value for key, value in data.items() if key not in {"reachable", "connectionStatus", "capabilities", "diagnostics"}} | {"status": status})
             return response(200, payload, trace_id)
         except ConnectionIssue as issue:
             return response(
@@ -152,7 +154,7 @@ def _initial_status(payload: dict[str, Any]) -> str:
     if source_type == "remote_file_link":
         return "connected"
     if source_type == "google_drive_selection":
-        return "connected" if picker_config_from_env()["configured"] else "registered"
+        return "authorization_required" if picker_config_from_env()["configured"] else "registered"
     return str(payload.get("status") or "registered")
 
 

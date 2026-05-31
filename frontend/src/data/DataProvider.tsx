@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { DataContext, type DataContextValue } from './DataContext'
 import { getEmptyData } from './emptyData'
 import { recordHumanReviewDecision } from './humanReviewDecision'
@@ -26,6 +26,7 @@ import {
   deleteServerWorkspaceMember,
   deleteServerWorkspaceGroup,
   deleteServerSource,
+  isApiRequestError,
   loadServerData,
   reviewServerFinding,
   startServerScan,
@@ -57,6 +58,12 @@ const localMocksEnabled = import.meta.env.VITE_DATASENTINEL_ENABLE_LOCAL_MOCKS =
 export function DataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState(localMocksEnabled ? getInitialMockData : getEmptyData)
   const [notifications, setNotifications] = useState<DataContextValue['notifications']>([])
+  const [serverConnection, setServerConnection] = useState<DataContextValue['serverConnection']>({
+    checkedAt: null,
+    message: 'Checking project server.',
+    status: 'checking',
+  })
+  const [runtimeAuthorizedSourceIds, setRuntimeAuthorizedSourceIds] = useState<string[]>([])
   const scanTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const serverAvailable = useRef(false)
   const googleDriveAccessTokens = useRef<Record<string, string>>({})
@@ -72,6 +79,40 @@ export function DataProvider({ children }: { children: ReactNode }) {
     ].slice(0, 50))
   }
 
+  const markServerConnection = useCallback((status: DataContextValue['serverConnection']['status'], message: string) => {
+    serverAvailable.current = status === 'connected'
+    setServerConnection({
+      checkedAt: new Date().toISOString(),
+      message,
+      status,
+    })
+  }, [])
+
+  const markServerConnected = useCallback(() => {
+    markServerConnection('connected', 'Project server connected.')
+  }, [markServerConnection])
+
+  const markServerUnavailable = useCallback(() => {
+    markServerConnection('disconnected', 'Project server unavailable.')
+  }, [markServerConnection])
+
+  function notifyApiRejection(error: unknown, fallbackMessage: string) {
+    notify(error instanceof Error ? error.message : fallbackMessage)
+  }
+
+  function shouldUseLocalFallback(error: unknown): boolean {
+    return !isApiRequestError(error)
+  }
+
+  function forgetRuntimeAuthorization(sourceId: string) {
+    delete googleDriveAccessTokens.current[sourceId]
+    setRuntimeAuthorizedSourceIds((current) => current.filter((candidate) => candidate !== sourceId))
+  }
+
+  function rememberRuntimeAuthorization(sourceId: string) {
+    setRuntimeAuthorizedSourceIds((current) => current.includes(sourceId) ? current : [...current, sourceId])
+  }
+
   useEffect(() => {
     let active = true
     const fallback = localMocksEnabled ? getInitialMockData() : getEmptyData()
@@ -82,11 +123,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return
         }
 
-        serverAvailable.current = true
+        markServerConnected()
         setData(serverData)
       })
       .catch(() => {
-        serverAvailable.current = false
+        if (!active) {
+          return
+        }
+
+        markServerUnavailable()
         if (localMocksEnabled) {
           setData(fallback)
         }
@@ -99,7 +144,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         clearTimeout(scanTimer.current)
       }
     }
-  }, [])
+  }, [markServerConnected, markServerUnavailable])
 
   async function startScan(options: StartScanOptions) {
     const sourceToken = options.sourceId ? googleDriveAccessTokens.current[options.sourceId] : undefined
@@ -127,7 +172,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }, scanOptions.scanType === 'full' ? 2400 : 2000)
         return
       } catch (error) {
-        serverAvailable.current = false
+        if (!shouldUseLocalFallback(error)) {
+          if (scanOptions.sourceId && isGoogleDriveSource(scanOptions.sourceId)) {
+            forgetRuntimeAuthorization(scanOptions.sourceId)
+          }
+          notifyApiRejection(error, 'Scan was rejected by the project server.')
+          return
+        }
+        markServerUnavailable()
         notify(error instanceof Error ? error.message : 'Project server unavailable; using local mock workflow.')
       }
     }
@@ -174,7 +226,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         notify(`${result.data.name ?? sourceId} connection: ${result.data.connectionStatus}.${diagnostics ? ` ${diagnostics}` : ''}`)
         return
       } catch (error) {
-        serverAvailable.current = false
+        if (!shouldUseLocalFallback(error)) {
+          notifyApiRejection(error, 'Source connection check was rejected by the project server.')
+          return
+        }
+        markServerUnavailable()
         notify(error instanceof Error ? error.message : 'Project server unavailable; using local source check.')
       }
     }
@@ -190,10 +246,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      if (input.googleDriveAccessToken) {
-        googleDriveAccessTokens.current[input.sourceId] = input.googleDriveAccessToken
-      }
       const result = await createServerSource(input)
+      if (input.googleDriveAccessToken) {
+        googleDriveAccessTokens.current[result.data.sourceId] = input.googleDriveAccessToken
+        rememberRuntimeAuthorization(result.data.sourceId)
+      }
       setData((current) => ({
         ...current,
         meta: result.meta,
@@ -216,7 +273,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     try {
       const result = await deleteServerSource(sourceId)
-      delete googleDriveAccessTokens.current[sourceId]
+      forgetRuntimeAuthorization(sourceId)
       await refreshServerData(`${result.data.name} source registration deleted.`)
     } catch (error) {
       notify(error instanceof Error ? error.message : 'Source deletion failed.')
@@ -230,7 +287,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         await refreshServerData('Review decision recorded. Deletion remains simulated.')
         return
       } catch (error) {
-        serverAvailable.current = false
+        if (!shouldUseLocalFallback(error)) {
+          notifyApiRejection(error, 'Review decision was rejected by the project server.')
+          return
+        }
+        markServerUnavailable()
         notify(error instanceof Error ? error.message : 'Project server unavailable; using local review workflow.')
       }
     }
@@ -269,7 +330,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         await refreshServerData('Workspace created. You are now a Workspace owner and admin.')
         return
       } catch (error) {
-        serverAvailable.current = false
+        if (!shouldUseLocalFallback(error)) {
+          notifyApiRejection(error, 'Workspace creation was rejected by the project server.')
+          return
+        }
+        markServerUnavailable()
         notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
       }
     }
@@ -322,7 +387,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         await refreshServerData('Workspace invitation link created.')
         return result.data
       } catch (error) {
-        serverAvailable.current = false
+        if (!shouldUseLocalFallback(error)) {
+          notifyApiRejection(error, 'Workspace invitation was rejected by the project server.')
+          return null
+        }
+        markServerUnavailable()
         notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
       }
     }
@@ -373,7 +442,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setData((current) => ({ ...current, workspaceDirectory: result.data, meta: result.meta }))
         return true
       } catch (error) {
-        serverAvailable.current = false
+        if (!shouldUseLocalFallback(error)) {
+          notifyApiRejection(error, 'Workspace invitation acceptance was rejected by the project server.')
+          return false
+        }
+        markServerUnavailable()
         notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
       }
     }
@@ -419,7 +492,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         await refreshServerData('Workspace group created.')
         return result.data
       } catch (error) {
-        serverAvailable.current = false
+        if (!shouldUseLocalFallback(error)) {
+          notifyApiRejection(error, 'Workspace group creation was rejected by the project server.')
+          return null
+        }
+        markServerUnavailable()
         notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
       }
     }
@@ -442,7 +519,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         await refreshServerData('Workspace group updated.')
         return result.data
       } catch (error) {
-        serverAvailable.current = false
+        if (!shouldUseLocalFallback(error)) {
+          notifyApiRejection(error, 'Workspace group update was rejected by the project server.')
+          return null
+        }
+        markServerUnavailable()
         notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
       }
     }
@@ -491,7 +572,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         await refreshServerData('Workspace group deleted.')
         return true
       } catch (error) {
-        serverAvailable.current = false
+        if (!shouldUseLocalFallback(error)) {
+          notifyApiRejection(error, 'Workspace group deletion was rejected by the project server.')
+          return false
+        }
+        markServerUnavailable()
         notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
       }
     }
@@ -518,7 +603,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         await refreshServerData('Workspace member groups updated.')
         return true
       } catch (error) {
-        serverAvailable.current = false
+        if (!shouldUseLocalFallback(error)) {
+          notifyApiRejection(error, 'Workspace member update was rejected by the project server.')
+          return false
+        }
+        markServerUnavailable()
         notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
       }
     }
@@ -564,7 +653,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         await refreshServerData('Workspace member removed.')
         return true
       } catch (error) {
-        serverAvailable.current = false
+        if (!shouldUseLocalFallback(error)) {
+          notifyApiRejection(error, 'Workspace member removal was rejected by the project server.')
+          return false
+        }
+        markServerUnavailable()
         notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
       }
     }
@@ -612,7 +705,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         await refreshServerData('Workspace owner transferred.')
         return true
       } catch (error) {
-        serverAvailable.current = false
+        if (!shouldUseLocalFallback(error)) {
+          notifyApiRejection(error, 'Workspace owner transfer was rejected by the project server.')
+          return false
+        }
+        markServerUnavailable()
         notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
       }
     }
@@ -640,7 +737,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         await refreshServerData('Workspace deleted.')
         return true
       } catch (error) {
-        serverAvailable.current = false
+        if (!shouldUseLocalFallback(error)) {
+          notifyApiRejection(error, 'Workspace deletion was rejected by the project server.')
+          return false
+        }
+        markServerUnavailable()
         notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
       }
     }
@@ -714,6 +815,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return data.findings.find((finding) => finding.findingId === findingId)
   }
 
+  function isGoogleDriveSource(sourceId: string): boolean {
+    return data.sources.some((source) => source.sourceId === sourceId && source.sourceType === 'google_drive_selection')
+  }
+
   function getReviewSupport(findingId: string) {
     const finding = getFinding(findingId)
 
@@ -744,6 +849,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         workspaceDirectory: data.workspaceDirectory,
         workspaceAdmin: data.workspaceAdmin,
         meta: data.meta,
+        serverConnection,
+        runtimeAuthorizedSourceIds,
         notifications,
         getFinding,
         getReviewSupport,
@@ -773,7 +880,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   async function refreshServerData(successNotification: string) {
     const nextData = await loadServerData(localMocksEnabled ? getInitialMockData() : getEmptyData())
-    serverAvailable.current = true
+    markServerConnected()
     setData(nextData)
     notify(successNotification)
   }

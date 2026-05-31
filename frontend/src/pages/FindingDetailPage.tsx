@@ -1,10 +1,11 @@
 import { ArrowLeft, CalendarClock, FileSearch, FileText, Flag, ShieldAlert, UserRound, X } from 'lucide-react'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useData } from '../data/useData'
 import type { ReviewDecision } from '../types'
 import { formatBytes, formatDate, humanize } from '../components/formatters'
 import { FileReviewEditor } from '../components/FileReviewEditor'
+import { safeFindingSourceLabel } from '../components/findingDisplay'
 import {
   Button,
   EmptyState,
@@ -31,7 +32,7 @@ export function FindingDetailPage() {
         <div>
           <p className="eyebrow">{finding.findingId}</p>
           <h1>{finding.fileName}</h1>
-          <p className="page-description">{finding.sourcePath ?? 'Source path is not available'}</p>
+          <p className="page-description">{safeFindingSourceLabel(finding)}</p>
         </div>
         <div className="detail-actions">
           <RiskBadge riskLevel={finding.riskLevel} score={finding.riskScore} />
@@ -187,7 +188,8 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({})
   const checklistComplete = reviewSupport.checklist.every((item) => !item.required || checkedItems[item.itemId])
   const decisionAvailable = decisions.some((option) => option.decision === decision)
-  const activeDecision = decisionAvailable ? decision : ''
+  const activeDecision = decisionAvailable ? decision : decisions[0]?.decision ?? ''
+  const activeNextAction = decisionAvailable ? nextAction : ''
   const targetRequired = activeDecision === 'reassign_owner' || activeDecision === 'escalate'
   const retentionRequired = activeDecision === 'keep_with_reason'
   const checkedChecklistIds = Object.entries(checkedItems)
@@ -195,17 +197,11 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
     .map(([itemId]) => itemId)
   const canSubmit =
     decisions.length > 0
+    && activeDecision.length > 0
     && checklistComplete
     && reason.trim().length > 0
-    && (!targetRequired || nextAction.length > 0)
+    && (!targetRequired || activeNextAction.length > 0)
     && (!retentionRequired || retentionUntil.length > 0)
-
-  useEffect(() => {
-    if (decisions.length > 0 && !decisions.some((option) => option.decision === decision)) {
-      setDecision(decisions[0].decision)
-      setNextAction('')
-    }
-  }, [decision, decisions])
 
   function submitReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -215,13 +211,13 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
 
     reviewFinding({
       findingId,
-      decision,
+      decision: activeDecision as ReviewDecision,
       reason,
       actorId: reviewSupport.actorId,
       checklistItemIds: checkedChecklistIds,
-      nextAction,
-      reassignToUserId: decision === 'reassign_owner' ? nextAction : undefined,
-      retentionUntil: decision === 'keep_with_reason' ? retentionUntil : undefined,
+      nextAction: activeNextAction,
+      reassignToUserId: activeDecision === 'reassign_owner' ? activeNextAction : undefined,
+      retentionUntil: activeDecision === 'keep_with_reason' ? retentionUntil : undefined,
     })
     onClose()
   }
@@ -261,7 +257,7 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
           {activeDecision === 'reassign_owner' ? (
             <label className="form-field">
               <span>Transfer target</span>
-              <select required value={nextAction} onChange={(event) => setNextAction(event.target.value)}>
+              <select required value={activeNextAction} onChange={(event) => setNextAction(event.target.value)}>
                 <option value="">Select an owner</option>
                 {(reviewSupport.transferOptions ?? []).map((option) => <option key={option.userId} value={option.userId}>{option.displayName}</option>)}
               </select>
@@ -270,7 +266,7 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
           {activeDecision === 'escalate' ? (
             <label className="form-field">
               <span>Escalation queue</span>
-              <select required value={nextAction} onChange={(event) => setNextAction(event.target.value)}>
+              <select required value={activeNextAction} onChange={(event) => setNextAction(event.target.value)}>
                 <option value="">Select a queue</option>
                 {(reviewSupport.escalationOptions ?? []).map((option) => <option key={option.queueId} value={option.queueId}>{option.label}</option>)}
               </select>

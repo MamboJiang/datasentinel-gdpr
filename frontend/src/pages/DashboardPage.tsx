@@ -13,6 +13,7 @@ import {
 import { Link } from 'react-router-dom'
 import { useData } from '../data/useData'
 import { canStartDeltaScan, getDefaultFullScanSource, isSourceScanReady } from '../data/scanWorkflow'
+import { canStartSourceScan } from '../data/sourceScanReadiness'
 import { formatBytes, formatDate, humanize } from '../components/formatters'
 import type { AdminMetricsAggregationSummary } from '../types'
 import {
@@ -29,14 +30,16 @@ import {
 } from '../components/ui'
 
 export function DashboardPage() {
-  const { metrics, scan, findings, auditEvents, meta, sources, governanceConfig, startScan } = useData()
+  const { metrics, scan, findings, auditEvents, meta, sources, governanceConfig, runtimeAuthorizedSourceIds, startScan } = useData()
   const highRisk = findings.filter((finding) => finding.riskLevel === 'high').slice(0, 3)
-  const defaultFullScanSource = getDefaultFullScanSource(sources, governanceConfig)
+  const startableSources = sources.filter((source) => canStartSourceScan(source, governanceConfig, runtimeAuthorizedSourceIds))
+  const defaultFullScanSource = getDefaultFullScanSource(startableSources, governanceConfig)
   const currentScanSource = sources.find((source) => source.sourceId === scan.sourceId)
   const scanIsRunning = scan.status === 'running'
   const canRunDelta = Boolean(
     currentScanSource
     && isSourceScanReady(currentScanSource, governanceConfig)
+    && canStartSourceScan(currentScanSource, governanceConfig, runtimeAuthorizedSourceIds)
     && !scanIsRunning
     && canStartDeltaScan(scan, currentScanSource.sourceId),
   )

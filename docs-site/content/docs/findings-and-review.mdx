@@ -7,6 +7,12 @@ Findings are review tasks assembled from redacted evidence, context, policy-pack
 
 Every finding should have evidence. If a finding has no evidence card, it should not be treated as review-ready.
 
+<DocsScreenshot
+  src="/docs/media/findings-list.png"
+  alt="Findings list showing finding names, evidence count, risk, context, retention state, owner, and status."
+  caption="Use the Findings table to sort review work by risk, retention state, owner, and status before opening a detail page."
+/>
+
 ## Findings list
 
 Use **Findings** to prioritize review work. Depending on the current data and permissions, rows can show:
@@ -20,6 +26,18 @@ Use **Findings** to prioritize review work. Depending on the current data and pe
 - Review support readiness.
 
 Unknown or unsupported values should render neutrally instead of breaking the table.
+
+## Findings table guide
+
+| Column | What it answers | Review cue |
+| --- | --- | --- |
+| Finding | Which file or item produced the review task. | Open the row when the source reference and context match your assignment. |
+| Evidence | How many redacted signals support the task. | Treat missing evidence as not review-ready. |
+| Risk | How urgent the review should be. | Prioritize high-risk rows and overdue retention states. |
+| Context | Why the item was grouped this way. | Confirm that the context matches the business process. |
+| Retention | Whether retention review is required or overdue. | Escalate when retention state is unclear or overdue. |
+| Owner | Who is accountable for the next decision. | Reassign or escalate when the owner is wrong or missing. |
+| Status | Current workflow state. | Avoid duplicate review if a final decision was already recorded. |
 
 ## Finding detail
 
