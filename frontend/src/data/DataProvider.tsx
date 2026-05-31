@@ -10,6 +10,10 @@ import {
   applyLocalWorkspaceGroupCreation,
   applyLocalWorkspaceGroupDeletion,
   applyLocalWorkspaceGroupUpdate,
+  applyLocalWorkspaceDeletion,
+  applyLocalWorkspaceMemberDeletion,
+  applyLocalWorkspaceMemberUpdate,
+  applyLocalWorkspaceOwnerTransfer,
   buildLocalWorkspaceGroup,
 } from './workspaceLocalState'
 import {
@@ -18,12 +22,17 @@ import {
   createServerSource,
   createServerWorkspace,
   createServerWorkspaceInvitation,
+  deleteServerWorkspace,
+  deleteServerWorkspaceMember,
   deleteServerWorkspaceGroup,
   deleteServerSource,
   loadServerData,
   reviewServerFinding,
   startServerScan,
+  switchServerWorkspace,
+  transferServerWorkspaceOwner,
   testServerSourceConnection,
+  updateServerWorkspaceMember,
   updateServerWorkspaceGroup,
   type CreateSourceInput,
 } from './serverApi'
@@ -31,9 +40,13 @@ import type {
   CreateWorkspaceInvitationInput,
   CreateWorkspaceInput,
   DeleteWorkspaceGroupInput,
+  DeleteWorkspaceInput,
+  DeleteWorkspaceMemberInput,
   Finding,
   ReviewInput,
   UpdateWorkspaceGroupInput,
+  UpdateWorkspaceMemberInput,
+  TransferWorkspaceOwnerInput,
   WorkspaceGroup,
   WorkspaceGroupInput,
   WorkspaceInvitation,
@@ -253,7 +266,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (serverAvailable.current) {
       try {
         await createServerWorkspace(input)
-        await refreshServerData('Workspace created. You are now a Workspace admin.')
+        await refreshServerData('Workspace created. You are now a Workspace owner and admin.')
         return
       } catch (error) {
         serverAvailable.current = false
@@ -262,7 +275,44 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     setData((current) => applyLocalWorkspaceCreation(current, input))
-    notify('Workspace created in local mock state. You are now a Workspace admin.')
+    notify('Workspace created in local mock state. You are now a Workspace owner and admin.')
+  }
+
+  async function switchWorkspace(workspaceId: string): Promise<boolean> {
+    if (workspaceId === data.workspaceDirectory.currentWorkspaceId) {
+      return true
+    }
+
+    if (serverAvailable.current) {
+      try {
+        await switchServerWorkspace(workspaceId)
+        await refreshServerData('Workspace switched.')
+        return true
+      } catch (error) {
+        notify(error instanceof Error ? error.message : 'Workspace switch failed.')
+        return false
+      }
+    }
+
+    const workspace = data.workspaceDirectory.workspaces.find((candidate) => candidate.workspaceId === workspaceId)
+    if (!workspace) {
+      notify('Workspace membership is required.')
+      return false
+    }
+
+    setData((current) => ({
+      ...current,
+      workspaceDirectory: {
+        ...current.workspaceDirectory,
+        currentWorkspaceId: workspaceId,
+      },
+      workspaceAdmin: {
+        ...current.workspaceAdmin,
+        workspace,
+      },
+    }))
+    notify('Workspace switched in local mock state.')
+    return true
   }
 
   async function createWorkspaceInvitation(input: CreateWorkspaceInvitationInput) {
@@ -402,6 +452,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return null
     }
 
+    if (input.groupId === 'workspace_owner' && !canManageWorkspaceOwnership()) {
+      notify('Workspace owner permission is required.')
+      return null
+    }
+
+    if (input.groupId === 'workspace_owner' && (!input.permissions.includes('manage_workspace_ownership') || !input.permissions.includes('view_workspace_admin') || !input.permissions.includes('manage_workspace_members'))) {
+      notify('Workspace owners must retain owner, admin view, and member management permissions.')
+      return null
+    }
+
     if (input.groupId === 'workspace_admin' && (!input.permissions.includes('view_workspace_admin') || !input.permissions.includes('manage_workspace_groups'))) {
       notify('Workspace admins must retain admin view and group management permissions.')
       return null
@@ -441,8 +501,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return false
     }
 
-    if (input.groupId === 'workspace_admin') {
-      notify('Workspace admin group cannot be deleted.')
+    if (input.groupId === 'workspace_owner' || input.groupId === 'workspace_admin') {
+      notify(`${input.groupId === 'workspace_owner' ? 'Workspace owner' : 'Workspace admin'} group cannot be deleted.`)
       return false
     }
 
@@ -451,8 +511,195 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return true
   }
 
+  async function updateWorkspaceMember(input: UpdateWorkspaceMemberInput): Promise<boolean> {
+    if (serverAvailable.current) {
+      try {
+        await updateServerWorkspaceMember(input)
+        await refreshServerData('Workspace member groups updated.')
+        return true
+      } catch (error) {
+        serverAvailable.current = false
+        notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
+      }
+    }
+
+    if (!canManageWorkspaceMembers()) {
+      notify('Workspace member management permission is required.')
+      return false
+    }
+
+    const groupIds = Array.from(new Set(input.groupIds))
+    const validGroupIds = new Set(data.workspaceAdmin.groups.map((group) => group.groupId))
+    if (!groupIds.length || groupIds.some((groupId) => !validGroupIds.has(groupId))) {
+      notify('Select at least one valid Workspace group.')
+      return false
+    }
+
+    const existingMember = data.workspaceAdmin.members.find((member) => member.membershipId === input.membershipId)
+    const ownerChanged = Boolean(existingMember?.groupIds.includes('workspace_owner')) !== groupIds.includes('workspace_owner')
+    if (ownerChanged && !canManageWorkspaceOwnership()) {
+      notify('Workspace owner permission is required.')
+      return false
+    }
+
+    if (!hasWorkspaceOwnerAfterMemberChange(input.membershipId, groupIds)) {
+      notify('At least one active Workspace owner member is required.')
+      return false
+    }
+
+    if (!hasWorkspaceAdminAfterMemberChange(input.membershipId, groupIds)) {
+      notify('At least one active Workspace admin member is required.')
+      return false
+    }
+
+    setData((current) => applyLocalWorkspaceMemberUpdate(current, input.workspaceId, input.membershipId, groupIds))
+    notify('Workspace member groups updated in local mock state.')
+    return true
+  }
+
+  async function deleteWorkspaceMember(input: DeleteWorkspaceMemberInput): Promise<boolean> {
+    if (serverAvailable.current) {
+      try {
+        await deleteServerWorkspaceMember(input)
+        await refreshServerData('Workspace member removed.')
+        return true
+      } catch (error) {
+        serverAvailable.current = false
+        notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
+      }
+    }
+
+    if (!canManageWorkspaceMembers()) {
+      notify('Workspace member management permission is required.')
+      return false
+    }
+
+    const member = data.workspaceAdmin.members.find((candidate) => candidate.membershipId === input.membershipId)
+    if (!member) {
+      notify('Workspace member was not found.')
+      return false
+    }
+
+    if (member.accountId === data.workspaceAdmin.currentMembership?.accountId) {
+      notify('Workspace admins cannot remove their own active membership.')
+      return false
+    }
+
+    if (member.groupIds.includes('workspace_owner') && !canManageWorkspaceOwnership()) {
+      notify('Workspace owner permission is required.')
+      return false
+    }
+
+    if (!hasWorkspaceOwnerAfterMemberRemoval(input.membershipId)) {
+      notify('At least one active Workspace owner member is required.')
+      return false
+    }
+
+    if (!hasWorkspaceAdminAfterMemberRemoval(input.membershipId)) {
+      notify('At least one active Workspace admin member is required.')
+      return false
+    }
+
+    setData((current) => applyLocalWorkspaceMemberDeletion(current, input.workspaceId, input.membershipId))
+    notify('Workspace member removed in local mock state.')
+    return true
+  }
+
+  async function transferWorkspaceOwner(input: TransferWorkspaceOwnerInput): Promise<boolean> {
+    if (serverAvailable.current) {
+      try {
+        await transferServerWorkspaceOwner(input)
+        await refreshServerData('Workspace owner transferred.')
+        return true
+      } catch (error) {
+        serverAvailable.current = false
+        notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
+      }
+    }
+
+    if (!canManageWorkspaceOwnership()) {
+      notify('Workspace owner permission is required.')
+      return false
+    }
+
+    const member = data.workspaceAdmin.members.find((candidate) => candidate.membershipId === input.membershipId)
+    if (!member) {
+      notify('Workspace member was not found.')
+      return false
+    }
+
+    setData((current) => applyLocalWorkspaceOwnerTransfer(current, input.workspaceId, input.membershipId))
+    notify('Workspace owner transferred in local mock state.')
+    return true
+  }
+
+  async function deleteWorkspace(input: DeleteWorkspaceInput): Promise<boolean> {
+    if (serverAvailable.current) {
+      try {
+        await deleteServerWorkspace(input)
+        await refreshServerData('Workspace deleted.')
+        return true
+      } catch (error) {
+        serverAvailable.current = false
+        notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
+      }
+    }
+
+    if (!canManageWorkspaceOwnership()) {
+      notify('Workspace owner permission is required.')
+      return false
+    }
+
+    if (input.workspaceName !== data.workspaceAdmin.workspace?.name) {
+      notify('Workspace name confirmation must match exactly.')
+      return false
+    }
+
+    setData((current) => applyLocalWorkspaceDeletion(current, input.workspaceId))
+    notify('Workspace deleted in local mock state.')
+    return true
+  }
+
   function canManageWorkspaceGroups() {
     return data.workspaceAdmin.permissionBoundary.allowedActions.includes('manage_workspace_groups')
+  }
+
+  function canManageWorkspaceMembers() {
+    return data.workspaceAdmin.permissionBoundary.allowedActions.includes('manage_workspace_members')
+  }
+
+  function canManageWorkspaceOwnership() {
+    return data.workspaceAdmin.permissionBoundary.allowedActions.includes('manage_workspace_ownership')
+  }
+
+  function hasWorkspaceAdminAfterMemberChange(membershipId: string, groupIds: string[]) {
+    return data.workspaceAdmin.members.some((member) => (
+      member.status === 'active'
+      && (member.membershipId === membershipId ? groupIds : member.groupIds).includes('workspace_admin')
+    ))
+  }
+
+  function hasWorkspaceOwnerAfterMemberChange(membershipId: string, groupIds: string[]) {
+    return data.workspaceAdmin.members.some((member) => (
+      member.status === 'active'
+      && (member.membershipId === membershipId ? groupIds : member.groupIds).includes('workspace_owner')
+    ))
+  }
+
+  function hasWorkspaceAdminAfterMemberRemoval(membershipId: string) {
+    return data.workspaceAdmin.members.some((member) => (
+      member.status === 'active'
+      && member.membershipId !== membershipId
+      && member.groupIds.includes('workspace_admin')
+    ))
+  }
+
+  function hasWorkspaceOwnerAfterMemberRemoval(membershipId: string) {
+    return data.workspaceAdmin.members.some((member) => (
+      member.status === 'active'
+      && member.membershipId !== membershipId
+      && member.groupIds.includes('workspace_owner')
+    ))
   }
 
   function getFinding(findingId: string): Finding | undefined {
@@ -506,11 +753,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
         testSourceConnection,
         reviewFinding,
         createWorkspace,
+        switchWorkspace,
         createWorkspaceInvitation,
         acceptWorkspaceInvitation,
         createWorkspaceGroup,
         updateWorkspaceGroup,
         deleteWorkspaceGroup,
+        updateWorkspaceMember,
+        deleteWorkspaceMember,
+        transferWorkspaceOwner,
+        deleteWorkspace,
         dismissNotification: (notificationId) => setNotifications((current) => current.filter(({ id }) => id !== notificationId)),
         clearNotifications: () => setNotifications([]),
       }}

@@ -38,6 +38,18 @@ def stored_group(state: dict[str, Any], workspace_id: str, selected_group_id: st
     )
 
 
+def stored_membership(state: dict[str, Any], workspace_id: str, membership_id: str) -> dict[str, Any] | None:
+    return next(
+        (
+            item for item in state["memberships"]
+            if item["workspaceId"] == workspace_id
+            and item["membershipId"] == membership_id
+            and item["status"] == "active"
+        ),
+        None,
+    )
+
+
 def group_with_name(
     state: dict[str, Any],
     workspace_id: str,
@@ -64,13 +76,14 @@ def require_workspace_permission(
     path: str,
     trace_id: str,
 ) -> dict[str, Any] | None:
-    if not workspace(state, workspace_id):
+    target_workspace = workspace(state, workspace_id)
+    if not target_workspace or target_workspace.get("status") != "active":
         return workspace_problem(404, "Workspace was not found.", path, trace_id, "#/workspaceId")
 
     membership = current_membership(state, actor["accountId"], workspace_id)
     boundary = permission_boundary(state, actor, membership)
     if permission not in boundary["allowedActions"]:
-        return workspace_problem(403, "Workspace group management permission is required.", path, trace_id, "#/workspaceId")
+        return workspace_problem(403, "Workspace permission is required.", path, trace_id, "#/workspaceId")
 
     return None
 
@@ -102,6 +115,24 @@ def parse_group_payload(payload: dict[str, Any], path: str, trace_id: str) -> di
         "description": description,
         "permissions": unique_permissions,
     }
+
+
+def parse_member_group_payload(state: dict[str, Any], workspace_id: str, payload: dict[str, Any], path: str, trace_id: str) -> dict[str, Any]:
+    group_ids = payload.get("groupIds")
+
+    if not isinstance(group_ids, list) or not group_ids or not all(isinstance(item, str) and item for item in group_ids):
+        return workspace_problem(422, "Workspace member groups must be a non-empty array.", path, trace_id, "#/groupIds")
+
+    unique_group_ids = list(dict.fromkeys(group_ids))
+    valid_group_ids = {
+        group["groupId"] for group in state["groups"]
+        if group["workspaceId"] == workspace_id
+    }
+    unknown_group_ids = [group_id for group_id in unique_group_ids if group_id not in valid_group_ids]
+    if unknown_group_ids:
+        return workspace_problem(422, f"Unknown Workspace group: {unknown_group_ids[0]}", path, trace_id, "#/groupIds")
+
+    return {"groupIds": unique_group_ids}
 
 
 def workspace_problem(status: int, detail: str, path: str, trace_id: str, pointer: str) -> dict[str, Any]:

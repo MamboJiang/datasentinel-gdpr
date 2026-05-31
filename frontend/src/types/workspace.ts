@@ -128,3 +128,24 @@ export type DeleteWorkspaceGroupInput = {
   workspaceId: string
   groupId: string
 }
+
+export type UpdateWorkspaceMemberInput = {
+  workspaceId: string
+  membershipId: string
+  groupIds: string[]
+}
+
+export type DeleteWorkspaceMemberInput = {
+  workspaceId: string
+  membershipId: string
+}
+
+export type TransferWorkspaceOwnerInput = {
+  workspaceId: string
+  membershipId: string
+}
+
+export type DeleteWorkspaceInput = {
+  workspaceId: string
+  workspaceName: string
+}

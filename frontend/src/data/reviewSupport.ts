@@ -48,6 +48,10 @@ const decisionLabels: Record<ReviewDecision, string> = {
 }
 
 const actorProfiles: Record<string, { roles: string[]; visibleScopes: string[] }> = {
+  authenticated_user: {
+    roles: ['reviewer'],
+    visibleScopes: ['assigned_findings', 'configured_sources'],
+  },
   user_anna: {
     roles: ['master_of_data', 'reviewer'],
     visibleScopes: ['assigned_findings', 'finance_org_unit'],

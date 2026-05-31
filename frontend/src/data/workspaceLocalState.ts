@@ -12,9 +12,20 @@ const adminPermissions = [
   'view_assigned_findings',
   'view_review_support',
   'review_findings',
+  'view_owned_sources',
+]
+
+const ownerPermissions = [
+  'manage_workspace_ownership',
+  ...adminPermissions,
 ]
 
 export const workspacePermissionOptions = [
+  {
+    permission: 'manage_workspace_ownership',
+    label: 'Manage Workspace owner',
+    description: 'Transfer the Workspace owner role and delete the Workspace control-plane record.',
+  },
   {
     permission: 'view_workspace_admin',
     label: 'View Workspace admin',
@@ -93,7 +104,7 @@ export function applyLocalWorkspaceCreation(current: MockData, input: CreateWork
     accountId: current.workspaceDirectory.account.accountId || 'local_creator',
     displayName: current.workspaceDirectory.account.displayName || 'Workspace creator',
     email: current.workspaceDirectory.account.email ?? null,
-    groupIds: ['workspace_admin'],
+    groupIds: ['workspace_owner', 'workspace_admin'],
     status: 'active',
     joinedAt: now,
     invitedBy: null,
@@ -117,8 +128,8 @@ export function applyLocalWorkspaceCreation(current: MockData, input: CreateWork
         ...current.workspaceAdmin.permissionBoundary,
         actorId: membership.accountId,
         workspaceId,
-        roles: ['workspace_admin'],
-        allowedActions: adminPermissions,
+        roles: ['workspace_owner', 'workspace_admin'],
+        allowedActions: ownerPermissions,
         deniedActions: [
           { action: 'execute_real_deletion', reason: 'Real deletion is disabled in P0.' },
           { action: 'sync_enterprise_directory', reason: 'Production directory and tenant sync are out of scope for P0.' },
@@ -135,8 +146,8 @@ export function applyLocalWorkspaceCreation(current: MockData, input: CreateWork
         ...current.workspaceAdmin.charts,
         membersByGroup: groups.map((group) => ({
           label: group.name,
-          value: group.groupId === 'workspace_admin' ? 1 : 0,
-          tone: group.groupId === 'workspace_admin' ? 'black' : 'neutral',
+          value: membership.groupIds.includes(group.groupId) ? 1 : 0,
+          tone: groupTone(group.groupId),
         })),
         invitationStatus: [
           { label: 'Pending', value: 0, tone: 'yellow' },
@@ -199,8 +210,67 @@ export function applyLocalWorkspaceGroupDeletion(current: MockData, workspaceId:
   }, groups)
 }
 
+export function applyLocalWorkspaceMemberUpdate(current: MockData, workspaceId: string, membershipId: string, groupIds: string[]): MockData {
+  const members = current.workspaceAdmin.members.map((member) => (
+    member.workspaceId === workspaceId && member.membershipId === membershipId
+      ? { ...member, groupIds }
+      : member
+  ))
+  return withWorkspaceMembers(current, members)
+}
+
+export function applyLocalWorkspaceMemberDeletion(current: MockData, workspaceId: string, membershipId: string): MockData {
+  const members = current.workspaceAdmin.members.filter((member) => (
+    !(member.workspaceId === workspaceId && member.membershipId === membershipId)
+  ))
+  return withWorkspaceMembers(current, members)
+}
+
+export function applyLocalWorkspaceOwnerTransfer(current: MockData, workspaceId: string, membershipId: string): MockData {
+  const members = current.workspaceAdmin.members.map((member) => {
+    if (member.workspaceId !== workspaceId) {
+      return member
+    }
+
+    if (member.membershipId === membershipId) {
+      return { ...member, groupIds: Array.from(new Set([...member.groupIds, 'workspace_owner', 'workspace_admin'])) }
+    }
+
+    return { ...member, groupIds: member.groupIds.filter((groupId) => groupId !== 'workspace_owner') }
+  })
+  return withWorkspaceMembers(current, members)
+}
+
+export function applyLocalWorkspaceDeletion(current: MockData, workspaceId: string): MockData {
+  const workspaces = current.workspaceDirectory.workspaces.filter((workspace) => workspace.workspaceId !== workspaceId)
+  return {
+    ...current,
+    workspaceDirectory: {
+      ...current.workspaceDirectory,
+      currentWorkspaceId: workspaces[0]?.workspaceId ?? null,
+      workspaces,
+      workspaceRequired: workspaces.length === 0,
+    },
+    workspaceAdmin: workspaces.length === 0 ? {
+      ...current.workspaceAdmin,
+      workspace: null,
+      currentMembership: null,
+      groups: [],
+      members: [],
+      invitations: [],
+    } : current.workspaceAdmin,
+  }
+}
+
 function defaultGroups(): WorkspaceGroup[] {
   return [
+    {
+      groupId: 'workspace_owner',
+      name: 'Workspace owners',
+      description: 'Highest Workspace authority for owner transfer and Workspace deletion.',
+      permissions: ownerPermissions,
+      memberCount: 1,
+    },
     {
       groupId: 'workspace_admin',
       name: 'Workspace admins',
@@ -243,7 +313,30 @@ function withWorkspaceGroups(current: MockData, groups: WorkspaceGroup[]): MockD
         membersByGroup: groups.map((group) => ({
           label: group.name,
           value: group.memberCount,
-          tone: group.groupId === 'workspace_admin' ? 'black' : 'neutral',
+          tone: groupTone(group.groupId),
+        })),
+      },
+    },
+  }
+}
+
+function withWorkspaceMembers(current: MockData, members: WorkspaceMembership[]): MockData {
+  const groups = current.workspaceAdmin.groups.map((group) => ({
+    ...group,
+    memberCount: members.filter((member) => member.groupIds.includes(group.groupId)).length,
+  }))
+  return {
+    ...current,
+    workspaceAdmin: {
+      ...current.workspaceAdmin,
+      groups,
+      members,
+      charts: {
+        ...current.workspaceAdmin.charts,
+        membersByGroup: groups.map((group) => ({
+          label: group.name,
+          value: group.memberCount,
+          tone: groupTone(group.groupId),
         })),
       },
     },
@@ -266,4 +359,8 @@ function localGroupId(name: string, groups: WorkspaceGroup[]) {
 function uniquePermissions(permissions: string[]) {
   const valid = new Set(workspacePermissionOptions.map((option) => option.permission))
   return Array.from(new Set(permissions.filter((permission) => valid.has(permission))))
+}
+
+function groupTone(groupId: string) {
+  return groupId === 'workspace_owner' || groupId === 'workspace_admin' ? 'black' : 'neutral'
 }

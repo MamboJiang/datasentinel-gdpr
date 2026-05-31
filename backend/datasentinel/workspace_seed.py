@@ -8,6 +8,11 @@ DEFAULT_WORKSPACE_ID = "ws_datasentinel_gdpr"
 WORKSPACE_STATE_VERSION = "workspace-state-v1"
 WORKSPACE_PERMISSION_OPTIONS = [
     {
+        "permission": "manage_workspace_ownership",
+        "label": "Manage Workspace owner",
+        "description": "Transfer the Workspace owner role and delete the Workspace control-plane record.",
+    },
+    {
         "permission": "view_workspace_admin",
         "label": "View Workspace admin",
         "description": "Open the Workspace administration surface and inspect visible control-plane state.",
@@ -64,6 +69,7 @@ WORKSPACE_PERMISSION_OPTIONS = [
     },
 ]
 WORKSPACE_PERMISSION_IDS = tuple(item["permission"] for item in WORKSPACE_PERMISSION_OPTIONS)
+WORKSPACE_OWNER_REQUIRED_PERMISSIONS = ("manage_workspace_ownership", "view_workspace_admin", "manage_workspace_members")
 WORKSPACE_ADMIN_REQUIRED_PERMISSIONS = ("view_workspace_admin", "manage_workspace_groups")
 
 
@@ -82,15 +88,26 @@ def seed_state() -> dict[str, Any]:
         "groups": _seed_groups(),
         "memberships": _seed_memberships(),
         "invitations": _seed_invitations(),
+        "workspaceSelections": {
+            "user_demo_admin": DEFAULT_WORKSPACE_ID,
+            "user_anna": DEFAULT_WORKSPACE_ID,
+            "user_marta": DEFAULT_WORKSPACE_ID,
+            "user_lee": DEFAULT_WORKSPACE_ID,
+        },
     }
 
 
 def _seed_groups() -> list[dict[str, Any]]:
     return [
+        _group("workspace_owner", "Workspace owners", "Highest Workspace authority for owner transfer and Workspace deletion.", [
+            "manage_workspace_ownership", "view_workspace_admin", "invite_workspace_members", "manage_workspace_members",
+            "manage_workspace_groups", "view_workspace_metrics", "view_workspace_audit", "view_governance",
+            "view_assigned_findings", "view_review_support", "review_findings", "view_owned_sources",
+        ]),
         _group("workspace_admin", "Workspace admins", "Manage Workspace members, groups, invitations, audit, governance, and metrics.", [
             "view_workspace_admin", "invite_workspace_members", "manage_workspace_members", "manage_workspace_groups",
             "view_workspace_metrics", "view_workspace_audit", "view_governance", "view_assigned_findings",
-            "view_review_support", "review_findings",
+            "view_review_support", "review_findings", "view_owned_sources",
         ]),
         _group("privacy_reviewer", "Privacy reviewers", "Review assigned findings with visible permission boundaries.", [
             "view_assigned_findings", "view_review_support", "review_findings",
@@ -114,7 +131,7 @@ def groups_for_workspace(workspace_id: str) -> list[dict[str, Any]]:
 
 def _seed_memberships() -> list[dict[str, Any]]:
     return [
-        _member("mem_demo_admin", "user_demo_admin", "Demo Workspace Admin", "demo.admin@example.invalid", ["workspace_admin"], None, "2026-05-30T12:20:00Z"),
+        _member("mem_demo_admin", "user_demo_admin", "Demo Workspace Admin", "demo.admin@example.invalid", ["workspace_owner", "workspace_admin"], None, "2026-05-30T12:20:00Z"),
         _member("mem_anna_reviewer", "user_anna", "Anna Privacy Reviewer", "anna.reviewer@example.invalid", ["privacy_reviewer"], "user_demo_admin", "2026-05-30T12:19:00Z"),
         _member("mem_marta_steward", "user_marta", "Marta Data Steward", "marta.steward@example.invalid", ["data_steward"], "user_demo_admin", "2026-05-30T12:12:00Z"),
         _member("mem_lee_auditor", "user_lee", "Lee Audit Observer", "lee.audit@example.invalid", ["auditor"], "user_demo_admin", "2026-05-30T12:10:00Z"),

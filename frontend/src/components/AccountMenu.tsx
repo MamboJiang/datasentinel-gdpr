@@ -136,7 +136,7 @@ export function AccountMenu({
               </div>
 
               {menuRoutes.map(({ label, path, icon: Icon }) => (
-                <Link className="account-menu-row" key={path} to={path} onClick={onClose}>
+                <Link className="account-menu-row" key={path} to={path} onClick={onClose} reloadDocument={path === '/docs'}>
                   <span>{t(label)}</span>
                   <Icon aria-hidden="true" size={19} />
                 </Link>

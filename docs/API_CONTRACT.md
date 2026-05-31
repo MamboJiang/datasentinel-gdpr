@@ -125,11 +125,16 @@ Errors use `application/problem+json`.
 | `GET` | `/api/auth/session` | Read current first-party session and safe user profile. |
 | `POST` | `/api/auth/logout` | Revoke the current first-party session and clear the session cookie. |
 | `GET` | `/api/workspaces` | List Workspaces visible to the current account and any legacy account-targeted pending invitations. |
-| `POST` | `/api/workspaces` | Create a Workspace and add the creator as a `workspace_admin` member. |
+| `POST` | `/api/workspaces` | Create a Workspace and add the creator as `workspace_owner` and `workspace_admin`. |
+| `POST` | `/api/workspaces/current` | Switch the signed-in account's current Workspace context. |
 | `GET` | `/api/workspaces/current/admin` | Read Workspace admin summary, groups, members, invitations, permission boundary, and charts for the current Workspace context. |
+| `DELETE` | `/api/workspaces/{workspaceId}` | Soft-delete a Workspace after exact-name confirmation by the current Workspace owner. |
+| `POST` | `/api/workspaces/{workspaceId}/owner-transfer` | Transfer Workspace owner authority to an active member. |
 | `POST` | `/api/workspaces/{workspaceId}/groups` | Create a Workspace group with a name, description, and explicit permission set. |
 | `PATCH` | `/api/workspaces/{workspaceId}/groups/{groupId}` | Update a Workspace group's visible name, description, and permissions. |
 | `DELETE` | `/api/workspaces/{workspaceId}/groups/{groupId}` | Delete a non-admin Workspace group and remove its references from members and pending invite links. |
+| `PATCH` | `/api/workspaces/{workspaceId}/members/{membershipId}` | Update a Workspace member's explicit group assignments. |
+| `DELETE` | `/api/workspaces/{workspaceId}/members/{membershipId}` | Remove an active Workspace member from the Workspace. |
 | `POST` | `/api/workspaces/{workspaceId}/invitations` | Generate a Workspace invitation link for a group set. |
 | `POST` | `/api/workspaces/invitations/{invitationId}/accept` | Accept a pending Workspace invitation link as the current signed-in account. |
 | `GET` | `/api/integrations/google-drive/picker-config` | Read session-protected Google Drive Picker browser setup state without secrets. |
@@ -174,10 +179,12 @@ Auth payloads:
 - User profile exposes local `userId`, `provider`, `providerSubject`, `displayName`, optional `email`, and optional `avatarUrl`.
 - Provider access tokens, refresh tokens, client secrets, auth state, and PKCE verifier are never returned.
 
-Account-scoped state:
+Account and Workspace-scoped state:
 
-- When `DATASENTINEL_AUTH_REQUIRED=true`, protected SQLite-backed routes resolve the owner scope from the first-party session `userId`.
-- Source list/mutation routes, scan routes, finding routes, audit, metrics, and evaluation return only the current account's state.
+- When `DATASENTINEL_AUTH_REQUIRED=true`, protected SQLite-backed routes without an active Workspace resolve the owner scope from the first-party session `userId`.
+- When the account has an active current Workspace, Source list/mutation routes, scan routes, finding routes, audit, metrics, and evaluation resolve the owner scope from `workspace:{workspaceId}` instead of the account.
+- Switching Workspace context changes the operational owner scope for subsequent Source, scan, finding, audit, metric, and evaluation reads and writes.
+- Source list/mutation routes, scan routes, finding routes, audit, metrics, and evaluation return only the current account or current Workspace state.
 - Cross-account source and finding identifiers behave as not found or as the current account's empty state.
 - Request payloads and compatibility headers cannot override the owner scope.
 
@@ -188,9 +195,18 @@ Accounts and Workspaces are separate. A newly created account starts without Wor
 Workspace creation:
 
 - `POST /api/workspaces` accepts `name` and optional `description`.
-- The creator becomes an active member of the new Workspace with the `workspace_admin` group.
-- The new Workspace receives the default P0 group definitions for admin, privacy reviewer, data steward, and auditor.
+- The creator becomes an active member of the new Workspace with both `workspace_owner` and `workspace_admin`.
+- The new Workspace becomes the creator's current Workspace context.
+- The new Workspace receives the default P0 group definitions for owner, admin, privacy reviewer, data steward, and auditor.
 - Workspace creation does not create a production tenant, external directory, source connector, billing object, email domain, or deletion capability.
+
+Workspace switching:
+
+- `POST /api/workspaces/current` accepts `workspaceId`.
+- The target Workspace must exist and the current account must have an active membership in it.
+- Successful switching stores only the current Workspace selection for the account and updates subsequent operational reads to the selected Workspace scope.
+- Switching does not copy sources, findings, scan state, metrics, audit events, invitations, members, or groups between Workspaces.
+- Unknown or non-member Workspace IDs return problem details and leave the previous selection unchanged.
 
 Workspace payloads:
 
@@ -199,7 +215,7 @@ Workspace payloads:
 - `WorkspaceGroup` exposes group ID, Workspace ID, visible name, description, explicit permissions, and member count.
 - `WorkspaceInvitation` exposes invitation status, invite path, invited groups, inviter, creation time, and expiry time. Provider tokens, auth secrets, and hidden directory data are never returned.
 
-Workspace permission actions are open strings, but group mutation accepts only the exposed P0 permission catalog. Known P0 actions include `view_workspace_admin`, `invite_workspace_members`, `manage_workspace_members`, `manage_workspace_groups`, `view_workspace_audit`, `view_workspace_metrics`, `view_assigned_findings`, `view_review_support`, `review_findings`, `view_owned_sources`, `view_governance`, and denied `execute_real_deletion`.
+Workspace permission actions are open strings, but group mutation accepts only the exposed P0 permission catalog. Known P0 actions include `manage_workspace_ownership`, `view_workspace_admin`, `invite_workspace_members`, `manage_workspace_members`, `manage_workspace_groups`, `view_workspace_audit`, `view_workspace_metrics`, `view_assigned_findings`, `view_review_support`, `review_findings`, `view_owned_sources`, `view_governance`, and denied `execute_real_deletion`.
 
 Workspace group state:
 
@@ -210,9 +226,36 @@ Group command guards and side effects:
 - Group creation, update, and deletion require `manage_workspace_groups`.
 - Group creation and update reject missing names, duplicate names within a Workspace, and unknown permissions.
 - Updating a group preserves `groupId`, so memberships and invite links continue referencing the same group.
+- The `workspace_owner` group cannot be deleted and must retain `manage_workspace_ownership`, `view_workspace_admin`, and `manage_workspace_members`.
 - The `workspace_admin` group cannot be deleted and must retain `view_workspace_admin` and `manage_workspace_groups`.
 - Deleting a non-admin group removes that `groupId` from active memberships and invitation group lists.
 - Pending invite links with no remaining groups after deletion become `revoked`.
+
+Workspace member state:
+
+`member_active -> member_groups_updated -> member_removed`
+
+Member command guards and side effects:
+
+- Member group updates and member removal require `manage_workspace_members`.
+- Adding or removing `workspace_owner` from a member requires `manage_workspace_ownership`.
+- Member group updates require at least one valid group from the target Workspace.
+- Member group updates and member removal must leave at least one active member assigned to `workspace_owner`.
+- Member group updates and member removal must leave at least one active member assigned to `workspace_admin`.
+- A Workspace admin cannot remove their own active membership through the member removal command.
+- Removing a member changes their membership status to `removed` and clears that account's selected Workspace if it pointed at the removed Workspace.
+
+Workspace owner state:
+
+`workspace_active -> owner_transferred -> workspace_active -> workspace_deleted`
+
+Owner command guards and side effects:
+
+- Owner transfer and Workspace deletion require `manage_workspace_ownership`.
+- `POST /api/workspaces/{workspaceId}/owner-transfer` accepts `membershipId` for an active member in the same Workspace.
+- A successful owner transfer assigns `workspace_owner` and `workspace_admin` to the target member and removes `workspace_owner` from the previous active owner.
+- `DELETE /api/workspaces/{workspaceId}` accepts `workspaceName`; it must exactly match the current Workspace name.
+- Workspace deletion is a soft delete of the local Workspace record. It removes active memberships, revokes pending invitations, clears current Workspace selections for affected accounts, and does not delete external source files or production tenant resources.
 
 Invitation state:
 
@@ -222,6 +265,7 @@ Failure paths:
 
 - Non-admin invitation creation returns `403` problem details and changes no state.
 - Empty group list returns `422` problem details and changes no state.
+- Invitation creation rejects `workspace_owner`; Owner authority must be transferred by the owner-transfer command instead of invite link.
 - Each invitation creation generates a new pending link unless validation fails.
 - Expired, revoked, already accepted, or already-member invitation acceptance returns problem details and changes no state.
 

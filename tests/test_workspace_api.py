@@ -67,8 +67,73 @@ class WorkspaceApiTests(unittest.TestCase):
         self.assertFalse(created["body"]["data"]["workspaceRequired"])
         self.assertEqual(created["body"]["data"]["workspaces"][0]["name"], "Privacy Ops")
         self.assertEqual(summary["body"]["data"]["workspace"]["workspaceId"], workspace_id)
-        self.assertEqual(summary["body"]["data"]["currentMembership"]["groupIds"], ["workspace_admin"])
+        self.assertEqual(summary["body"]["data"]["currentMembership"]["groupIds"], ["workspace_owner", "workspace_admin"])
+        self.assertIn("manage_workspace_ownership", summary["body"]["data"]["permissionBoundary"]["allowedActions"])
         self.assertIn("invite_workspace_members", summary["body"]["data"]["permissionBoundary"]["allowedActions"])
+
+    def test_workspace_switching_scopes_operational_state(self) -> None:
+        with TemporaryDirectory() as directory:
+            db_path = Path(directory) / "datasentinel.sqlite3"
+            creator_cookie = create_session(db_path, "user_workspace_owner", "owner@example.invalid")
+            outsider_cookie = create_session(db_path, "user_workspace_outsider", "outsider@example.invalid")
+            with mock.patch.dict("os.environ", {"DATASENTINEL_AUTH_REQUIRED": "true", "DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+                app = build_sqlite_app(db_path)
+                workspace_a = app.handle(
+                    "POST",
+                    "/api/workspaces",
+                    "trace_workspace_a",
+                    json.dumps({"name": "Workspace A"}),
+                    "application/json",
+                    {"Cookie": creator_cookie},
+                )
+                workspace_a_id = workspace_a["body"]["data"]["currentWorkspaceId"]
+                created_source = app.handle(
+                    "POST",
+                    "/api/sources",
+                    "trace_workspace_a_source",
+                    json.dumps({
+                        "sourceId": "source_workspace_a",
+                        "name": "Workspace A Source",
+                        "sourceType": "remote_file_link",
+                        "rootLabel": "https://example.com/workspace-a.txt",
+                        "config": {"url": "https://example.com/workspace-a.txt"},
+                    }),
+                    "application/json",
+                    {"Cookie": creator_cookie},
+                )
+                workspace_b = app.handle(
+                    "POST",
+                    "/api/workspaces",
+                    "trace_workspace_b",
+                    json.dumps({"name": "Workspace B"}),
+                    "application/json",
+                    {"Cookie": creator_cookie},
+                )
+                workspace_b_sources = app.handle("GET", "/api/sources", "trace_workspace_b_sources", None, None, {"Cookie": creator_cookie})
+                switched = app.handle(
+                    "POST",
+                    "/api/workspaces/current",
+                    "trace_workspace_switch_a",
+                    json.dumps({"workspaceId": workspace_a_id}),
+                    "application/json",
+                    {"Cookie": creator_cookie},
+                )
+                workspace_a_sources = app.handle("GET", "/api/sources", "trace_workspace_a_sources", None, None, {"Cookie": creator_cookie})
+                rejected = app.handle(
+                    "POST",
+                    "/api/workspaces/current",
+                    "trace_workspace_switch_denied",
+                    json.dumps({"workspaceId": workspace_b["body"]["data"]["currentWorkspaceId"]}),
+                    "application/json",
+                    {"Cookie": outsider_cookie},
+                )
+
+        self.assertEqual(created_source["status"], 201)
+        self.assertEqual(workspace_b_sources["body"]["data"], [])
+        self.assertEqual(switched["status"], 200)
+        self.assertEqual(switched["body"]["data"]["currentWorkspaceId"], workspace_a_id)
+        self.assertIn("source_workspace_a", {source["sourceId"] for source in workspace_a_sources["body"]["data"]})
+        self.assertEqual(rejected["status"], 403)
 
     def test_workspace_admin_can_create_invite_link_and_signed_in_account_accepts_once(self) -> None:
         with TemporaryDirectory() as directory:
@@ -224,6 +289,154 @@ class WorkspaceApiTests(unittest.TestCase):
         self.assertNotIn(group_id, {group["groupId"] for group in summary_after_delete["body"]["data"]["groups"]})
         self.assertNotIn("view_workspace_audit", target_after_delete["body"]["data"]["permissionBoundary"]["allowedActions"])
         self.assertIn("manage_workspace_groups", {item["permission"] for item in summary_after_delete["body"]["data"]["availablePermissions"]})
+
+    def test_workspace_admin_can_update_and_remove_members(self) -> None:
+        with TemporaryDirectory() as directory:
+            db_path = Path(directory) / "datasentinel.sqlite3"
+            admin_cookie = create_session(db_path, "user_demo_admin", "demo.admin@example.invalid")
+            target_cookie = create_session(db_path, "user_managed", "managed@example.invalid")
+            with mock.patch.dict("os.environ", {"DATASENTINEL_AUTH_REQUIRED": "true"}):
+                app = build_sqlite_app(db_path)
+                invitation = app.handle(
+                    "POST",
+                    "/api/workspaces/ws_datasentinel_gdpr/invitations",
+                    "trace_workspace_member_invite",
+                    json.dumps({"groupIds": ["privacy_reviewer"]}),
+                    "application/json",
+                    {"Cookie": admin_cookie},
+                )
+                invitation_id = invitation["body"]["data"]["invitationId"]
+                app.handle(
+                    "POST",
+                    f"/api/workspaces/invitations/{invitation_id}/accept",
+                    "trace_workspace_member_accept",
+                    "{}",
+                    "application/json",
+                    {"Cookie": target_cookie},
+                )
+                membership_id = "mem_user_managed_ws_datasentinel_gdpr"
+                updated = app.handle(
+                    "PATCH",
+                    f"/api/workspaces/ws_datasentinel_gdpr/members/{membership_id}",
+                    "trace_workspace_member_update",
+                    json.dumps({"groupIds": ["auditor", "auditor"]}),
+                    "application/json",
+                    {"Cookie": admin_cookie},
+                )
+                target_summary = app.handle("GET", "/api/workspaces/current/admin", "trace_workspace_member_target_summary", None, None, {"Cookie": target_cookie})
+                denied_update = app.handle(
+                    "PATCH",
+                    "/api/workspaces/ws_datasentinel_gdpr/members/mem_demo_admin",
+                    "trace_workspace_member_denied_update",
+                    json.dumps({"groupIds": ["auditor"]}),
+                    "application/json",
+                    {"Cookie": target_cookie},
+                )
+                last_admin_guard = app.handle(
+                    "PATCH",
+                    "/api/workspaces/ws_datasentinel_gdpr/members/mem_demo_admin",
+                    "trace_workspace_member_last_admin_guard",
+                    json.dumps({"groupIds": ["auditor"]}),
+                    "application/json",
+                    {"Cookie": admin_cookie},
+                )
+                removed = app.handle(
+                    "DELETE",
+                    f"/api/workspaces/ws_datasentinel_gdpr/members/{membership_id}",
+                    "trace_workspace_member_remove",
+                    None,
+                    None,
+                    {"Cookie": admin_cookie},
+                )
+                summary_after_remove = app.handle("GET", "/api/workspaces/current/admin", "trace_workspace_member_after_remove", None, None, {"Cookie": admin_cookie})
+                self_remove = app.handle(
+                    "DELETE",
+                    "/api/workspaces/ws_datasentinel_gdpr/members/mem_demo_admin",
+                    "trace_workspace_member_self_remove",
+                    None,
+                    None,
+                    {"Cookie": admin_cookie},
+                )
+
+        self.assertEqual(updated["status"], 200)
+        self.assertEqual(updated["body"]["data"]["groupIds"], ["auditor"])
+        self.assertIn("view_workspace_audit", target_summary["body"]["data"]["permissionBoundary"]["allowedActions"])
+        self.assertEqual(denied_update["status"], 403)
+        self.assertEqual(last_admin_guard["status"], 409)
+        self.assertEqual(removed["status"], 200)
+        self.assertEqual(removed["body"]["data"]["status"], "removed")
+        self.assertNotIn(membership_id, {member["membershipId"] for member in summary_after_remove["body"]["data"]["members"]})
+        self.assertEqual(self_remove["status"], 409)
+
+    def test_workspace_owner_can_transfer_owner_and_delete_workspace_with_name_confirmation(self) -> None:
+        with TemporaryDirectory() as directory:
+            db_path = Path(directory) / "datasentinel.sqlite3"
+            owner_cookie = create_session(db_path, "user_demo_admin", "demo.admin@example.invalid")
+            target_cookie = create_session(db_path, "user_owner_target", "owner.target@example.invalid")
+            with mock.patch.dict("os.environ", {"DATASENTINEL_AUTH_REQUIRED": "true"}):
+                app = build_sqlite_app(db_path)
+                invitation = app.handle(
+                    "POST",
+                    "/api/workspaces/ws_datasentinel_gdpr/invitations",
+                    "trace_workspace_owner_invite",
+                    json.dumps({"groupIds": ["privacy_reviewer"]}),
+                    "application/json",
+                    {"Cookie": owner_cookie},
+                )
+                invitation_id = invitation["body"]["data"]["invitationId"]
+                app.handle(
+                    "POST",
+                    f"/api/workspaces/invitations/{invitation_id}/accept",
+                    "trace_workspace_owner_accept",
+                    "{}",
+                    "application/json",
+                    {"Cookie": target_cookie},
+                )
+                target_membership_id = "mem_user_owner_target_ws_datasentinel_gdpr"
+                transferred = app.handle(
+                    "POST",
+                    "/api/workspaces/ws_datasentinel_gdpr/owner-transfer",
+                    "trace_workspace_owner_transfer",
+                    json.dumps({"membershipId": target_membership_id}),
+                    "application/json",
+                    {"Cookie": owner_cookie},
+                )
+                prior_owner_summary = app.handle("GET", "/api/workspaces/current/admin", "trace_workspace_prior_owner", None, None, {"Cookie": owner_cookie})
+                prior_owner_delete = app.handle(
+                    "DELETE",
+                    "/api/workspaces/ws_datasentinel_gdpr",
+                    "trace_workspace_prior_owner_delete",
+                    json.dumps({"workspaceName": "DataSentinel GDPR"}),
+                    "application/json",
+                    {"Cookie": owner_cookie},
+                )
+                wrong_name_delete = app.handle(
+                    "DELETE",
+                    "/api/workspaces/ws_datasentinel_gdpr",
+                    "trace_workspace_wrong_name_delete",
+                    json.dumps({"workspaceName": "datasentinel gdpr"}),
+                    "application/json",
+                    {"Cookie": target_cookie},
+                )
+                deleted = app.handle(
+                    "DELETE",
+                    "/api/workspaces/ws_datasentinel_gdpr",
+                    "trace_workspace_delete",
+                    json.dumps({"workspaceName": "DataSentinel GDPR"}),
+                    "application/json",
+                    {"Cookie": target_cookie},
+                )
+                directory_after_delete = app.handle("GET", "/api/workspaces", "trace_workspace_delete_directory", None, None, {"Cookie": target_cookie})
+
+        self.assertEqual(transferred["status"], 200)
+        self.assertEqual(transferred["body"]["data"]["groupIds"], ["privacy_reviewer", "workspace_owner", "workspace_admin"])
+        self.assertNotIn("manage_workspace_ownership", prior_owner_summary["body"]["data"]["permissionBoundary"]["allowedActions"])
+        self.assertEqual(prior_owner_delete["status"], 403)
+        self.assertEqual(wrong_name_delete["status"], 422)
+        self.assertEqual(deleted["status"], 200)
+        self.assertEqual(deleted["body"]["data"]["status"], "deleted")
+        self.assertTrue(directory_after_delete["body"]["data"]["workspaceRequired"])
+        self.assertEqual(directory_after_delete["body"]["data"]["workspaces"], [])
 
     def test_http_handler_and_cors_allow_workspace_group_patch(self) -> None:
         with TemporaryDirectory() as directory:

@@ -1,0 +1,64 @@
+---
+title: Dashboard and Scans
+description: Use the Dashboard to monitor full scans, pipeline stages, review workload, owner routing, and resource signals.
+---
+
+The Dashboard is the operating view for scan and review status. It should help you answer three questions:
+
+1. What did DataSentinel scan?
+2. What needs human attention?
+3. What can be proven about the workflow?
+
+## Full scans
+
+A full scan is the initial discovery workflow for a selected source. It can be started from the Dashboard when a default ready source exists or from the Sources page for a selected ready source.
+
+The scan records visible workflow state, including scan start, scan completion, pipeline progress, metrics, and audit events.
+
+## Pipeline stages
+
+DataSentinel represents scanning as accountable stages. A completed or running scan may show:
+
+| Stage | Purpose | User-visible result |
+| --- | --- | --- |
+| Source readiness | Confirm the source can be scanned. | Ready, not ready, denied, or warning state. |
+| Inventory | Count candidate files and source snapshot metadata. | Candidate files, skipped files, fingerprints, source snapshot identity. |
+| Extraction | Read supported content during scan execution. | Extracted files, warning counts, supported methods, recognition difficulty. |
+| Signal detection | Detect deterministic evidence signals. | Redacted signal counts and signal-type summaries. |
+| Context/risk judgment | Apply policy-pack context to evidence. | Risk, retention-review, and human-review counts. |
+| Owner assignment | Route findings to accountable owners or escalation paths. | Direct owner, Master of Data fallback, escalation, or unowned counts. |
+| Finding assembly | Build finding rows and evidence cards. | Findings with redacted evidence, policy context, owner, and action boundary. |
+| Review support | Prepare human decision options. | Allowed decisions, denied actions, required reasons, checklist items. |
+| Audit recording | Record workflow state changes. | Structured events in the audit trail. |
+| Metrics and evaluation | Summarize quality and resources. | Precision, recall, F1, throughput, reproducibility, resource intensity. |
+
+## Key Dashboard indicators
+
+Review these indicators before moving into findings:
+
+- Scanned files.
+- Flagged files.
+- Scanned volume.
+- Progress percentage.
+- Scan time.
+- Review backlog.
+- High-risk findings.
+- Retention-review count.
+- Owner-routed findings.
+- Recognition difficulty and unsupported/deferred file counts when provided.
+
+## Warnings and partial data
+
+Warnings are not necessarily failures. They can indicate unsupported formats, OCR-deferred inputs, missing provider tokens, partial extraction, or unavailable optional services.
+
+DataSentinel should show partial data explicitly with recoverable warning counts and avoid presenting incomplete scan output as a final legal conclusion.
+
+## Delta scans
+
+A delta scan focuses on changed files after a completed full-scan baseline exists. Use it when you need ongoing governance rather than a full rediscovery pass.
+
+A delta scan should preserve audit and evaluation traceability and should not execute deletion.
+
+## Resource intensity
+
+P0 deterministic scans should show zero model calls and zero estimated paid-service cost unless an explicitly approved assistive AI path is configured and invoked. If optional AI support is unavailable, deterministic scan and review surfaces should still work.

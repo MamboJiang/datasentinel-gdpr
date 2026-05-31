@@ -1,0 +1,70 @@
+---
+title: Sources
+description: Register supported sources, understand scan readiness, and remove DataSentinel registrations without deleting external files.
+---
+
+Sources are the places DataSentinel can inspect during a scan. A source registration stores metadata that lets the product describe the source and decide whether scanning is allowed.
+
+## Supported prelaunch source types
+
+Depending on deployment setup, DataSentinel can work with:
+
+| Source type | What it means | Important boundary |
+| --- | --- | --- |
+| Controlled sample source | The organizer sample repository used for P0 demonstration. | Deterministic fixture-backed behavior, no production tenant connection. |
+| Direct HTTPS file link | A public HTTPS file URL that passes safety checks. | Google Drive share-page URLs must use the Drive Picker path instead. |
+| Google Drive selected files or folders | Files or folders selected through Google Picker. | Selected metadata is stored; per-scan access tokens are not persisted. |
+| Host-allowed local source | A local preview source made available by the host environment. | Local preview only, not a production connector. |
+
+## Supported file handling
+
+The prelaunch scanner is designed for controlled and bounded input. Supported or recognized formats include:
+
+- Text-like content that can be read safely.
+- PDFs with extractable text layers.
+- Office Open XML files such as DOCX, XLSX, and PPTX.
+- Image files when host-local OCR is enabled and available.
+- VTT and SRT transcript files.
+- Raw video media as recognized but OCR-deferred until an approved video processor exists.
+
+Image-only or unreadable PDFs, unsupported files, private addresses, credential-bearing URLs, over-limit inputs, and missing Drive tokens should be rejected or marked as deferred before workflow state changes.
+
+## Register a direct HTTPS link
+
+1. Open **Sources**.
+2. Choose the direct-link source mode.
+3. Enter an HTTPS URL that does not contain embedded credentials.
+4. Submit the source registration.
+5. Review the readiness status and any visible rejection reason.
+
+DataSentinel should store source metadata and redacted workflow output, not raw source bodies.
+
+## Select Google Drive files
+
+1. Open **Sources**.
+2. Choose the Google Drive Picker mode.
+3. Select files or a folder in the Picker.
+4. Confirm the selected items before registration.
+5. Start a scan only when you can provide the short-lived per-scan access token.
+
+Picker intermediate callbacks should not close the source setup flow. Picked files or folders should remain visible before registration.
+
+## Start a scan from a source
+
+The source row can start a full scan when the source is ready and your permission boundary allows the action. The scan targets the selected source ID, not a hidden default.
+
+If the source is not ready, DataSentinel should reject the scan without creating scan, finding, audit, metric, or evaluation state.
+
+## Remove a source registration
+
+Deleting a source from the Sources page removes the DataSentinel registration and clears DataSentinel workflow state derived from that registration.
+
+It does not delete external files. It does not revoke Google or GitHub provider access outside DataSentinel. Provider access remains managed by the provider and the deployment environment.
+
+## What to verify after source setup
+
+- The source type and root label are understandable.
+- The readiness status is visible.
+- Supported file types or limitations are shown.
+- Errors do not expose raw sensitive content.
+- Scan actions are disabled or denied when the source is unsafe or incomplete.

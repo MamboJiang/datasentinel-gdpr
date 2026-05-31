@@ -130,7 +130,6 @@ class SourceHttpApp:
         if auth_required:
             return auth_required
 
-        source_api, demo_state = self._scoped_runtime(headers)
         actor = actor_from_headers(headers, self.auth_service.session_payload(headers))
 
         if method == "GET" and route == "/workspaces":
@@ -142,8 +141,29 @@ class SourceHttpApp:
                 return payload_response
             return self.workspace_service.create_workspace(payload_response["payload"], actor, trace_id, f"/api{route}")
 
+        if method == "POST" and route == "/workspaces/current":
+            payload_response = self._json_body(body, content_type, route, trace_id)
+            if "body" in payload_response:
+                return payload_response
+            return self.workspace_service.switch_workspace(payload_response["payload"], actor, trace_id, f"/api{route}")
+
         if method == "GET" and route == "/workspaces/current/admin":
+            _source_api, demo_state = self._scoped_runtime(headers, actor)
             return self.workspace_service.admin_summary(actor, getattr(demo_state, "metrics", {}), trace_id)
+
+        workspace_owner_transfer = _match(route, "/workspaces/", "/owner-transfer")
+        if method == "POST" and workspace_owner_transfer:
+            payload_response = self._json_body(body, content_type, route, trace_id)
+            if "body" in payload_response:
+                return payload_response
+            return self.workspace_service.transfer_owner(workspace_owner_transfer, payload_response["payload"], actor, trace_id, f"/api{route}")
+
+        workspace_item = _workspace_item_match(route)
+        if method == "DELETE" and workspace_item:
+            payload_response = self._json_body(body, content_type, route, trace_id)
+            if "body" in payload_response:
+                return payload_response
+            return self.workspace_service.delete_workspace(workspace_item, payload_response["payload"], actor, trace_id, f"/api{route}")
 
         workspace_group_collection = _match(route, "/workspaces/", "/groups")
         if method == "POST" and workspace_group_collection:
@@ -162,6 +182,16 @@ class SourceHttpApp:
                 return payload_response
             return self.workspace_service.update_group(workspace_id, group_id, payload_response["payload"], actor, trace_id, f"/api{route}")
 
+        workspace_member = _workspace_member_match(route)
+        if workspace_member and method in {"PATCH", "DELETE"}:
+            workspace_id, membership_id = workspace_member
+            if method == "DELETE":
+                return self.workspace_service.remove_member(workspace_id, membership_id, actor, trace_id, f"/api{route}")
+            payload_response = self._json_body(body, content_type, route, trace_id)
+            if "body" in payload_response:
+                return payload_response
+            return self.workspace_service.update_member(workspace_id, membership_id, payload_response["payload"], actor, trace_id, f"/api{route}")
+
         accept_invitation = _match(route, "/workspaces/invitations/", "/accept")
         if method == "POST" and accept_invitation:
             return self.workspace_service.accept_invitation(accept_invitation, actor, trace_id, f"/api{route}")
@@ -172,6 +202,8 @@ class SourceHttpApp:
             if "body" in payload_response:
                 return payload_response
             return self.workspace_service.create_invitation(workspace_invitation, payload_response["payload"], actor, trace_id, f"/api{route}")
+
+        source_api, demo_state = self._scoped_runtime(headers, actor)
 
         if method == "GET" and route == "/integrations/google-drive/picker-config":
             return picker_config_response(trace_id)
@@ -329,11 +361,11 @@ class SourceHttpApp:
 
         return {"payload": payload}
 
-    def _scoped_runtime(self, headers: dict[str, str]) -> tuple[SourceApi, DemoState]:
+    def _scoped_runtime(self, headers: dict[str, str], actor: dict[str, Any] | None = None) -> tuple[SourceApi, DemoState]:
         if not self.sqlite_documents:
             return self.source_api, self.demo_state
 
-        owner_id = self._request_owner_id(headers)
+        owner_id = self._request_owner_id(headers, actor)
         store = SQLiteSourceStore(self.sqlite_documents, allowed_roots=self.allowed_roots, owner_id=owner_id)
         policy = ConnectionPolicy.with_roots(self.allowed_roots)
         source_api = SourceApi(SourceConnectionService(store, policy), store)
@@ -341,11 +373,16 @@ class SourceHttpApp:
         state = PersistentDemoState(store, workflow_store) if demo_fixtures_enabled() else PersistentPrelaunchState(store, workflow_store)
         return source_api, state
 
-    def _request_owner_id(self, headers: dict[str, str]) -> str:
+    def _request_owner_id(self, headers: dict[str, str], actor: dict[str, Any] | None = None) -> str:
+        if actor:
+            workspace_id = self.workspace_service.current_workspace_id(actor)
+            if workspace_id:
+                return f"workspace:{workspace_id}"
+
         session = self.auth_service.session_payload(headers)
         user = session.get("user") if session.get("authenticated") else None
         if isinstance(user, dict) and isinstance(user.get("userId"), str) and user["userId"]:
-            return user["userId"]
+            return f"account:{user['userId']}"
         return "anonymous"
 
 
@@ -382,3 +419,17 @@ def _workspace_group_match(route: str) -> tuple[str, str] | None:
     if len(parts) != 4 or parts[0] != "workspaces" or parts[2] != "groups":
         return None
     return unquote(parts[1]), unquote(parts[3])
+
+
+def _workspace_member_match(route: str) -> tuple[str, str] | None:
+    parts = route.strip("/").split("/")
+    if len(parts) != 4 or parts[0] != "workspaces" or parts[2] != "members":
+        return None
+    return unquote(parts[1]), unquote(parts[3])
+
+
+def _workspace_item_match(route: str) -> str | None:
+    parts = route.strip("/").split("/")
+    if len(parts) != 2 or parts[0] != "workspaces":
+        return None
+    return unquote(parts[1])

@@ -44,13 +44,27 @@ def memberships(state: dict[str, Any], workspace_id: str) -> list[dict[str, Any]
 
 
 def active_memberships(state: dict[str, Any], account_id: str) -> list[dict[str, Any]]:
-    return [item for item in state["memberships"] if item["accountId"] == account_id and item["status"] == "active"]
+    active_workspace_ids = {
+        item["workspaceId"] for item in state["workspaces"]
+        if item.get("status") == "active"
+    }
+    return [
+        item for item in state["memberships"]
+        if item["accountId"] == account_id
+        and item["status"] == "active"
+        and item["workspaceId"] in active_workspace_ids
+    ]
 
 
 def current_membership(state: dict[str, Any], account_id: str, workspace_id: str | None = None) -> dict[str, Any] | None:
     available = active_memberships(state, account_id)
     if workspace_id:
         return next((item for item in available if item["workspaceId"] == workspace_id), None)
+    selected_workspace_id = state.get("workspaceSelections", {}).get(account_id)
+    if selected_workspace_id:
+        selected = next((item for item in available if item["workspaceId"] == selected_workspace_id), None)
+        if selected:
+            return selected
     return available[-1] if available else None
 
 
@@ -143,6 +157,8 @@ def expired(expires_at: str) -> bool:
 
 def _denials_for_allowed(allowed: list[str]) -> list[dict[str, str]]:
     denials = [REAL_DELETION_DENIAL, {"action": "sync_enterprise_directory", "reason": "Production directory and tenant sync are out of scope for P0."}]
+    if "manage_workspace_ownership" not in allowed:
+        denials.insert(0, {"action": "manage_workspace_ownership", "reason": "Only Workspace owners can transfer owner authority or delete a Workspace."})
     if "view_workspace_admin" not in allowed:
         denials.insert(0, {"action": "view_workspace_admin", "reason": "Workspace admin view permission is required."})
     if "invite_workspace_members" not in allowed:
@@ -155,4 +171,4 @@ def _denials_for_allowed(allowed: list[str]) -> list[dict[str, str]]:
 
 
 def _tone(group_id: str) -> str:
-    return {"workspace_admin": "black", "privacy_reviewer": "blue", "data_steward": "green", "auditor": "neutral"}.get(group_id, "neutral")
+    return {"workspace_owner": "black", "workspace_admin": "black", "privacy_reviewer": "blue", "data_steward": "green", "auditor": "neutral"}.get(group_id, "neutral")

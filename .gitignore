@@ -32,6 +32,8 @@ build/
 coverage/
 .turbo/
 .next/
+.source/
+*.tsbuildinfo
 
 # Python artifacts
 __pycache__/

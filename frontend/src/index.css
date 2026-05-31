@@ -91,6 +91,8 @@ h3 { color: var(--text); font-size: .95rem; }
 .nav-link { align-items: center; border-radius: 6px; color: #5c5c5c; display: flex; font-size: .78rem; font-weight: 560; gap: 10px; padding: 8px 10px; transition: background-color .15s, color .15s; }
 .nav-link:hover { background: #f1f1f1; color: var(--text); }
 .nav-link-active { background: #ededed; color: #1f1f1f; }
+.nav-expand-icon { color: #747474; margin-left: auto; transition: transform .15s; }
+.nav-group-expanded .nav-expand-icon { transform: rotate(90deg); }
 .nav-subtree { border-left: 1px solid var(--border); display: grid; gap: 2px; margin: 2px 0 5px 18px; padding-left: 12px; }
 .nav-sublink { align-items: center; border-radius: 6px; color: #626262; display: flex; font-size: .73rem; font-weight: 540; gap: 8px; min-height: 30px; padding: 5px 8px; transition: background-color .15s, color .15s; }
 .nav-sublink:hover { background: #f4f4f4; color: var(--text); }
@@ -114,6 +116,9 @@ h3 { color: var(--text); font-size: .95rem; }
 .icon-button { align-items: center; background: transparent; border: 0; border-radius: 6px; color: var(--text-soft); display: flex; height: 32px; justify-content: center; width: 32px; }
 .icon-button:hover { background: #f2f2f2; color: var(--text); }
 .main-content { margin: 0 auto; max-width: 1560px; padding: 38px 42px 56px; }
+.route-denied { border: 1px solid var(--border); border-radius: 8px; max-width: 560px; padding: 22px; }
+.route-denied h1 { font-size: 1.38rem; margin-top: 8px; }
+.route-denied p:last-child { color: var(--text-soft); line-height: 1.5; margin-top: 8px; }
 
 @media (min-width: 861px) {
   .sidebar-collapsed { padding-left: 10px; padding-right: 10px; }
@@ -126,6 +131,7 @@ h3 { color: var(--text); font-size: .95rem; }
   .sidebar-collapsed nav { justify-items: center; }
   .sidebar-collapsed .nav-link { height: 38px; justify-content: center; padding: 0; width: 42px; }
   .sidebar-collapsed .nav-link span { display: none; }
+  .sidebar-collapsed .nav-expand-icon { display: none; }
   .sidebar-collapsed .nav-subtree { display: none; }
 }
 
@@ -247,6 +253,7 @@ select { background: var(--surface); border: 1px solid var(--border-strong); bor
 .form-field span { color: var(--text-soft); display: block; font-size: .71rem; font-weight: 700; margin-bottom: 7px; }
 .form-field input, .form-field select, .form-field textarea { border: 1px solid var(--border-strong); border-radius: 6px; color: var(--text); padding: 10px; width: 100%; }
 .form-field textarea { resize: vertical; }
+.form-help { color: var(--text-soft); display: block; font-size: .66rem; line-height: 1.45; margin-top: 6px; }
 .segmented-control { background: var(--surface-subtle); border: 1px solid var(--border); border-radius: 7px; display: grid; gap: 4px; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 4px; }
 .segmented-control button { align-items: center; background: transparent; border: 0; border-radius: 5px; color: var(--text-soft); display: inline-flex; font-size: .68rem; font-weight: 750; gap: 6px; justify-content: center; min-height: 32px; padding: 0 7px; }
 .segmented-control button.active { background: var(--surface); box-shadow: 0 1px 3px rgba(15, 23, 42, .09); color: var(--text); }

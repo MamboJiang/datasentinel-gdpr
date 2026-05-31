@@ -1,0 +1,50 @@
+---
+title: Safety and Boundaries
+description: Review the privacy, legal, deletion, permission, integration, and AI boundaries that keep the prototype accountable.
+---
+
+DataSentinel is designed to make boundaries visible. These boundaries help users understand what the product can do, what it refuses to do, and what still needs human judgement.
+
+## Legal boundary
+
+DataSentinel does not provide legal advice and does not claim full GDPR compliance. It presents evidence, policy-pack guidance, workflow state, audit records, and evaluation metrics so accountable people can review and decide.
+
+## Deletion boundary
+
+Deletion is simulated in P0.
+
+A delete-candidate review decision records that a human believes cleanup should be considered. It does not delete external source files, Drive files, local files, or tenant data.
+
+Denied real-deletion actions should remain visible in permission boundaries.
+
+## Raw-content boundary
+
+DataSentinel should not expose raw source bodies, raw extracted text, page images, unredacted personal data, provider secrets, provider tokens, refresh tokens, or client secrets in public payloads or user-facing screens.
+
+The scan process can read supported source content during execution, but the durable product output should be metadata, redacted evidence, findings, metrics, and audit events.
+
+## Source boundary
+
+Prelaunch source input is limited to approved paths such as controlled sample sources, safe direct HTTPS links, Google Drive selected items, and host-allowed local sources.
+
+The prototype does not add production Microsoft Graph, enterprise tenant, automatic deletion, SCIM, production RBAC, or broad directory integrations.
+
+## Permission boundary
+
+Users should see what is allowed and denied before they act. Authentication alone does not grant review authority, Workspace administration, source scanning, or deletion powers.
+
+If a route or action is outside the current Workspace permission boundary, the UI should hide, disable, or clearly deny that destination or action.
+
+## AI boundary
+
+Deterministic scanning comes first. Optional AI support must be disabled unless configured, budget-guarded, redacted-evidence-only, and fail-closed when safety checks cannot pass.
+
+AI support must not invent audit facts, decide ownership, decide permissions, claim legal conclusions, expose raw content, or instruct deletion.
+
+## Safe use rules
+
+- Do not paste raw sensitive content into feedback or support fields.
+- Do not treat evidence summaries as legal advice.
+- Confirm the source, evidence, owner, and permission boundary before reviewing.
+- Use escalation when the correct owner or policy interpretation is unclear.
+- Verify audit and evaluation output after important workflow actions.

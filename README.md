@@ -45,6 +45,18 @@ Find risky personal-data records, explain why they matter, route them to the acc
 - [Deployment](docs/DEPLOYMENT.md)
 - [Acceptance Criteria](ACCEPTANCE.md)
 
+## User Documentation
+
+The Fumadocs-powered user guide lives in [docs-site](docs-site/README.md). Run it locally with:
+
+```bash
+cd docs-site
+npm install
+npm run dev
+```
+
+The docs site is user-facing product guidance for the prelaunch prototype. It must not claim legal advice, full GDPR compliance, production tenant access, or real deletion.
+
 ## Frontend-Backend Contract
 
 - Machine-readable API contract: [contracts/openapi.yaml](contracts/openapi.yaml)

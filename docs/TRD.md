@@ -121,12 +121,18 @@ The approved Workspace implementation is a local P0 RBAC and invitation boundary
 Technical constraints:
 
 - Authentication creates or reads an account identity only; Workspace access requires active membership.
-- `POST /api/workspaces` creates a local P0 Workspace and one active creator membership in `workspace_admin`.
+- `POST /api/workspaces` creates a local P0 Workspace and one active creator membership in `workspace_owner` and `workspace_admin`.
+- `POST /api/workspaces/current` switches the current Workspace for an account that is already an active member of the target Workspace.
+- SQLite-backed operational sources, scans, findings, audit events, metrics, and evaluation use the selected `workspace:{workspaceId}` owner scope when a current Workspace exists.
 - Workspace groups carry explicit permissions from the exposed permission catalog and are evaluated with deny-by-default behavior.
-- The local API exposes Workspace directory, admin summary, group create/update/delete, invite-link generation, and invitation accept endpoints using the standard envelope and problem-details error format.
-- Group deletion removes the group reference from memberships and pending invite links; the protected `workspace_admin` group cannot be deleted or stripped of required admin-management permissions.
+- The local API exposes Workspace directory, Workspace switch, admin summary, owner-transfer, Workspace delete, group create/update/delete, member update/delete, invite-link generation, and invitation accept endpoints using the standard envelope and problem-details error format.
+- Group deletion removes the group reference from memberships and pending invite links; the protected `workspace_owner` and `workspace_admin` groups cannot be deleted or stripped of required owner/admin-management permissions.
+- Member updates and removals require `manage_workspace_members`, owner assignment changes require `manage_workspace_ownership`, and member changes cannot remove or demote the last active `workspace_owner` or `workspace_admin` member.
+- Owner transfer assigns `workspace_owner` and `workspace_admin` to the target active member and removes `workspace_owner` from prior active owners; the frontend resolves the target from an exact active-member email match and requires a second confirmation before calling the API.
+- Workspace deletion requires `manage_workspace_ownership` plus exact Workspace-name confirmation; the frontend also requires a second confirmation before the API soft-deletes the local Workspace, removes active memberships, revokes pending invitations, and clears affected current Workspace selections without deleting external source files.
 - SQLite-backed deployments may persist local Workspace membership and invitation state, but this remains a prelaunch store and not production tenant authorization.
-- The frontend Workspace menu and `/workspace/admin` route consume contract data and tolerate no-Workspace, non-admin, empty, and denied states.
+- The frontend Workspace menu and `/workspace/admin` route consume contract data and tolerate no-Workspace, non-admin, empty, switched, and denied states.
+- The frontend sidebar hides destinations outside the current Workspace permission boundary and marks expandable navigation groups with a chevron.
 - Invitation acceptance must be idempotent at the membership level and must not create duplicate memberships.
 - Workspace permissions do not enable production Microsoft Graph, enterprise directory sync, tenant provisioning, billing, source-file deletion, hidden permission data, legal advice, or full GDPR-compliance claims.
 

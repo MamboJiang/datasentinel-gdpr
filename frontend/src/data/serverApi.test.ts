@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getEmptyData } from './emptyData'
-import { loadServerData } from './serverApi'
+import { loadServerData, switchServerWorkspace } from './serverApi'
 
 function envelope(data: unknown) {
   return {
@@ -69,5 +69,29 @@ describe('server API loading', () => {
     expect(data.metrics.aggregation).toBeUndefined()
     expect(requestedPaths).not.toContain('/findings/')
     expect(requestedPaths).not.toContain('/findings//review-support')
+  })
+
+  it('posts the selected Workspace when switching current Workspace context', async () => {
+    const fallback = getEmptyData()
+    const requests: { body?: string; path: string }[] = []
+
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      requests.push({
+        body: typeof init?.body === 'string' ? init.body : undefined,
+        path: String(input).replace('/api', ''),
+      })
+      return new Response(JSON.stringify(envelope({
+        ...fallback.workspaceDirectory,
+        currentWorkspaceId: 'ws_target',
+      })), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }))
+
+    const switched = await switchServerWorkspace('ws_target')
+
+    expect(requests).toEqual([{ body: JSON.stringify({ workspaceId: 'ws_target' }), path: '/workspaces/current' }])
+    expect(switched.data.currentWorkspaceId).toBe('ws_target')
   })
 })

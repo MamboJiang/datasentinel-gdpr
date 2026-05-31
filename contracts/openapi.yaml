@@ -78,7 +78,27 @@ paths:
               $ref: "./schemas/workspace.yaml#/CreateWorkspaceRequest"
       responses:
         "201":
-          description: Workspace created and creator joined as a Workspace admin.
+          description: Workspace created and creator joined as Workspace owner and Workspace admin.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/workspace.yaml#/WorkspaceDirectoryEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /workspaces/current:
+    post:
+      operationId: switchCurrentWorkspace
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/workspace.yaml#/SwitchWorkspaceRequest"
+      responses:
+        "200":
+          description: Current Workspace context switched for the signed-in account.
           content:
             application/json:
               schema:
@@ -95,6 +115,48 @@ paths:
             application/json:
               schema:
                 $ref: "./schemas/workspace.yaml#/WorkspaceAdminSummaryEnvelope"
+  /workspaces/{workspaceId}:
+    delete:
+      operationId: deleteWorkspace
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/workspace.yaml#/DeleteWorkspaceRequest"
+      responses:
+        "200":
+          description: Workspace soft-deleted after exact-name confirmation; active memberships are removed and pending invitations are revoked.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/workspace.yaml#/WorkspaceEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /workspaces/{workspaceId}/owner-transfer:
+    post:
+      operationId: transferWorkspaceOwner
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/workspace.yaml#/TransferWorkspaceOwnerRequest"
+      responses:
+        "200":
+          description: Workspace owner authority transferred to an active member.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/workspace.yaml#/WorkspaceMembershipEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
   /workspaces/{workspaceId}/groups:
     post:
       operationId: createWorkspaceGroup
@@ -151,6 +213,43 @@ paths:
             application/json:
               schema:
                 $ref: "./schemas/workspace.yaml#/WorkspaceGroupEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /workspaces/{workspaceId}/members/{membershipId}:
+    patch:
+      operationId: updateWorkspaceMember
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/MembershipId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/workspace.yaml#/UpdateWorkspaceMemberRequest"
+      responses:
+        "200":
+          description: Workspace member group assignment updated.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/workspace.yaml#/WorkspaceMembershipEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deleteWorkspaceMember
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/MembershipId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Workspace member removed from active membership.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/workspace.yaml#/WorkspaceMembershipEnvelope"
         default:
           $ref: "#/components/responses/Problem"
   /workspaces/{workspaceId}/invitations:
@@ -517,6 +616,11 @@ components:
       schema: { type: string }
     GroupId:
       name: groupId
+      in: path
+      required: true
+      schema: { type: string }
+    MembershipId:
+      name: membershipId
       in: path
       required: true
       schema: { type: string }
