@@ -56,6 +56,8 @@ DATASENTINEL_COOKIE_SECURE=true
 DATASENTINEL_ENABLE_DEMO_FIXTURES=false
 GOOGLE_CLIENT_ID=<google oauth client id>
 GOOGLE_CLIENT_SECRET=<google oauth client secret>
+GOOGLE_PICKER_API_KEY=<google picker api key>
+GOOGLE_CLOUD_PROJECT_NUMBER=<google cloud project number>
 GITHUB_CLIENT_ID=<github oauth client id>
 GITHUB_CLIENT_SECRET=<github oauth client secret>
 ```
@@ -66,6 +68,17 @@ Register provider callbacks as:
 - GitHub: `https://founder-force.uk/api/auth/callback/github`
 
 The provider credentials authenticate users only. They must not be reused for source connectors, Microsoft Graph, tenant inventory, deletion, or authorization policy.
+
+Google Drive source selection also requires Google Picker public setup. See `docs/GOOGLE_DRIVE_SETUP.md` for the focused checklist.
+
+- Enable the Google Drive API and Google Picker API on the same Google Cloud project.
+- Create an API key for Picker and restrict it to the preview origin, such as `https://founder-force.uk/*`, plus localhost origins used for development.
+- Set `GOOGLE_PICKER_API_KEY` to that API key.
+- Set `GOOGLE_CLOUD_PROJECT_NUMBER` to the numeric Google Cloud project number used as Picker `appId`.
+- Add `https://founder-force.uk` as an authorized JavaScript origin on the Google OAuth web client.
+- Add Drive scopes to the OAuth consent screen: `https://www.googleapis.com/auth/drive.file` for selected files and `https://www.googleapis.com/auth/drive.readonly` when folder traversal is enabled.
+
+The Picker API key and project number are browser setup configuration, but they still belong in ignored host environment files so deployments can rotate or disable them. The Google OAuth client secret remains server-only and must never be returned by `/api/integrations/google-drive/picker-config`. In prelaunch, the route is protected by the first-party session cookie when `DATASENTINEL_AUTH_REQUIRED=true`.
 
 Start the API with one or more local roots that users may register as sources:
 
@@ -154,11 +167,13 @@ curl -I http://127.0.0.1/
 curl -I http://127.0.0.1/dashboard
 curl -s http://127.0.0.1/api/health
 curl -s http://127.0.0.1/api/health | grep openrouter
+curl -s --cookie "datasentinel_session=<session id>" http://127.0.0.1/api/integrations/google-drive/picker-config
 curl -s http://127.0.0.1/api/sources | grep source_001
 python3 -m backend.datasentinel.db_tool status --db-path /srv/datasentinel/data/datasentinel.sqlite3
 curl -I https://founder-force.uk/
 curl -I https://founder-force.uk/dashboard
 curl -s https://founder-force.uk/api/health
+curl -s --cookie "datasentinel_session=<session id>" https://founder-force.uk/api/integrations/google-drive/picker-config
 curl -s http://127.0.0.1/ | grep DataSentinel
 curl -s http://127.0.0.1/dashboard | grep DataSentinel
 curl -s https://founder-force.uk/ | grep DataSentinel

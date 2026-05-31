@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import Any
 
 from .envelope import envelope, problem, response
+from .google_drive_config import picker_config_from_env
 from .source_connection import ConnectionIssue, SourceConnectionService
+from .source_documents import SourceReadIssue, validate_remote_source_url
 from .source_store import SourceStore
 
 
@@ -40,16 +42,17 @@ class SourceApi:
                 content_type="application/problem+json",
             )
 
+        safe_config = _safe_source_config(payload)
         source = {
             "sourceId": payload["sourceId"],
             "name": payload["name"],
             "sourceType": payload["sourceType"],
-            "status": payload.get("status", "registered"),
+            "status": _initial_status(payload),
             **({"rootLabel": payload["rootLabel"]} if "rootLabel" in payload else {}),
             **({"masterOfDataUserId": payload["masterOfDataUserId"]} if "masterOfDataUserId" in payload else {}),
             **({"referenceUrl": payload["referenceUrl"]} if "referenceUrl" in payload else {}),
             **({"sampleFamilies": payload["sampleFamilies"]} if "sampleFamilies" in payload else {}),
-            **({"config": payload["config"]} if "config" in payload else {}),
+            **({"config": safe_config} if safe_config else {}),
         }
         return response(201, envelope(self.store.add(source), trace_id), trace_id)
 
@@ -98,4 +101,66 @@ def _validate_source(payload: dict[str, Any]) -> list[dict[str, str]]:
     if "config" in payload and not isinstance(payload["config"], dict):
         errors.append({"pointer": "#/config", "detail": "config must be an object"})
 
+    config = payload.get("config") if isinstance(payload.get("config"), dict) else {}
+    source_type = payload.get("sourceType")
+
+    if source_type == "remote_file_link":
+        if not isinstance(config.get("url"), str):
+            errors.append({"pointer": "#/config/url", "detail": "remote_file_link requires config.url"})
+        else:
+            try:
+                validate_remote_source_url(config["url"])
+            except SourceReadIssue as issue:
+                errors.append({"pointer": issue.pointer, "detail": issue.detail})
+
+    if source_type == "google_drive_selection":
+        items = config.get("items")
+        if not isinstance(items, list) or not items:
+            errors.append({"pointer": "#/config/items", "detail": "google_drive_selection requires selected Drive items"})
+        else:
+            for index, item in enumerate(items):
+                if not isinstance(item, dict) or not isinstance(item.get("id"), str) or not item["id"].strip():
+                    errors.append({"pointer": f"#/config/items/{index}/id", "detail": "Google Drive selected items require an id"})
+                if isinstance(item, dict) and "mimeType" in item and not isinstance(item["mimeType"], str):
+                    errors.append({"pointer": f"#/config/items/{index}/mimeType", "detail": "Google Drive selected item mimeType must be a string"})
+
     return errors
+
+
+def _initial_status(payload: dict[str, Any]) -> str:
+    source_type = payload.get("sourceType")
+    if source_type == "local_repo":
+        return "registered"
+    if source_type == "remote_file_link":
+        return "connected"
+    if source_type == "google_drive_selection":
+        return "connected" if picker_config_from_env()["configured"] else "registered"
+    return str(payload.get("status") or "registered")
+
+
+def _safe_source_config(payload: dict[str, Any]) -> dict[str, Any] | None:
+    config = payload.get("config") if isinstance(payload.get("config"), dict) else {}
+    source_type = payload.get("sourceType")
+
+    if source_type == "local_repo" and isinstance(config.get("rootPath"), str):
+        return {"rootPath": config["rootPath"].strip()}
+
+    if source_type == "remote_file_link" and isinstance(config.get("url"), str):
+        safe_config = {"url": config["url"].strip()}
+        if isinstance(config.get("fileName"), str) and config["fileName"].strip():
+            safe_config["fileName"] = config["fileName"].strip()
+        return safe_config
+
+    if source_type == "google_drive_selection" and isinstance(config.get("items"), list):
+        return {"items": [_safe_drive_item(item) for item in config["items"] if isinstance(item, dict)]}
+
+    return None
+
+
+def _safe_drive_item(item: dict[str, Any]) -> dict[str, str]:
+    safe_item: dict[str, str] = {}
+    for key in ("id", "name", "mimeType", "url"):
+        value = item.get(key)
+        if isinstance(value, str) and value.strip():
+            safe_item[key] = value.strip()
+    return safe_item

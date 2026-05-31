@@ -4,6 +4,7 @@ export type ScanType = 'full' | 'delta'
 
 export type StartScanOptions = {
   baselineScanId?: string | null
+  googleDriveAccessToken?: string
   modifiedSince?: string | null
   scanType: ScanType
   sourceId?: string
@@ -55,7 +56,10 @@ export const scanProfiles: Record<ScanType, ScanProfile> = {
 export function isSourceScanReady(source: Source, governanceConfig: GovernanceConfig): boolean {
   const adapter = governanceConfig.sourceAdapters.find((candidate) => candidate.sourceType === source.sourceType)
 
-  return source.status === 'mock_ready' && adapter?.status === 'mock_ready'
+  return Boolean(adapter) && (
+    (source.status === 'mock_ready' && adapter?.status === 'mock_ready')
+    || (source.status === 'connected' && adapter?.status === 'connected')
+  )
 }
 
 export function getDefaultFullScanSource(sources: Source[], governanceConfig: GovernanceConfig): Source | undefined {

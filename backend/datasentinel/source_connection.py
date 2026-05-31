@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlparse
 
+from .google_drive_config import picker_config_from_env
+from .source_documents import SourceReadIssue, validate_remote_source_url
 from .source_store import SourceStore
 
 EXPECTED_SAMPLE_FAMILIES = {
@@ -66,6 +68,12 @@ class SourceConnectionService:
 
         if source_type == "local_repo":
             return self._local_repo(source)
+
+        if source_type == "remote_file_link":
+            return self._remote_file_link(source)
+
+        if source_type == "google_drive_selection":
+            return self._google_drive_selection(source)
 
         return self._unsupported(source), False, []
 
@@ -185,6 +193,75 @@ class SourceConnectionService:
                 "code": code,
                 "severity": "error",
                 "message": "Local source configuration is not allowed in this server context.",
+            }],
+        }, False, []
+
+    def _remote_file_link(self, source: dict[str, Any]) -> tuple[dict[str, Any], bool, list[str]]:
+        url = str((source.get("config") or {}).get("url") or "")
+        try:
+            validate_remote_source_url(url)
+        except SourceReadIssue as issue:
+            return {
+                **source,
+                "reachable": False,
+                "connectionStatus": "policy_denied",
+                "capabilities": {"canReadMetadata": False, "canReadContent": False},
+                "diagnostics": [{
+                    "code": "source.remote_link_denied",
+                    "severity": "error",
+                    "message": issue.detail,
+                }],
+            }, False, []
+
+        return {
+            **source,
+            "reachable": True,
+            "connectionStatus": "connected",
+            "capabilities": {"canReadMetadata": True, "canReadContent": True},
+            "diagnostics": [],
+        }, False, []
+
+    def _google_drive_selection(self, source: dict[str, Any]) -> tuple[dict[str, Any], bool, list[str]]:
+        config = source.get("config") or {}
+        items = config.get("items")
+        picker_config = picker_config_from_env()
+
+        if not isinstance(items, list) or not items:
+            return {
+                **source,
+                "reachable": False,
+                "connectionStatus": "invalid_config",
+                "capabilities": {"canReadMetadata": False, "canReadContent": False},
+                "diagnostics": [{
+                    "code": "source.google_drive_selection_missing",
+                    "severity": "error",
+                    "message": "Google Drive source requires selected files or folders.",
+                }],
+            }, False, []
+
+        if not picker_config["configured"]:
+            return {
+                **source,
+                "reachable": False,
+                "connectionStatus": "configuration_required",
+                "capabilities": {"canReadMetadata": True, "canReadContent": False},
+                "diagnostics": [{
+                    "code": "source.google_drive_picker_config_missing",
+                    "severity": "warning",
+                    "message": "Google Drive Picker credentials are not configured on this host.",
+                    "missing": picker_config["missing"],
+                }],
+            }, True, ["Google Drive Picker credentials are not configured on this host."]
+
+        return {
+            **source,
+            "reachable": True,
+            "connectionStatus": "connected",
+            "capabilities": {"canReadMetadata": True, "canReadContent": False, "requiresPerScanAccessToken": True},
+            "diagnostics": [{
+                "code": "source.google_drive_token_required",
+                "severity": "info",
+                "message": "Google Drive content is read with a short-lived per-scan token and is not stored.",
             }],
         }, False, []
 

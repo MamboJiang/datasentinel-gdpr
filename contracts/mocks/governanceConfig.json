@@ -110,6 +110,16 @@
         "sourceType": "local_repo",
         "label": "Allowed local directory",
         "status": "connected"
+      },
+      {
+        "sourceType": "remote_file_link",
+        "label": "Remote HTTPS file link",
+        "status": "connected"
+      },
+      {
+        "sourceType": "google_drive_selection",
+        "label": "Google Drive selected files or folders",
+        "status": "connected"
       }
     ],
     "changeControls": {

@@ -79,6 +79,7 @@ class DemoState:
         return response(200, envelope(self.scan, trace_id, partial=self.scan["status"] == "running"), trace_id)
 
     def get_scan_summary(self, trace_id: str) -> dict[str, Any]:
+        self._finish_scan_if_ready()
         return response(200, envelope(self.metrics, trace_id), trace_id)
 
     def start_scan(self, scan_type: str, payload: dict[str, Any], trace_id: str, path: str) -> dict[str, Any]:
@@ -106,10 +107,12 @@ class DemoState:
         return response(202, envelope(self.scan, trace_id, partial=True, warnings=self._running_warnings()), trace_id)
 
     def list_findings(self, trace_id: str) -> dict[str, Any]:
+        self._finish_scan_if_ready()
         pagination = {"limit": 25, "offset": 0, "total": max(len(self.findings), 17), "nextCursor": None}
         return response(200, envelope(self.findings, trace_id, pagination=pagination), trace_id)
 
     def get_finding(self, finding_id: str, trace_id: str, path: str) -> dict[str, Any]:
+        self._finish_scan_if_ready()
         finding = self._finding_detail(finding_id)
 
         if not finding:
@@ -146,12 +149,15 @@ class DemoState:
         return response(201, envelope(review, trace_id), trace_id)
 
     def audit_event_list(self, trace_id: str) -> dict[str, Any]:
+        self._finish_scan_if_ready()
         return response(200, envelope(self.audit_events, trace_id), trace_id)
 
     def admin_metrics(self, trace_id: str) -> dict[str, Any]:
+        self._finish_scan_if_ready()
         return response(200, envelope(self.metrics, trace_id), trace_id)
 
     def latest_evaluation(self, trace_id: str) -> dict[str, Any]:
+        self._finish_scan_if_ready()
         return response(200, envelope(self.evaluation, trace_id), trace_id)
 
     def governance(self, trace_id: str) -> dict[str, Any]:
@@ -173,6 +179,7 @@ class DemoState:
         return response(200, envelope(self.permission_boundary, trace_id), trace_id)
 
     def finding_review_support(self, finding_id: str, trace_id: str, path: str) -> dict[str, Any]:
+        self._finish_scan_if_ready()
         if not self._finding_detail(finding_id):
             return self._not_found("Finding not found", path, trace_id, "#/findingId")
 
@@ -259,9 +266,12 @@ class DemoState:
             (item for item in self.governance_config["sourceAdapters"] if item.get("sourceType") == source.get("sourceType")),
             None,
         )
+        connectable_types = {"local_repo", "remote_file_link", "google_drive_selection"}
         return bool(adapter) and (
             source.get("status") == "mock_ready" and adapter.get("status") == "mock_ready"
-            or source.get("sourceType") == "local_repo" and source.get("status") == "connected" and adapter.get("status") == "connected"
+            or source.get("sourceType") in connectable_types
+            and source.get("status") == "connected"
+            and adapter.get("status") == "connected"
         )
 
     def _has_completed_baseline(self, source_id: str, baseline_scan_id: Any) -> bool:

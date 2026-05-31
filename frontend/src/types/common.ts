@@ -15,4 +15,5 @@ export type Source = {
   masterOfDataUserId?: string | null
   referenceUrl?: string | null
   sampleFamilies?: string[]
+  config?: Record<string, unknown>
 }

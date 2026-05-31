@@ -10,6 +10,7 @@ The hackathon prototype must simulate deletion. It must not delete, quarantine, 
 - Evidence examples must not contain real personal data.
 - UI examples should show masked values, such as `[REDACTED]` or `DE** ****`.
 - Raw extracted text is not part of the public API contract.
+- Prelaunch source readers must not persist raw source files or provider access tokens; they may persist metadata, redacted snippets, findings, metrics, and audit events.
 - Audit examples should include decision metadata, not raw sensitive content.
 - Human-entered audit reason text should be sanitized before public display; audit events must preserve accountability without becoming a new store of raw personal data.
 
@@ -35,7 +36,11 @@ P0 should expose allowed and denied actions to the UI. This improves user contro
 
 P0 must not require live Microsoft Graph, tenant secrets, or external deletion APIs.
 
-Google and GitHub OAuth are approved only for prelaunch sign-in. They must not be used as file-source connectors, directory sync, tenant inventory, or authorization providers in this slice.
+Google and GitHub OAuth are approved only for prelaunch sign-in. They must not be used as directory sync, tenant inventory, or authorization providers in this slice.
+
+Google Drive selected-source access is approved only through the Google Picker prelaunch boundary. The frontend may request a short-lived access token for selected files or folders, and the backend may use that token only for the current scan request. The token must not be stored in source records, SQLite workflow documents, logs, audit events, or frontend payloads.
+
+Direct HTTPS file links are approved only for public text-like files. The backend must reject non-HTTPS links, embedded credentials, private-address hosts, unsupported content, and over-limit files before storing workflow output.
 
 OpenRouter assistive AI is the only approved external AI boundary. It must follow these controls:
 

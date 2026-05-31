@@ -10,6 +10,7 @@ from urllib.parse import parse_qs, urlparse
 from .auth import AuthService
 from .demo_state import DemoState
 from .envelope import envelope, problem, response
+from .google_drive_config import picker_config_response
 from .persistent_demo_state import PersistentDemoState
 from .prelaunch_state import PrelaunchState
 from .source_api import SourceApi
@@ -120,6 +121,9 @@ class SourceHttpApp:
         auth_required = self.auth_service.require_session(headers, trace_id, f"/api{route}")
         if auth_required:
             return auth_required
+
+        if method == "GET" and route == "/integrations/google-drive/picker-config":
+            return picker_config_response(trace_id)
 
         if method == "GET" and route == "/sources":
             return self.source_api.list_sources(trace_id)

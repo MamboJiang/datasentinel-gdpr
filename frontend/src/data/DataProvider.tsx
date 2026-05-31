@@ -18,6 +18,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<string | null>(null)
   const scanTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const serverAvailable = useRef(false)
+  const googleDriveAccessTokens = useRef<Record<string, string>>({})
 
   useEffect(() => {
     let active = true
@@ -49,9 +50,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [])
 
   async function startScan(options: StartScanOptions) {
+    const sourceToken = options.sourceId ? googleDriveAccessTokens.current[options.sourceId] : undefined
+    const scanOptions = sourceToken && !options.googleDriveAccessToken
+      ? { ...options, googleDriveAccessToken: sourceToken }
+      : options
+
     if (serverAvailable.current) {
       try {
-        const result = await startServerScan(options)
+        const result = await startServerScan(scanOptions)
 
         if (scanTimer.current) {
           clearTimeout(scanTimer.current)
@@ -62,11 +68,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
           meta: result.meta,
           scan: result.data,
         }))
-        setToast(`${options.scanType === 'full' ? 'Full' : 'Delta'} scan started on the project server.`)
+        setToast(`${scanOptions.scanType === 'full' ? 'Full' : 'Delta'} scan started on the project server.`)
         scanTimer.current = setTimeout(() => {
-          refreshServerData(`${options.scanType === 'full' ? 'Full' : 'Delta'} scan completed.`)
+          refreshServerData(`${scanOptions.scanType === 'full' ? 'Full' : 'Delta'} scan completed.`)
           scanTimer.current = null
-        }, options.scanType === 'full' ? 2400 : 2000)
+        }, scanOptions.scanType === 'full' ? 2400 : 2000)
         return
       } catch (error) {
         serverAvailable.current = false
@@ -74,7 +80,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    startLocalScan(options)
+    startLocalScan(scanOptions)
   }
 
   function startLocalScan(options: StartScanOptions) {
@@ -132,6 +138,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      if (input.googleDriveAccessToken) {
+        googleDriveAccessTokens.current[input.sourceId] = input.googleDriveAccessToken
+      }
       const result = await createServerSource(input)
       setData((current) => ({
         ...current,

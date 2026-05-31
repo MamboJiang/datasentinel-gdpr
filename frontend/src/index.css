@@ -218,8 +218,16 @@ select { background: var(--surface); border: 1px solid var(--border-strong); bor
 .dialog-header { align-items: flex-start; display: flex; justify-content: space-between; }
 .dialog-card form { display: grid; gap: 15px; margin-top: 20px; }
 .form-field span { color: var(--text-soft); display: block; font-size: .71rem; font-weight: 700; margin-bottom: 7px; }
-.form-field select, .form-field textarea { border: 1px solid var(--border-strong); border-radius: 6px; color: var(--text); padding: 10px; width: 100%; }
+.form-field input, .form-field select, .form-field textarea { border: 1px solid var(--border-strong); border-radius: 6px; color: var(--text); padding: 10px; width: 100%; }
 .form-field textarea { resize: vertical; }
+.segmented-control { background: var(--surface-subtle); border: 1px solid var(--border); border-radius: 7px; display: grid; gap: 4px; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 4px; }
+.segmented-control button { align-items: center; background: transparent; border: 0; border-radius: 5px; color: var(--text-soft); display: inline-flex; font-size: .68rem; font-weight: 750; gap: 6px; justify-content: center; min-height: 32px; padding: 0 7px; }
+.segmented-control button.active { background: var(--surface); box-shadow: 0 1px 3px rgba(15, 23, 42, .09); color: var(--text); }
+.dialog-stack { display: grid; gap: 10px; }
+.drive-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.dialog-selection { border: 1px solid var(--border); border-radius: 6px; display: grid; gap: 6px; padding: 9px; }
+.dialog-selection span { color: var(--text-soft); font-size: .7rem; overflow-wrap: anywhere; }
+.form-error { color: var(--red); font-size: .7rem; line-height: 1.45; }
 .dialog-notice { align-items: flex-start; background: var(--amber-soft); border-radius: 6px; color: var(--amber); display: flex; font-size: .7rem; gap: 8px; line-height: 1.5; padding: 10px; }
 .dialog-notice svg { flex-shrink: 0; }
 .review-guidance { background: #f7f9fc; border: 1px solid var(--border); border-radius: 6px; padding: 11px; }

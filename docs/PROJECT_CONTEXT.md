@@ -28,7 +28,7 @@ Source connection -> full scan -> inventory/extraction -> deterministic signal d
 - Admin reporting must show scanned files, flagged files, data volume, scan progress, scan time, review backlog, and risk distribution.
 - Evaluation must include accuracy, reproducibility, speed, and resource intensity.
 - Deletion is simulated in the hackathon prototype.
-- The demo must not rely on live external APIs except the optional OpenRouter assistive AI boundary, which must be disabled by default unless configured, budget-guarded, and redacted-evidence-only.
+- The demo must not rely on live external APIs except approved prelaunch boundaries: Google/GitHub sign-in, Google Drive Picker/Drive reads for user-selected sources, direct HTTPS file reads, and optional OpenRouter assistive AI that is disabled unless configured, budget-guarded, and redacted-evidence-only.
 - Legal and policy details must be configurable through versioned policy packs rather than hard-coded into scanner structure.
 - Users must see permission boundaries and action scope before making decisions.
 - The default demo source should reference the organizer sample repository.

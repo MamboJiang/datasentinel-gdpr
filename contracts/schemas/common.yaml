@@ -76,6 +76,31 @@ AuthSessionEnvelope:
   properties:
     data: { $ref: "#/AuthSession" }
     meta: { $ref: "#/Meta" }
+GoogleDrivePickerConfig:
+  type: object
+  required: [configured, clientId, apiKey, appId, scopes, missing]
+  additionalProperties: true
+  properties:
+    configured: { type: boolean }
+    clientId: { type: [string, "null"] }
+    apiKey: { type: [string, "null"] }
+    appId: { type: [string, "null"] }
+    scopes:
+      type: object
+      required: [files, folders]
+      additionalProperties: false
+      properties:
+        files: { type: string }
+        folders: { type: string }
+    missing:
+      type: array
+      items: { type: string }
+GoogleDrivePickerConfigEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/GoogleDrivePickerConfig" }
+    meta: { $ref: "#/Meta" }
 HealthEnvelope:
   type: object
   required: [data, meta]

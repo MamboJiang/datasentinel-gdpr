@@ -33,6 +33,7 @@ The future product experience should make GDPR data cleanup feel like an account
 - Give users a clear sense of their permission boundary before they act.
 - Make reviewer guidance operational through checklists, available decisions, transfer options, and escalation options.
 - Separate authentication from authorization: Google/GitHub sign-in identifies the browser user, while permission boundaries still decide available workflow actions.
+- Let users point DataSentinel at real files without implying that raw source files are uploaded into long-term product storage.
 
 ## P0 Information Architecture
 
@@ -93,7 +94,19 @@ The full-scan start interaction connects Source Connector and Admin Dashboard su
 - A source that is not scan-ready must present a disabled or rejected action rather than silently creating a scan.
 - Running scan state must show progress, partial counts, scanned volume, and audit activity.
 - Completed scan state must show final counts, duration, throughput, and deterministic evaluation readiness.
-- The interaction must not expose raw source text, claim legal conclusions, trigger deletion, or depend on production external APIs.
+- The interaction must not expose raw source text, claim legal conclusions, trigger deletion, or depend on unapproved production external APIs.
+
+## Prelaunch Source Input Interaction
+
+The source-input interaction is documented in `docs/design/google-drive-source-integration.md`.
+
+- The Source Connector offers direct HTTPS file links, Google Drive selected files/folders, and host-allowed local paths as explicit modes.
+- Google Drive selection opens the official Picker UI when host public credentials are configured.
+- Drive file/folder selections store metadata only; the browser keeps the short-lived access token in memory and sends it only when starting a scan.
+- Direct HTTPS links are treated as one-file sources and must show connection or scan errors when the URL fails policy checks.
+- The UI states that DataSentinel reads source content during scan execution and stores metadata, redacted evidence, findings, and audit events.
+- Source setup and empty states must avoid fake prefilled source rows or seeded findings in prelaunch mode.
+- The UI must avoid raw source content, provider tokens, client secrets, legal conclusions, deletion execution, and broad tenant-access claims.
 
 ## Source Inventory and Content Extraction Interaction
 

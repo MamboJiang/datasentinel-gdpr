@@ -71,6 +71,19 @@
 | DB-004 | Record a review through a SQLite-backed API app and restart with the same file | Finding status and the review audit event remain visible after restart. |
 | DB-005 | Start the API without `--db-path` | The server keeps the existing in-memory fixture-backed behavior. |
 
+## Prelaunch Source Input Checks
+
+| ID | Scenario | Expected Result |
+| --- | --- | --- |
+| SRCIN-001 | Call `GET /api/integrations/google-drive/picker-config` with a valid first-party session cookie | The response reports `configured`, `clientId`, `apiKey`, `appId`, scopes, and missing browser setup fields without returning client secrets or provider tokens. |
+| SRCIN-002 | Register a direct HTTPS file link | The source is created as `remote_file_link` with `config.url` and can become scan-ready when the URL passes policy checks. |
+| SRCIN-003 | Scan a direct HTTPS text file with detectable personal-data patterns | The scan produces findings with redacted evidence and no raw source body or unredacted personal data in public payloads. |
+| SRCIN-004 | Register a non-HTTPS, credential-bearing, private-address, over-limit, or unsupported direct file link | The backend rejects the connection or scan before creating workflow output. |
+| SRCIN-005 | Select Google Drive files through Picker | The source stores selected item metadata and keeps the access token out of persisted source state. |
+| SRCIN-006 | Select a Google Drive folder through Picker | The scan enumerates descendant files up to the prelaunch limit and exports supported Google Workspace documents to text-like content. |
+| SRCIN-007 | Start a Google Drive scan without a per-scan access token | The backend returns `application/problem+json` and leaves scan, finding, audit, metric, and evaluation state unchanged. |
+| SRCIN-008 | Review public payloads after remote-link or Drive scans | Payloads expose metadata, warnings, redacted snippets, findings, metrics, and audit events only; raw file bodies, provider tokens, refresh tokens, client secrets, legal conclusions, and deletion execution are absent. |
+
 ## OpenRouter AI Assistive Processing Checks
 
 | ID | Scenario | Expected Result |
