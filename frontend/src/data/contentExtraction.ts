@@ -50,6 +50,12 @@ export function buildContentExtractionSummary(
     ? profile.completedEvidenceCandidates
     : profile.runningEvidenceCandidates
   const ocrDeferredFiles = state === 'completed' ? Math.min(2, warningFiles) : Math.min(1, warningFiles)
+  const recognitionDifficulty = {
+    easy: Math.max(0, successfulFiles - Math.round(successfulFiles * 0.38)),
+    moderate: Math.round(successfulFiles * 0.38),
+    hard: ocrDeferredFiles,
+    unsupported: Math.max(0, unsupportedFiles - ocrDeferredFiles),
+  }
 
   return {
     status: state,
@@ -61,6 +67,15 @@ export function buildContentExtractionSummary(
     ocrDeferredFiles,
     redactedEvidenceCandidates,
     rawContentExposed: false,
+    aiAssistanceUsed: false,
+    modelCalls: 0,
+    recognitionDifficulty,
+    formatCounts: [
+      { format: 'text', files: recognitionDifficulty.easy, difficulty: 'easy', method: 'utf8_text' },
+      { format: 'pdf_text_layer', files: Math.max(0, recognitionDifficulty.moderate - Math.round(successfulFiles * 0.14)), difficulty: 'moderate', method: 'pdf_text_layer' },
+      { format: 'ooxml', files: Math.round(successfulFiles * 0.14), difficulty: 'moderate', method: 'ooxml_text' },
+      { format: 'ocr_deferred', files: ocrDeferredFiles, difficulty: 'hard', method: 'ocr_deferred' },
+    ].filter((item) => item.files > 0),
     methods: [
       { method: 'metadata', files: processedFiles, status: state },
       { method: 'text_layer', files: successfulFiles, status: state },

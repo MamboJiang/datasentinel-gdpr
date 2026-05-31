@@ -7,10 +7,13 @@ Governance configuration lets DataSentinel adapt to policy changes, organization
 Related contract files:
 
 - `contracts/schemas/governance.yaml`
+- `contracts/schemas/workspace.yaml`
 - `contracts/mocks/governanceConfig.json`
 - `contracts/mocks/permissionBoundary.json`
 - `contracts/mocks/reviewDecision.json`
 - `contracts/mocks/reviewSupport.json`
+- `contracts/mocks/workspaceDirectory.json`
+- `contracts/mocks/workspaceAdmin.json`
 
 ## Principles
 
@@ -30,6 +33,9 @@ Related contract files:
 | `ReviewSupport` | Reviewer guidance, checklist, available decisions, required reason fields, transfer options, and escalation options. |
 | `ReviewDecision` | Human decision record with reason, checklist acknowledgement, target or retention context, resulting status, audit event, and no-real-deletion boundary. |
 | `SourceAdapterConfig` | Demo source, local source, direct HTTPS file link, Google Drive selected source, mock SharePoint, and future connector readiness. |
+| `Workspace` | Accountable operational boundary for members, groups, invitations, sources, findings, audit, evaluation, and admin charts. |
+| `WorkspaceGroup` | Workspace-scoped role-like group carrying explicit permissions such as admin management, review, stewardship, or audit read access. |
+| `WorkspaceInvitation` | Pending, accepted, expired, or revoked invite link that turns a signed-in account into a Workspace member only after acceptance. |
 
 ## Policy Pack Shape
 
@@ -71,6 +77,24 @@ P0 exposes configuration for inspection and mock-driven UI. Production editing i
 - View org units and owner fallback model.
 - View permission boundaries.
 - Preview policy or org changes before activation.
+- View Workspace members, groups, pending invite links, and group-derived permission boundaries.
+- Create, rename, re-permission, and delete Workspace groups when `manage_workspace_groups` is present.
+- Generate invite links into a Workspace with explicit group assignment.
+
+## Workspace Groups
+
+Workspace groups are the P0 role carrier. Account sign-in does not grant Workspace access by itself.
+
+Workspace admins can add custom groups from the exposed permission catalog. Custom group IDs are opaque and remain stable across rename operations. Deleting a non-admin group removes the group reference from active members and pending invite links; pending links with no remaining groups become revoked. The `workspace_admin` group remains protected so it cannot be deleted or stripped of `view_workspace_admin` plus `manage_workspace_groups`.
+
+| Group | Purpose | Representative permissions |
+| --- | --- | --- |
+| `workspace_admin` | Manage the Workspace control plane. | `view_workspace_admin`, `invite_workspace_members`, `manage_workspace_members`, `manage_workspace_groups`, `view_workspace_metrics`, `view_workspace_audit`, `view_governance`, `view_review_support` |
+| `privacy_reviewer` | Review assigned findings with visible support. | `view_assigned_findings`, `review_findings`, `view_review_support` |
+| `data_steward` | Own source or department stewardship decisions. | `view_owned_sources`, `view_assigned_findings`, `review_findings` |
+| `auditor` | Inspect evidence without mutating workflow state. | `view_workspace_audit`, `view_workspace_metrics`, `view_governance` |
+
+Real deletion stays denied as `execute_real_deletion` for every group in P0.
 
 ## Review Support Rules
 

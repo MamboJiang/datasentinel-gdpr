@@ -38,6 +38,8 @@ describe('server API loading', () => {
       ['/evaluation/runs/latest', fallback.evaluation],
       ['/governance/config', fallback.governanceConfig],
       ['/users/me/permissions', fallback.permissionBoundary],
+      ['/workspaces', fallback.workspaceDirectory],
+      ['/workspaces/current/admin', fallback.workspaceAdmin],
     ])
     const requestedPaths: string[] = []
 

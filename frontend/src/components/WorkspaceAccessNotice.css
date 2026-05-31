@@ -1,0 +1,16 @@
+.workspace-access-notice { display: grid; gap: 8px; max-width: 760px; }
+.workspace-access-notice > svg { color: var(--blue); }
+.workspace-access-notice h2 { font-size: 1.35rem; margin: 4px 0 6px; }
+.workspace-access-notice p { color: var(--text-soft); font-size: .76rem; line-height: 1.5; }
+.workspace-access-invitations { display: grid; gap: 8px; margin-top: 10px; }
+.workspace-access-invitations article { align-items: center; border: 1px solid var(--border); border-radius: 8px; display: flex; gap: 10px; justify-content: space-between; padding: 10px; }
+.workspace-access-invitations strong, .workspace-access-invitations small { display: block; }
+.workspace-access-invitations small, .workspace-access-empty { color: var(--text-soft); font-size: .68rem; }
+.workspace-access-invitations button { align-items: center; background: var(--text); border: 0; border-radius: 8px; color: #ffffff; display: inline-flex; font-weight: 760; gap: 7px; min-height: 36px; padding: 8px 10px; }
+.workspace-access-create { background: var(--text); border: 0; border-radius: 8px; color: #ffffff; font-weight: 760; justify-self: start; min-height: 38px; padding: 8px 12px; }
+
+@media (max-width: 620px) {
+  .workspace-access-invitations article { align-items: stretch; flex-direction: column; }
+  .workspace-access-invitations button { justify-content: center; }
+  .workspace-access-create { justify-self: stretch; }
+}

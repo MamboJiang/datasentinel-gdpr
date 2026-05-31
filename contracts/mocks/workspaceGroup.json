@@ -1,0 +1,17 @@
+{
+  "data": {
+    "workspaceId": "ws_datasentinel_gdpr",
+    "groupId": "custom_legal-reviewers",
+    "name": "Legal reviewers",
+    "description": "Review legal escalation evidence.",
+    "permissions": ["view_assigned_findings", "view_review_support", "review_findings"],
+    "memberCount": 0
+  },
+  "meta": {
+    "contractVersion": "0.1.0",
+    "generatedAt": "2026-05-31T12:00:00Z",
+    "traceId": "trace_workspace_group_mock",
+    "partial": false,
+    "warnings": []
+  }
+}

@@ -16,6 +16,7 @@ Organizations often store personal and GDPR-relevant data across fragmented file
 - Preserve an audit trail for deletion, retention, escalation, or exception decisions.
 - Support future full-scan and delta-scan governance loops.
 - Report measurable scanning quality through accuracy, reproducibility, speed, and resource intensity.
+- Recognize common text, PDF text-layer, and Office document sources through deterministic processing before any optional AI assistance.
 - Adapt to policy changes, organization changes, ownership transfers, and reviewer delegation without code rewrites.
 - Give users clear visibility into their permissions and decision boundaries.
 - Use optional AI assistance only for redacted evidence context when deterministic processing is insufficient.

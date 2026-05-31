@@ -38,7 +38,7 @@ python3 -m backend.datasentinel.db_tool init --db-path /srv/datasentinel/data/da
 python3 -m backend.datasentinel.source_server --host 127.0.0.1 --port 8000 --db-path /srv/datasentinel/data/datasentinel.sqlite3
 ```
 
-`requirements.txt` includes the PDF text-layer extraction dependency used by prelaunch source scans. Install it on the same Python environment that runs the API service.
+`requirements.txt` includes the PDF text-layer extraction dependency used by prelaunch source scans. DOCX, XLSX, and PPTX text extraction uses Python stdlib ZIP/XML modules and does not add another runtime dependency. Install the requirements on the same Python environment that runs the API service.
 On Ubuntu/Debian hosts where Python reports an externally managed environment, either install into a virtual environment and point the service at that Python, or use the host-approved user-site override:
 
 ```bash
@@ -114,10 +114,12 @@ OPENROUTER_USAGE_BASELINE_USD=<usage from GET https://openrouter.ai/api/v1/key>
 DATASENTINEL_AI_FAIL_CLOSED=true
 DATASENTINEL_AI_MAX_PROMPT_TOKENS=6000
 DATASENTINEL_AI_MAX_COMPLETION_TOKENS=350
-DATASENTINEL_OCR_MODE=deferred
+DATASENTINEL_OCR_MODE=local
 ```
 
 The server loads `.env.local` on startup without overriding existing process environment variables. The app reports AI readiness through `/api/health` and optional `aiProcessing` metadata in scan, metrics, and evaluation responses. Existing scans remain deterministic and show zero model calls unless a redacted assistive AI classification path is explicitly invoked.
+
+Install the host `tesseract` binary when `DATASENTINEL_OCR_MODE=local`; otherwise supported image files are counted as hard/OCR-deferred warnings. Raw video media remains deferred until a separate approved FFmpeg-based processor is deployed.
 
 OpenRouter bills in USD credits, so the runtime uses a conservative 25 USD application cap for the requested 25 EUR budget. Set the OpenRouter dashboard key credit limit as well when available; the application guard is not a replacement for provider-side spend limits.
 
@@ -171,6 +173,8 @@ sudo systemctl reload caddy
 ```
 
 ## Validation
+
+For shared preview work, validate the deployed server route directly. Local Vite or loopback API runs may help while editing, but they do not count as delivery validation for this project.
 
 ```bash
 curl -I http://127.0.0.1/

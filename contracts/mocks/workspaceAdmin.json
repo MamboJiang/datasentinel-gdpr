@@ -1,0 +1,270 @@
+{
+  "data": {
+    "workspace": {
+      "workspaceId": "ws_datasentinel_gdpr",
+      "name": "DataSentinel GDPR",
+      "slug": "datasentinel-gdpr",
+      "status": "active",
+      "plan": "Prelaunch",
+      "description": "Privacy operations workspace",
+      "createdAt": "2026-05-30T12:00:00Z",
+      "memberCount": 4,
+      "pendingInvitationCount": 2
+    },
+    "currentMembership": {
+      "membershipId": "mem_demo_admin",
+      "workspaceId": "ws_datasentinel_gdpr",
+      "accountId": "user_demo_admin",
+      "displayName": "Demo Workspace Admin",
+      "email": "demo.admin@example.invalid",
+      "groupIds": ["workspace_admin"],
+      "status": "active",
+      "joinedAt": "2026-05-30T12:00:00Z",
+      "invitedBy": null,
+      "lastActiveAt": "2026-05-30T12:20:00Z"
+    },
+    "permissionBoundary": {
+      "actorId": "user_demo_admin",
+      "workspaceId": "ws_datasentinel_gdpr",
+      "roles": ["workspace_admin"],
+      "allowedActions": [
+        "view_workspace_admin",
+        "invite_workspace_members",
+        "manage_workspace_members",
+        "manage_workspace_groups",
+        "view_workspace_metrics",
+        "view_workspace_audit",
+        "view_governance",
+        "view_assigned_findings",
+        "view_review_support",
+        "review_findings"
+      ],
+      "deniedActions": [
+        {
+          "action": "execute_real_deletion",
+          "reason": "Real deletion is disabled in P0."
+        },
+        {
+          "action": "sync_enterprise_directory",
+          "reason": "Production directory and tenant sync are out of scope for P0."
+        }
+      ],
+      "visibleScopes": ["workspace:ws_datasentinel_gdpr"],
+      "boundaryFingerprint": "sha256:workspace_admin_demo_boundary",
+      "evaluatedAt": "2026-05-30T12:00:00Z"
+    },
+    "availablePermissions": [
+      {
+        "permission": "view_workspace_admin",
+        "label": "View Workspace admin",
+        "description": "Open the Workspace administration surface and inspect visible control-plane state."
+      },
+      {
+        "permission": "invite_workspace_members",
+        "label": "Generate invite links",
+        "description": "Create pending invitation links with explicit Workspace group assignment."
+      },
+      {
+        "permission": "manage_workspace_members",
+        "label": "Manage members",
+        "description": "Change Workspace member control-plane state when member editing is exposed."
+      },
+      {
+        "permission": "manage_workspace_groups",
+        "label": "Manage groups",
+        "description": "Create, edit, and delete Workspace groups and their permission sets."
+      },
+      {
+        "permission": "view_workspace_metrics",
+        "label": "View metrics",
+        "description": "Read Workspace-level metrics and admin charts."
+      },
+      {
+        "permission": "view_workspace_audit",
+        "label": "View audit",
+        "description": "Read Workspace audit and operational evidence."
+      },
+      {
+        "permission": "view_governance",
+        "label": "View governance",
+        "description": "Read policy-pack and governance configuration state."
+      },
+      {
+        "permission": "view_assigned_findings",
+        "label": "View assigned findings",
+        "description": "Read findings assigned or delegated to the actor."
+      },
+      {
+        "permission": "view_review_support",
+        "label": "View review support",
+        "description": "Read permission-aware reviewer guidance for findings."
+      },
+      {
+        "permission": "review_findings",
+        "label": "Review findings",
+        "description": "Record supported human review decisions inside the visible permission boundary."
+      },
+      {
+        "permission": "view_owned_sources",
+        "label": "View owned sources",
+        "description": "Read source records owned or stewarded by the actor."
+      }
+    ],
+    "groups": [
+      {
+        "workspaceId": "ws_datasentinel_gdpr",
+        "groupId": "workspace_admin",
+        "name": "Workspace admins",
+        "description": "Can manage Workspace members, groups, invitations, audit, governance, and metrics.",
+        "permissions": [
+          "view_workspace_admin",
+          "invite_workspace_members",
+          "manage_workspace_members",
+          "manage_workspace_groups",
+          "view_workspace_metrics",
+          "view_workspace_audit",
+          "view_governance",
+          "view_assigned_findings",
+          "view_review_support",
+          "review_findings"
+        ],
+        "memberCount": 1
+      },
+      {
+        "workspaceId": "ws_datasentinel_gdpr",
+        "groupId": "privacy_reviewer",
+        "name": "Privacy reviewers",
+        "description": "Can review assigned findings with visible permission boundaries.",
+        "permissions": ["view_assigned_findings", "view_review_support", "review_findings"],
+        "memberCount": 1
+      },
+      {
+        "workspaceId": "ws_datasentinel_gdpr",
+        "groupId": "data_steward",
+        "name": "Data stewards",
+        "description": "Can steward owned sources and delegated findings.",
+        "permissions": ["view_owned_sources", "view_assigned_findings", "review_findings"],
+        "memberCount": 1
+      },
+      {
+        "workspaceId": "ws_datasentinel_gdpr",
+        "groupId": "auditor",
+        "name": "Auditors",
+        "description": "Can inspect governance, audit, and evaluation evidence without mutating workflow state.",
+        "permissions": ["view_workspace_audit", "view_workspace_metrics", "view_governance"],
+        "memberCount": 1
+      }
+    ],
+    "members": [
+      {
+        "membershipId": "mem_demo_admin",
+        "workspaceId": "ws_datasentinel_gdpr",
+        "accountId": "user_demo_admin",
+        "displayName": "Demo Workspace Admin",
+        "email": "demo.admin@example.invalid",
+        "groupIds": ["workspace_admin"],
+        "status": "active",
+        "joinedAt": "2026-05-30T12:00:00Z",
+        "invitedBy": null,
+        "lastActiveAt": "2026-05-30T12:20:00Z"
+      },
+      {
+        "membershipId": "mem_anna_reviewer",
+        "workspaceId": "ws_datasentinel_gdpr",
+        "accountId": "user_anna",
+        "displayName": "Anna Privacy Reviewer",
+        "email": "anna.reviewer@example.invalid",
+        "groupIds": ["privacy_reviewer"],
+        "status": "active",
+        "joinedAt": "2026-05-30T12:03:00Z",
+        "invitedBy": "user_demo_admin",
+        "lastActiveAt": "2026-05-30T12:19:00Z"
+      },
+      {
+        "membershipId": "mem_marta_steward",
+        "workspaceId": "ws_datasentinel_gdpr",
+        "accountId": "user_marta",
+        "displayName": "Marta Data Steward",
+        "email": "marta.steward@example.invalid",
+        "groupIds": ["data_steward"],
+        "status": "active",
+        "joinedAt": "2026-05-30T12:05:00Z",
+        "invitedBy": "user_demo_admin",
+        "lastActiveAt": "2026-05-30T12:12:00Z"
+      },
+      {
+        "membershipId": "mem_lee_auditor",
+        "workspaceId": "ws_datasentinel_gdpr",
+        "accountId": "user_lee",
+        "displayName": "Lee Audit Observer",
+        "email": "lee.audit@example.invalid",
+        "groupIds": ["auditor"],
+        "status": "active",
+        "joinedAt": "2026-05-30T12:08:00Z",
+        "invitedBy": "user_demo_admin",
+        "lastActiveAt": "2026-05-30T12:10:00Z"
+      }
+    ],
+    "invitations": [
+      {
+        "invitationId": "invite_priya_reviewer",
+        "workspaceId": "ws_datasentinel_gdpr",
+        "invitePath": "/workspace/invitations/invite_priya_reviewer",
+        "groupIds": ["privacy_reviewer"],
+        "status": "pending",
+        "invitedBy": "user_demo_admin",
+        "invitedByDisplayName": "Demo Workspace Admin",
+        "createdAt": "2026-05-30T12:15:00Z",
+        "expiresAt": "2026-06-06T12:15:00Z",
+        "acceptedAt": null
+      },
+      {
+        "invitationId": "invite_dpo_auditor",
+        "workspaceId": "ws_datasentinel_gdpr",
+        "invitePath": "/workspace/invitations/invite_dpo_auditor",
+        "groupIds": ["auditor"],
+        "status": "pending",
+        "invitedBy": "user_demo_admin",
+        "invitedByDisplayName": "Demo Workspace Admin",
+        "createdAt": "2026-05-30T12:17:00Z",
+        "expiresAt": "2026-06-06T12:17:00Z",
+        "acceptedAt": null
+      }
+    ],
+    "charts": {
+      "membersByGroup": [
+        { "label": "Workspace admins", "value": 1, "tone": "black" },
+        { "label": "Privacy reviewers", "value": 1, "tone": "blue" },
+        { "label": "Data stewards", "value": 1, "tone": "green" },
+        { "label": "Auditors", "value": 1, "tone": "neutral" }
+      ],
+      "invitationStatus": [
+        { "label": "Pending", "value": 2, "tone": "yellow" },
+        { "label": "Accepted", "value": 3, "tone": "green" },
+        { "label": "Expired", "value": 0, "tone": "neutral" }
+      ],
+      "reviewLoad": [
+        { "label": "Open backlog", "value": 12, "tone": "blue" },
+        { "label": "High risk", "value": 4, "tone": "red" },
+        { "label": "Review decisions", "value": 5, "tone": "green" }
+      ],
+      "riskOverview": [
+        { "label": "Flagged files", "value": 17, "tone": "blue" },
+        { "label": "Retention review", "value": 9, "tone": "yellow" },
+        { "label": "False positives", "value": 1, "tone": "neutral" }
+      ],
+      "scanCoverage": [
+        { "label": "Scanned files", "value": 42, "tone": "black" },
+        { "label": "Fingerprint records", "value": 42, "tone": "green" },
+        { "label": "Extraction warnings", "value": 3, "tone": "yellow" }
+      ]
+    }
+  },
+  "meta": {
+    "contractVersion": "0.1.0",
+    "generatedAt": "2026-05-30T12:00:00Z",
+    "traceId": "trace_workspace_admin_mock",
+    "partial": false,
+    "warnings": []
+  }
+}

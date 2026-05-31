@@ -1,0 +1,233 @@
+Workspace:
+  type: object
+  required: [workspaceId, name, slug, status, plan, memberCount, pendingInvitationCount]
+  additionalProperties: true
+  properties:
+    workspaceId: { type: string }
+    name: { type: string }
+    slug: { type: string }
+    status: { type: string }
+    plan: { type: string }
+    description: { type: string }
+    createdAt: { type: string, format: date-time }
+    memberCount: { type: integer, minimum: 0 }
+    pendingInvitationCount: { type: integer, minimum: 0 }
+WorkspaceGroup:
+  type: object
+  required: [groupId, name, permissions, memberCount]
+  additionalProperties: true
+  properties:
+    workspaceId: { type: string }
+    groupId: { type: string }
+    name: { type: string }
+    description: { type: string }
+    permissions:
+      type: array
+      items: { type: string }
+    memberCount: { type: integer, minimum: 0 }
+WorkspacePermissionOption:
+  type: object
+  required: [permission, label, description]
+  additionalProperties: true
+  properties:
+    permission: { type: string }
+    label: { type: string }
+    description: { type: string }
+WorkspaceMembership:
+  type: object
+  required: [membershipId, workspaceId, accountId, displayName, groupIds, status, joinedAt]
+  additionalProperties: true
+  properties:
+    membershipId: { type: string }
+    workspaceId: { type: string }
+    accountId: { type: string }
+    displayName: { type: string }
+    email: { type: [string, "null"] }
+    groupIds:
+      type: array
+      items: { type: string }
+    status: { type: string }
+    joinedAt: { type: string, format: date-time }
+    invitedBy: { type: [string, "null"] }
+    lastActiveAt: { type: [string, "null"], format: date-time }
+WorkspaceInvitation:
+  type: object
+  required: [invitationId, workspaceId, invitePath, groupIds, status, invitedBy, createdAt, expiresAt]
+  additionalProperties: true
+  properties:
+    invitationId: { type: string }
+    workspaceId: { type: string }
+    invitePath: { type: string }
+    email: { type: [string, "null"] }
+    groupIds:
+      type: array
+      items: { type: string }
+    status: { type: string }
+    invitedBy: { type: string }
+    invitedByDisplayName: { type: string }
+    createdAt: { type: string, format: date-time }
+    expiresAt: { type: string, format: date-time }
+    acceptedAt: { type: [string, "null"], format: date-time }
+WorkspacePermissionBoundary:
+  type: object
+  required: [actorId, workspaceId, roles, allowedActions, deniedActions, visibleScopes]
+  additionalProperties: true
+  properties:
+    actorId: { type: string }
+    workspaceId: { type: [string, "null"] }
+    roles:
+      type: array
+      items: { type: string }
+    allowedActions:
+      type: array
+      items: { type: string }
+    deniedActions:
+      type: array
+      items:
+        type: object
+        required: [action, reason]
+        additionalProperties: true
+        properties:
+          action: { type: string }
+          reason: { type: string }
+    visibleScopes:
+      type: array
+      items: { type: string }
+    boundaryFingerprint: { type: string }
+    evaluatedAt: { type: string, format: date-time }
+WorkspaceChartDatum:
+  type: object
+  required: [label, value]
+  additionalProperties: true
+  properties:
+    label: { type: string }
+    value: { type: number }
+    tone: { type: string }
+WorkspaceAdminCharts:
+  type: object
+  required: [membersByGroup, invitationStatus, reviewLoad, riskOverview, scanCoverage]
+  additionalProperties: true
+  properties:
+    membersByGroup:
+      type: array
+      items: { $ref: "#/WorkspaceChartDatum" }
+    invitationStatus:
+      type: array
+      items: { $ref: "#/WorkspaceChartDatum" }
+    reviewLoad:
+      type: array
+      items: { $ref: "#/WorkspaceChartDatum" }
+    riskOverview:
+      type: array
+      items: { $ref: "#/WorkspaceChartDatum" }
+    scanCoverage:
+      type: array
+      items: { $ref: "#/WorkspaceChartDatum" }
+WorkspaceDirectory:
+  type: object
+  required: [account, currentWorkspaceId, workspaces, pendingInvitations, workspaceRequired]
+  additionalProperties: true
+  properties:
+    account:
+      type: object
+      required: [accountId, displayName]
+      additionalProperties: true
+      properties:
+        accountId: { type: string }
+        displayName: { type: string }
+        email: { type: [string, "null"] }
+    currentWorkspaceId: { type: [string, "null"] }
+    workspaces:
+      type: array
+      items: { $ref: "#/Workspace" }
+    pendingInvitations:
+      type: array
+      items: { $ref: "#/WorkspaceInvitation" }
+    workspaceRequired: { type: boolean }
+WorkspaceAdminSummary:
+  type: object
+  required: [workspace, currentMembership, permissionBoundary, availablePermissions, groups, members, invitations, charts]
+  additionalProperties: true
+  properties:
+    workspace:
+      anyOf:
+        - $ref: "#/Workspace"
+        - type: "null"
+    currentMembership:
+      anyOf:
+        - $ref: "#/WorkspaceMembership"
+        - type: "null"
+    permissionBoundary: { $ref: "#/WorkspacePermissionBoundary" }
+    availablePermissions:
+      type: array
+      items: { $ref: "#/WorkspacePermissionOption" }
+    groups:
+      type: array
+      items: { $ref: "#/WorkspaceGroup" }
+    members:
+      type: array
+      items: { $ref: "#/WorkspaceMembership" }
+    invitations:
+      type: array
+      items: { $ref: "#/WorkspaceInvitation" }
+    charts: { $ref: "#/WorkspaceAdminCharts" }
+CreateWorkspaceInvitationRequest:
+  type: object
+  required: [groupIds]
+  additionalProperties: true
+  properties:
+    groupIds:
+      type: array
+      minItems: 1
+      items: { type: string }
+CreateWorkspaceRequest:
+  type: object
+  required: [name]
+  additionalProperties: true
+  properties:
+    name: { type: string }
+    description: { type: string }
+CreateWorkspaceGroupRequest:
+  type: object
+  required: [name, permissions]
+  additionalProperties: true
+  properties:
+    name: { type: string }
+    description: { type: string }
+    permissions:
+      type: array
+      items: { type: string }
+UpdateWorkspaceGroupRequest:
+  type: object
+  required: [name, permissions]
+  additionalProperties: true
+  properties:
+    name: { type: string }
+    description: { type: string }
+    permissions:
+      type: array
+      items: { type: string }
+WorkspaceDirectoryEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/WorkspaceDirectory" }
+    meta: { $ref: "./common.yaml#/Meta" }
+WorkspaceAdminSummaryEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/WorkspaceAdminSummary" }
+    meta: { $ref: "./common.yaml#/Meta" }
+WorkspaceInvitationEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/WorkspaceInvitation" }
+    meta: { $ref: "./common.yaml#/Meta" }
+WorkspaceGroupEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/WorkspaceGroup" }
+    meta: { $ref: "./common.yaml#/Meta" }

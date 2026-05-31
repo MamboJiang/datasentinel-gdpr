@@ -150,6 +150,46 @@
       "ocrDeferredFiles": 2,
       "redactedEvidenceCandidates": 64,
       "rawContentExposed": false,
+      "aiAssistanceUsed": false,
+      "modelCalls": 0,
+      "recognitionDifficulty": {
+        "easy": 22,
+        "moderate": 16,
+        "hard": 2,
+        "unsupported": 2
+      },
+      "formatCounts": [
+        {
+          "format": "text",
+          "difficulty": "easy",
+          "method": "utf8_text",
+          "files": 22
+        },
+        {
+          "format": "pdf_text_layer",
+          "difficulty": "moderate",
+          "method": "pdf_text_layer",
+          "files": 7
+        },
+        {
+          "format": "ooxml",
+          "difficulty": "moderate",
+          "method": "ooxml_text",
+          "files": 9
+        },
+        {
+          "format": "ocr_deferred",
+          "difficulty": "hard",
+          "method": "ocr_deferred",
+          "files": 2
+        },
+        {
+          "format": "unsupported",
+          "difficulty": "unsupported",
+          "method": "unsupported",
+          "files": 2
+        }
+      ],
       "methods": [
         {
           "method": "metadata",

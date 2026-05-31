@@ -12,7 +12,7 @@ In scope:
 
 - Deterministic sample-source file inventory summaries.
 - Internal file inventory items with path, size, modified timestamp, sample family, permission snapshot, readability status, and stable file fingerprint.
-- Deterministic content extraction summaries for text, metadata, table, and deferred OCR handling.
+- Deterministic content extraction summaries for text, metadata, table, local image OCR, transcript text, and deferred media handling.
 - Redacted evidence-candidate counts only, not raw extracted text.
 - Scan-stage visibility through the existing scan, metrics, audit, and evaluation surfaces.
 - Partial-data warnings while the scan is running.
@@ -22,7 +22,7 @@ Out of scope:
 
 - Production Microsoft Graph, OAuth, tenant, or deletion integrations.
 - Downloading or vendoring organizer sample files.
-- Runtime OCR, parser, NER, LLM, storage, queue, or database selection.
+- Production parser, NER, LLM, storage, queue, database selection, or full video media processing.
 - Automatic deletion, legal conclusions, or unreviewed retention decisions.
 - New public extraction endpoints.
 
@@ -57,7 +57,7 @@ Out of scope:
 | Add one public extraction endpoint | Easy to debug stage output | Expands API surface and risks raw-content leakage | Rejected |
 | Add optional scan-stage summaries to existing scan payload | Keeps frontend/backend contract stable and observable | Requires disciplined optional-field handling | Accepted |
 | Use deterministic fixture-backed summaries | Fast, free, reproducible, and testable | Does not parse real documents | Accepted for P0 |
-| Use Tika/Tesseract later behind an internal boundary | Reuses mature open-source tools and controls cost | Needs sandboxing, file-size limits, and parser hardening | Future candidate |
+| Use Tika/Tesseract behind an internal boundary | Reuses mature open-source tools and controls cost | Needs sandboxing, file-size limits, and parser hardening | Tesseract image OCR accepted for prelaunch; broad parser services remain future candidates |
 
 ## State Machine
 
@@ -90,7 +90,7 @@ The admin metrics payload may include optional inventory and extraction counters
 - Do not expose raw source text, full file bodies, page images, or unredacted personal data.
 - Redacted evidence snippets remain part of finding evidence cards, not this inventory/extraction summary.
 - Warning text must describe processing limitations without copying source content.
-- Parser/OCR execution is deferred until sandboxing, file-size limits, MIME allowlists, and malware handling are designed.
+- Broad parser execution and raw video media processing are deferred until sandboxing, file-size limits, MIME allowlists, and malware handling are designed. Image OCR is limited to host-local Tesseract under the prelaunch media boundary.
 - P0 uses zero model calls and zero paid services.
 
 ## Economic Affordability

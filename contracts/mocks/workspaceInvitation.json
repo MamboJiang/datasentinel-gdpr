@@ -1,0 +1,21 @@
+{
+  "data": {
+    "invitationId": "invite_priya_reviewer",
+    "workspaceId": "ws_datasentinel_gdpr",
+    "invitePath": "/workspace/invitations/invite_priya_reviewer",
+    "groupIds": ["privacy_reviewer"],
+    "status": "pending",
+    "invitedBy": "user_demo_admin",
+    "invitedByDisplayName": "Demo Workspace Admin",
+    "createdAt": "2026-05-30T12:15:00Z",
+    "expiresAt": "2026-06-06T12:15:00Z",
+    "acceptedAt": null
+  },
+  "meta": {
+    "contractVersion": "0.1.0",
+    "generatedAt": "2026-05-30T12:15:00Z",
+    "traceId": "trace_workspace_invitation_mock",
+    "partial": false,
+    "warnings": []
+  }
+}

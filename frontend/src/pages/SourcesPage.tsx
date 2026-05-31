@@ -18,6 +18,12 @@ const SUPPORTED_FILE_TYPES = [
   'XML',
   'HTML',
   'PDF text layer',
+  'DOCX',
+  'XLSX',
+  'PPTX',
+  'PNG/JPG image OCR',
+  'TIFF/BMP/WEBP image OCR',
+  'VTT/SRT video transcripts',
   'Google Docs export',
   'Google Sheets export',
   'Google Slides export',
@@ -137,7 +143,7 @@ export function SourcesPage() {
           {SUPPORTED_FILE_TYPES.map((type) => <span key={type}>{t(type)}</span>)}
         </div>
         <p className="supported-formats-note">
-          {t('Image-only PDFs and other binary Office files are OCR-deferred or unsupported in this prelaunch build.')}
+          {t('Legacy binary Office files, image-only PDFs, OCR failures, and raw video media are hard/OCR-deferred or unsupported. Deterministic scans do not use AI by default.')}
         </p>
       </section>
 

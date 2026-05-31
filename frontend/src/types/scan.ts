@@ -83,6 +83,21 @@ export type ContentExtractionMethod = {
   status?: string
 }
 
+export type RecognitionDifficultySummary = {
+  easy?: number
+  moderate?: number
+  hard?: number
+  unsupported?: number
+  [key: string]: number | undefined
+}
+
+export type ContentFormatCount = {
+  format: string
+  files: number
+  difficulty?: string
+  method?: string
+}
+
 export type ContentExtractionSummary = {
   status: string
   extractionFingerprint: string
@@ -93,6 +108,10 @@ export type ContentExtractionSummary = {
   ocrDeferredFiles: number
   redactedEvidenceCandidates: number
   rawContentExposed: boolean
+  aiAssistanceUsed?: boolean
+  modelCalls?: number
+  recognitionDifficulty?: RecognitionDifficultySummary
+  formatCounts?: ContentFormatCount[]
   methods: ContentExtractionMethod[]
   warnings: string[]
 }

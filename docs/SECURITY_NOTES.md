@@ -42,7 +42,7 @@ Google and GitHub OAuth are approved only for prelaunch sign-in. They must not b
 
 Google Drive selected-source access is approved only through the Google Picker prelaunch boundary. The frontend may request a short-lived access token for selected files or folders, and the backend may use that token only for the current scan request. The token must not be stored in source records, SQLite workflow documents, logs, audit events, or frontend payloads.
 
-Direct HTTPS file links are approved only for public text-like files. The backend must reject non-HTTPS links, embedded credentials, private-address hosts, unsupported content, and over-limit files before storing workflow output.
+Direct HTTPS file links are approved only for public text-like, PDF text-layer, Office Open XML, supported image, supported transcript, or recognized raw video media files. The backend must reject non-HTTPS links, embedded credentials, private-address hosts, unsupported content, and over-limit files before storing workflow output. Image OCR must run locally through the host OCR binary when `DATASENTINEL_OCR_MODE=local`, and raw video media must stay hard/OCR-deferred until an approved local media processor exists.
 
 OpenRouter assistive AI is the only approved external AI boundary. It must follow these controls:
 

@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from .auth import AuthService
 from .demo_state import DemoState
@@ -17,6 +18,13 @@ from .source_api import SourceApi
 from .source_connection import ConnectionPolicy, SourceConnectionService
 from .source_store import SourceStore, demo_fixtures_enabled
 from .sqlite_store import SQLiteAuthStore, SQLiteDocumentStore, SQLiteSourceStore, SQLiteWorkflowStore
+from .workspace import WorkspaceService, actor_from_headers
+
+
+@dataclass(frozen=True)
+class SourceHttpOptions:
+    sqlite_documents: SQLiteDocumentStore | None = None
+    allowed_roots: list[Path | str] | None = None
 
 
 class SourceHttpApp:
@@ -25,14 +33,15 @@ class SourceHttpApp:
         source_api: SourceApi | None = None,
         demo_state: DemoState | None = None,
         auth_service: AuthService | None = None,
-        sqlite_documents: SQLiteDocumentStore | None = None,
-        allowed_roots: list[Path | str] | None = None,
+        options: SourceHttpOptions | None = None,
     ) -> None:
+        runtime_options = options or SourceHttpOptions()
         self.source_api = source_api or SourceApi()
         self.demo_state = demo_state or (DemoState(self.source_api.store) if demo_fixtures_enabled() else PrelaunchState(self.source_api.store))
         self.auth_service = auth_service or AuthService()
-        self.sqlite_documents = sqlite_documents
-        self.allowed_roots = allowed_roots or []
+        self.sqlite_documents = runtime_options.sqlite_documents
+        self.allowed_roots = runtime_options.allowed_roots or []
+        self.workspace_service = WorkspaceService.with_sqlite(self.sqlite_documents) if self.sqlite_documents else WorkspaceService()
 
     @classmethod
     def with_roots(cls, allowed_roots: list[Path | str]) -> "SourceHttpApp":
@@ -51,7 +60,7 @@ class SourceHttpApp:
         roots = allowed_roots or []
         documents = SQLiteDocumentStore(db_path)
         auth_service = AuthService(SQLiteAuthStore(documents))
-        return cls(auth_service=auth_service, sqlite_documents=documents, allowed_roots=roots)
+        return cls(auth_service=auth_service, options=SourceHttpOptions(sqlite_documents=documents, allowed_roots=roots))
 
     def handle(
         self,
@@ -122,6 +131,47 @@ class SourceHttpApp:
             return auth_required
 
         source_api, demo_state = self._scoped_runtime(headers)
+        actor = actor_from_headers(headers, self.auth_service.session_payload(headers))
+
+        if method == "GET" and route == "/workspaces":
+            return self.workspace_service.directory(actor, trace_id)
+
+        if method == "POST" and route == "/workspaces":
+            payload_response = self._json_body(body, content_type, route, trace_id)
+            if "body" in payload_response:
+                return payload_response
+            return self.workspace_service.create_workspace(payload_response["payload"], actor, trace_id, f"/api{route}")
+
+        if method == "GET" and route == "/workspaces/current/admin":
+            return self.workspace_service.admin_summary(actor, getattr(demo_state, "metrics", {}), trace_id)
+
+        workspace_group_collection = _match(route, "/workspaces/", "/groups")
+        if method == "POST" and workspace_group_collection:
+            payload_response = self._json_body(body, content_type, route, trace_id)
+            if "body" in payload_response:
+                return payload_response
+            return self.workspace_service.create_group(workspace_group_collection, payload_response["payload"], actor, trace_id, f"/api{route}")
+
+        workspace_group = _workspace_group_match(route)
+        if workspace_group and method in {"PATCH", "DELETE"}:
+            workspace_id, group_id = workspace_group
+            if method == "DELETE":
+                return self.workspace_service.delete_group(workspace_id, group_id, actor, trace_id, f"/api{route}")
+            payload_response = self._json_body(body, content_type, route, trace_id)
+            if "body" in payload_response:
+                return payload_response
+            return self.workspace_service.update_group(workspace_id, group_id, payload_response["payload"], actor, trace_id, f"/api{route}")
+
+        accept_invitation = _match(route, "/workspaces/invitations/", "/accept")
+        if method == "POST" and accept_invitation:
+            return self.workspace_service.accept_invitation(accept_invitation, actor, trace_id, f"/api{route}")
+
+        workspace_invitation = _match(route, "/workspaces/", "/invitations")
+        if method == "POST" and workspace_invitation:
+            payload_response = self._json_body(body, content_type, route, trace_id)
+            if "body" in payload_response:
+                return payload_response
+            return self.workspace_service.create_invitation(workspace_invitation, payload_response["payload"], actor, trace_id, f"/api{route}")
 
         if method == "GET" and route == "/integrations/google-drive/picker-config":
             return picker_config_response(trace_id)
@@ -325,3 +375,10 @@ def _match(route: str, prefix: str, suffix: str = "") -> str | None:
         value = value[:-len(suffix)]
 
     return value.strip("/") or None
+
+
+def _workspace_group_match(route: str) -> tuple[str, str] | None:
+    parts = route.strip("/").split("/")
+    if len(parts) != 4 or parts[0] != "workspaces" or parts[2] != "groups":
+        return None
+    return unquote(parts[1]), unquote(parts[3])

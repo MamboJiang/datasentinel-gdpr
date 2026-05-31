@@ -53,6 +53,7 @@ export function DashboardPage() {
   const aggregation = getDashboardAggregation(rawAggregation)
   const estimatedCostUsd = rawAggregation?.estimatedCostUsd ?? 0
   const pipelineStages = scan.pipelineStages ?? []
+  const recognitionDifficulty = formatRecognitionDifficulty(extraction?.recognitionDifficulty)
   const processedFiles = scan.scannedFiles ?? 0
   const totalFiles = scan.totalFiles ?? 0
   const scanCoverage = totalFiles > 0 ? `${processedFiles}/${totalFiles}` : processedFiles.toString()
@@ -203,7 +204,7 @@ export function DashboardPage() {
         {inventory && extraction ? (
           <div className="pipeline-footnote">
             <Files aria-hidden="true" size={16} />
-            <span>{inventory.totalCandidateFiles} candidates · {extraction.redactedEvidenceCandidates} redacted evidence candidates · {signalDetection?.redactedSignals ?? 0} redacted signals · {deltaScan ? `${deltaScan.carriedForwardFiles} carried forward · ` : ''}{findingAssembly?.evidenceCards ?? 0} evidence cards · {reviewSupport?.supportedFindings ?? 0} review supports · {auditRecording?.recordedEventCount ?? metrics.auditRecordedEvents ?? 0} audit events · metrics {aggregation?.status ?? 'unknown'} · policy {contextRisk?.policyPackVersion ?? 'unknown'}</span>
+            <span>{inventory.totalCandidateFiles} candidates · {extraction.redactedEvidenceCandidates} redacted evidence candidates · {signalDetection?.redactedSignals ?? 0} redacted signals · {recognitionDifficulty ? `difficulty ${recognitionDifficulty} · ` : ''}{deltaScan ? `${deltaScan.carriedForwardFiles} carried forward · ` : ''}{findingAssembly?.evidenceCards ?? 0} evidence cards · {reviewSupport?.supportedFindings ?? 0} review supports · {auditRecording?.recordedEventCount ?? metrics.auditRecordedEvents ?? 0} audit events · metrics {aggregation?.status ?? 'unknown'} · policy {contextRisk?.policyPackVersion ?? 'unknown'}</span>
           </div>
         ) : null}
       </section>
@@ -269,4 +270,16 @@ function getDashboardAggregation(aggregation: AdminMetricsAggregationSummary | u
   }
 
   return aggregation
+}
+
+function formatRecognitionDifficulty(difficulty: Record<string, number | undefined> | undefined) {
+  if (!difficulty) {
+    return ''
+  }
+
+  return (['easy', 'moderate', 'hard', 'unsupported'] as const)
+    .map((level) => [level, difficulty[level] ?? 0] as const)
+    .filter(([, count]) => count > 0)
+    .map(([level, count]) => `${count} ${level}`)
+    .join(' / ')
 }

@@ -83,7 +83,7 @@ def response(
             "X-Contract-Version": CONTRACT_VERSION,
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Headers": "Accept, Content-Type, X-Actor-Id, X-Contract-Version, Idempotency-Key, X-Trace-Id",
-            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
         },
         "body": body,
     }

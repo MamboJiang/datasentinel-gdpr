@@ -2,6 +2,9 @@ import { createContext } from 'react'
 import type {
   AdminMetrics,
   AuditEvent,
+  CreateWorkspaceInvitationInput,
+  CreateWorkspaceInput,
+  DeleteWorkspaceGroupInput,
   EvaluationSummary,
   Finding,
   FindingSummary,
@@ -12,6 +15,12 @@ import type {
   ReviewSupport,
   Scan,
   Source,
+  WorkspaceAdminSummary,
+  WorkspaceDirectory,
+  WorkspaceGroup,
+  WorkspaceGroupInput,
+  WorkspaceInvitation,
+  UpdateWorkspaceGroupInput,
 } from '../types'
 import type { StartScanOptions } from './scanWorkflow'
 import type { CreateSourceInput } from './serverApi'
@@ -32,6 +41,8 @@ export type DataContextValue = {
   governanceConfig: GovernanceConfig
   permissionBoundary: PermissionBoundary
   reviewSupport: ReviewSupport
+  workspaceDirectory: WorkspaceDirectory
+  workspaceAdmin: WorkspaceAdminSummary
   meta: Meta
   notifications: AppNotification[]
   getFinding: (findingId: string) => Finding | undefined
@@ -41,6 +52,12 @@ export type DataContextValue = {
   startScan: (options: StartScanOptions) => void
   testSourceConnection: (sourceId: string) => void
   reviewFinding: (input: ReviewInput) => void
+  createWorkspace: (input: CreateWorkspaceInput) => void
+  createWorkspaceInvitation: (input: CreateWorkspaceInvitationInput) => Promise<WorkspaceInvitation | null>
+  acceptWorkspaceInvitation: (invitationId: string) => Promise<boolean>
+  createWorkspaceGroup: (input: WorkspaceGroupInput) => Promise<WorkspaceGroup | null>
+  updateWorkspaceGroup: (input: UpdateWorkspaceGroupInput) => Promise<WorkspaceGroup | null>
+  deleteWorkspaceGroup: (input: DeleteWorkspaceGroupInput) => Promise<boolean>
   dismissNotification: (notificationId: string) => void
   clearNotifications: () => void
 }

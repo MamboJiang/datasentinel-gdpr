@@ -56,6 +56,139 @@ paths:
             application/json:
               schema:
                 $ref: "./schemas/common.yaml#/AuthSessionEnvelope"
+  /workspaces:
+    get:
+      operationId: listVisibleWorkspaces
+      responses:
+        "200":
+          description: Workspaces visible to the current account and any legacy account-targeted pending invitations.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/workspace.yaml#/WorkspaceDirectoryEnvelope"
+    post:
+      operationId: createWorkspace
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/workspace.yaml#/CreateWorkspaceRequest"
+      responses:
+        "201":
+          description: Workspace created and creator joined as a Workspace admin.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/workspace.yaml#/WorkspaceDirectoryEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /workspaces/current/admin:
+    get:
+      operationId: getCurrentWorkspaceAdminSummary
+      responses:
+        "200":
+          description: Workspace administrator summary, permission boundary, and charts for the current account context.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/workspace.yaml#/WorkspaceAdminSummaryEnvelope"
+  /workspaces/{workspaceId}/groups:
+    post:
+      operationId: createWorkspaceGroup
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/workspace.yaml#/CreateWorkspaceGroupRequest"
+      responses:
+        "201":
+          description: Workspace group created with explicit permissions.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/workspace.yaml#/WorkspaceGroupEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /workspaces/{workspaceId}/groups/{groupId}:
+    patch:
+      operationId: updateWorkspaceGroup
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/GroupId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/workspace.yaml#/UpdateWorkspaceGroupRequest"
+      responses:
+        "200":
+          description: Workspace group name, description, and permissions updated.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/workspace.yaml#/WorkspaceGroupEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: deleteWorkspaceGroup
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/GroupId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Workspace group deleted; memberships and pending invite links no longer reference it.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/workspace.yaml#/WorkspaceGroupEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /workspaces/{workspaceId}/invitations:
+    post:
+      operationId: createWorkspaceInvitation
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/workspace.yaml#/CreateWorkspaceInvitationRequest"
+      responses:
+        "201":
+          description: Workspace invitation link created.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/workspace.yaml#/WorkspaceInvitationEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /workspaces/invitations/{invitationId}/accept:
+    post:
+      operationId: acceptWorkspaceInvitation
+      parameters:
+        - $ref: "#/components/parameters/InvitationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Workspace invitation accepted by the signed-in account that opens the link.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/workspace.yaml#/WorkspaceDirectoryEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
   /health:
     get:
       operationId: getHealth
@@ -376,6 +509,21 @@ components:
       name: Idempotency-Key
       in: header
       required: false
+      schema: { type: string }
+    WorkspaceId:
+      name: workspaceId
+      in: path
+      required: true
+      schema: { type: string }
+    GroupId:
+      name: groupId
+      in: path
+      required: true
+      schema: { type: string }
+    InvitationId:
+      name: invitationId
+      in: path
+      required: true
       schema: { type: string }
     SourceId:
       name: sourceId

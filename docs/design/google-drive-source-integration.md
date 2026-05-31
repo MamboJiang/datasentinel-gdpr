@@ -5,7 +5,7 @@
 Prelaunch users need to scan real working files without uploading and storing raw files inside DataSentinel. The source setup flow must support two low-friction inputs:
 
 - A user-selected Google Drive file or folder scope.
-- A direct HTTPS link to one supported text-like file or PDF text layer.
+- A direct HTTPS link to one supported text-like file, PDF text layer, or Office Open XML file.
 
 The implementation must read source content only during scan execution, produce redacted findings and audit evidence, and avoid long-term raw source-content storage.
 
@@ -92,6 +92,7 @@ Rollback path:
 - A user can register a direct HTTPS file link and start a full scan that produces redacted findings when the file contains detectable signals.
 - Direct-link scans reject non-HTTPS, credential-bearing, private-address, unreachable, over-limit, or unsupported files without storing raw content.
 - PDF text-layer scans can produce redacted findings without storing raw PDF bodies or raw extracted text.
+- DOCX, XLSX, and PPTX scans can produce redacted findings through the local deterministic extraction path documented in `docs/design/local-format-recognition-difficulty.md`.
 - A user can select Google Drive files or one folder through Google Picker when host public credentials are configured.
 - A Google Drive source stores selected item metadata but not the access token.
 - A Google Drive full scan requires a short-lived access token in the scan request and rejects missing tokens without mutating workflow state.

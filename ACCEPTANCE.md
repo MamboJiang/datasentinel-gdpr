@@ -59,8 +59,9 @@ Backend work after sample source connection is ready to break into scoped tasks 
 The first implementation milestone is accepted when:
 
 - The root route `/` shows a public project homepage that introduces DataSentinel and links to the internal dashboard route at `/dashboard`.
-- The frontend app shell shows only the current page title plus notifications in the top bar, keeps workspace switching in the top-left sidebar control, exposes logged-in account controls from the bottom-left sidebar account menu, and lets users collapse or expand the sidebar.
+- The frontend app shell shows the current page title or route hierarchy plus notifications in the top bar, lets intermediate title levels show a hover underline and navigate back to their route, keeps workspace switching in the top-left sidebar control, exposes logged-in account controls from the bottom-left sidebar account menu, and lets users collapse or expand the sidebar.
 - The top-right notification button opens a session notification center; operation feedback is timestamped, newest-first, dismissible, and does not render as a bottom toast.
+- New operation feedback appears in a small top-right notification preview, auto-dismisses after a few seconds, and does not open, close, clear, dismiss, or reorder the session notification center.
 - On desktop, the sidebar can be resized with a pointer or keyboard-accessible separator, collapses when dragged below the configured threshold, caps expansion at the configured maximum width, and keeps the content area aligned without overlap.
 - Account menu actions open local utility routes or local UI states for account settings, theme, language preference, feedback, homepage, changelog, help, docs, platform status, prototype plan, and session boundary without adding production authentication, billing, support, monitoring, tenant, external translation service, or external feedback integration.
 - The account menu language preference lists EU language options, persists the selected code locally, updates core user-facing UI copy through static frontend dictionaries, keeps developer-facing docs and code comments English-only, and does not call a backend or translation service.
@@ -68,7 +69,7 @@ The first implementation milestone is accepted when:
 - Starting a full scan uses an explicit `sourceId`, is allowed only for the controlled `mock_ready` sample source or approved prelaunch source types, and records scan-start and scan-completion audit events in the workflow.
 - The Dashboard groups scanned files, flagged files, scanned volume, progress, scan time, review backlog, high-risk count, retention review count, and owner routing into clear scan, review, and pipeline summaries.
 - A responsible user can list assigned findings.
-- A finding detail view shows redacted evidence, signals, risk explanation, owner assignment, retention status, and audit timeline.
+- A finding detail view shows redacted evidence, signals, risk explanation, owner assignment, retention status, and audit timeline, and the top title hierarchy shows `Findings / Finding Detail` with `Findings` linking back to the findings list.
 - A reviewer can open a redacted file review surface from a finding detail view and focus the relevant sensitive evidence location without exposing raw sensitive values.
 - A human reviewer can record delete candidate, keep with reason, false positive, reassign, or escalate decisions.
 - Every review decision creates an audit event with actor, timestamp, reason, and resulting status.
@@ -99,28 +100,57 @@ The Google/GitHub account system is accepted when:
 - Authentication does not grant real deletion, Microsoft Graph access, tenant access, legal conclusions, or hidden permission powers.
 - Automated backend tests cover provider setup, unconfigured rejection, state mismatch rejection, session read, logout, auth-required workflow protection, account-scoped Sources, and account-scoped findings.
 
+## Workspace Admin Permission Acceptance
+
+The Workspace administrator and user-group system is accepted when:
+
+- `docs/design/workspace-admin-permission-system.md` defines problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
+- `contracts/openapi.yaml`, `contracts/schemas/workspace.yaml`, `contracts/mocks/workspaceDirectory.json`, `contracts/mocks/workspaceAdmin.json`, `contracts/mocks/workspaceGroup.json`, and `docs/API_CONTRACT.md` document workspace directory, admin summary, group management, invitation creation, and invitation acceptance endpoints.
+- A newly created signed-in account has no Workspace membership by default and sees an invitation-required state rather than seeded Workspace access.
+- A signed-in account can open a Workspace creation dialog from the left Workspace menu or no-Workspace state, enter Workspace settings, create a Workspace, and automatically becomes an active `workspace_admin` member of that Workspace.
+- A seeded or invited Workspace admin can open `/workspace/admin` and inspect members, groups, pending invite links, permission boundaries, and workspace-level charts.
+- A Workspace admin can open `/workspace/admin/members` from the sidebar or the Admin page Members panel and search, filter, group, and sort Workspace members by member text, group, status, join date, and last activity.
+- Workspace groups carry explicit permissions for workspace administration, privacy review, data stewardship, and audit read-only access.
+- A Workspace admin can create new Workspace groups, set their names and permissions from the exposed permission catalog, and immediately use them in invite links.
+- Workspace group controls render collapsed by default: the new-group form is hidden behind a single button, existing groups show compact summary cards, and permission editing expands only after the admin clicks a group's edit icon.
+- A Workspace admin can rename groups and change group permissions; permission boundaries use the updated definitions.
+- A Workspace admin can delete non-admin groups; member and pending invite references to the deleted group are removed or revoked when no groups remain.
+- The `workspace_admin` group cannot be deleted or stripped of the minimum admin-management permissions required to avoid locking out the Workspace.
+- Permission boundaries expose both allowed and denied Workspace actions, including a visible denial for real deletion.
+- The left workspace menu is backed by Workspace data, shows the current Workspace when available, shows legacy pending invitations or no-Workspace state when unavailable, and opens the Workspace creation dialog from its create action.
+- A Workspace admin can generate a pending invite link with one or more Workspace groups.
+- A signed-in account that opens the invite link can accept it and becomes an active Workspace member exactly once.
+- Already-member, duplicate-acceptance, expired, revoked, or non-admin invitation actions do not create membership or privilege changes.
+- Admin charts render deterministic management data from existing metrics plus Workspace membership and invitation summaries without adding a chart dependency.
+- Workspace permissions do not grant production tenant access, Microsoft Graph access, source-file deletion, legal advice, full GDPR-compliance claims, or hidden powers.
+- Automated tests cover Workspace-less accounts, Workspace creation, admin summary access, group customization, invitation creation, and invitation acceptance.
+
 ## Prelaunch Source Input Acceptance
 
 Google Drive and direct-link source input are accepted when:
 
-- The design notes `docs/design/google-drive-source-integration.md` and `docs/design/pdf-source-text-extraction-and-source-deletion.md` define problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
+- The design notes `docs/design/google-drive-source-integration.md`, `docs/design/pdf-source-text-extraction-and-source-deletion.md`, `docs/design/local-format-recognition-difficulty.md`, and `docs/design/image-video-recognition-boundary.md` define problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
 - `contracts/openapi.yaml`, `contracts/schemas/common.yaml`, `contracts/schemas/source-scan.yaml`, and `docs/API_CONTRACT.md` document Google Drive Picker public config, remote-link source config, Drive selected-item config, and per-scan short-lived authorization.
 - Runtime configuration uses ignored environment variables for Google Picker public credentials: `GOOGLE_PICKER_API_KEY` and `GOOGLE_CLOUD_PROJECT_NUMBER`.
 - `/api/integrations/google-drive/picker-config` reports Picker setup state behind the prelaunch session boundary without exposing Google client secrets, provider tokens, refresh tokens, or GitHub credentials.
 - An authenticated empty prelaunch project can still register sources when there are no findings or finding detail records yet.
 - The Sources page can register a `remote_file_link` with `config.url` and no fake prefilled source examples.
 - The Sources page shows the current prelaunch supported file types below the source inventory surface.
-- Remote file-link scans require HTTPS, no embedded credentials, a public-resolving host, supported text-like content or a PDF text layer, and the prelaunch size limit.
+- Remote file-link scans require HTTPS, no embedded credentials, a public-resolving host, supported text-like content, a PDF text layer, Office Open XML content, supported image files, supported transcript files, or recognized raw video media; extractable files must stay within the prelaunch size limit and raw video media is reported as hard/OCR-deferred.
 - Google Drive and Google Docs share-page URLs are rejected as direct links and must be added through Google Drive Picker.
 - The Sources page can select Google Drive files or a folder through Google Picker when host credentials are configured.
 - Google Picker intermediate callbacks do not close the source setup flow; picked files or folders remain visible in the Add Source dialog before registration.
 - Google Drive source registration stores selected item metadata but not access tokens.
 - Google Drive full scans require a short-lived per-scan access token and reject missing tokens without changing scan, finding, audit, metric, or evaluation state.
 - PDF files with an extractable text layer can be scanned from local, direct-link, or Google Drive selected sources without storing raw PDF bodies or raw extracted text.
+- DOCX, XLSX, and PPTX files can be scanned deterministically from local, direct-link, or Google Drive selected sources without storing raw Office XML or raw extracted text.
+- PNG, JPG/JPEG, TIFF, BMP, and WEBP image files can be scanned through host-local Tesseract OCR when `DATASENTINEL_OCR_MODE=local` and the host binary is available, without storing raw images or raw OCR text.
+- VTT and SRT transcript files can be scanned as video transcript text, while raw MP4, MOV, M4V, MKV, WEBM, and AVI media are counted as hard/OCR-deferred until an approved video processor exists.
+- Scan payloads expose recognition difficulty counts and per-format extraction counts while normal deterministic scans keep `aiAssistanceUsed = false` and `modelCalls = 0`.
 - Image-only or unreadable PDFs are reported as unsupported/OCR-deferred prelaunch inputs rather than silent successes.
 - The Sources page can delete a DataSentinel source registration, clears DataSentinel scan/finding state derived from that deleted registration, and the backend `DELETE /api/sources/{sourceId}` route does not delete external source files.
 - Source scanning reads file content only during scan execution and persists metadata, redacted evidence, findings, metrics, and audit events rather than raw source bodies.
-- Automated tests cover Picker config redaction, Picker picked/cancel/pending callback handling, empty-project source registration readiness, remote-link redaction/no-raw-content behavior, Google Drive share-link rejection, PDF text-layer scanning without raw-text persistence, source-registration deletion, and missing Drive token rejection.
+- Automated tests cover Picker config redaction, Picker picked/cancel/pending callback handling, empty-project source registration readiness, remote-link redaction/no-raw-content behavior, Google Drive share-link rejection, PDF text-layer scanning without raw-text persistence, DOCX/XLSX/PPTX deterministic extraction with difficulty counts, local image OCR with redaction, video transcript scanning, raw video media deferred handling, source-registration deletion, and missing Drive token rejection.
 
 ## OpenRouter AI Assistive Processing Acceptance
 

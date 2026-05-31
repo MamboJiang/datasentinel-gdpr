@@ -27,6 +27,9 @@ def make_handler(app: SourceHttpApp | None = None) -> type[BaseHTTPRequestHandle
         def do_POST(self) -> None:
             self._handle()
 
+        def do_PATCH(self) -> None:
+            self._handle()
+
         def do_DELETE(self) -> None:
             self._handle()
 

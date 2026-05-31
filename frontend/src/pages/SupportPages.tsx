@@ -12,14 +12,15 @@ import {
   helpTopics,
   planBoundaries,
   sessionBoundaries,
-  workspaceSimulation,
 } from '../data/sessionSimulation'
 import './SupportPages.css'
 
 export function AccountPage() {
-  const { permissionBoundary, meta } = useData()
+  const { permissionBoundary, meta, workspaceAdmin, workspaceDirectory } = useData()
   const { session } = useAuth()
   const user = session.user
+  const workspace = workspaceDirectory.workspaces.find((item) => item.workspaceId === workspaceDirectory.currentWorkspaceId)
+    ?? workspaceAdmin.workspace
 
   return (
     <>
@@ -42,11 +43,12 @@ export function AccountPage() {
         </section>
 
         <section className="panel">
-          <SectionHeader title="Workspace" description="The current workspace is the active prelaunch privacy operations workspace." />
+          <SectionHeader title="Workspace" description="Workspace membership is separate from account sign-in." />
           <dl className="definition-list">
-            <div><dt>Name</dt><dd>{workspaceSimulation.name}</dd></div>
-            <div><dt>Plan</dt><dd>{workspaceSimulation.plan}</dd></div>
-            <div><dt>Scope</dt><dd>{workspaceSimulation.description}</dd></div>
+            <div><dt>Name</dt><dd>{workspace?.name ?? 'No Workspace membership'}</dd></div>
+            <div><dt>Plan</dt><dd>{workspace?.plan ?? 'Invitation required'}</dd></div>
+            <div><dt>Groups</dt><dd>{workspaceAdmin.currentMembership?.groupIds.map(humanize).join(', ') || 'None'}</dd></div>
+            <div><dt>Pending invite links</dt><dd>{workspaceDirectory.pendingInvitations.length}</dd></div>
           </dl>
         </section>
       </div>
@@ -71,6 +73,25 @@ export function AccountPage() {
         <div className="visible-scopes">
           <ShieldCheck aria-hidden="true" size={16} />
           <span>Visible scopes: {permissionBoundary.visibleScopes.map(humanize).join(', ')}</span>
+        </div>
+      </section>
+
+      <section className="panel support-section">
+        <SectionHeader title="Workspace permission boundary" description="Workspace admin powers are granted only through Workspace groups." />
+        <div className="permission-columns">
+          <div>
+            <h3><ShieldCheck aria-hidden="true" size={16} /> Allowed workspace actions</h3>
+            {(workspaceAdmin.permissionBoundary.allowedActions ?? []).map((action) => <span className="permission-chip permission-allowed" key={action}>{humanize(action)}</span>)}
+          </div>
+          <div>
+            <h3><ShieldCheck aria-hidden="true" size={16} /> Denied workspace actions</h3>
+            {(workspaceAdmin.permissionBoundary.deniedActions ?? []).map((action) => (
+              <article className="denied-action" key={action.action}>
+                <strong>{humanize(action.action)}</strong>
+                <p>{action.reason}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
     </>
