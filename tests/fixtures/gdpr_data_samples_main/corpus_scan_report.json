@@ -1,0 +1,318 @@
+{
+  "datasetId": "google-drive-gdpr-data-samples-main",
+  "generatedAt": "2026-05-31",
+  "rawCorpusManifest": "tests/fixtures/gdpr_data_samples_main/raw_corpus_manifest.json",
+  "verificationCommand": "python3 -m unittest tests.test_gdpr_data_samples_corpus",
+  "privacyRule": "This report records counts, methods, and signal types only. It must not include raw extracted text or raw detected values.",
+  "hostCapabilities": {
+    "ocrMode": "local",
+    "languagesConfigured": [],
+    "pypdfVersion": "6.10.0",
+    "tesseractAvailable": false,
+    "pdftoppmAvailable": false,
+    "imageOcrAvailable": false,
+    "pdfOcrAvailable": false
+  },
+  "summary": {
+    "driveManifestFilesRepresented": 18,
+    "rawFilesTracked": 19,
+    "completedFiles": 16,
+    "ocrDeferredFiles": 1,
+    "skippedMetadataFiles": 2,
+    "totalSignals": 70,
+    "signalTypeFileCounts": {
+      "access_context": 4,
+      "address": 2,
+      "email": 2,
+      "employee_id": 2,
+      "expense_amount": 2,
+      "free_text_personal_context": 6,
+      "incident_context": 4,
+      "location_data": 2,
+      "organization_identifier": 2,
+      "person_name": 10,
+      "tax_id": 2
+    }
+  },
+  "results": [
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/drive_only/da243f78edd96abc7a1e1ce5041f2480.png",
+      "originalName": "da243f78edd96abc7a1e1ce5041f2480.png",
+      "mimeType": "image/png",
+      "role": "image_ocr_challenge",
+      "status": "ocr_deferred",
+      "recognitionDifficulty": "hard",
+      "issue": "da243f78edd96abc7a1e1ce5041f2480.png requires image OCR, but Tesseract is not installed on this host."
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/drive_only/drive_chinese_travel_plan_v4.pdf",
+      "originalName": "欧洲经典线家庭旅行规划_V4_14至18天弹性版_巴黎或伦敦终点模块_厦门出发法兰克福入境(2).pdf",
+      "mimeType": "application/pdf",
+      "role": "multilingual_pdf_text_layer_challenge",
+      "status": "completed",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "textChars": 20775,
+      "signals": 0,
+      "signalTypes": []
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/.gitignore",
+      "originalName": ".gitignore",
+      "mimeType": "application/octet-stream",
+      "role": "source_repo_metadata",
+      "status": "skipped_metadata"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Expense_Report.pdf",
+      "originalName": "Expense_Report.pdf",
+      "mimeType": "application/pdf",
+      "role": "expense_report_template",
+      "status": "completed",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "textChars": 203,
+      "signals": 0,
+      "signalTypes": []
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Expense_Report_Example_A.pdf",
+      "originalName": "Expense_Report_Example_A.pdf",
+      "mimeType": "application/pdf",
+      "role": "expense_report",
+      "status": "completed",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "textChars": 494,
+      "signals": 8,
+      "signalTypes": [
+        "access_context",
+        "employee_id",
+        "expense_amount",
+        "incident_context",
+        "person_name"
+      ]
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Expense_Report_Example_B.pdf",
+      "originalName": "Expense_Report_Example_B.pdf",
+      "mimeType": "application/pdf",
+      "role": "expense_report",
+      "status": "completed",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "textChars": 470,
+      "signals": 8,
+      "signalTypes": [
+        "access_context",
+        "employee_id",
+        "expense_amount",
+        "incident_context",
+        "person_name"
+      ]
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/IT_Access_Request.pdf",
+      "originalName": "IT_Access_Request.pdf",
+      "mimeType": "application/pdf",
+      "role": "it_access_request_template",
+      "status": "completed",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "textChars": 313,
+      "signals": 0,
+      "signalTypes": []
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/IT_Access_Request_Example_A.pdf",
+      "originalName": "IT_Access_Request_Example_A.pdf",
+      "mimeType": "application/pdf",
+      "role": "it_access_request",
+      "status": "completed",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "textChars": 624,
+      "signals": 10,
+      "signalTypes": [
+        "access_context",
+        "free_text_personal_context",
+        "person_name"
+      ]
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/IT_Access_Request_Example_B.pdf",
+      "originalName": "IT_Access_Request_Example_B.pdf",
+      "mimeType": "application/pdf",
+      "role": "it_access_request",
+      "status": "completed",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "textChars": 615,
+      "signals": 10,
+      "signalTypes": [
+        "access_context",
+        "free_text_personal_context",
+        "person_name"
+      ]
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Incident_Report.pdf",
+      "originalName": "Incident_Report.pdf",
+      "mimeType": "application/pdf",
+      "role": "incident_report_template",
+      "status": "completed",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "textChars": 178,
+      "signals": 0,
+      "signalTypes": []
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Incident_Report_Example_A.pdf",
+      "originalName": "Incident_Report_Example_A.pdf",
+      "mimeType": "application/pdf",
+      "role": "incident_report",
+      "status": "completed",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "textChars": 580,
+      "signals": 6,
+      "signalTypes": [
+        "incident_context",
+        "location_data",
+        "person_name"
+      ]
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Incident_Report_Example_B.pdf",
+      "originalName": "Incident_Report_Example_B.pdf",
+      "mimeType": "application/pdf",
+      "role": "incident_report",
+      "status": "completed",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "textChars": 532,
+      "signals": 6,
+      "signalTypes": [
+        "incident_context",
+        "location_data",
+        "person_name"
+      ]
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/SOURCE_COMMIT.txt",
+      "originalName": "SOURCE_COMMIT.txt",
+      "mimeType": "text/plain",
+      "role": "source_repo_metadata",
+      "status": "skipped_metadata"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Supplier_Onboarding.pdf",
+      "originalName": "Supplier_Onboarding.pdf",
+      "mimeType": "application/pdf",
+      "role": "supplier_onboarding_template",
+      "status": "completed",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "textChars": 184,
+      "signals": 0,
+      "signalTypes": []
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Supplier_Onboarding_Example_A.pdf",
+      "originalName": "Supplier_Onboarding_Example_A.pdf",
+      "mimeType": "application/pdf",
+      "role": "supplier_onboarding",
+      "status": "completed",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "textChars": 542,
+      "signals": 7,
+      "signalTypes": [
+        "address",
+        "email",
+        "free_text_personal_context",
+        "organization_identifier",
+        "person_name",
+        "tax_id"
+      ]
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Supplier_Onboarding_Example_B.pdf",
+      "originalName": "Supplier_Onboarding_Example_B.pdf",
+      "mimeType": "application/pdf",
+      "role": "supplier_onboarding",
+      "status": "completed",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "textChars": 488,
+      "signals": 7,
+      "signalTypes": [
+        "address",
+        "email",
+        "free_text_personal_context",
+        "organization_identifier",
+        "person_name",
+        "tax_id"
+      ]
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Training_Evaluation.pdf",
+      "originalName": "Training_Evaluation.pdf",
+      "mimeType": "application/pdf",
+      "role": "training_evaluation_template",
+      "status": "completed",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "textChars": 180,
+      "signals": 0,
+      "signalTypes": []
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Training_Evaluation_Example_A.pdf",
+      "originalName": "Training_Evaluation_Example_A.pdf",
+      "mimeType": "application/pdf",
+      "role": "training_evaluation",
+      "status": "completed",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "textChars": 419,
+      "signals": 4,
+      "signalTypes": [
+        "free_text_personal_context",
+        "person_name"
+      ]
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Training_Evaluation_Example_B.pdf",
+      "originalName": "Training_Evaluation_Example_B.pdf",
+      "mimeType": "application/pdf",
+      "role": "training_evaluation",
+      "status": "completed",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "textChars": 433,
+      "signals": 4,
+      "signalTypes": [
+        "free_text_personal_context",
+        "person_name"
+      ]
+    }
+  ]
+}

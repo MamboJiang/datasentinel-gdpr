@@ -20,13 +20,15 @@ function source(input: Partial<Source>): Source {
 }
 
 describe('source scan readiness', () => {
-  it('requires a runtime Picker token for Google Drive scans', () => {
+  it('requires a runtime Picker token or account binding for Google Drive scans', () => {
     const driveSource = source({ sourceId: 'source_drive', sourceType: 'google_drive_selection', status: 'authorization_required' })
 
     expect(canStartSourceScan(driveSource, governanceConfig, [])).toBe(false)
-    expect(sourceScanBlockReason(driveSource, governanceConfig, [])).toBe('Google Drive scan requires reconnecting through the Picker')
+    expect(sourceScanBlockReason(driveSource, governanceConfig, [])).toBe('Google Drive scan requires a connected account binding or Picker authorization')
     expect(canStartSourceScan(driveSource, governanceConfig, ['source_drive'])).toBe(true)
+    expect(canStartSourceScan(driveSource, governanceConfig, [], true)).toBe(true)
     expect(sourceDisplayStatus(driveSource, ['source_drive'])).toBe('connected')
+    expect(sourceDisplayStatus(driveSource, [], true)).toBe('connected')
     expect(sourceDisplayStatus(driveSource, [])).toBe('authorization_required')
   })
 

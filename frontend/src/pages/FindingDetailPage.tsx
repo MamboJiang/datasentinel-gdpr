@@ -6,6 +6,7 @@ import type { ReviewDecision } from '../types'
 import { formatBytes, formatDate, humanize } from '../components/formatters'
 import { FileReviewEditor } from '../components/FileReviewEditor'
 import { safeFindingSourceLabel } from '../components/findingDisplay'
+import { canOpenEvidenceReview, evidenceReviewDeniedReason } from './findingDetailAccess'
 import {
   Button,
   EmptyState,
@@ -15,15 +16,27 @@ import {
 
 export function FindingDetailPage() {
   const { findingId = '' } = useParams()
-  const { getFinding } = useData()
+  const { getFinding, getReviewSupport, loadFinding, workspaceAdmin } = useData()
   const finding = getFinding(findingId)
   const [reviewOpen, setReviewOpen] = useState(false)
   const [fileReviewOpen, setFileReviewOpen] = useState(false)
   const [initialSignalIndex, setInitialSignalIndex] = useState(0)
 
+  useEffect(() => {
+    if (findingId) {
+      void loadFinding(findingId)
+    }
+  }, [findingId, loadFinding])
+
   if (!finding) {
     return <EmptyState title="Finding not available" />
   }
+
+  const reviewSupport = getReviewSupport(finding.findingId)
+  const evidenceReviewAllowed = canOpenEvidenceReview(reviewSupport, workspaceAdmin.permissionBoundary)
+  const evidenceReviewDenial = evidenceReviewDeniedReason(reviewSupport, workspaceAdmin.permissionBoundary)
+  const signals = finding.signals ?? []
+  const auditTimeline = finding.auditTimeline ?? []
 
   return (
     <>
@@ -37,9 +50,13 @@ export function FindingDetailPage() {
         <div className="detail-actions">
           <RiskBadge riskLevel={finding.riskLevel} score={finding.riskScore} />
           <Button
+            disabled={!evidenceReviewAllowed}
             icon={FileSearch}
             variant="secondary"
             onClick={() => {
+              if (!evidenceReviewAllowed) {
+                return
+              }
               setInitialSignalIndex(0)
               setFileReviewOpen(true)
             }}
@@ -69,7 +86,7 @@ export function FindingDetailPage() {
               <FileText aria-hidden="true" className="section-icon" size={20} />
             </div>
             <div className="signal-list">
-              {(finding.signals ?? []).map((signal, index) => (
+              {signals.map((signal, index) => (
                 <article className="signal-card" key={`${signal.type}-${signal.detector}-${index}`}>
                   <div className="signal-topline">
                     <strong>{humanize(signal.type)}</strong>
@@ -78,12 +95,16 @@ export function FindingDetailPage() {
                   <code>{signal.snippet}</code>
                   <div className="signal-meta">
                     <span>{humanize(signal.detector)}</span>
-                    {signal.page ? <span>Page {signal.page}</span> : null}
+                    {signalLocationLabel(signal) ? <span>{signalLocationLabel(signal)}</span> : null}
                   </div>
                   <button
                     className="signal-open-button"
+                    disabled={!evidenceReviewAllowed}
                     type="button"
                     onClick={() => {
+                      if (!evidenceReviewAllowed) {
+                        return
+                      }
                       setInitialSignalIndex(index)
                       setFileReviewOpen(true)
                     }}
@@ -92,7 +113,9 @@ export function FindingDetailPage() {
                   </button>
                 </article>
               ))}
+              {signals.length === 0 ? <EmptyState title="No redacted evidence available" /> : null}
             </div>
+            {!evidenceReviewAllowed ? <p className="form-help">{evidenceReviewDenial}</p> : null}
           </section>
 
           <section className="panel">
@@ -100,7 +123,7 @@ export function FindingDetailPage() {
               <div><h2>Audit timeline</h2></div>
             </div>
             <div className="timeline">
-              {(finding.auditTimeline ?? []).map((event) => (
+              {auditTimeline.map((event) => (
                 <div className="timeline-item" key={event.auditEventId}>
                   <div className="timeline-marker"><CalendarClock aria-hidden="true" size={14} /></div>
                   <div>
@@ -111,6 +134,7 @@ export function FindingDetailPage() {
                   </div>
                 </div>
               ))}
+              {auditTimeline.length === 0 ? <EmptyState title="No audit events yet" /> : null}
             </div>
           </section>
         </div>
@@ -170,7 +194,7 @@ export function FindingDetailPage() {
       </div>
 
       {reviewOpen ? <ReviewDialog findingId={finding.findingId} onClose={() => setReviewOpen(false)} /> : null}
-      {fileReviewOpen ? (
+      {fileReviewOpen && evidenceReviewAllowed ? (
         <FileReviewEditor finding={finding} initialSignalIndex={initialSignalIndex} onClose={() => setFileReviewOpen(false)} />
       ) : null}
     </>
@@ -205,7 +229,6 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
 
   useEffect(() => {
     let active = true
-    setReviewSupport(getReviewSupport(findingId))
     void loadReviewSupport(findingId).then((nextReviewSupport) => {
       if (active) {
         setReviewSupport(nextReviewSupport)
@@ -214,16 +237,7 @@ function ReviewDialog({ findingId, onClose }: { findingId: string; onClose: () =
     return () => {
       active = false
     }
-  }, [findingId])
-
-  useEffect(() => {
-    if (decisions.some((option) => option.decision === decision)) {
-      return
-    }
-
-    setDecision(decisions[0]?.decision ?? 'escalate')
-    setNextAction('')
-  }, [decision, decisions])
+  }, [findingId, loadReviewSupport])
 
   function submitReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -336,4 +350,17 @@ function getDefaultRetentionDate(): string {
   date.setUTCFullYear(date.getUTCFullYear() + 1)
 
   return date.toISOString().slice(0, 10)
+}
+
+function signalLocationLabel(signal: { page?: number | null; evidenceAnchor?: { fallback?: { label?: string }; selector?: { page?: number } } }): string | null {
+  if (signal.evidenceAnchor?.fallback?.label) {
+    return signal.evidenceAnchor.fallback.label
+  }
+  if (typeof signal.evidenceAnchor?.selector?.page === 'number') {
+    return `Page ${signal.evidenceAnchor.selector.page}`
+  }
+  if (signal.page) {
+    return `Page ${signal.page}`
+  }
+  return null
 }

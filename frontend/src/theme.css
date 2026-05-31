@@ -1,4 +1,5 @@
 [data-theme="dark"] {
+  color-scheme: dark;
   color: #f4f6f8;
   background: #111315;
   --bg: #111315;
@@ -19,6 +20,10 @@
   --amber-soft: #3d2f10;
   --red: #f28b82;
   --red-soft: #3d1f1d;
+  --solid-control: #8ab4ff;
+  --solid-control-text: #111315;
+  --solid-control-disabled: #20242a;
+  --solid-control-disabled-text: #8c96a3;
 }
 
 [data-theme="dark"] .sidebar,
@@ -80,6 +85,15 @@
 [data-theme="dark"] th,
 [data-theme="dark"] tbody tr:hover {
   background: #14171b;
+}
+
+[data-theme="dark"] .document-context-window {
+  background: #172033;
+}
+
+[data-theme="dark"] .document-context-window mark {
+  background: #5a4700;
+  color: #fff4bd;
 }
 
 [data-theme="dark"] .theme-option[aria-pressed="true"] {

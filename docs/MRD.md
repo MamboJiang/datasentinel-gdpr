@@ -12,7 +12,7 @@
 - They cannot easily see where personal data is stored.
 - They cannot manually inspect large distributed file stores.
 - They need evidence before deleting or retaining files.
-- They need common business document formats such as text, PDF text layers, and Office documents to be visible without paid AI by default.
+- They need common business document formats such as text, email messages, ZIP bundles, PDF text layers, bounded local PDF OCR, image OCR, Office documents, and OpenDocument files to be visible without paid AI by default.
 - They need a defensible audit trail for review decisions.
 - They need governance tools that survive reorganizations, role changes, task transfers, and policy updates.
 - They need reviewers to understand what they can do without guessing their authority.

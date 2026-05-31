@@ -9,6 +9,10 @@ export type GoogleDrivePickedItem = {
   url?: string
 }
 
+export type GoogleDrivePickerOptions = {
+  accessToken?: string
+}
+
 type TokenResponse = {
   access_token?: string
   error?: string
@@ -84,15 +88,17 @@ declare global {
   }
 }
 
-export async function pickGoogleDriveItems(config: GoogleDrivePickerConfig, mode: GoogleDrivePickerMode): Promise<{ accessToken: string, items: GoogleDrivePickedItem[] }> {
+export async function pickGoogleDriveItems(config: GoogleDrivePickerConfig, mode: GoogleDrivePickerMode, options: GoogleDrivePickerOptions = {}): Promise<{ accessToken: string, items: GoogleDrivePickedItem[] }> {
   if (!config.configured || !config.clientId || !config.apiKey || !config.appId) {
     throw new Error(`Google Drive Picker is missing: ${config.missing.join(', ')}`)
   }
 
   await loadScript('https://apis.google.com/js/api.js')
-  await loadScript('https://accounts.google.com/gsi/client')
+  if (!options.accessToken) {
+    await loadScript('https://accounts.google.com/gsi/client')
+  }
   await loadPickerLibrary()
-  const accessToken = await requestAccessToken(config.clientId, mode === 'folders' ? config.scopes.folders : config.scopes.files)
+  const accessToken = options.accessToken ?? await requestAccessToken(config.clientId, mode === 'folders' ? config.scopes.folders : config.scopes.files)
   const items = await showPicker(config, mode, accessToken)
 
   return { accessToken, items }

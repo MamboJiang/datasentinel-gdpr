@@ -29,6 +29,7 @@ import type {
 } from '../types'
 import type { StartScanOptions } from './scanWorkflow'
 import type { CreateSourceInput, UpdateSourceInput } from './serverApi'
+import type { GoogleDriveBinding } from './authApi'
 
 export type AppNotification = {
   id: string
@@ -58,9 +59,11 @@ export type DataContextValue = {
   workspaceAdmin: WorkspaceAdminSummary
   meta: Meta
   serverConnection: ServerConnection
+  googleDriveBinding: GoogleDriveBinding | null
   runtimeAuthorizedSourceIds: string[]
   notifications: AppNotification[]
   getFinding: (findingId: string) => Finding | undefined
+  loadFinding: (findingId: string) => Promise<Finding | undefined>
   getReviewSupport: (findingId: string) => ReviewSupport
   loadReviewSupport: (findingId: string) => Promise<ReviewSupport>
   createSource: (input: CreateSourceInput) => void
@@ -68,6 +71,7 @@ export type DataContextValue = {
   deleteSource: (sourceId: string) => void
   startScan: (options: StartScanOptions) => void
   testSourceConnection: (sourceId: string) => void
+  refreshGoogleDriveBinding: () => Promise<GoogleDriveBinding | null>
   reviewFinding: (input: ReviewInput) => void
   createWorkspace: (input: CreateWorkspaceInput) => void
   switchWorkspace: (workspaceId: string) => Promise<boolean>

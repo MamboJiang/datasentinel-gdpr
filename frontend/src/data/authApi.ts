@@ -20,6 +20,30 @@ export type AuthSession = {
   expiresAt?: string | null
 }
 
+export type GoogleDriveBinding = {
+  connected: boolean
+  configured: boolean
+  provider: 'google_drive'
+  email?: string | null
+  displayName?: string | null
+  avatarUrl?: string | null
+  scopes: string[]
+  connectedAt?: string | null
+  updatedAt?: string | null
+  tokenRefreshAvailable?: boolean
+  serverSideOnly?: boolean
+  revocationAttempted?: boolean
+  revoked?: boolean
+}
+
+export type GoogleDrivePickerToken = {
+  accessToken: string
+  provider: 'google_drive'
+  scopes: string[]
+  source: 'account_binding'
+  tokenType: string
+}
+
 type ApiEnvelope<T> = {
   data: T
 }
@@ -39,6 +63,25 @@ export async function loadAuthSession(): Promise<AuthSession> {
 export async function logoutAuthSession(): Promise<AuthSession> {
   const envelope = await authRequest<AuthSession>('/auth/logout', { method: 'POST' })
   return envelope.data
+}
+
+export async function loadGoogleDriveBinding(): Promise<GoogleDriveBinding> {
+  const envelope = await authRequest<GoogleDriveBinding>('/integrations/google-drive/binding')
+  return envelope.data
+}
+
+export async function disconnectGoogleDriveBinding(): Promise<GoogleDriveBinding> {
+  const envelope = await authRequest<GoogleDriveBinding>('/integrations/google-drive/binding', { method: 'DELETE' })
+  return envelope.data
+}
+
+export async function loadGoogleDrivePickerToken(): Promise<GoogleDrivePickerToken> {
+  const envelope = await authRequest<GoogleDrivePickerToken>('/integrations/google-drive/picker-token', { method: 'POST' })
+  return envelope.data
+}
+
+export function googleDriveBindingStartUrl(): string {
+  return `${apiBase}/integrations/google-drive/bind/start`
 }
 
 async function authRequest<T>(path: string, init: RequestInit = {}): Promise<ApiEnvelope<T>> {

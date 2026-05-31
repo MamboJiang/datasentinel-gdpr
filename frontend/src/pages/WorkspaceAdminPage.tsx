@@ -160,7 +160,7 @@ export function WorkspaceAdminPage() {
         <div>
           <p className="eyebrow">Workspace admin</p>
           <h2>{workspace.name}</h2>
-          <p>{workspace.description ?? 'Workspace-scoped administration, invitations, groups, and management evidence.'}</p>
+          {workspace.description ? <p>{workspace.description}</p> : null}
         </div>
         <div className="workspace-admin-kpis" aria-label="Workspace overview">
           <MetricTile label="Members" value={memberCount} />
@@ -176,7 +176,6 @@ export function WorkspaceAdminPage() {
             <Link2 aria-hidden="true" size={18} />
             <div>
               <h3 id="workspace-invite-title">Invite link</h3>
-              <p>Generate a link that creates Workspace membership only after a signed-in account opens and accepts it.</p>
             </div>
           </div>
           <form onSubmit={submitInvitation}>
@@ -221,7 +220,6 @@ export function WorkspaceAdminPage() {
             <BarChart3 aria-hidden="true" size={18} />
             <div>
               <h3 id="workspace-charts-title">Workspace charts</h3>
-              <p>Operational overview from Workspace state and existing admin metrics.</p>
             </div>
           </div>
           <ChartGroup title="Members by group" data={workspaceAdmin.charts.membersByGroup} />
@@ -236,7 +234,6 @@ export function WorkspaceAdminPage() {
             <UsersRound aria-hidden="true" size={18} />
             <div>
               <h3 id="workspace-members-title">Members</h3>
-              <p>Membership is Workspace-scoped; account sign-in alone grants no Workspace access.</p>
             </div>
             <Link className="workspace-section-link" to="/workspace/admin/members">
               Members page
@@ -272,7 +269,6 @@ export function WorkspaceAdminPage() {
             <ShieldCheck aria-hidden="true" size={18} />
             <div>
               <h3 id="workspace-groups-title">Group controls</h3>
-              <p>Group definitions now live on a dedicated admin subpage.</p>
             </div>
             <Link className="workspace-section-link" to="/workspace/admin/groups">
               Group controls
@@ -290,7 +286,6 @@ export function WorkspaceAdminPage() {
                 <div className="workspace-group-summary workspace-group-summary-compact">
                   <span className="workspace-group-summary-copy">
                     <strong>{group.name}</strong>
-                    <small>{group.description || 'No description'}</small>
                   </span>
                   <span className="workspace-group-summary-meta">
                     <small>{group.memberCount} members</small>
@@ -314,7 +309,6 @@ export function WorkspaceAdminPage() {
           <Link2 aria-hidden="true" size={18} />
             <div>
               <h3 id="workspace-invitations-title">Invitations</h3>
-              <p>Pending invite links do not grant access until a signed-in account opens and accepts them.</p>
             </div>
           </div>
         <div className="workspace-invitation-list">
@@ -351,7 +345,6 @@ export function WorkspaceAdminPage() {
           <Trash2 aria-hidden="true" size={18} />
           <div>
             <h3 id="workspace-danger-title">Danger Zone</h3>
-            <p>Owner-only controls for transferring highest authority or deleting this Workspace.</p>
           </div>
         </div>
         <div className="workspace-danger-grid">
@@ -360,7 +353,6 @@ export function WorkspaceAdminPage() {
               <KeyRound aria-hidden="true" size={17} />
               <strong>Transfer owner</strong>
             </span>
-            <p>Move the Owner role to another active member. The target keeps or receives Admin as well.</p>
             <label>
               <span>New owner email</span>
               <input
@@ -388,7 +380,7 @@ export function WorkspaceAdminPage() {
               <Trash2 aria-hidden="true" size={17} />
               <strong>Delete Workspace</strong>
             </span>
-            <p>Delete the DataSentinel Workspace record, revoke pending invites, and remove Workspace memberships. This does not delete external source files.</p>
+            <small className="workspace-danger-warning">External source files are not deleted.</small>
             <label>
               <span>Type {workspace.name} to confirm</span>
               <input
@@ -447,7 +439,6 @@ function WorkspaceProfileSettings({
         <Settings2 aria-hidden="true" size={18} />
         <div>
           <h3 id="workspace-profile-title">Workspace profile</h3>
-          <p>Name and introduction shown in the Workspace shell.</p>
         </div>
       </div>
       <form onSubmit={(event) => void submitWorkspaceSettings(event)}>

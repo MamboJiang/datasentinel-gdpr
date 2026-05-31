@@ -156,6 +156,16 @@ class PersistentPrelaunchState(PrelaunchState):
             self._running_started_epoch = None if self.scan.get("status") != "running" else self._running_started_epoch
             self._save_state()
 
+    def _scan_worker_finished(self, scan_id: str) -> None:
+        saved = self.workflow_store.load() or {}
+        saved_scan = saved.get("scan")
+
+        if not isinstance(saved_scan, dict) or saved_scan.get("scanId") != scan_id:
+            return
+
+        self._running_started_epoch = None if self.scan.get("status") != "running" else self._running_started_epoch
+        self._save_state()
+
     def _restore_state(self, snapshot: dict[str, Any]) -> None:
         for field in WORKFLOW_FIELDS:
             if field in snapshot:

@@ -13,6 +13,116 @@ export type Signal = {
   confidence: number
   snippet: string
   page?: number | null
+  evidenceAnchor?: SignalEvidenceAnchor
+}
+
+export type SignalEvidenceAnchor = {
+  anchorId: string
+  format: string
+  label: string
+  redactedText: string
+  selector: {
+    type: string
+    start?: number
+    end?: number
+    sourceStart?: number
+    sourceEnd?: number
+    page?: number
+    row?: number
+    column?: number
+    columnLabel?: string
+    sheetName?: string
+    path?: string
+    partName?: string
+    paragraphIndex?: number
+    slideNumber?: number
+    shapeIndex?: number
+    tagName?: string
+    nodeIndex?: number
+    recordIndex?: number
+    lineNumber?: number
+    fieldIndex?: number
+    elementIndex?: number
+    attributeIndex?: number
+    blockLabel?: string
+    frameIndex?: number
+    pageRegion?: {
+      x?: number
+      y?: number
+      width?: number
+      height?: number
+      pageWidth?: number
+      pageHeight?: number
+      unit?: string
+      origin?: string
+      confidence?: string
+      ocrConfidence?: number
+      [key: string]: unknown
+    }
+    [key: string]: unknown
+  }
+  fallback?: {
+    label?: string
+    redactedText?: string
+    [key: string]: unknown
+  }
+  rawContentExposed?: boolean
+  [key: string]: unknown
+}
+
+export type SourceReviewPreview = {
+  sourcePreviewId: string
+  sourceName: string
+  fileFormat: string
+  extractionMethod?: string
+  recognitionDifficulty?: string
+  redactionMode: string
+  rawContentExposed: boolean
+  pageImagesExposed: boolean
+  anchors?: {
+    anchorId: string
+    label: string
+    format: string
+    redactedText: string
+    fallbackLabel?: string
+    selector: SignalEvidenceAnchor['selector']
+    contextWindow?: SourceReviewContextWindow
+    confidence?: number
+    rawContentExposed?: boolean
+  }[]
+  contextWindows?: SourceReviewContextWindow[]
+  pages?: {
+    page: number
+    label: string
+    unit?: string
+    origin?: string
+    coordinateSystem?: string
+    width?: number
+    height?: number
+    pageImageExposed?: boolean
+    regions?: {
+      anchorId: string
+      label: string
+      redactedText: string
+      region: NonNullable<SignalEvidenceAnchor['selector']['pageRegion']>
+      rawContentExposed?: boolean
+    }[]
+  }[]
+  textRanges?: unknown[]
+  tableCells?: unknown[]
+  structureBlocks?: unknown[]
+  warnings?: string[]
+}
+
+export type SourceReviewContextWindow = {
+  anchorId: string
+  redactedContext: string
+  contextStart?: number
+  contextEnd?: number
+  highlightStart?: number
+  highlightEnd?: number
+  redactionMode?: string
+  rawContentExposed: boolean
 }
 
 export type AuditEvidenceReference = {
@@ -81,6 +191,7 @@ export type Finding = FindingSummary & {
     sizeBytes?: number
   }
   signals?: Signal[]
+  sourceReviewPreview?: SourceReviewPreview
   riskExplanation?: string
   policyContext?: {
     policyPackId?: string

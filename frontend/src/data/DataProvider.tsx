@@ -2,9 +2,17 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { DataContext, type DataContextValue } from './DataContext'
 import { getEmptyData } from './emptyData'
 import { recordHumanReviewDecision } from './humanReviewDecision'
-import { getInitialMockData } from './mockApi'
+import { getInitialMockData, type MockData } from './mockApi'
 import { buildReviewSupport } from './reviewSupport'
 import { completeScanWorkflow, getSourceConnectionMessage, startScanWorkflow, type StartScanOptions } from './scanWorkflow'
+import {
+  findFindingInData,
+  isScanCompletionTransition,
+  mergeVisibleFindingDetails,
+  scanCompletionMessage,
+  shouldUseLocalFallback,
+  type ServerRefreshOptions,
+} from './serverRefresh'
 import {
   applyLocalWorkspaceCreation,
   applyLocalWorkspaceGroupCreation,
@@ -27,8 +35,8 @@ import {
   deleteServerWorkspaceMember,
   deleteServerWorkspaceGroup,
   deleteServerSource,
+  getServerFinding,
   getServerReviewSupport,
-  isApiRequestError,
   loadServerData,
   reviewServerFinding,
   startServerScan,
@@ -42,6 +50,7 @@ import {
   type CreateSourceInput,
   type UpdateSourceInput,
 } from './serverApi'
+import { loadGoogleDriveBinding, type GoogleDriveBinding } from './authApi'
 import type {
   CreateWorkspaceInvitationInput,
   CreateWorkspaceInput,
@@ -61,11 +70,14 @@ import type {
 } from '../types'
 
 const localMocksEnabled = import.meta.env.VITE_DATASENTINEL_ENABLE_LOCAL_MOCKS === 'true'
+const BACKGROUND_REFRESH_MS = 5000
+const RUNNING_SCAN_REFRESH_MS = 1000
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState(localMocksEnabled ? getInitialMockData : getEmptyData)
   const [reviewSupportByFindingId, setReviewSupportByFindingId] = useState<Record<string, ReviewSupport>>({})
   const [notifications, setNotifications] = useState<DataContextValue['notifications']>([])
+  const [googleDriveBinding, setGoogleDriveBinding] = useState<GoogleDriveBinding | null>(null)
   const [serverConnection, setServerConnection] = useState<DataContextValue['serverConnection']>({
     checkedAt: null,
     message: 'Checking project server.',
@@ -73,10 +85,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   })
   const [runtimeAuthorizedSourceIds, setRuntimeAuthorizedSourceIds] = useState<string[]>([])
   const scanTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const backgroundRefreshInFlight = useRef(false)
+  const dataRef = useRef(data)
   const serverAvailable = useRef(false)
   const googleDriveAccessTokens = useRef<Record<string, string>>({})
 
-  function notify(message: string) {
+  const notify = useCallback((message: string) => {
     setNotifications((current) => [
       {
         id: `notification_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -85,7 +99,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       },
       ...current,
     ].slice(0, 50))
-  }
+  }, [])
 
   const markServerConnection = useCallback((status: DataContextValue['serverConnection']['status'], message: string) => {
     serverAvailable.current = status === 'connected'
@@ -104,13 +118,40 @@ export function DataProvider({ children }: { children: ReactNode }) {
     markServerConnection('disconnected', 'Project server unavailable.')
   }, [markServerConnection])
 
-  function notifyApiRejection(error: unknown, fallbackMessage: string) {
+  const notifyApiRejection = useCallback((error: unknown, fallbackMessage: string) => {
     notify(error instanceof Error ? error.message : fallbackMessage)
-  }
+  }, [notify])
 
-  function shouldUseLocalFallback(error: unknown): boolean {
-    return !isApiRequestError(error)
-  }
+  const buildFallbackData = useCallback(() => (
+    localMocksEnabled ? getInitialMockData() : getEmptyData()
+  ), [])
+
+  const applyServerData = useCallback((nextData: MockData, options: ServerRefreshOptions = {}) => {
+    const previousData = dataRef.current
+    const mergedData = {
+      ...nextData,
+      findingDetails: mergeVisibleFindingDetails(previousData, nextData),
+    }
+
+    dataRef.current = mergedData
+    setData(mergedData)
+    setReviewSupportByFindingId(mergedData.reviewSupport.findingId ? { [mergedData.reviewSupport.findingId]: mergedData.reviewSupport } : {})
+
+    if (options.successNotification) {
+      notify(options.successNotification)
+      return
+    }
+
+    if (options.notifyOnScanCompletion && isScanCompletionTransition(previousData.scan, mergedData.scan)) {
+      notify(scanCompletionMessage(mergedData.scan))
+    }
+  }, [notify])
+
+  const refreshServerData = useCallback(async (successNotification?: string, options: ServerRefreshOptions = {}) => {
+    const nextData = await loadServerData(buildFallbackData())
+    markServerConnected()
+    applyServerData(nextData, { ...options, successNotification })
+  }, [applyServerData, buildFallbackData, markServerConnected])
 
   function forgetRuntimeAuthorization(sourceId: string) {
     delete googleDriveAccessTokens.current[sourceId]
@@ -122,8 +163,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    dataRef.current = data
+  }, [data])
+
+  useEffect(() => {
     let active = true
-    const fallback = localMocksEnabled ? getInitialMockData() : getEmptyData()
+    const fallback = buildFallbackData()
 
     loadServerData(fallback)
       .then((serverData) => {
@@ -132,8 +177,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
 
         markServerConnected()
-        setData(serverData)
-        setReviewSupportByFindingId(serverData.reviewSupport.findingId ? { [serverData.reviewSupport.findingId]: serverData.reviewSupport } : {})
+        applyServerData(serverData)
       })
       .catch(() => {
         if (!active) {
@@ -142,7 +186,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
         markServerUnavailable()
         if (localMocksEnabled) {
+          dataRef.current = fallback
           setData(fallback)
+        }
+      })
+
+    loadGoogleDriveBinding()
+      .then((binding) => {
+        if (active) {
+          setGoogleDriveBinding(binding)
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setGoogleDriveBinding(null)
         }
       })
 
@@ -153,7 +210,41 @@ export function DataProvider({ children }: { children: ReactNode }) {
         clearTimeout(scanTimer.current)
       }
     }
-  }, [markServerConnected, markServerUnavailable])
+  }, [applyServerData, buildFallbackData, markServerConnected, markServerUnavailable])
+
+  useEffect(() => {
+    if (serverConnection.status !== 'connected') {
+      return
+    }
+
+    let stopped = false
+    const refreshMs = data.scan.status === 'running' ? RUNNING_SCAN_REFRESH_MS : BACKGROUND_REFRESH_MS
+    const refresh = async () => {
+      if (backgroundRefreshInFlight.current) {
+        return
+      }
+
+      backgroundRefreshInFlight.current = true
+
+      try {
+        await refreshServerData(undefined, { notifyOnScanCompletion: true })
+      } catch {
+        if (!stopped) {
+          markServerUnavailable()
+        }
+      } finally {
+        backgroundRefreshInFlight.current = false
+      }
+    }
+    const intervalId = window.setInterval(() => {
+      void refresh()
+    }, refreshMs)
+
+    return () => {
+      stopped = true
+      window.clearInterval(intervalId)
+    }
+  }, [data.scan.status, markServerUnavailable, refreshServerData, serverConnection.status])
 
   async function startScan(options: StartScanOptions) {
     const sourceToken = options.sourceId ? googleDriveAccessTokens.current[options.sourceId] : undefined
@@ -169,16 +260,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
           clearTimeout(scanTimer.current)
         }
 
-        setData((current) => ({
-          ...current,
-          meta: result.meta,
-          scan: result.data,
-        }))
+        setData((current) => {
+          const nextData = {
+            ...current,
+            meta: result.meta,
+            scan: result.data,
+          }
+          dataRef.current = nextData
+          return nextData
+        })
         notify(`${scanOptions.scanType === 'full' ? 'Full' : 'Delta'} scan started on the project server.`)
-        scanTimer.current = setTimeout(() => {
-          refreshServerData(`${scanOptions.scanType === 'full' ? 'Full' : 'Delta'} scan completed.`)
-          scanTimer.current = null
-        }, scanOptions.scanType === 'full' ? 2400 : 2000)
         return
       } catch (error) {
         if (!shouldUseLocalFallback(error)) {
@@ -197,7 +288,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }
 
   function startLocalScan(options: StartScanOptions) {
-    const result = startScanWorkflow(data, {
+    const result = startScanWorkflow(dataRef.current, {
       ...options,
       actorId: 'user_demo_admin',
       auditEventId: `audit_${Date.now()}`,
@@ -213,15 +304,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
       clearTimeout(scanTimer.current)
     }
 
+    dataRef.current = result.data
     setData(result.data)
     notify(result.toast)
 
     scanTimer.current = setTimeout(() => {
-      setData((current) => completeScanWorkflow(current, {
-        auditEventId: `audit_${Date.now()}`,
-        occurredAt: new Date().toISOString(),
-        scanId: result.scanId,
-      }))
+      setData((current) => {
+        const nextData = completeScanWorkflow(current, {
+          auditEventId: `audit_${Date.now()}`,
+          occurredAt: new Date().toISOString(),
+          scanId: result.scanId,
+        })
+        dataRef.current = nextData
+        return nextData
+      })
       notify(`${options.scanType === 'full' ? 'Full' : 'Delta'} scan completed.`)
       scanTimer.current = null
     }, result.completionDelayMs)
@@ -246,6 +342,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const source = data.sources.find((candidate) => candidate.sourceId === sourceId)
     notify(getSourceConnectionMessage(source, data.governanceConfig))
+  }
+
+  async function refreshGoogleDriveBinding(): Promise<GoogleDriveBinding | null> {
+    try {
+      const binding = await loadGoogleDriveBinding()
+      setGoogleDriveBinding(binding)
+      return binding
+    } catch {
+      setGoogleDriveBinding(null)
+      return null
+    }
   }
 
   async function createSource(input: CreateSourceInput) {
@@ -882,16 +989,45 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }
 
   function getFinding(findingId: string): Finding | undefined {
-    if (data.findingDetails[findingId]) {
-      return data.findingDetails[findingId]
-    }
-
-    if (data.findingDetail.findingId === findingId) {
-      return data.findingDetail
-    }
-
-    return data.findings.find((finding) => finding.findingId === findingId)
+    return findFindingInData(data, findingId)
   }
+
+  const loadFinding = useCallback(async (findingId: string): Promise<Finding | undefined> => {
+    const cachedFinding = findFindingInData(dataRef.current, findingId)
+
+    if (!findingId) {
+      return cachedFinding
+    }
+
+    if (serverAvailable.current) {
+      try {
+        const result = await getServerFinding(findingId)
+        setData((current) => {
+          const nextData = {
+            ...current,
+            findingDetail: result.data,
+            findingDetails: {
+              ...current.findingDetails,
+              [result.data.findingId]: result.data,
+            },
+            meta: result.meta,
+          }
+          dataRef.current = nextData
+          return nextData
+        })
+        return result.data
+      } catch (error) {
+        if (!shouldUseLocalFallback(error)) {
+          notifyApiRejection(error, 'Finding detail was rejected by the project server.')
+          return cachedFinding
+        }
+        markServerUnavailable()
+        notify(error instanceof Error ? error.message : 'Project server unavailable; using local finding detail.')
+      }
+    }
+
+    return findFindingInData(dataRef.current, findingId)
+  }, [markServerUnavailable, notify, notifyApiRejection])
 
   function isGoogleDriveSource(sourceId: string): boolean {
     return data.sources.some((source) => source.sourceId === sourceId && source.sourceType === 'google_drive_selection')
@@ -960,9 +1096,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         workspaceAdmin: data.workspaceAdmin,
         meta: data.meta,
         serverConnection,
+        googleDriveBinding,
         runtimeAuthorizedSourceIds,
         notifications,
         getFinding,
+        loadFinding,
         getReviewSupport,
         loadReviewSupport,
         createSource,
@@ -970,6 +1108,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         deleteSource,
         startScan,
         testSourceConnection,
+        refreshGoogleDriveBinding,
         reviewFinding,
         createWorkspace,
         switchWorkspace,
@@ -991,11 +1130,4 @@ export function DataProvider({ children }: { children: ReactNode }) {
     </DataContext.Provider>
   )
 
-  async function refreshServerData(successNotification: string) {
-    const nextData = await loadServerData(localMocksEnabled ? getInitialMockData() : getEmptyData())
-    markServerConnected()
-    setData(nextData)
-    setReviewSupportByFindingId(nextData.reviewSupport.findingId ? { [nextData.reviewSupport.findingId]: nextData.reviewSupport } : {})
-    notify(successNotification)
-  }
 }

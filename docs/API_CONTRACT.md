@@ -139,6 +139,11 @@ Errors use `application/problem+json`.
 | `POST` | `/api/workspaces/{workspaceId}/invitations` | Generate a Workspace invitation link for a group set. |
 | `POST` | `/api/workspaces/invitations/{invitationId}/accept` | Accept a pending Workspace invitation link as the current signed-in account. |
 | `GET` | `/api/integrations/google-drive/picker-config` | Read session-protected Google Drive Picker browser setup state without secrets. |
+| `GET` | `/api/integrations/google-drive/binding` | Read the current account's Google Drive binding status without tokens. |
+| `POST` | `/api/integrations/google-drive/picker-token` | Mint a short-lived Picker access token from the current account's Drive binding. |
+| `GET` | `/api/integrations/google-drive/bind/start` | Start Google OAuth consent for a persistent account-level Drive binding. |
+| `GET` | `/api/integrations/google-drive/bind/callback` | Complete Google OAuth consent and store the account-level Drive binding server-side. |
+| `DELETE` | `/api/integrations/google-drive/binding` | Disconnect the current account's Drive binding and attempt provider-token revocation. |
 | `GET` | `/api/sources` | List configured sources. |
 | `POST` | `/api/sources` | Create a mock, local, direct-link, or Google Drive selected source. |
 | `PATCH` | `/api/sources/{sourceId}` | Update Source metadata such as the direct Source owner. |
@@ -180,6 +185,28 @@ Auth payloads:
 - Session read exposes `authenticated`, optional `user`, and optional `expiresAt`.
 - User profile exposes local `userId`, `provider`, `providerSubject`, `displayName`, optional `email`, and optional `avatarUrl`.
 - Provider access tokens, refresh tokens, client secrets, auth state, and PKCE verifier are never returned.
+
+### Google Drive Account Binding
+
+The Google Drive binding is a personal prelaunch source-access grant, not Workspace authorization and not tenant discovery. Binding uses a backend-owned Google authorization-code flow with `access_type=offline` so the local API can refresh short-lived Drive access tokens server-side for selected-source scans. The frontend receives only safe binding status.
+
+`unbound -> bind_starting -> provider_redirected -> callback_validating -> bound`
+
+Failure paths:
+
+- `bind_starting -> unbound` when Google OAuth client credentials or the first-party session are missing.
+- `callback_validating -> unbound` when provider error, missing code, state mismatch, token exchange failure, missing Google user subject, or missing refresh token occurs.
+- `bound -> unbound` when the user disconnects the binding in Account settings.
+- `bound -> bound` when the user changes the binding and the new Google account grant is stored; the prior local binding is replaced and prior provider-token revocation is attempted.
+
+Binding payloads:
+
+- `GET /api/integrations/google-drive/binding` exposes `connected`, `configured`, `provider`, optional safe Google profile fields, granted `scopes`, timestamps, `tokenRefreshAvailable`, and `serverSideOnly`.
+- `POST /api/integrations/google-drive/picker-token` uses the current account's connected Drive binding to mint a short-lived access token for Google Picker. This response intentionally returns `accessToken` for browser Picker use only; it must not include refresh tokens, client secrets, OAuth transaction state, source file content, or unredacted personal data.
+- `GET /api/integrations/google-drive/bind/start` redirects the signed-in user to Google OAuth consent for the binding scopes.
+- `GET /api/integrations/google-drive/bind/callback` stores the refresh token server-side and redirects to the frontend with `driveBinding=success` or `driveBinding=failed`.
+- `DELETE /api/integrations/google-drive/binding` removes the local binding and attempts to revoke the stored provider token; source registrations and external Drive files are not deleted or mutated.
+- Binding endpoints must never return access tokens, refresh tokens, client secrets, OAuth transaction state, raw source content, or unredacted personal data.
 
 Account and Workspace-scoped state:
 
@@ -341,8 +368,9 @@ The processing order is `source_policy_context -> metadata_inventory -> text_lay
 Start guard:
 
 - `POST /api/scans/full` requires `sourceId`.
-- P0 accepts full-scan start for the controlled `mock_ready` organizer sample source, connected local prelaunch sources, connected direct HTTPS file links, and Google Drive selected sources with current per-scan authorization.
-- `google_drive_selection` scans require `authorization.googleDriveAccessToken` in the scan request. The token is a short-lived per-scan value and must not be stored by the server; persisted Drive source records may report `authorization_required` while clients may present the same source as connected for the current browser session when they hold a fresh in-memory Picker token.
+- P0 accepts full-scan start for the controlled `mock_ready` organizer sample source, connected local prelaunch sources, connected direct HTTPS file links, and Google Drive selected sources with either current per-scan authorization or a connected account-level Drive binding.
+- `google_drive_selection` scans require `authorization.googleDriveAccessToken` in the scan request unless the signed-in account has a connected Drive binding. Per-scan tokens are short-lived values and must not be stored by the server. Account Drive bindings store refresh tokens server-side only so the API can mint short-lived access tokens during scan execution; binding tokens must never be returned to the frontend. Persisted Drive source records may report `authorization_required` while clients may present the same source as connected when they hold a fresh in-memory Picker token or the account binding is connected.
+- Accepted prelaunch scan starts return `202` with a `running` scan immediately after command validation and before source content reading completes. Source inventory, extraction, signal detection, findings, metrics, evaluation, and completion audit events may update asynchronously after the accepted response.
 - A source that is missing, unreadable, expired-token, or not scan-ready must not surface stale findings. Backend implementations should return `application/problem+json`; source-read failures may record a failed source-unavailable scan state with zero findings.
 - Accepted scan starts should be idempotent when `Idempotency-Key` is present.
 - `POST /api/scans/delta` requires `sourceId` and a completed selected-source baseline; when `baselineScanId` is provided it must match an available baseline. Missing, running, not-ready, or mismatched baselines must not create scan, audit, finding, metric, or evaluation state changes.
@@ -369,13 +397,15 @@ Internal P0 stage visibility:
 - `rawContentExposed = false` is the required P0 value when extraction status is visible.
 - Signal detection output may include `signalDetection` with detector rules version/hash, active evidence requirements, evaluated evidence-candidate count, detected/redacted signal count, findings-with-signals count, signal-type counts, warnings, and `rawContentExposed = false`.
 - Deterministic signal detection is evidence generation only; public payloads must not expose raw extracted text, unredacted snippets, detector secrets, legal conclusions, or deletion execution.
+- Finding signals may include an optional `evidenceAnchor` with a redacted label, redacted text, source-data-derived selector, and fallback label. P0 deterministic extraction supports `selector.type = "textPosition"` for normalized extracted text streams, Markdown non-table text, bounded RTF text, and host-local legacy Office conversion, `selector.type = "tableCell"` for CSV, TSV, Markdown tables, XLSX, and ODS cell-derived matches, and `selector.type = "structurePath"` for DOCX, PPTX, ODT, ODP, EML, HTML/HTM, XML, JSON, JSONL, and NDJSON block-derived matches. ZIP member anchors wrap child selectors and use `format = "zip"`. Text-like, Markdown, XML, JSON-like, RTF, RFC 5322/MIME email, ZIP archive members, Office Open XML, legacy Office conversion, OpenDocument, image OCR, video transcript, video frame OCR, PDF text-layer, and bounded PDF OCR extraction may add `selector.sourceStart` and `selector.sourceEnd` so an authorized review surface can focus the source-local text range while preserving the same open-and-focus interaction. Table-cell selectors may include `row`, `column`, `columnLabel`, and `sheetName`; structure-path selectors may include `path`, `partName`, `paragraphIndex`, `slideNumber`, `shapeIndex`, `tagName`, `nodeIndex`, `recordIndex`, `lineNumber`, `fieldIndex`, `elementIndex`, `attributeIndex`, and `blockLabel`. ZIP selectors may include `containerType = "zip"`, `memberIndex`, `memberPath`, and `childFormat`; they must use ordinal member metadata rather than raw member names. Email selectors use ordinal header and body-part paths rather than raw header values, attachment names, or body text. XML selectors use ordinal element and attribute paths rather than raw XML element names or attribute names. PDF extraction may also add `selector.page` when page metadata is available. Video frame OCR may add `selector.frameIndex` while reusing `selector.page` as the frame ordinal for unified preview navigation. `selector.pageRegion` may be included when scan-time PDF text-layer coordinates can be estimated from the PDF data or when scan-time OCR word boxes are available from Tesseract TSV output. PDF text-layer regions use PDF user-space points, bottom-left origin, and may include `confidence = "estimated"` because PDF text coordinates can be unreliable in complex documents. OCR regions use image pixels, top-left origin, `confidence = "ocr"`, and optional `ocrConfidence`; they must not include raw OCR text, raw frames, raw videos, or page images.
+- Finding details may include optional `sourceReviewPreview` for authorized file review. This preview package is assembled during scan-time finding assembly from redacted evidence anchors only, uses `redactionMode = "anchor_only"`, and must keep `rawContentExposed = false` and `pageImagesExposed = false`. It may group anchors into page regions, redacted context windows, text ranges, table cells, and structure blocks so the file review surface can jump to the same evidence through one consistent interaction without exposing raw extracted text, full source bodies, page images, provider tokens, Drive URLs, absolute host paths, or unredacted personal data. Context windows must redact the target signal span and any overlapping known signal spans before persistence; they are for human orientation, not raw source review.
 - `contextRisk.legalConclusionProvided = false` is the required P0 value when context/risk status is visible.
 - Context/risk output must include policy-pack version and must use neutral values when policy guidance is missing or unknown.
 - Owner assignment output must include policy-pack version, organization-model version, owner-resolution strategy, assignment-rule fingerprint, and routed counts when visible.
 - Owner assignment must never silently leave review-required findings unowned; controlled P0 fixtures must expose `unownedFindings = 0`.
 - Finding assembly output must include policy-pack version, source snapshot, assembly-rule fingerprint, assembled finding count, evidence-card count, redacted signal count, missing-card count, denied-action count, `rawContentExposed = false`, and `legalConclusionProvided = false` when visible.
 - Finding rows may include optional `evidenceSignalCount` and `policyPackVersion`; clients must still render rows when those optional fields are absent.
-- Evidence cards must expose redacted signals, policy context, owner assignment, retention status, action boundary, and audit timeline without raw source content.
+- Evidence cards must expose redacted signals, optional evidence anchors, policy context, owner assignment, retention status, action boundary, and audit timeline without raw source content.
 - Review support output must include policy-pack version, organization-model version, visible allowed actions, visible denied actions, required reason fields, checklist items, transfer options, and escalation options when available.
 - Review support must not expose raw source content, unredacted personal data, hidden permission data, legal conclusions, or deletion execution.
 - Audit recording output must include policy-pack version, audit rules fingerprint, event counts, scan-linked count, finding-linked count, review-decision count, human/system counts, `rawContentExposed = false`, `legalConclusionProvided = false`, and `deletionExecuted = false` when visible.
@@ -463,7 +493,7 @@ The contract represents the source as `sourceType = organizer_sample_repo` and e
 
 Source records may include optional `config` for connector-specific metadata:
 
-- `remote_file_link` stores `config.url` as a direct HTTPS file URL. The backend validates that the URL is HTTPS, has no embedded credentials, resolves to public IP addresses, is not a Google Drive or Google Docs share page, and points to supported text-like content, a PDF text layer, Office Open XML content, supported image content, supported transcript content, or recognized raw video media. Extractable files must stay within the prelaunch size limit; raw video media is reported as hard/OCR-deferred until an approved processor exists.
+- `remote_file_link` stores `config.url` as a direct HTTPS file URL. The backend validates that the URL is HTTPS, has no embedded credentials, resolves to public IP addresses, is not a Google Drive or Google Docs share page, and points to supported BOM/charset-aware Unicode text-like content, XML/JSON-like structure extraction, bounded RTF text extraction, RFC 5322/MIME email text extraction, bounded ZIP archive member extraction, a PDF text layer or bounded local PDF OCR candidate, Office Open XML content, OpenDocument content, supported image content, supported transcript content, or bounded raw video media. Extractable text-like files must stay within the prelaunch size limit; raw video media must stay within the bounded video size limit and is reported as hard/OCR-deferred when FFmpeg, Tesseract, or local OCR is unavailable.
 - `google_drive_selection` stores `config.items`, an array of Google Picker selected item metadata such as `id`, `name`, `mimeType`, and optional `url`. The backend uses this metadata only with a per-scan `authorization.googleDriveAccessToken`.
 - `local_repo` stores `config.rootPath` for host-mounted folders that pass the configured allowed-root policy.
 
@@ -497,13 +527,50 @@ Source records may also include owner-routing metadata:
 
 The endpoint may return `configured = false` with `null` browser setup fields and a `missing` list. It must never return Google client secrets, GitHub credentials, provider access tokens, refresh tokens, auth transaction state, raw source content, or unredacted personal data.
 
+`GET /api/integrations/google-drive/binding` requires a first-party session and returns token-free account binding status:
+
+```json
+{
+  "data": {
+    "connected": true,
+    "configured": true,
+    "provider": "google_drive",
+    "email": "reviewer@example.org",
+    "displayName": "Privacy Reviewer",
+    "scopes": ["https://www.googleapis.com/auth/drive.readonly"],
+    "connectedAt": "2026-05-31T10:00:00Z",
+    "updatedAt": "2026-05-31T10:00:00Z",
+    "tokenRefreshAvailable": true,
+    "serverSideOnly": true
+  }
+}
+```
+
+`DELETE /api/integrations/google-drive/binding` returns the same envelope shape with `connected = false`; it may include `revocationAttempted` and `revoked`. Disconnecting a binding does not delete DataSentinel source registrations and never deletes or mutates Google Drive files.
+
+`POST /api/integrations/google-drive/picker-token` requires a first-party session and a connected account Drive binding. It returns a browser-use-only short-lived token so Add Source can pass it to Google Picker:
+
+```json
+{
+  "data": {
+    "accessToken": "ya29.short_lived_picker_token",
+    "provider": "google_drive",
+    "source": "account_binding",
+    "tokenType": "Bearer",
+    "scopes": ["https://www.googleapis.com/auth/drive.readonly"]
+  }
+}
+```
+
+This endpoint must not be called with `GET`, must not set cookies containing provider tokens, and must not persist the access token server-side or client-side beyond runtime memory. If the binding is missing or cannot refresh, the endpoint returns `application/problem+json` and existing source registrations remain unchanged.
+
 Prelaunch source scans read raw source content only inside the scan process. Public payloads may expose source metadata, counts, warnings, redacted snippets, findings, metrics, and audit events; they must not expose raw file bodies, page images, provider tokens, refresh tokens, client secrets, legal conclusions, or deletion execution.
 
 `contentExtraction` may include optional `recognitionDifficulty`, `formatCounts`, `aiAssistanceUsed`, and `modelCalls` fields. Difficulty tiers are:
 
-- `easy`: direct UTF-8 text-like extraction.
-- `moderate`: deterministic structured extraction such as PDF text layers, DOCX/XLSX/PPTX Office Open XML text, and VTT/SRT video transcript text.
-- `hard`: image OCR, OCR-deferred, raw video media, or richer-parser-needed inputs.
+- `easy`: direct BOM/charset-aware Unicode text-like extraction, including UTF-8 and UTF-16, and bounded XML/JSON/JSONL/NDJSON structure extraction.
+- `moderate`: deterministic structured extraction such as PDF text layers, RTF rich text, EML RFC 5322/MIME email text, ZIP archive member text, DOCX/XLSX/PPTX Office Open XML text, ODT/ODS/ODP OpenDocument text, and VTT/SRT video transcript text.
+- `hard`: host-tool-dependent, OCR-deferred, or richer-parser-needed extraction such as image OCR, bounded PDF OCR fallback, bounded raw video frame OCR, and legacy DOC/XLS/PPT conversion through LibreOffice.
 - `unsupported`: unknown, unsafe, over-limit, malformed, or unsupported formats.
 
 Normal deterministic source scans must keep `aiAssistanceUsed = false` and `modelCalls = 0`; OpenRouter remains only an explicit assistive boundary for redacted evidence.

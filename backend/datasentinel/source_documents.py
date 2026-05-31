@@ -3,22 +3,21 @@
 from __future__ import annotations
 
 import ipaddress
-import json
 import socket
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
+from .google_drive_file_client import DriveAccessIssue, DriveFileClient, GOOGLE_FOLDER_MIME
 from .source_format_recognition import DOWNLOAD_ACCEPT_HEADER, SUPPORTED_PDF_SUFFIXES, SUPPORTED_SUFFIXES, DocumentExtractionIssue, PdfReader as DefaultPdfReader, SourceDocument, SourceDocumentBatch, build_document_batch, extract_document_content
 from .source_media_recognition import is_video_media
 
 PdfReader = DefaultPdfReader
 MAX_DOCUMENT_BYTES = 1_000_000
+MAX_VIDEO_BYTES = 8_000_000
 MAX_SOURCE_FILES = 500
-GOOGLE_FOLDER_MIME = "application/vnd.google-apps.folder"
-GOOGLE_API_BASE = "https://www.googleapis.com/drive/v3/files"
 GOOGLE_DRIVE_SHARE_HOSTS = {"drive.google.com", "docs.google.com"}
 
 
@@ -79,6 +78,9 @@ def _read_local_source(source: dict[str, Any]) -> SourceDocumentBatch:
     ocr_deferred = 0
     total_bytes = 0
 
+    if len(files) > MAX_SOURCE_FILES:
+        warnings.append(f"Local source scan stopped at the prelaunch {MAX_SOURCE_FILES} file limit.")
+
     for file_path in files[:MAX_SOURCE_FILES]:
         size = file_path.stat().st_size
         total_bytes += size
@@ -86,7 +88,7 @@ def _read_local_source(source: dict[str, Any]) -> SourceDocumentBatch:
             unsupported += 1
             failure_difficulties.append("unsupported")
             continue
-        if size > MAX_DOCUMENT_BYTES:
+        if size > _max_bytes_for_file("", file_path.name):
             unsupported += 1
             deferred = is_video_media("", file_path.suffix.lower())
             ocr_deferred += 1 if deferred else 0
@@ -126,7 +128,7 @@ def _read_remote_link_source(source: dict[str, Any]) -> SourceDocumentBatch:
     body, content_type, final_url = _download_url(url)
     name = str(config.get("fileName") or Path(urlparse(final_url).path).name or source["name"])
 
-    if len(body) > MAX_DOCUMENT_BYTES:
+    if len(body) > _max_bytes_for_file(content_type, name):
         video_media = is_video_media(content_type, Path(name).suffix.lower())
         return _unsupported_batch(
             "Remote_File",
@@ -172,7 +174,7 @@ def _read_google_drive_source(source: dict[str, Any], access_token: str) -> Sour
     if not isinstance(items, list) or not items:
         raise SourceReadIssue("Google Drive source requires selected files or folders.", "#/config/items")
 
-    client = DriveClient(access_token)
+    client = DriveFileClient(access_token, MAX_SOURCE_FILES, MAX_VIDEO_BYTES)
     documents: list[SourceDocument] = []
     warnings: list[str] = []
     failure_difficulties: list[str] = []
@@ -190,13 +192,25 @@ def _read_google_drive_source(source: dict[str, Any], access_token: str) -> Sour
             unsupported += 1
             failure_difficulties.append("unsupported")
             continue
-        for metadata in client.iter_item(file_id):
+        try:
+            metadata_items = client.iter_item(file_id)
+        except DriveAccessIssue as issue:
+            unsupported += 1
+            failure_difficulties.append("unsupported")
+            warnings.append(issue.detail)
+            continue
+        for metadata in metadata_items:
             if len(documents) + unsupported >= MAX_SOURCE_FILES:
                 warnings.append("Google Drive scan stopped at the prelaunch 500 file limit.")
                 break
             total_files += 1
             try:
-                document = client.read_text_document(metadata)
+                document = _document_from_drive_metadata(client, metadata)
+            except DriveAccessIssue as issue:
+                unsupported += 1
+                failure_difficulties.append("unsupported")
+                warnings.append(issue.detail)
+                continue
             except SourceReadIssue as issue:
                 unsupported += 1
                 ocr_deferred += 1 if issue.ocr_deferred else 0
@@ -220,102 +234,43 @@ def _read_google_drive_source(source: dict[str, Any], access_token: str) -> Sour
     )
 
 
-class DriveClient:
-    def __init__(self, access_token: str) -> None:
-        self.access_token = access_token
+def _document_from_drive_metadata(client: DriveFileClient, metadata: dict[str, Any]) -> SourceDocument:
+    mime_type = str(metadata.get("mimeType") or "")
+    name = str(metadata.get("name") or metadata.get("id") or "Google Drive file")
+    if mime_type == GOOGLE_FOLDER_MIME:
+        raise SourceReadIssue("Google Drive folders are inventory containers, not text documents.")
 
-    def iter_item(self, file_id: str) -> list[dict[str, Any]]:
-        metadata = self._metadata(file_id)
-        if metadata.get("mimeType") != GOOGLE_FOLDER_MIME:
-            return [metadata]
-
-        descendants: list[dict[str, Any]] = []
-        pending = [file_id]
-        while pending and len(descendants) < MAX_SOURCE_FILES:
-            folder_id = pending.pop(0)
-            for child in self._children(folder_id):
-                if child.get("mimeType") == GOOGLE_FOLDER_MIME:
-                    pending.append(str(child["id"]))
-                else:
-                    descendants.append(child)
-                if len(descendants) >= MAX_SOURCE_FILES:
-                    break
-        return descendants
-
-    def read_text_document(self, metadata: dict[str, Any]) -> SourceDocument:
-        mime_type = str(metadata.get("mimeType") or "")
-        name = str(metadata.get("name") or metadata.get("id") or "Google Drive file")
-        if mime_type == GOOGLE_FOLDER_MIME:
-            raise SourceReadIssue("Google Drive folders are inventory containers, not text documents.")
-
-        if mime_type.startswith("application/vnd.google-apps."):
-            content_type = _export_mime_type(mime_type)
-            body = self._export(str(metadata["id"]), content_type)
-        else:
-            content_type = mime_type
-            body = self._download(str(metadata["id"]))
-
-        if len(body) > MAX_DOCUMENT_BYTES:
-            video_media = is_video_media(content_type, Path(name).suffix.lower())
-            raise SourceReadIssue(
-                f"{name} requires an approved video processor before scanning." if video_media else f"{name} exceeds the prelaunch 1 MB text extraction limit.",
-                recognition_difficulty="hard" if video_media else "unsupported",
-                ocr_deferred=video_media,
-            )
-
-        return _document_from_bytes(
-            body=body,
-            content_type=content_type,
-            family="Google_Drive",
-            name=name,
-            source_path=str(metadata.get("webViewLink") or f"google-drive://{metadata['id']}"),
+    declared_size = _declared_size(metadata)
+    if declared_size and declared_size > _max_bytes_for_file(mime_type, name):
+        video_media = is_video_media(mime_type, Path(name).suffix.lower())
+        raise SourceReadIssue(
+            f"{name} requires a smaller bounded video sample before scanning." if video_media else f"{name} exceeds the prelaunch 1 MB text extraction limit.",
+            recognition_difficulty="hard" if video_media else "unsupported",
+            ocr_deferred=video_media,
         )
 
-    def _metadata(self, file_id: str) -> dict[str, Any]:
-        query = urlencode({"fields": "id,name,mimeType,size,webViewLink", "supportsAllDrives": "true"})
-        return self._json(f"{GOOGLE_API_BASE}/{file_id}?{query}")
+    if mime_type.startswith("application/vnd.google-apps."):
+        content_type = _export_mime_type(mime_type)
+        body = client.export(str(metadata["id"]), content_type)
+    else:
+        content_type = mime_type
+        body = client.download(str(metadata["id"]))
 
-    def _children(self, folder_id: str) -> list[dict[str, Any]]:
-        children: list[dict[str, Any]] = []
-        page_token: str | None = None
-        while len(children) < MAX_SOURCE_FILES:
-            params = {
-                "q": f"'{folder_id}' in parents and trashed = false",
-                "fields": "nextPageToken,files(id,name,mimeType,size,webViewLink)",
-                "pageSize": str(min(100, MAX_SOURCE_FILES - len(children))),
-                "supportsAllDrives": "true",
-                "includeItemsFromAllDrives": "true",
-                **({"pageToken": page_token} if page_token else {}),
-            }
-            payload = self._json(f"{GOOGLE_API_BASE}?{urlencode(params)}")
-            children.extend(list(payload.get("files") or []))
-            next_page_token = payload.get("nextPageToken")
-            if not isinstance(next_page_token, str) or not next_page_token:
-                break
-            page_token = next_page_token
-        return children
+    if len(body) > _max_bytes_for_file(content_type, name):
+        video_media = is_video_media(content_type, Path(name).suffix.lower())
+        raise SourceReadIssue(
+            f"{name} requires an approved video processor before scanning." if video_media else f"{name} exceeds the prelaunch 1 MB text extraction limit.",
+            recognition_difficulty="hard" if video_media else "unsupported",
+            ocr_deferred=video_media,
+        )
 
-    def _download(self, file_id: str) -> bytes:
-        return self._bytes(f"{GOOGLE_API_BASE}/{file_id}?alt=media&supportsAllDrives=true")
-
-    def _export(self, file_id: str, mime_type: str) -> bytes:
-        return self._bytes(f"{GOOGLE_API_BASE}/{file_id}/export?{urlencode({'mimeType': mime_type})}")
-
-    def _json(self, url: str) -> dict[str, Any]:
-        try:
-            return json.loads(self._bytes(url).decode("utf-8"))
-        except json.JSONDecodeError as error:
-            raise SourceReadIssue("Google Drive returned an invalid metadata response.") from error
-
-    def _bytes(self, url: str) -> bytes:
-        request = Request(url, headers={"Authorization": f"Bearer {self.access_token}", "Accept": "application/json"})
-        try:
-            with build_opener().open(request, timeout=20) as response:
-                return response.read(MAX_DOCUMENT_BYTES + 1)
-        except HTTPError as error:
-            raise SourceReadIssue(f"Google Drive access failed with HTTP {error.code}.") from error
-        except URLError as error:
-            raise SourceReadIssue("Google Drive access failed before content extraction.") from error
+    return _document_from_bytes(
+        body=body,
+        content_type=content_type,
+        family="Google_Drive",
+        name=name,
+        source_path=str(metadata.get("webViewLink") or f"google-drive://{metadata['id']}"),
+    )
 
 
 class SafeRedirectHandler(HTTPRedirectHandler):
@@ -331,7 +286,8 @@ def _download_url(url: str) -> tuple[bytes, str, str]:
             final_url = response.geturl()
             validate_remote_source_url(final_url)
             content_type = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
-            return response.read(MAX_DOCUMENT_BYTES + 1), content_type, final_url
+            name = Path(urlparse(final_url).path).name
+            return response.read(_max_bytes_for_file(content_type, name) + 1), content_type, final_url
     except HTTPError as error:
         raise SourceReadIssue(f"Remote file returned HTTP {error.code}.", "#/config/url") from error
     except URLError as error:
@@ -370,6 +326,7 @@ def _document_from_bytes(
         file_format=extracted.file_format,
         extraction_method=extracted.extraction_method,
         recognition_difficulty=extracted.recognition_difficulty,
+        text_locations=extracted.text_locations,
     )
 
 
@@ -402,6 +359,17 @@ def _unsupported_batch(
 
 def _unsupported_warnings(count: int) -> list[str]:
     return [f"{count} unsupported files skipped by the prelaunch scanner."] if count else []
+
+
+def _max_bytes_for_file(content_type: str, name: str) -> int:
+    return MAX_VIDEO_BYTES if is_video_media(content_type, Path(name).suffix.lower()) else MAX_DOCUMENT_BYTES
+
+
+def _declared_size(metadata: dict[str, Any]) -> int | None:
+    try:
+        return int(str(metadata.get("size") or ""))
+    except ValueError:
+        return None
 
 
 def _validate_public_host(hostname: str) -> None:

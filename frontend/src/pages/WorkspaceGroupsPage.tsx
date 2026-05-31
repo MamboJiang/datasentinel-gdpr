@@ -156,7 +156,6 @@ export function WorkspaceGroupsPage() {
       <PageHeader
         eyebrow="Workspace admin"
         title="Group controls"
-        description={canManageGroups ? 'Create, rename, and permission Workspace groups.' : 'Inspect Workspace group definitions and permission boundaries.'}
         actions={<Link className="button button-secondary" to="/workspace/admin"><ArrowLeft aria-hidden="true" size={16} /> Admin</Link>}
       />
 
@@ -172,7 +171,6 @@ export function WorkspaceGroupsPage() {
           <ShieldCheck aria-hidden="true" size={18} />
           <div>
             <h3 id="workspace-groups-title">Group controls</h3>
-            <p>Permissions are explicit, scoped to this Workspace, and denied by default.</p>
           </div>
         </div>
         {createGroupOpen ? (
@@ -244,7 +242,6 @@ export function WorkspaceGroupsPage() {
                 <div className="workspace-group-summary">
                   <span className="workspace-group-summary-copy">
                     <strong>{group.name}</strong>
-                    <small>{group.description || 'No description'}</small>
                   </span>
                   <span className="workspace-group-summary-meta">
                     <small>{group.memberCount} members</small>

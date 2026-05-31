@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
+import threading
 import time
 from typing import Any
 
 from .demo_state import DemoState, _source_owner
 from .deterministic_signals import detect_signals, safe_public_source_path
 from .envelope import envelope, response, utc_now
+from .signal_evidence_anchors import apply_source_locations
 from .source_documents import SourceDocument, SourceDocumentBatch, SourceReadIssue, read_source_documents
+from .source_review_preview import build_source_review_preview
 from .source_store import SourceStore
 
 
@@ -32,14 +36,15 @@ class PrelaunchState(DemoState):
         if not source or not self._source_scan_ready(source):
             return self._problem(409, "Source is not scan-ready", path, trace_id, "#/sourceId")
 
-        try:
-            result = _scan_source(source, self.governance_config, scan_type, payload)
-        except SourceReadIssue as issue:
+        if source.get("sourceType") == "google_drive_selection" and not _has_google_drive_access_token(payload):
+            issue = SourceReadIssue("Google Drive scans require a short-lived access token.", "#/authorization/googleDriveAccessToken")
             self._record_failed_scan(scan_type, source, issue.detail)
             return self._problem(409, issue.detail, path, trace_id, issue.pointer)
 
-        self._pending_result = result
-        self.scan = {**result["scan"], "status": "running", "stage": "detecting_signals", "progress": 0.35}
+        scan_id = f"scan_{int(time.time() * 1000)}"
+        accepted_scan = _running_prelaunch_scan(scan_id, source, scan_type, self.governance_config)
+        self._pending_result = None
+        self.scan = accepted_scan
         self._running_started_at = time.monotonic()
         self._prepend_audit_event(f"{scan_type}_scan_started", self.scan["scanId"], source_id, "running")
         self.metrics.update({
@@ -47,7 +52,58 @@ class PrelaunchState(DemoState):
             "totalScannedFiles": 0,
             "flaggedFiles": 0,
         })
-        return response(202, envelope(self.scan, trace_id, partial=True), trace_id)
+        worker_finished = self._start_scan_worker(scan_id, source, scan_type, payload)
+        worker_finished.wait(0.02)
+        return response(202, envelope(accepted_scan, trace_id, partial=True), trace_id)
+
+    def _start_scan_worker(
+        self,
+        scan_id: str,
+        source: dict[str, Any],
+        scan_type: str,
+        payload: dict[str, Any],
+    ) -> threading.Event:
+        worker_finished = threading.Event()
+        payload_for_worker = copy.deepcopy(payload)
+        source_for_worker = copy.deepcopy(source)
+        governance_for_worker = copy.deepcopy(self.governance_config)
+
+        thread = threading.Thread(
+            target=self._run_scan_worker,
+            args=(scan_id, source_for_worker, governance_for_worker, scan_type, payload_for_worker, worker_finished),
+            daemon=True,
+            name=f"datasentinel-scan-{scan_id}",
+        )
+        thread.start()
+        return worker_finished
+
+    def _run_scan_worker(
+        self,
+        scan_id: str,
+        source: dict[str, Any],
+        governance: dict[str, Any],
+        scan_type: str,
+        payload: dict[str, Any],
+        worker_finished: threading.Event,
+    ) -> None:
+        try:
+            result = _scan_source(source, governance, scan_type, payload, scan_id)
+            if self._scan_is_current(scan_id):
+                self._pending_result = result
+                self._finish_scan_if_ready()
+        except SourceReadIssue as issue:
+            self._record_failed_scan(scan_type, source, issue.detail, scan_id)
+        except Exception:
+            self._record_failed_scan(scan_type, source, "Scan execution failed after command acceptance.", scan_id)
+        finally:
+            self._scan_worker_finished(scan_id)
+            worker_finished.set()
+
+    def _scan_worker_finished(self, scan_id: str) -> None:
+        return None
+
+    def _scan_is_current(self, scan_id: str) -> bool:
+        return self.scan.get("scanId") == scan_id and self.scan.get("status") == "running"
 
     def _finish_scan_if_ready(self) -> None:
         if self.scan["status"] != "running" or self._running_started_at is None or not self._pending_result:
@@ -87,11 +143,14 @@ class PrelaunchState(DemoState):
         self._running_started_at = None
         self._clear_seeded_workflow()
 
-    def _record_failed_scan(self, scan_type: str, source: dict[str, Any], warning: str) -> None:
+    def _record_failed_scan(self, scan_type: str, source: dict[str, Any], warning: str, scan_id: str | None = None) -> None:
+        if scan_id and not self._scan_is_current(scan_id):
+            return
+
         if source.get("sourceType") == "google_drive_selection":
             self.source_store.add({**source, "status": "authorization_required"})
 
-        scan_id = f"scan_failed_{int(time.time() * 1000)}"
+        scan_id = scan_id or f"scan_failed_{int(time.time() * 1000)}"
         self._pending_result = None
         self._running_started_at = None
         self.scan = _failed_scan(scan_id, source, scan_type, warning)
@@ -104,9 +163,8 @@ class PrelaunchState(DemoState):
         self._prepend_audit_event(f"{scan_type}_scan_failed", scan_id, source["sourceId"], "failed")
 
 
-def _scan_source(source: dict[str, Any], governance: dict[str, Any], scan_type: str, payload: dict[str, Any]) -> dict[str, Any]:
+def _scan_source(source: dict[str, Any], governance: dict[str, Any], scan_type: str, payload: dict[str, Any], scan_id: str) -> dict[str, Any]:
     batch = read_source_documents(source, payload)
-    scan_id = f"scan_{int(time.time() * 1000)}"
     policy_version = governance.get("activePolicyPack", {}).get("version", "unconfigured")
     findings: list[dict[str, Any]] = []
     details: dict[str, dict[str, Any]] = {}
@@ -114,7 +172,7 @@ def _scan_source(source: dict[str, Any], governance: dict[str, Any], scan_type: 
     signal_type_counts: dict[str, int] = {}
 
     for document in batch.documents:
-        signals = detect_signals(document.text)
+        signals = apply_source_locations(detect_signals(document.text), document.text_locations)
         if not signals:
             continue
 
@@ -180,12 +238,61 @@ def _finding(scan_id: str, source: dict[str, Any], document: SourceDocument, sig
         "owner": owner,
         "file": {"sourceName": source["name"], "sourceType": source["sourceType"], "lastModifiedAt": utc_now(), "sizeBytes": document.size_bytes},
         "signals": signals,
+        "sourceReviewPreview": build_source_review_preview(document, signals),
         "riskExplanation": "The prelaunch scan found redacted identifier patterns that require accountable human review before any action.",
         "policyContext": {"policyPackId": "policy_gdpr_demo", "policyPackVersion": policy_version, "policyConclusion": "human_review_required"},
         "availableActions": ["keep_with_reason", "correct_false_positive", "reassign_owner", "escalate"],
         "deniedActions": [{"action": "execute_real_deletion", "reason": "Real deletion is disabled."}],
         "auditTimeline": [],
     }
+
+
+def _running_prelaunch_scan(scan_id: str, source: dict[str, Any], scan_type: str, governance: dict[str, Any]) -> dict[str, Any]:
+    policy_version = governance.get("activePolicyPack", {}).get("version", "unconfigured")
+    stages = ["source_ready"]
+    if scan_type == "delta":
+        stages.append("comparing_delta_baseline")
+    stages.extend([
+        "inventorying_files",
+        "extracting_content",
+        "detecting_signals",
+        "judging_context_risk",
+        "assigning_owner",
+        "assembling_findings",
+        "preparing_review_support",
+        "recording_audit_events",
+    ])
+    return {
+        "scanId": scan_id,
+        "sourceId": source["sourceId"],
+        "scanType": scan_type,
+        "status": "running",
+        "stage": "source_ready",
+        "progress": 0.05,
+        "totalFiles": 0,
+        "scannedFiles": 0,
+        "flaggedFiles": 0,
+        "totalBytes": 0,
+        "durationMs": None,
+        "throughputFilesPerSecond": None,
+        "reproducibilityFingerprint": None,
+        "pipelineStages": [{"stage": stage, "status": "running" if stage == "source_ready" else "pending", "warnings": []} for stage in stages],
+        "fileInventory": {"status": "pending", "sourceSnapshotId": None, "inventoryFingerprint": None, "totalCandidateFiles": 0, "fingerprintedFiles": 0, "skippedFiles": 0, "totalBytes": 0, "permissionSnapshots": 0, "sampleFamilies": [], "warnings": []},
+        "contentExtraction": {"status": "pending", "extractionFingerprint": None, "processedFiles": 0, "successfulFiles": 0, "warningFiles": 0, "unsupportedFiles": 0, "ocrDeferredFiles": 0, "redactedEvidenceCandidates": 0, "rawContentExposed": False, "methods": [], "formatCounts": [], "recognitionDifficulty": {"easy": 0, "moderate": 0, "hard": 0, "unsupported": 0}, "aiAssistanceUsed": False, "modelCalls": 0, "warnings": []},
+        "signalDetection": {"status": "pending", "detectorRulesVersion": "prelaunch-local-v2", "detectorRulesHash": None, "evidenceRequirements": ["redacted_snippet", "detector_signal", "owner_assignment", "policy_version"], "evaluatedEvidenceCandidates": 0, "detectedSignals": 0, "redactedSignals": 0, "findingsWithSignals": 0, "rawContentExposed": False, "signalTypeCounts": [], "warnings": []},
+        "contextRisk": {"status": "pending", "policyPackVersion": policy_version, "riskRulesFingerprint": None, "assessedEvidenceCandidates": 0, "contextClassifiedFindings": 0, "riskAssessedFindings": 0, "highRiskFindings": 0, "mediumRiskFindings": 0, "lowRiskFindings": 0, "retentionReviewFiles": 0, "humanReviewRequiredFindings": 0, "legalConclusionProvided": False, "contextCategories": [], "warnings": []},
+        "ownerAssignment": {"status": "pending", "policyPackVersion": policy_version, "organizationModelVersion": "prelaunch", "ownerResolutionStrategy": "source_owner_then_data_steward_fallback", "assignmentRulesFingerprint": None, "humanReviewRequiredFindings": 0, "assignedFindings": 0, "directOwnerAssignments": 0, "masterOfDataAssignments": 0, "escalationAssignments": 0, "unownedFindings": 0, "transferOptionCount": 0, "escalationOptionCount": 1, "sourceOwnerAvailable": bool(_source_owner(source)), "warnings": []},
+        "findingAssembly": {"status": "pending", "policyPackVersion": policy_version, "sourceSnapshotId": None, "assemblyRulesFingerprint": None, "assembledFindings": 0, "evidenceCards": 0, "evidenceSignals": 0, "redactedEvidenceSnippets": 0, "missingEvidenceCards": 0, "deniedActionCount": 0, "rawContentExposed": False, "legalConclusionProvided": False, "warnings": []},
+        "reviewSupport": {"status": "pending", "policyPackVersion": policy_version, "organizationModelVersion": "prelaunch", "supportRulesFingerprint": None, "reviewableFindings": 0, "supportedFindings": 0, "allowedActionCount": 0, "deniedActionCount": 1, "availableDecisionCount": 0, "reasonRequiredDecisionCount": 0, "checklistItemCount": 0, "transferOptionCount": 0, "escalationOptionCount": 1, "rawContentExposed": False, "legalConclusionProvided": False, "warnings": []},
+        "auditRecording": {"status": "pending", "policyPackVersion": policy_version, "auditRulesFingerprint": None, "recordedEventCount": 0, "linkedScanEvents": 1, "linkedFindingEvents": 0, "reviewDecisionEvents": 0, "systemEvents": 0, "humanEvents": 0, "rawContentExposed": False, "legalConclusionProvided": False, "deletionExecuted": False, "warnings": []},
+    }
+
+
+def _has_google_drive_access_token(payload: dict[str, Any]) -> bool:
+    authorization = payload.get("authorization")
+    token = authorization.get("googleDriveAccessToken") if isinstance(authorization, dict) else None
+    return isinstance(token, str) and bool(token.strip())
+
 
 def _scan(scan_id: str, source: dict[str, Any], scan_type: str, batch: SourceDocumentBatch, findings: list[dict[str, Any]], signal_count: int, signal_type_counts: dict[str, int], policy_version: str) -> dict[str, Any]:
     warnings = batch.warnings

@@ -1,0 +1,194 @@
+{
+  "datasetId": "gdpr-data-samples-main-generated-format-challenges-v1",
+  "sourceFolderId": "1AmTxh7RhEyvgo400SAZHI8s_CawvAdQn",
+  "description": "Synthetic multilingual high-difficulty companion cases generated for repeatable core-engine format tests without mutating Drive originals.",
+  "cases": [
+    {
+      "caseId": "csv_polish_identity",
+      "fileKind": "utf8_text",
+      "fileName": "polish_identity.csv",
+      "contentType": "text/csv",
+      "expectedFormat": "csv",
+      "expectedDifficulty": "easy",
+      "text": "field,value\nImię i nazwisko: Anna Kowalska\nTelefon: +48 501234567\nPESEL: 44051401359",
+      "expectedTypes": ["person_name", "phone_number", "national_identifier"],
+      "forbiddenValues": ["Anna Kowalska", "+48 501234567", "44051401359"]
+    },
+    {
+      "caseId": "html_arabic_contact",
+      "fileKind": "utf8_text",
+      "fileName": "arabic_contact.html",
+      "contentType": "text/html",
+      "expectedFormat": "html",
+      "expectedDifficulty": "easy",
+      "text": "<p>الاسم: ليلى حسن</p>\n<p>الهاتف: +971 501234567</p>\n<p>العنوان: شارع الاتحاد 12</p>",
+      "expectedTypes": ["person_name", "phone_number", "address"],
+      "forbiddenValues": ["ليلى حسن", "+971 501234567", "شارع الاتحاد 12"]
+    },
+    {
+      "caseId": "jsonl_chinese_contact",
+      "fileKind": "utf8_text",
+      "fileName": "chinese_contact.jsonl",
+      "contentType": "application/x-ndjson",
+      "expectedFormat": "jsonl",
+      "expectedDifficulty": "easy",
+      "text": "{\"contact\":{\"姓名\":\"王芳\",\"电话\":\"13800138000\"}}\n{\"contact\":{\"电子邮件\":\"privacy.jsonl@example.org\"}}",
+      "expectedTypes": ["person_name", "phone_number", "email"],
+      "forbiddenValues": ["王芳", "13800138000", "privacy.jsonl@example.org"]
+    },
+    {
+      "caseId": "xml_german_contact",
+      "fileKind": "utf8_text",
+      "fileName": "german_contact.xml",
+      "contentType": "application/xml",
+      "expectedFormat": "xml",
+      "expectedDifficulty": "easy",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><fall><kontakt Telefon=\"+491711234567\"><Name>Anna Becker</Name><Geburtsdatum>1984-05-12</Geburtsdatum></kontakt></fall>",
+      "expectedTypes": ["person_name", "phone_number", "date_of_birth"],
+      "forbiddenValues": ["Anna Becker", "+491711234567", "1984-05-12"]
+    },
+    {
+      "caseId": "rtf_chinese_french_contact",
+      "fileKind": "utf8_text",
+      "fileName": "chinese_french_contact.rtf",
+      "contentType": "application/rtf",
+      "expectedFormat": "rtf",
+      "expectedDifficulty": "moderate",
+      "text": "{\\rtf1\\ansi{\\fonttbl{\\f0 Arial;}}\\u22995?\\u21517?: \\u29579?\\u33459?\\par T\\'e9l\\'e9phone: +33123456789}",
+      "expectedTypes": ["person_name", "phone_number"],
+      "forbiddenValues": ["王芳", "+33123456789"]
+    },
+    {
+      "caseId": "docx_italian_tax_health",
+      "fileKind": "docx",
+      "fileName": "italian_tax_health.docx",
+      "contentType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "expectedFormat": "docx",
+      "expectedDifficulty": "moderate",
+      "text": "Nome: Giulia Rossi\nCodice fiscale: RSSGLI80A01H501U\nDiagnosi: piano allergia",
+      "expectedTypes": ["person_name", "tax_id", "health_data"],
+      "forbiddenValues": ["Giulia Rossi", "RSSGLI80A01H501U", "piano allergia"]
+    },
+    {
+      "caseId": "xlsx_dutch_compensation",
+      "fileKind": "xlsx",
+      "fileName": "dutch_compensation.xlsx",
+      "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "expectedFormat": "xlsx",
+      "expectedDifficulty": "moderate",
+      "text": "Naam: Sophie de Vries\nBSN: 123456782\nSalaris: EUR 62000",
+      "expectedTypes": ["person_name", "national_identifier", "salary_compensation"],
+      "forbiddenValues": ["Sophie de Vries", "123456782", "EUR 62000"]
+    },
+    {
+      "caseId": "pptx_japanese_bank",
+      "fileKind": "pptx",
+      "fileName": "japanese_bank.pptx",
+      "contentType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "expectedFormat": "pptx",
+      "expectedDifficulty": "moderate",
+      "text": "氏名：佐藤花子\n電話：+81 9012345678\n銀行口座：JP90BANK000000123456",
+      "expectedTypes": ["person_name", "phone_number", "bank_account"],
+      "forbiddenValues": ["佐藤花子", "+81 9012345678", "JP90BANK000000123456"]
+    },
+    {
+      "caseId": "odt_spanish_health",
+      "fileKind": "odt",
+      "fileName": "spanish_health.odt",
+      "contentType": "application/vnd.oasis.opendocument.text",
+      "expectedFormat": "odt",
+      "expectedDifficulty": "moderate",
+      "text": "Nombre: Laura Garcia\nTeléfono: +34123456789\nDiagnóstico: alergia severa",
+      "expectedTypes": ["person_name", "phone_number", "health_data"],
+      "forbiddenValues": ["Laura Garcia", "+34123456789", "alergia severa"]
+    },
+    {
+      "caseId": "ods_dutch_compensation",
+      "fileKind": "ods",
+      "fileName": "dutch_compensation.ods",
+      "contentType": "application/vnd.oasis.opendocument.spreadsheet",
+      "expectedFormat": "ods",
+      "expectedDifficulty": "moderate",
+      "text": "Naam: Sophie de Vries\nBSN: 123456782\nSalaris: EUR 62000",
+      "expectedTypes": ["person_name", "national_identifier", "salary_compensation"],
+      "forbiddenValues": ["Sophie de Vries", "123456782", "EUR 62000"]
+    },
+    {
+      "caseId": "odp_polish_identity",
+      "fileKind": "odp",
+      "fileName": "polish_identity.odp",
+      "contentType": "application/vnd.oasis.opendocument.presentation",
+      "expectedFormat": "odp",
+      "expectedDifficulty": "moderate",
+      "text": "Imię i nazwisko: Anna Kowalska\nTelefon: +48 501234567\nPESEL: 44051401359",
+      "expectedTypes": ["person_name", "phone_number", "national_identifier"],
+      "forbiddenValues": ["Anna Kowalska", "+48 501234567", "44051401359"]
+    },
+    {
+      "caseId": "eml_chinese_contact",
+      "fileKind": "eml",
+      "fileName": "chinese_contact.eml",
+      "contentType": "message/rfc822",
+      "expectedFormat": "eml",
+      "expectedDifficulty": "moderate",
+      "text": "姓名：王芳\n电话：13800138000\n电子邮件：privacy.eml@example.org",
+      "expectedTypes": ["person_name", "phone_number", "email"],
+      "forbiddenValues": ["王芳", "13800138000", "privacy.eml@example.org"]
+    },
+    {
+      "caseId": "zip_mixed_multilingual_bundle",
+      "fileKind": "zip",
+      "fileName": "mixed_multilingual_bundle.zip",
+      "contentType": "application/zip",
+      "expectedFormat": "zip",
+      "expectedDifficulty": "moderate",
+      "text": "Nombre,Laura Garcia\nTeléfono,+34123456789\n姓名：王芳\n电话：13800138000",
+      "expectedTypes": ["person_name", "phone_number"],
+      "forbiddenValues": ["Laura Garcia", "+34123456789", "王芳", "13800138000", "Laura Garcia payroll.csv", "王芳 contact.txt"]
+    },
+    {
+      "caseId": "utf16le_chinese_contact",
+      "fileKind": "utf16_text",
+      "fileName": "chinese_contact_utf16le.txt",
+      "contentType": "text/plain; charset=utf-16le",
+      "expectedFormat": "txt",
+      "expectedDifficulty": "easy",
+      "text": "姓名：王芳\n电话：13800138000\n电子邮件：privacy.utf16@example.org",
+      "expectedTypes": ["person_name", "phone_number", "email"],
+      "forbiddenValues": ["王芳", "13800138000", "privacy.utf16@example.org"]
+    },
+    {
+      "caseId": "image_ocr_korean_health",
+      "fileKind": "image_ocr",
+      "fileName": "korean_health.png",
+      "contentType": "image/png",
+      "expectedFormat": "image_ocr",
+      "expectedDifficulty": "hard",
+      "text": "이름: 김민준\n전화: +82 1012345678\n진단: 고혈압 관리",
+      "expectedTypes": ["person_name", "phone_number", "health_data"],
+      "forbiddenValues": ["김민준", "+82 1012345678", "고혈압 관리"]
+    },
+    {
+      "caseId": "pdf_ocr_chinese_identity",
+      "fileKind": "pdf_ocr",
+      "fileName": "chinese_identity_scan.pdf",
+      "contentType": "application/pdf",
+      "expectedFormat": "pdf_ocr",
+      "expectedDifficulty": "hard",
+      "text": "姓名：王芳\n电话：13800138000\n身份证号：11010519491231002X",
+      "expectedTypes": ["person_name", "phone_number", "national_identifier"],
+      "forbiddenValues": ["王芳", "13800138000", "11010519491231002X"]
+    },
+    {
+      "caseId": "vtt_portuguese_secret",
+      "fileKind": "utf8_text",
+      "fileName": "portuguese_secret.vtt",
+      "contentType": "text/vtt",
+      "expectedFormat": "video_transcript",
+      "expectedDifficulty": "moderate",
+      "text": "WEBVTT\n\n1\n00:00:01.000 --> 00:00:04.000\nNome: Mariana Silva\nSenha: segredo-pt-77",
+      "expectedTypes": ["person_name", "credential_secret"],
+      "forbiddenValues": ["Mariana Silva", "segredo-pt-77"]
+    }
+  ]
+}

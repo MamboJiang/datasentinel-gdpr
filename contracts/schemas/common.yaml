@@ -101,6 +101,50 @@ GoogleDrivePickerConfigEnvelope:
   properties:
     data: { $ref: "#/GoogleDrivePickerConfig" }
     meta: { $ref: "#/Meta" }
+GoogleDriveBinding:
+  type: object
+  required: [connected, configured, provider, scopes]
+  additionalProperties: true
+  properties:
+    connected: { type: boolean }
+    configured: { type: boolean }
+    provider: { type: string, enum: [google_drive] }
+    email: { type: [string, "null"] }
+    displayName: { type: [string, "null"] }
+    avatarUrl: { type: [string, "null"] }
+    scopes:
+      type: array
+      items: { type: string }
+    connectedAt: { type: [string, "null"], format: date-time }
+    updatedAt: { type: [string, "null"], format: date-time }
+    tokenRefreshAvailable: { type: boolean }
+    serverSideOnly: { type: boolean }
+    revocationAttempted: { type: boolean }
+    revoked: { type: boolean }
+GoogleDriveBindingEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/GoogleDriveBinding" }
+    meta: { $ref: "#/Meta" }
+GoogleDrivePickerToken:
+  type: object
+  required: [accessToken, provider, scopes, source, tokenType]
+  additionalProperties: false
+  properties:
+    accessToken: { type: string }
+    provider: { type: string, enum: [google_drive] }
+    scopes:
+      type: array
+      items: { type: string }
+    source: { type: string, enum: [account_binding] }
+    tokenType: { type: string }
+GoogleDrivePickerTokenEnvelope:
+  type: object
+  required: [data, meta]
+  properties:
+    data: { $ref: "#/GoogleDrivePickerToken" }
+    meta: { $ref: "#/Meta" }
 HealthEnvelope:
   type: object
   required: [data, meta]

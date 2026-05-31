@@ -29,7 +29,7 @@ Provide a prototype workflow that shows how an organization can discover GDPR-re
 - Optional AI-assist concept for redacted, deterministic evidence that needs context support after OCR and grep-style rules.
 - Prelaunch account concept for Google and GitHub login through backend-owned OAuth, first-party sessions, visible user profile, and logout.
 - Workspace administration concept for Workspace-scoped admins, user groups, invitation-based membership, visible permission boundaries, and operational charts.
-- Prelaunch source-input concept for Google Drive selected files or folders, direct HTTPS file links, PDF text-layer extraction, and source-registration deletion without long-term raw source-file storage or source-file deletion.
+- Prelaunch source-input concept for Google Drive selected files or folders, direct HTTPS file links, RFC 5322/MIME email extraction, bounded ZIP archive member extraction, host-local legacy Office conversion, PDF text-layer extraction with bounded local OCR fallback, and source-registration deletion without long-term raw source-file storage or source-file deletion.
 
 ## Backend Planning Sequence After Sample Source Connection
 
@@ -124,8 +124,8 @@ The Workspace slice separates signed-in accounts from Workspace membership. It m
 - Expose allowed and denied Workspace actions before privileged actions are attempted.
 - Use the top-left Workspace menu to show current Workspace, current membership groups in the compact pill, no-Workspace state, and legacy pending invitations when present.
 - Hide sidebar destinations that are outside the current Workspace permission boundary.
-- Provide a Workspace admin overview with compact member/group summaries, compact invitation rows, permission boundaries, management charts, Workspace profile settings, and the Danger Zone as the final section.
-- Provide dedicated Workspace admin subpages for full member management and full group controls.
+- Provide a Workspace admin overview with compact member/group summaries, compact invitation rows, permission boundaries, management charts, Workspace profile settings, and the Danger Zone as the final section, using concise operational copy.
+- Provide dedicated Workspace admin subpages for full member management and full group controls without explanatory helper paragraphs.
 - Keep real deletion, production tenant access, Microsoft Graph directory sync, legal conclusions, and hidden privileges out of this slice.
 
 The detailed design note is `docs/design/workspace-admin-permission-system.md`.
@@ -136,13 +136,14 @@ The source-input slice lets signed-in users scan real files without uploading ra
 
 - Let a user register a direct HTTPS file link or select Google Drive files/folders through Google Picker.
 - Store only source metadata and selected Drive item metadata during registration.
-- Use a short-lived Google Drive access token only when a scan starts, and never persist provider tokens.
-- Extract text-layer PDFs, Office Open XML files, supported images through host-local OCR, and VTT/SRT transcripts during scan execution when selected/local/linked files have usable text; keep image-only PDFs and raw video media OCR-deferred when the required processor is unavailable.
+- Use a short-lived Google Drive access token only when a scan starts, either from a one-off Picker grant or from a server-side account binding refreshed by the local API.
+- Let a user connect, change, or disconnect the personal Google Drive binding in Account settings without deleting source registrations or Drive files.
+- Extract text-layer PDFs, Office Open XML files, legacy DOC/XLS/PPT files through host-local LibreOffice conversion, OpenDocument files, EML email messages, bounded ZIP archive members, supported images through host-local OCR, bounded image-only PDF OCR when host tooling is available, VTT/SRT transcripts, and bounded raw video media through host-local FFmpeg frame OCR during scan execution when selected/local/linked files have usable text; keep image-only PDFs, nested archives, raw video media, and legacy Office inputs hard-deferred or unsupported when the required processor is unavailable.
 - Show recognition difficulty for easy text, moderate structured documents, hard OCR-deferred inputs, and unsupported formats.
 - Let users remove DataSentinel source registrations without deleting external source files.
 - Read file content only inside the scan process and persist redacted evidence, findings, metrics, and audit events instead of raw file bodies.
 - Reject unsafe direct links, unsupported files, missing Drive tokens, and over-limit inputs before mutating workflow state.
-- Keep legal conclusions, full-compliance claims, provider secrets, refresh tokens, source-file deletion, and production tenant connectors out of this slice.
+- Keep legal conclusions, full-compliance claims, provider secrets, frontend token exposure, source-file deletion, and production tenant connectors out of this slice.
 
 The detailed design notes are `docs/design/google-drive-source-integration.md`, `docs/design/local-format-recognition-difficulty.md`, and `docs/design/image-video-recognition-boundary.md`.
 
@@ -156,7 +157,7 @@ The next implementation slice connects content extraction to redacted detector e
 - Use extracted text only inside the internal processing boundary.
 - Preserve detector rules version/hash, active policy-pack evidence requirements, evaluated evidence-candidate count, redacted signal count, findings-with-signals count, and signal-type counts.
 - Expose redacted evidence signals for finding cards without raw extracted text, file bodies, page images, raw source URLs, absolute host paths, adjacent raw match context, or unredacted personal data.
-- Detect completed labeled sample-form fields and common personal-data identifiers across contact, identity, government ID, employment, education, financial, online/device, location, vehicle, health, biometric, genetic, special-category, family/minor, credential, incident, and access workflows in addition to direct email, phone, URL, handle, SSN/NINO, IP, MAC, UUID, coordinate, payment-card, and IBAN-like patterns.
+- Detect completed labeled sample-form fields, including common multilingual labels, and common personal-data identifiers across contact, identity, government ID, employment, education, financial, online/device, location, vehicle, health, biometric, genetic, special-category, family/minor, credential, incident, and access workflows in addition to direct email, phone, URL, handle, SSN/NINO, IP, MAC, UUID, coordinate, payment-card, and IBAN-like patterns.
 - Keep deterministic processing, model calls, and estimated paid-service cost at zero for P0.
 - Leave risk scoring, owner routing, and human review decisions in their downstream stages.
 

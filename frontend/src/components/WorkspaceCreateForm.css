@@ -1,25 +1,28 @@
 .workspace-create-modal { inset: 0; position: fixed; z-index: 120; }
 .workspace-create-modal-backdrop { background: rgba(17, 17, 17, .28); border: 0; inset: 0; padding: 0; position: absolute; }
-.workspace-create-dialog { background: #ffffff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 24px 70px rgba(15, 23, 42, .22); display: grid; gap: 16px; left: 50%; max-height: calc(100vh - 40px); max-width: min(520px, calc(100vw - 28px)); overflow: auto; padding: 18px; position: absolute; top: 50%; transform: translate(-50%, -50%); width: 100%; }
+.workspace-create-dialog { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 24px 70px rgba(15, 23, 42, .22); color: var(--text); display: grid; gap: 16px; left: 50%; max-height: calc(100vh - 40px); max-width: min(520px, calc(100vw - 28px)); overflow: auto; padding: 18px; position: absolute; top: 50%; transform: translate(-50%, -50%); width: 100%; }
 .workspace-create-dialog header { align-items: start; display: flex; gap: 12px; justify-content: space-between; }
 .workspace-create-dialog h2 { font-size: 1.16rem; margin: 3px 0 0; }
-.workspace-create-close { align-items: center; background: #f7f7f7; border: 1px solid var(--border); border-radius: 8px; color: var(--text); display: flex; height: 34px; justify-content: center; width: 34px; }
+.workspace-create-close { align-items: center; background: var(--surface-subtle); border: 1px solid var(--border); border-radius: 8px; color: var(--text); display: flex; height: 34px; justify-content: center; width: 34px; }
+.workspace-create-close:hover { background: var(--surface-blue); }
 .workspace-create-form { display: grid; gap: 12px; }
 .workspace-create-form label { display: grid; gap: 6px; }
 .workspace-create-form label span { color: var(--text); font-size: .72rem; font-weight: 750; }
-.workspace-create-form input, .workspace-create-form textarea { background: #ffffff; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font: inherit; padding: 9px 10px; resize: vertical; width: 100%; }
+.workspace-create-form input, .workspace-create-form textarea { background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px; color: var(--text); font: inherit; padding: 9px 10px; resize: vertical; width: 100%; }
+.workspace-create-form input::placeholder, .workspace-create-form textarea::placeholder { color: var(--text-muted); }
 .workspace-create-form input { min-height: 40px; }
 .workspace-create-settings { display: grid; gap: 8px; }
-.workspace-create-settings article { align-items: flex-start; background: #f8f8f8; border: 1px solid var(--border); border-radius: 8px; display: flex; gap: 9px; padding: 10px; }
+.workspace-create-settings article { align-items: flex-start; background: var(--surface-subtle); border: 1px solid var(--border); border-radius: 8px; display: flex; gap: 9px; padding: 10px; }
 .workspace-create-settings svg { color: var(--blue); flex-shrink: 0; margin-top: 1px; }
 .workspace-create-settings strong, .workspace-create-settings small { display: block; }
 .workspace-create-settings strong { font-size: .74rem; }
 .workspace-create-settings small { color: var(--text-soft); font-size: .66rem; line-height: 1.45; margin-top: 3px; }
 .workspace-create-form footer { display: flex; gap: 8px; justify-content: flex-end; }
 .workspace-create-primary, .workspace-create-secondary { border-radius: 8px; font-weight: 760; min-height: 38px; padding: 8px 12px; }
-.workspace-create-primary { background: var(--text); border: 0; color: #ffffff; }
-.workspace-create-primary:disabled { background: #c7c7c7; cursor: not-allowed; }
-.workspace-create-secondary { background: #ffffff; border: 1px solid var(--border); color: var(--text); }
+.workspace-create-primary { background: var(--solid-control); border: 0; color: var(--solid-control-text); }
+.workspace-create-primary:disabled { background: var(--solid-control-disabled); color: var(--solid-control-disabled-text); cursor: not-allowed; }
+.workspace-create-secondary { background: var(--surface); border: 1px solid var(--border-strong); color: var(--text); }
+.workspace-create-secondary:hover { background: var(--surface-subtle); }
 
 @media (max-width: 560px) {
   .workspace-create-dialog { top: 18px; transform: translateX(-50%); }

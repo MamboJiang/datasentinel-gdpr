@@ -288,7 +288,7 @@ class DemoState:
         if finding_id not in self.finding_details:
             summary = next((item for item in self.findings if item["findingId"] == finding_id), None)
             if summary:
-                self.finding_details[finding_id] = {**copy.deepcopy(summary), "auditTimeline": []}
+                self.finding_details[finding_id] = _fallback_finding_detail(summary)
 
         finding = self.finding_details.get(finding_id)
         if finding:
@@ -466,6 +466,102 @@ def _can_view_finding(finding: dict[str, Any], access_context: dict[str, Any] | 
 
     owner = finding.get("owner")
     return isinstance(owner, dict) and owner.get("userId") == actor_id
+
+
+def _fallback_finding_detail(summary: dict[str, Any]) -> dict[str, Any]:
+    detail = copy.deepcopy(summary)
+    policy_version = detail.get("policyPackVersion") or "2026.05-demo"
+    personal_data_types = [item for item in detail.get("personalDataTypes", []) if isinstance(item, str)] or ["personal_data"]
+    signal_limit = max(1, int(detail.get("evidenceSignalCount") or len(personal_data_types) or 1))
+    signals = [
+        _redacted_mock_signal(detail["findingId"], signal_type, index)
+        for index, signal_type in enumerate(personal_data_types[:signal_limit])
+    ]
+
+    detail.update({
+        "signals": signals,
+        "riskExplanation": _fallback_risk_explanation(detail),
+        "file": {
+            "sourceName": "Controlled demo source",
+            "sourceType": "contract_mock",
+            "lastModifiedAt": "2026-05-30T12:00:00Z",
+            "sizeBytes": None,
+        },
+        "policyContext": {
+            "policyPackId": "policy_gdpr_demo",
+            "policyPackVersion": policy_version,
+            "policyConclusion": "human_review_required",
+        },
+        "availableActions": ["delete_candidate", "keep_with_reason", "correct_false_positive", "reassign_owner", "escalate"],
+        "deniedActions": [{"action": "execute_real_deletion", "reason": "Real deletion is disabled in the prototype."}],
+        "auditTimeline": [_fallback_finding_audit(detail, policy_version)],
+    })
+    return detail
+
+
+def _redacted_mock_signal(finding_id: str, signal_type: str, index: int) -> dict[str, Any]:
+    label = _human_label(signal_type)
+    redacted_token = signal_type.upper()
+    snippet = f"{label}: [REDACTED_{redacted_token}]"
+    return {
+        "type": signal_type,
+        "detector": "contract_mock_redacted_signal",
+        "confidence": 0.86,
+        "snippet": snippet,
+        "evidenceAnchor": {
+            "anchorId": f"anchor_{finding_id}_{index + 1}",
+            "format": "contract_mock",
+            "label": label,
+            "redactedText": snippet,
+            "selector": {
+                "type": "summaryEvidence",
+                "fieldIndex": index,
+                "blockLabel": label,
+            },
+            "fallback": {
+                "label": f"{label} evidence",
+                "redactedText": snippet,
+            },
+            "rawContentExposed": False,
+        },
+    }
+
+
+def _fallback_risk_explanation(finding: dict[str, Any]) -> str:
+    context = _human_label(str(finding.get("contextCategory") or "unclassified"))
+    data_types = ", ".join(_human_label(item) for item in finding.get("personalDataTypes", []) if isinstance(item, str))
+    return f"{context} contains redacted {data_types or 'personal data'} evidence that requires accountable human review."
+
+
+def _fallback_finding_audit(finding: dict[str, Any], policy_version: str) -> dict[str, Any]:
+    now = utc_now()
+    finding_id = finding["findingId"]
+    return {
+        "auditEventId": f"audit_{finding_id}_detail",
+        "scanId": finding.get("scanId"),
+        "findingId": finding_id,
+        "eventType": "finding_detail_assembled",
+        "actorId": "system",
+        "actorType": "system",
+        "occurredAt": now,
+        "recordedAt": now,
+        "auditRecordVersion": "audit-event-v1",
+        "objectType": "finding",
+        "objectId": finding_id,
+        "action": "assemble_redacted_evidence_card",
+        "outcome": "assembled",
+        "stage": "assembling_findings",
+        "summary": "Redacted evidence detail assembled for the controlled demo finding.",
+        "rawContentExposed": False,
+        "legalConclusionProvided": False,
+        "deletionExecuted": False,
+        "policyPackVersion": policy_version,
+        "evidenceReferences": [{"type": "finding", "id": finding_id, "label": "redacted evidence card"}],
+    }
+
+
+def _human_label(value: str) -> str:
+    return value.replace("_", " ").strip().title() or "Unknown"
 
 
 def _workspace_review_support(

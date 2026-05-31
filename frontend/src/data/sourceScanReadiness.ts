@@ -5,17 +5,17 @@ export function requiresRuntimeAuthorization(source: Source): boolean {
   return source.sourceType === 'google_drive_selection'
 }
 
-export function sourceDisplayStatus(source: Source, runtimeAuthorizedSourceIds: string[]): string {
-  if (requiresRuntimeAuthorization(source) && runtimeAuthorizedSourceIds.includes(source.sourceId)) {
+export function sourceDisplayStatus(source: Source, runtimeAuthorizedSourceIds: string[], googleDriveBindingConnected = false): string {
+  if (requiresRuntimeAuthorization(source) && hasGoogleDriveAuthorization(runtimeAuthorizedSourceIds, source.sourceId, googleDriveBindingConnected)) {
     return 'connected'
   }
 
   return source.status
 }
 
-export function canStartSourceScan(source: Source, governanceConfig: GovernanceConfig, runtimeAuthorizedSourceIds: string[]): boolean {
+export function canStartSourceScan(source: Source, governanceConfig: GovernanceConfig, runtimeAuthorizedSourceIds: string[], googleDriveBindingConnected = false): boolean {
   if (requiresRuntimeAuthorization(source)) {
-    return hasConnectedAdapter(source, governanceConfig) && runtimeAuthorizedSourceIds.includes(source.sourceId)
+    return hasConnectedAdapter(source, governanceConfig) && hasGoogleDriveAuthorization(runtimeAuthorizedSourceIds, source.sourceId, googleDriveBindingConnected)
   }
 
   if (!isSourceScanReady(source, governanceConfig)) {
@@ -25,12 +25,12 @@ export function canStartSourceScan(source: Source, governanceConfig: GovernanceC
   return true
 }
 
-export function sourceScanBlockReason(source: Source, governanceConfig: GovernanceConfig, runtimeAuthorizedSourceIds: string[]): string | undefined {
-  if (requiresRuntimeAuthorization(source) && !runtimeAuthorizedSourceIds.includes(source.sourceId)) {
-    return 'Google Drive scan requires reconnecting through the Picker'
+export function sourceScanBlockReason(source: Source, governanceConfig: GovernanceConfig, runtimeAuthorizedSourceIds: string[], googleDriveBindingConnected = false): string | undefined {
+  if (requiresRuntimeAuthorization(source) && !hasGoogleDriveAuthorization(runtimeAuthorizedSourceIds, source.sourceId, googleDriveBindingConnected)) {
+    return 'Google Drive scan requires a connected account binding or Picker authorization'
   }
 
-  if (!canStartSourceScan(source, governanceConfig, runtimeAuthorizedSourceIds)) {
+  if (!canStartSourceScan(source, governanceConfig, runtimeAuthorizedSourceIds, googleDriveBindingConnected)) {
     return 'Scan requires a connected source'
   }
 
@@ -41,4 +41,8 @@ function hasConnectedAdapter(source: Source, governanceConfig: GovernanceConfig)
   return governanceConfig.sourceAdapters.some((candidate) => (
     candidate.sourceType === source.sourceType && candidate.status === 'connected'
   ))
+}
+
+function hasGoogleDriveAuthorization(runtimeAuthorizedSourceIds: string[], sourceId: string, googleDriveBindingConnected: boolean): boolean {
+  return googleDriveBindingConnected || runtimeAuthorizedSourceIds.includes(sourceId)
 }

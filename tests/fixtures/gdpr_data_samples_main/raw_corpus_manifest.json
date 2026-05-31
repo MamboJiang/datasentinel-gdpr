@@ -1,0 +1,278 @@
+{
+  "datasetId": "google-drive-gdpr-data-samples-main",
+  "displayName": "GDPR-data-samples-main",
+  "observedAt": "2026-05-31",
+  "generatedAt": "2026-05-31",
+  "rawCorpusRule": "Raw corpus files are immutable test inputs. Refresh only by updating drive_manifest.json, this checksum manifest, tests, and docs together.",
+  "coverage": {
+    "driveManifestFilesRepresented": 18,
+    "rawFilesTracked": 19
+  },
+  "files": [
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/drive_only/da243f78edd96abc7a1e1ce5041f2480.png",
+      "byteSize": 114358,
+      "sha256": "20874371c84733c2a803523e969fc493b162c0331d1bd36e71f6c05ee89df68c",
+      "origin": "google_drive_download",
+      "source": {
+        "driveFolderId": "1AmTxh7RhEyvgo400SAZHI8s_CawvAdQn",
+        "driveFolderUrl": "https://drive.google.com/drive/folders/1AmTxh7RhEyvgo400SAZHI8s_CawvAdQn"
+      },
+      "driveFileId": "1jeh5Ci79Z6t68q5wmD_5istsXljnJMrc",
+      "originalName": "da243f78edd96abc7a1e1ce5041f2480.png",
+      "mimeType": "image/png",
+      "role": "image_ocr_challenge"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/drive_only/drive_chinese_travel_plan_v4.pdf",
+      "byteSize": 6265229,
+      "sha256": "b7f1001f6cd88d99364a6a7687905df395c21ab9d66c925f93c72a9e848096e0",
+      "origin": "google_drive_download",
+      "source": {
+        "driveFolderId": "1AmTxh7RhEyvgo400SAZHI8s_CawvAdQn",
+        "driveFolderUrl": "https://drive.google.com/drive/folders/1AmTxh7RhEyvgo400SAZHI8s_CawvAdQn"
+      },
+      "driveFileId": "1FHflbykOaqGMnML6AIafNGLlKeQ5T6hS",
+      "originalName": "欧洲经典线家庭旅行规划_V4_14至18天弹性版_巴黎或伦敦终点模块_厦门出发法兰克福入境(2).pdf",
+      "mimeType": "application/pdf",
+      "role": "multilingual_pdf_text_layer_challenge"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/.gitignore",
+      "byteSize": 10,
+      "sha256": "b0f0f9f00ef0a16d92776ed12bc92d854950b316f13110c9fbd5ea71ced1fa3e",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "driveFileId": "1DfTPN0w9WivaPIGnewB88M6RIJu4Tp68",
+      "originalName": ".gitignore",
+      "mimeType": "application/octet-stream",
+      "role": "source_repo_metadata"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Expense_Report.pdf",
+      "byteSize": 2150,
+      "sha256": "fff9cd8a1bcb86163112d82b0cab55f41f43f66dfd5b46c0f7cb4b3bc4b75dd8",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "driveFileId": "1heV-wNsxl6Wam-s6CvIvEhc2T0WuA9Vx",
+      "originalName": "Expense_Report.pdf",
+      "mimeType": "application/pdf",
+      "role": "expense_report_template"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Expense_Report_Example_A.pdf",
+      "byteSize": 2470,
+      "sha256": "7f4ba92882a8b643eb92fb35c4b17f7918990b5f2b5a6400ab86ef13b8deb5d0",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "driveFileId": "1HJA66VGmPNv02wZhQNhh7JucD_js3Ezm",
+      "originalName": "Expense_Report_Example_A.pdf",
+      "mimeType": "application/pdf",
+      "role": "expense_report"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Expense_Report_Example_B.pdf",
+      "byteSize": 2456,
+      "sha256": "be010548a0f447370a78493ab2151e219b7f6054c079885d4d1478fbf181bf73",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "driveFileId": "1k7CAYxKfmL8fscX9Io2wIdagw2ACHs7z",
+      "originalName": "Expense_Report_Example_B.pdf",
+      "mimeType": "application/pdf",
+      "role": "expense_report"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/IT_Access_Request.pdf",
+      "byteSize": 2241,
+      "sha256": "ca7c9fa68e555ec3c6fa78abab201ec358307cae773dd5b5b637dad9b7ec06ad",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "driveFileId": "1JOEFWx-JZYTG_Pi01Gag9CG-0yg9ALGv",
+      "originalName": "IT_Access_Request.pdf",
+      "mimeType": "application/pdf",
+      "role": "it_access_request_template"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/IT_Access_Request_Example_A.pdf",
+      "byteSize": 2556,
+      "sha256": "a3e061c79733e5f4b9805d7712d7b29761a7f6fb6e6d80ca8d6a52754fb94486",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "driveFileId": "1RB2tdiL-j7qyLj_qjwzRpv9c0CU5FM9b",
+      "originalName": "IT_Access_Request_Example_A.pdf",
+      "mimeType": "application/pdf",
+      "role": "it_access_request"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/IT_Access_Request_Example_B.pdf",
+      "byteSize": 2559,
+      "sha256": "527bf5bdabf3da2983dcf5881b112cc2a451410278da918e7427cc69004316f1",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "driveFileId": "1nsy3ZDcDnhEpAMplOTGcu-n17pGvnSbL",
+      "originalName": "IT_Access_Request_Example_B.pdf",
+      "mimeType": "application/pdf",
+      "role": "it_access_request"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Incident_Report.pdf",
+      "byteSize": 2127,
+      "sha256": "e5e26abac8a2c407d2ecbec94a81d756e342cd1dd3f846cdbf80298b82628cc9",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "driveFileId": "19ib9VeJwyo_tg7r5E6o0JA9ImSF2DuGv",
+      "originalName": "Incident_Report.pdf",
+      "mimeType": "application/pdf",
+      "role": "incident_report_template"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Incident_Report_Example_A.pdf",
+      "byteSize": 2519,
+      "sha256": "106a4627283f2a1b718f309403983856dc43b5d2d060a817adc3158ca20c666b",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "driveFileId": "1oHGVDLNnfCaGR6MykpXSzqVUTx4CtkRr",
+      "originalName": "Incident_Report_Example_A.pdf",
+      "mimeType": "application/pdf",
+      "role": "incident_report"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Incident_Report_Example_B.pdf",
+      "byteSize": 2475,
+      "sha256": "91c2e28a21f730dfa0785843e2631f3272636d1daa653d15fad8c4ae5466b49f",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "driveFileId": "14g_-WmK7WdAE9RhEC5R6Q-cUWNd2CyTx",
+      "originalName": "Incident_Report_Example_B.pdf",
+      "mimeType": "application/pdf",
+      "role": "incident_report"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/SOURCE_COMMIT.txt",
+      "byteSize": 41,
+      "sha256": "535895177335bd5f0a203ef434e94476e9c28ea16fa9eb10eff1f1353c80b639",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "originalName": "SOURCE_COMMIT.txt",
+      "mimeType": "text/plain",
+      "role": "source_repo_metadata"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Supplier_Onboarding.pdf",
+      "byteSize": 2146,
+      "sha256": "aa3c7b81fb743f7ec01f0205aba38d9befb2db6837a3e4400a67ea167e32c304",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "driveFileId": "14bfvKqk_rUoTg1K5kY-OAbdRwcE670zg",
+      "originalName": "Supplier_Onboarding.pdf",
+      "mimeType": "application/pdf",
+      "role": "supplier_onboarding_template"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Supplier_Onboarding_Example_A.pdf",
+      "byteSize": 2489,
+      "sha256": "d5389d28592d67f42e57289c72dd85eb146a19db316bdc11742f65bdf24b5470",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "driveFileId": "13EWoY2YIULQ63Cv6WomjTtObjzSJZBzl",
+      "originalName": "Supplier_Onboarding_Example_A.pdf",
+      "mimeType": "application/pdf",
+      "role": "supplier_onboarding"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Supplier_Onboarding_Example_B.pdf",
+      "byteSize": 2464,
+      "sha256": "78e9c6e45ecf97004b54a70d3f134a4ceaf42f1b1afd2842e428a8cba89df874",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "driveFileId": "1KdVLTohedm6BtxVBE9GWeK-GtFmgGlib",
+      "originalName": "Supplier_Onboarding_Example_B.pdf",
+      "mimeType": "application/pdf",
+      "role": "supplier_onboarding"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Training_Evaluation.pdf",
+      "byteSize": 2124,
+      "sha256": "6d1cc8f3adc6a3e3c492fd3707a2794846bc2b8091b0c2347c09249cde1955bc",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "driveFileId": "139mpKG_RvK-6qwbmlJP65x6zUfBnOs8p",
+      "originalName": "Training_Evaluation.pdf",
+      "mimeType": "application/pdf",
+      "role": "training_evaluation_template"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Training_Evaluation_Example_A.pdf",
+      "byteSize": 2388,
+      "sha256": "55d8d2a6e93afaab04e0768bdd24a770c2c32c6733d0015440bbb5adceb82f47",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "driveFileId": "1bQirhbxtBAFmPcehDqMVIDK6XUOgV-7O",
+      "originalName": "Training_Evaluation_Example_A.pdf",
+      "mimeType": "application/pdf",
+      "role": "training_evaluation"
+    },
+    {
+      "relativePath": "tests/fixtures/gdpr_data_samples_main/raw/organizer_samples/Training_Evaluation_Example_B.pdf",
+      "byteSize": 2408,
+      "sha256": "8737282471ae640bad42e5fdea9028dbea437dbfb9f94c036aec01da681dae61",
+      "origin": "public_github_mirror",
+      "source": {
+        "repository": "https://github.com/a-klumpp/GDPR-data-samples",
+        "commit": "76b0f66d5594d7fccfdd103c8379f7d9d7356aeb"
+      },
+      "driveFileId": "1qHtxJu3ZQ1BmLiIvosYDk0cpUhrU6B4Z",
+      "originalName": "Training_Evaluation_Example_B.pdf",
+      "mimeType": "application/pdf",
+      "role": "training_evaluation"
+    }
+  ]
+}

@@ -12,12 +12,14 @@
 .dashboard-overview-grid { align-items: stretch; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); }
 .lower-grid { grid-template-columns: minmax(0, 1.1fr) minmax(360px, .9fr); }
 .scan-summary-row { display: grid; gap: 18px; grid-template-columns: minmax(220px, .75fr) minmax(0, 1fr); margin: 23px 0 17px; }
-.scan-hero { align-items: center; display: flex; min-height: 46px; }
+.scan-hero { align-items: center; display: flex; gap: 12px; min-height: 46px; }
 .scan-hero strong, .scan-hero small { display: block; }
 .scan-hero strong { color: var(--text); font-size: 2rem; letter-spacing: 0; margin: 4px 0 3px; }
 .scan-hero small, .scan-type { color: var(--text-soft); font-size: .72rem; }
+.scan-loading-indicator { animation: scan-spinner .8s linear infinite; border: 2px solid #dbe7ff; border-radius: 50%; border-top-color: var(--blue); display: inline-flex; flex-shrink: 0; height: 28px; width: 28px; }
 .progress-track { background: #e8edf3; border-radius: 99px; height: 6px; overflow: hidden; }
 .progress-track span { background: var(--blue); border-radius: inherit; display: block; height: 100%; transition: width .3s; }
+.progress-track-active span { animation: scan-progress-stripes .7s linear infinite; background-color: var(--blue); background-image: linear-gradient(135deg, rgba(255, 255, 255, .32) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .32) 50%, rgba(255, 255, 255, .32) 75%, transparent 75%, transparent); background-size: 24px 24px; min-width: 18px; }
 .scan-facts { border: 1px solid var(--border); border-radius: 8px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: hidden; }
 .scan-facts div { background: #fbfcfe; min-width: 0; padding: 13px 14px; }
 .scan-facts div + div { border-left: 1px solid var(--border); }
@@ -59,6 +61,21 @@
 .list-item-main strong, .list-item-main span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .list-item-main strong { font-size: .78rem; }
 .list-item-main span { color: var(--text-soft); font-size: .68rem; margin-top: 4px; }
+@keyframes scan-spinner {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes scan-progress-stripes {
+  to { background-position: 24px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scan-loading-indicator,
+  .progress-track-active span {
+    animation: none;
+  }
+}
+
 @media (max-width: 1320px) {
   .scan-summary-row { grid-template-columns: 1fr; }
   .delta-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }

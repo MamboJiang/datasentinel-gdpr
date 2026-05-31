@@ -24,6 +24,8 @@ The browser receives only a DataSentinel first-party HttpOnly session cookie plu
 
 SQLite-backed prelaunch Sources, scans, findings, audit events, metrics, and evaluation state must be scoped by the first-party session `userId`. Cross-account object identifiers must resolve as not found or current-account empty state. Legacy global rows are quarantined outside authenticated account scopes during migration.
 
+Legacy DOC/XLS/PPT extraction uses host-local LibreOffice headless conversion inside temporary directories. The converter boundary must not persist source bytes, converted raw text, LibreOffice profile data, private host paths, or raw detected values into public API payloads or validation reports.
+
 Enterprise SSO, SCIM, production RBAC, tenant provisioning, and production authorization policy are deferred.
 
 ## Role Simulation
@@ -40,9 +42,9 @@ P0 must not require live Microsoft Graph, tenant secrets, or external deletion A
 
 Google and GitHub OAuth are approved only for prelaunch sign-in. They must not be used as directory sync, tenant inventory, or authorization providers in this slice.
 
-Google Drive selected-source access is approved only through the Google Picker prelaunch boundary. The frontend may request a short-lived access token for selected files or folders, and the backend may use that token only for the current scan request. The token must not be stored in source records, SQLite workflow documents, logs, audit events, or frontend payloads.
+Google Drive selected-source access is approved through the Google Picker prelaunch boundary and the account-level Drive binding documented in `docs/design/google-drive-account-binding.md`. The frontend may receive a short-lived Picker access token from browser OAuth or from the connected account binding only to open Picker and authorize the current runtime source selection; those access tokens must not be persisted. A signed-in user may also store a personal Drive binding in the local account store; its refresh token must stay server-side and must not appear in source records, SQLite workflow documents, logs, audit events, frontend payloads, or UI state. This binding is not tenant inventory, production authorization, or source-file deletion authority.
 
-Direct HTTPS file links are approved only for public text-like, PDF text-layer, Office Open XML, supported image, supported transcript, or recognized raw video media files. The backend must reject non-HTTPS links, embedded credentials, private-address hosts, unsupported content, and over-limit files before storing workflow output. Image OCR must run locally through the host OCR binary when `DATASENTINEL_OCR_MODE=local`, and raw video media must stay hard/OCR-deferred until an approved local media processor exists.
+Direct HTTPS file links are approved only for public BOM/charset-aware Unicode text-like, XML, JSON/JSONL/NDJSON, RTF, EML/RFC 5322 email, bounded ZIP archives, PDF text-layer or bounded local PDF OCR candidate, Office Open XML, OpenDocument, supported image, supported transcript, or bounded raw video media files. The backend must reject non-HTTPS links, embedded credentials, private-address hosts, unsupported content, and over-limit files before storing workflow output. Email extraction must skip attachments and must not expose raw body text, raw header values, or attachment names in public selectors. ZIP extraction must not write members to disk, must not recursively expand nested archives, and must not expose raw member names in public selectors. Image, PDF OCR, and video frame OCR must run locally through host OCR tooling when `DATASENTINEL_OCR_MODE=local`; `DATASENTINEL_OCR_LANGS` may select installed Tesseract language packs. Raw video media additionally requires host-local FFmpeg, must use temporary frame files only, and must not expose raw frames, raw media, raw OCR text, or audio in public payloads.
 
 OpenRouter assistive AI is the only approved external AI boundary. It must follow these controls:
 

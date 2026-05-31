@@ -1,0 +1,69 @@
+# Final Engine Hardening Boundary Register
+
+## Problem Definition
+
+DataSentinel is near final acceptance, so temporary P0/prelaunch/deferred boundaries must no longer hide core-engine gaps. The project needs one maintained register that lists every stage boundary that can weaken real scan coverage, evidence navigation, test confidence, or deployed proof.
+
+## Options Considered
+
+| Option | Summary | Decision |
+| --- | --- | --- |
+| Keep boundaries only in scattered design notes | Low effort, but reviewers cannot see remaining risk. | Rejected |
+| Remove all boundary language without verification | Looks complete, but can hide untested or host-dependent behavior. | Rejected |
+| Maintain a hardening register tied to tests and acceptance | Makes every boundary visible, prioritizable, and verifiable. | Accepted |
+
+## State Machine
+
+```text
+boundary_discovered -> classified
+classified -> removal_planned
+removal_planned -> implementation_in_progress
+implementation_in_progress -> locally_verified
+locally_verified -> server_verified
+server_verified -> closed
+classified -> accepted_future_scope
+classified -> blocked_by_external_state
+```
+
+Guards:
+
+- A boundary cannot move to `closed` without current evidence from code, tests, docs, and deployed/runtime verification when the boundary affects deployed behavior.
+- Host-dependent OCR boundaries require actual `tesseract`, `pdftoppm`, and language-pack capability evidence on the target server.
+- UI capability claims must match supported engine formats and rendered browser evidence.
+- Test reports must not store raw extracted text, raw detected values, source bodies, provider tokens, or absolute private paths.
+
+## Current Boundary Register
+
+| ID | Priority | Boundary | Why It Matters | Current Evidence | Removal Action | Verification |
+| --- | --- | --- | --- | --- | --- | --- |
+| BND-001 | Critical | Text-like extraction was effectively UTF-8-first. | Multilingual TXT/CSV/JSON/HTML exports can arrive as UTF-16 and labels can be lost before detection. | `source_format_recognition.py`, `source_tabular_text.py`, `source_json_text.py`, and `source_structured_text.py` now use BOM/charset-aware decoding. | Keep `source_text_decoding.py`; expand challenge corpus with UTF-16 cases. | `tests.test_text_decoding`, generated challenge tests, full backend suite. |
+| BND-002 | Critical | Supported-format UI can lag real engine coverage. | Users cannot know what the engine actually supports, and acceptance can validate the wrong surface. | Browser validation now shows TXT, UTF-16, JSONL/NDJSON, HTML/HTM, RTF, PDF text layer, PDF image OCR, Office, OpenDocument, EML, ZIP, image OCR, transcript, and Google export chips with no missing expected labels. | Keep `SourcesPage` support list generated or audited against engine suffixes; revalidate in browser after format changes. | Browser DOM/screenshot plus frontend tests. |
+| BND-003 | Critical | Real OCR depends on server-installed `tesseract`, `pdftoppm`, and language packs. | Image-only PDFs and image OCR are core hard cases; mocked tests are not enough for final proof. | `agent-us` has Tesseract 5.3.4, `pdftoppm`, and OCR languages `eng+chi_sim+deu+fra+spa+por+ita+nld+pol+jpn+kor+ara`; `/api/health` reports OCR `local_available`; a real temporary PNG and image-only PDF smoke test produced redacted email/person signals with page regions and offsets. | Keep host OCR packages and `DATASENTINEL_OCR_MODE=local`; rerun the smoke report after OCR package or language changes. | `engine_hardening_validation_report.json` agent-us OCR runtime and real OCR smoke sections. |
+| BND-004 | Critical | File review must provide consistent evidence jump confidence without exposing raw source data. | Reviewers need one-click location confidence across PDF text, PDF OCR, image OCR, text, table, and structured-document inputs. | Finding details now include a scan-time `sourceReviewPreview` package assembled from redacted anchors only; it groups page regions, redacted source-context windows, text ranges, table cells, and structure blocks with `rawContentExposed = false` and `pageImagesExposed = false`. `FileReviewEditor` consumes this package, highlights the redacted marker inside the context window, and falls back to signal anchors when absent. | Keep the redacted preview renderer as the P0 review path. A future raw full-source viewer would require a separate privileged source-byte access design and must not be treated as implicit P0 behavior. | `tests.test_source_review_preview`, `FileReviewEditor` frontend tests, full local/server suites. |
+| BND-005 | High | Raw video media needed real processing proof rather than a recognized-but-deferred label. | Screenshot only promised VTT/SRT, but broader "any format" expectations can include MP4/MOV/WEBM. | Closed for the current hardening scope: `source_video_ocr.py` extracts up to four temporary frames through host-local FFmpeg and runs local Tesseract OCR on those frames. `agent-us` has FFmpeg 6.1.1 and the runtime video OCR test passes without skips. Missing FFmpeg, missing Tesseract, OCR-disabled hosts, extraction failure, or empty OCR output remain hard/OCR-deferred warnings. | Keep bounded frame count, temporary files, 8 MB video cap, and no raw media/frame persistence. | `tests.test_format_recognition`, `tests.test_video_frame_ocr_runtime`, Sources supported-format frontend test, server runtime validation. |
+| BND-006 | High | Legacy binary Office formats needed an explicit support or exclusion decision. | Real business corpora may contain `.doc`, `.xls`, `.ppt`. Screenshot only lists modern Office, but final hardening should not leave the corpus gap implicit. | Closed for the current hardening scope: `source_legacy_office.py` invokes host-local LibreOffice headless conversion in a temporary directory and returns redacted text anchors only. Missing LibreOffice, conversion failure, timeout, missing output, empty output, or over-limit files remain hard unsupported warnings rather than fake findings. | Keep LibreOffice installed on scan hosts that need legacy Office support; keep temporary-profile conversion and no raw binary/text persistence. | `tests.test_format_recognition`, `tests.test_legacy_office_runtime`, Sources supported-format frontend test, server runtime validation. |
+| BND-007 | High | Google Drive corpus preservation needs deployed Drive scan proof. | The core user story starts from Google Drive samples. | Closed for current final-hardening scope: `live_drive_scan_report_agent_us.json` records a deployed `agent-us` scan of folder `1AmTxh7RhEyvgo400SAZHI8s_CawvAdQn` through an account-level Drive binding. The scan completed with 18 processed files, 16 successful files, 2 unsupported files, 0 OCR-deferred files, 75 detected redacted signals, 11 assembled findings, source-review preview samples, and no provider tokens, Drive URLs, raw values, source bodies, page images, or private paths in the report. | Keep account binding evidence current; rerun the live scan report after Drive client, binding, extraction, corpus, or deployment changes. | `tests.test_live_drive_scan_report`, agent-us live scan report, full local/server suites. |
+| BND-008 | High | Latest changes must be deployed and verified on `agent-us`. | User needs final server acceptance, not only local tests. | App and frontend release `20260531214833-final-engine-hardening` are active; remote backend tests pass; `/api/health` returns OCR `local_available`; `/sources` returns the new frontend bundle. | Keep release artifacts and repeat deployment proof after further engine changes. | `engine_hardening_validation_report.json` agent-us deployment section. |
+| BND-009 | Medium | Validation evidence is scattered across command output and fixture files. | Later optimization needs durable test data to compare coverage and regressions. | `engine_hardening_validation_report.json` records local tests, browser UI proof, deployment proof, OCR runtime, and real OCR smoke results without raw values. | Maintain the report when corpus, supported formats, OCR runtime, tests, or deployment changes. | JSON report generated after full local/server validation. |
+| BND-010 | Medium | Performance boundaries need repeatable mixed-corpus profiling. | "High performance, stable, accurate" needs measured throughput and memory. | `core_engine_performance_report.json` records local generated challenge, raw corpus, and oversized text benchmark metrics. `core_engine_performance_report_agent_us.json` records the deployed `agent-us` run with local OCR available: 35 files processed, 0 unsupported, 0 OCR-deferred, 13.268 files/sec, 64.059 MiB peak RSS, and 0 model calls. | Keep `tests/core_engine_performance_benchmark.py`; refresh both reports on parser, detector, OCR, corpus, or deployment changes. | `tests.test_core_engine_performance_report` plus local and agent-us benchmark runs. |
+| BND-011 | Medium | Optional OpenRouter support is budget-guarded but not part of deterministic core proof. | AI can distract from core engine strength and spend/privacy boundaries. | AI boundary docs/tests exist. | Keep deterministic path as acceptance baseline; use AI only for redacted ambiguous context. | Normal scans show `modelCalls = 0`. |
+| BND-012 | Critical | Static-format depth can be hidden behind broad format support labels. | CSV, Markdown, TXT/OCR-normalized text, image OCR, and PDF are high-volume enterprise formats; supporting the extension is not enough if ordinary header-row exports/tables, inline form rows, punctuation-missing OCR labels, character-split OCR words, and mixed text/scanned PDFs lose sensitive values. | Closed for the current hardening scope: `.csv` inputs sniff common delimiters and standard header rows create label context with `tableCell` anchors; Markdown tables create the same label context and source-cell anchors while non-table Markdown keeps text-position anchors; deterministic detection splits inline label sequences such as `姓名：... 电话：...`, OCR-normalized CJK/Kana/Hangul/Arabic label whitespace, separatorless CJK/Kana/Hangul OCR text, and dash-delimited labels into separate redacted `textPosition` signals; image OCR joins compatible CJK/Kana/Hangul TSV character words without synthetic spaces; mixed PDFs keep text-layer pages and OCR bounded blank/scanned pages as `pdf_mixed` when host tooling is available. | Keep inline/OCR label tests, separatorless CJK OCR word-join tests, header-row CSV tests, semicolon CSV tests, Markdown table tests, mixed PDF page OCR tests, and refresh server validation after parser or detector changes. | `tests.test_core_engine_detection`, `tests.test_ocr_region_anchors`, `tests.test_signal_detection_bounds`, `tests.test_table_cell_anchors`, `tests.test_markdown_extraction`, `tests.test_pdf_region_anchors`, full local/server suites, `engine_hardening_validation_report.json` static-format validation section. |
+
+## Impact Surface
+
+- Backend extraction, OCR, Drive source reading, signal anchoring, scan metrics, and report generation.
+- Frontend Sources support list and File Review open-and-focus behavior.
+- Deployment scripts, server environment, and validation evidence.
+- Acceptance criteria and fixture corpus governance.
+
+## Rollback Path
+
+If this register becomes noisy, keep the closed boundary history in this file and move future operational tracking to `docs/TestCase.md` plus redacted validation reports. Removing the register must not remove the underlying tests, docs, or safety boundaries.
+
+## Primitive Acceptance Criteria
+
+- Every discovered boundary has an ID, priority, current evidence, removal action, and verification requirement.
+- Critical boundaries cannot be called closed without current local and server evidence when they affect deployed behavior.
+- The supported-format UI matches the scanner's actual accepted formats or explicitly labels a format as deferred.
+- OCR hard cases are proven on the target server or remain visible as blocking final-acceptance risks.
+- Validation reports are stored as redacted project artifacts and can be compared across future hardening runs.

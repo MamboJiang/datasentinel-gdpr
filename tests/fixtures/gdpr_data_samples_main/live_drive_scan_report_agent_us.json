@@ -1,0 +1,212 @@
+{
+  "bindingConnected": true,
+  "bindingStatusCode": 200,
+  "contentExtraction": {
+    "aiAssistanceUsed": false,
+    "extractionFingerprint": "sha256:scan_1780265814403_google_drive_export",
+    "formatCounts": [
+      {
+        "difficulty": "hard",
+        "files": 1,
+        "format": "image_ocr",
+        "method": "tesseract_image_ocr"
+      },
+      {
+        "difficulty": "moderate",
+        "files": 15,
+        "format": "pdf_text_layer",
+        "method": "pdf_text_layer"
+      },
+      {
+        "difficulty": "unsupported",
+        "files": 2,
+        "format": "unsupported",
+        "method": "unsupported"
+      }
+    ],
+    "methods": [
+      {
+        "files": 15,
+        "method": "pdf_text_layer",
+        "status": "completed"
+      },
+      {
+        "files": 1,
+        "method": "tesseract_image_ocr",
+        "status": "completed"
+      },
+      {
+        "files": 2,
+        "method": "unsupported",
+        "status": "warning"
+      }
+    ],
+    "modelCalls": 0,
+    "ocrDeferredFiles": 0,
+    "processedFiles": 18,
+    "rawContentExposed": false,
+    "recognitionDifficulty": {
+      "easy": 0,
+      "hard": 1,
+      "moderate": 15,
+      "unsupported": 2
+    },
+    "redactedEvidenceCandidates": 75,
+    "status": "completed",
+    "successfulFiles": 16,
+    "unsupportedFiles": 2,
+    "warningFiles": 2,
+    "warnings": [
+      "1 file exceeded the prelaunch 1 MB text extraction limit.",
+      "1 unsupported metadata or control file was skipped.",
+      "2 unsupported files skipped by the prelaunch scanner."
+    ]
+  },
+  "fileInventory": {
+    "fingerprintedFiles": 18,
+    "inventoryFingerprint": "sha256:scan_1780265814403_inventory",
+    "permissionSnapshots": 18,
+    "sampleFamilies": [
+      {
+        "bytes": 149930,
+        "candidateFiles": 18,
+        "family": "Google_Drive",
+        "flaggedFiles": 11,
+        "processedFiles": 16
+      }
+    ],
+    "skippedFiles": 0,
+    "sourceSnapshotId": "snapshot_source_drive_live_gdpr_samples_1780265814_scan_1780265814403",
+    "status": "completed",
+    "totalBytes": 149930,
+    "totalCandidateFiles": 18,
+    "warnings": []
+  },
+  "findingAssembly": {
+    "assembledFindings": 11,
+    "assemblyRulesFingerprint": "sha256:scan_1780265814403_assembly",
+    "deniedActionCount": 11,
+    "evidenceCards": 11,
+    "evidenceSignals": 75,
+    "legalConclusionProvided": false,
+    "missingEvidenceCards": 0,
+    "policyPackVersion": "2026.05-demo",
+    "rawContentExposed": false,
+    "redactedEvidenceSnippets": 75,
+    "sourceSnapshotId": "snapshot_source_drive_live_gdpr_samples_1780265814_scan_1780265814403",
+    "status": "completed",
+    "warnings": []
+  },
+  "findingsListStatusCode": 200,
+  "findingsVisibleCount": 11,
+  "folderId": "1AmTxh7RhEyvgo400SAZHI8s_CawvAdQn",
+  "generatedAt": "2026-05-31T22:17:07Z",
+  "privacyRule": "Aggregate server-side Drive scan evidence only; no raw extracted text, raw detected values, source bodies, provider tokens, refresh tokens, Drive URLs, or private absolute paths.",
+  "reportId": "live_drive_scan_agent_us_2026-06-01",
+  "safetyChecks": {
+    "driveFilesMutated": false,
+    "driveUrlsPersisted": false,
+    "privateAbsolutePathsPersisted": false,
+    "providerTokensPersisted": false,
+    "rawDetectedValuesPersisted": false,
+    "rawTextPersisted": false,
+    "refreshTokensPersistedInReport": false,
+    "sourceBodiesPersisted": false
+  },
+  "scanId": "scan_1780265814403",
+  "scanStage": "completed",
+  "scanStartStatusCode": 202,
+  "scanStatus": "completed",
+  "signalDetection": {
+    "detectedSignals": 75,
+    "detectorRulesHash": "sha256:scan_1780265814403_signals",
+    "detectorRulesVersion": "prelaunch-local-v2",
+    "evaluatedEvidenceCandidates": 75,
+    "evidenceRequirements": [
+      "redacted_snippet",
+      "detector_signal",
+      "owner_assignment",
+      "policy_version"
+    ],
+    "findingsWithSignals": 11,
+    "rawContentExposed": false,
+    "redactedSignals": 75,
+    "signalTypeCounts": [
+      {
+        "evidenceRequirement": "detector_signal",
+        "signals": 10,
+        "type": "access_context"
+      },
+      {
+        "evidenceRequirement": "detector_signal",
+        "signals": 2,
+        "type": "address"
+      },
+      {
+        "evidenceRequirement": "detector_signal",
+        "signals": 4,
+        "type": "email"
+      },
+      {
+        "evidenceRequirement": "detector_signal",
+        "signals": 4,
+        "type": "employee_id"
+      },
+      {
+        "evidenceRequirement": "detector_signal",
+        "signals": 6,
+        "type": "expense_amount"
+      },
+      {
+        "evidenceRequirement": "detector_signal",
+        "signals": 8,
+        "type": "free_text_personal_context"
+      },
+      {
+        "evidenceRequirement": "detector_signal",
+        "signals": 10,
+        "type": "incident_context"
+      },
+      {
+        "evidenceRequirement": "detector_signal",
+        "signals": 2,
+        "type": "location_data"
+      },
+      {
+        "evidenceRequirement": "detector_signal",
+        "signals": 2,
+        "type": "organization_identifier"
+      },
+      {
+        "evidenceRequirement": "detector_signal",
+        "signals": 21,
+        "type": "person_name"
+      },
+      {
+        "evidenceRequirement": "detector_signal",
+        "signals": 2,
+        "type": "phone_number"
+      },
+      {
+        "evidenceRequirement": "detector_signal",
+        "signals": 4,
+        "type": "tax_id"
+      }
+    ],
+    "status": "completed",
+    "warnings": []
+  },
+  "sourceCreateStatusCode": 201,
+  "sourceId": "source_drive_live_gdpr_samples_1780265814",
+  "sourceReviewPreviewSample": {
+    "anchorCount": 5,
+    "fileFormat": "image_ocr",
+    "pageCount": 1,
+    "pageImagesExposed": false,
+    "rawContentExposed": false,
+    "redactionMode": "anchor_only",
+    "structureBlockCount": 0,
+    "tableCellCount": 0
+  },
+  "sourceReviewPreviewSampledFindings": 5
+}

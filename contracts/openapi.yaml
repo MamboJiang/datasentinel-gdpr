@@ -328,6 +328,55 @@ paths:
             application/json:
               schema:
                 $ref: "./schemas/common.yaml#/GoogleDrivePickerConfigEnvelope"
+  /integrations/google-drive/binding:
+    get:
+      operationId: getGoogleDriveBinding
+      responses:
+        "200":
+          description: Account-scoped Google Drive binding status. Provider tokens and refresh tokens are never returned.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/common.yaml#/GoogleDriveBindingEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+    delete:
+      operationId: disconnectGoogleDriveBinding
+      responses:
+        "200":
+          description: Local account Drive binding removed; provider-token revocation is attempted when a token exists.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/common.yaml#/GoogleDriveBindingEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /integrations/google-drive/picker-token:
+    post:
+      operationId: createGoogleDrivePickerToken
+      responses:
+        "200":
+          description: Short-lived browser-use Picker access token minted from the current account Drive binding.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/common.yaml#/GoogleDrivePickerTokenEnvelope"
+        default:
+          $ref: "#/components/responses/Problem"
+  /integrations/google-drive/bind/start:
+    get:
+      operationId: startGoogleDriveBinding
+      responses:
+        "302":
+          description: Redirects the signed-in user to Google OAuth consent for Drive binding.
+        default:
+          $ref: "#/components/responses/Problem"
+  /integrations/google-drive/bind/callback:
+    get:
+      operationId: completeGoogleDriveBinding
+      responses:
+        "302":
+          description: Completes Google OAuth binding and redirects back to the frontend with driveBinding status query parameters.
   /sources:
     get:
       operationId: listSources

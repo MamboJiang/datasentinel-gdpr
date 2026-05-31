@@ -150,12 +150,12 @@ export function MetricCard({
   )
 }
 
-export function ProgressBar({ value }: { value: number }) {
+export function ProgressBar({ active = false, value }: { active?: boolean; value: number }) {
   const { t } = useI18n()
   const percent = Math.max(0, Math.min(100, Math.round(value * 100)))
 
   return (
-    <div className="progress-track" aria-label={t('{{percent}}% complete', { percent })} role="progressbar" aria-valuenow={percent}>
+    <div className={`progress-track${active ? ' progress-track-active' : ''}`} aria-label={t('{{percent}}% complete', { percent })} role="progressbar" aria-valuenow={percent}>
       <span style={{ width: `${percent}%` }} />
     </div>
   )

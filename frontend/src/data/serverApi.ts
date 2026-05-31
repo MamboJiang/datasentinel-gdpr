@@ -260,6 +260,10 @@ export async function getServerReviewSupport(findingId: string): Promise<ApiEnve
   return requestEnvelope<ReviewSupport>(`/findings/${encodeURIComponent(findingId)}/review-support`)
 }
 
+export async function getServerFinding(findingId: string): Promise<ApiEnvelope<Finding>> {
+  return requestEnvelope<Finding>(`/findings/${encodeURIComponent(findingId)}`)
+}
+
 export async function createServerWorkspace(input: {
   description?: string
   name: string

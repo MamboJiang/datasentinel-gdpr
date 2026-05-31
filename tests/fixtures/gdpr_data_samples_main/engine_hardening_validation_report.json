@@ -1,0 +1,434 @@
+{
+  "reportId": "engine_hardening_2026-05-31_final_acceptance",
+  "generatedAt": "2026-05-31T23:46:42Z",
+  "privacyRule": "This report records commands, counts, capabilities, redacted signal types, and release identifiers only. It must not include raw extracted text, raw detected values, provider tokens, refresh tokens, source bodies, or private absolute source paths.",
+  "scope": {
+    "goal": "Core multilingual GDPR discovery engine hardening for Drive corpus fixtures, supported file formats, OCR-backed PDF/image/video-frame extraction, legacy Office conversion, evidence anchors, local validation, and agent-us deployment proof.",
+    "driveCorpusFolderName": "GDPR Data Samples Main",
+    "localCorpusManifest": "tests/fixtures/gdpr_data_samples_main/drive_manifest.json",
+    "generatedChallengeCorpus": "tests/fixtures/gdpr_data_samples_main/generated_format_challenges.json"
+  },
+  "googleDriveLiveReadOnlyCheck": {
+    "result": "passed",
+    "folderTitle": "GDPR-data-samples-main",
+    "folderId": "1AmTxh7RhEyvgo400SAZHI8s_CawvAdQn",
+    "itemsListed": 18,
+    "rawFileDownloaded": false,
+    "driveFileMutated": false
+  },
+  "supportedFormatsValidatedInUi": [
+    "TXT",
+    "UTF-16 text",
+    "CSV",
+    "TSV",
+    "JSON",
+    "JSONL/NDJSON",
+    "Markdown",
+    "LOG",
+    "XML",
+    "HTML/HTM",
+    "RTF",
+    "PDF text layer",
+    "DOCX",
+    "XLSX",
+    "PPTX",
+    "DOC/XLS/PPT legacy Office text",
+    "ODT",
+    "ODS",
+    "ODP",
+    "EML email",
+    "ZIP archives",
+    "PDF image OCR",
+    "PNG/JPG image OCR",
+    "TIFF/BMP/WEBP image OCR",
+    "VTT/SRT video transcripts",
+    "MP4/MOV/WEBM video frame OCR",
+    "Google Docs export",
+    "Google Sheets export",
+    "Google Slides export"
+  ],
+  "localValidation": {
+    "backendTests": {
+      "command": "python3 -m unittest discover -s tests -p 'test*.py'",
+      "result": "passed",
+      "testCount": 129,
+      "skippedCount": 2,
+      "skipReason": "Local workstation lacks Tesseract and LibreOffice, so video OCR and legacy Office runtime smoke tests are skipped locally and executed on agent-us."
+    },
+    "frontendTests": {
+      "command": "npm test",
+      "workingDirectory": "frontend",
+      "result": "passed",
+      "testFiles": 19,
+      "testCount": 71
+    },
+    "backendCompile": {
+      "command": "python3 -m compileall -q backend",
+      "result": "passed"
+    },
+    "frontendBuild": {
+      "command": "npm run build",
+      "workingDirectory": "frontend",
+      "result": "passed",
+      "warning": "Vite reported one large JS chunk; behavior validation was unaffected."
+    },
+    "diffCheck": {
+      "command": "git diff --check",
+      "result": "passed"
+    },
+    "browserUiCheck": {
+      "target": "http://127.0.0.1:5175/sources",
+      "result": "passed",
+      "supportedFormatCount": 29,
+      "missingExpectedFormats": [],
+      "consoleErrorsOrWarnings": 0,
+      "oldBoundaryTextPresent": false,
+      "containsVideoFrameOcrLabel": true,
+      "containsFfmpegNote": true,
+      "containsLegacyOfficeLabel": true,
+      "containsLibreOfficeNote": true
+    }
+  },
+  "agentUsDeployment": {
+    "appRelease": "/srv/datasentinel/app/releases/20260601012839-scan-refresh-detail",
+    "frontendRelease": "/srv/datasentinel/frontend/releases/20260601012839-scan-refresh-detail",
+    "apiService": "datasentinel-api.service",
+    "apiServiceState": "active",
+    "publicHealthUrl": "https://founder-force.uk/api/health",
+    "publicSourcesUrl": "https://founder-force.uk/sources",
+    "healthResult": {
+      "ok": true,
+      "ocrTierMode": "local",
+      "ocrTierStatus": "local_available",
+      "modelCalls": 0,
+      "estimatedCostUsd": 0.0,
+      "rawContentExposed": false,
+      "legalConclusionProvided": false,
+      "deletionExecuted": false
+    },
+    "frontendAssetCheck": {
+      "result": "passed",
+      "containsPdfImageOcrLabel": true,
+      "containsCoreScannerDescription": true,
+      "containsHostLocalOcrNote": true,
+      "containsVideoFrameOcrLabel": true,
+      "containsFfmpegNote": true,
+      "containsLegacyOfficeLabel": true,
+      "containsLibreOfficeNote": true,
+      "containsFrameIndexRuntime": true,
+      "jsAsset": "assets/index-CHSb4nIV.js",
+      "cssAsset": "assets/index-DjlCto_3.css"
+    },
+    "remoteBackendTests": {
+      "command": "cd /srv/datasentinel/app/current && python3 -m unittest discover -s tests -p 'test*.py'",
+      "result": "passed",
+      "testCount": 129
+    },
+    "remoteFormatRuntimeTests": {
+      "command": "cd /srv/datasentinel/app/current && python3 -m unittest tests.test_legacy_office_runtime tests.test_format_recognition tests.test_video_frame_ocr_runtime tests.test_table_cell_anchors tests.test_markdown_extraction tests.test_pdf_region_anchors tests.test_source_review_preview",
+      "result": "passed",
+      "testCount": 18,
+      "skippedCount": 0
+    }
+  },
+  "agentUsOcrRuntime": {
+    "operatingSystem": "Ubuntu 24.04.4 LTS",
+    "tesseractVersion": "5.3.4",
+    "tesseractPathPresent": true,
+    "pdftoppmPathPresent": true,
+    "ffmpegVersion": "6.1.1-3ubuntu5",
+    "ffmpegPathPresent": true,
+    "ffprobePathPresent": true,
+    "libreOfficeVersion": "24.2.7.2",
+    "libreOfficePathPresent": true,
+    "ocrMode": "local",
+    "languagesConfigured": [
+      "eng",
+      "chi_sim",
+      "deu",
+      "fra",
+      "spa",
+      "por",
+      "ita",
+      "nld",
+      "pol",
+      "jpn",
+      "kor",
+      "ara"
+    ],
+    "languagesInstalled": [
+      "ara",
+      "chi_sim",
+      "deu",
+      "eng",
+      "fra",
+      "ita",
+      "jpn",
+      "kor",
+      "nld",
+      "osd",
+      "pol",
+      "por",
+      "spa"
+    ]
+  },
+  "agentUsRealOcrSmoke": {
+    "command": "Generate temporary synthetic PNG and image-only PDF on agent-us, then run extract_document_content, detect_signals, and apply_source_locations with DATASENTINEL_OCR_MODE=local.",
+    "result": "passed",
+    "rawFixturePersisted": false,
+    "rawValuePrinted": false,
+    "image": {
+      "fileFormat": "image_ocr",
+      "extractionMethod": "tesseract_image_ocr",
+      "recognitionDifficulty": "hard",
+      "signalTypes": [
+        "email",
+        "person_name"
+      ],
+      "hasPageRegion": true,
+      "hasSourceOffsets": true
+    },
+    "pdf": {
+      "fileFormat": "pdf_ocr",
+      "extractionMethod": "pdf_page_image_ocr",
+      "recognitionDifficulty": "hard",
+      "signalTypes": [
+        "email",
+        "person_name"
+      ],
+      "hasPageRegion": true,
+      "hasSourceOffsets": true
+    }
+  },
+  "staticFormatDeepeningValidation": {
+    "result": "passed",
+    "priority": "static_enterprise_formats_before_breadth",
+    "localTargetedTests": {
+      "command": "python3 -m unittest tests.test_core_engine_detection tests.test_ocr_region_anchors tests.test_signal_detection_bounds tests.test_markdown_extraction tests.test_table_cell_anchors tests.test_pdf_region_anchors tests.test_text_decoding tests.test_source_review_preview",
+      "result": "passed",
+      "testCount": 34
+    },
+    "agentUsTargetedTests": {
+      "command": "cd /srv/datasentinel/app/current && python3 -m unittest tests.test_core_engine_detection tests.test_ocr_region_anchors tests.test_signal_detection_bounds tests.test_markdown_extraction tests.test_table_cell_anchors tests.test_pdf_region_anchors tests.test_text_decoding tests.test_source_review_preview",
+      "result": "passed",
+      "testCount": 34
+    },
+    "inlineStaticLabels": {
+      "inputFamilies": [
+        "txt",
+        "pdf_text_layer",
+        "pdf_ocr",
+        "image_ocr",
+        "markdown_non_table"
+      ],
+      "coveredPatterns": [
+        "multiple_colon_labels_on_one_line",
+        "dash_delimited_labels",
+        "punctuation_missing_cjk_kana_hangul_arabic_ocr_labels",
+        "separatorless_cjk_kana_hangul_ocr_labels"
+      ],
+      "coveredSignals": [
+        "person_name",
+        "phone_number",
+        "address"
+      ],
+      "anchorType": "textPosition",
+      "overlappingSameTypeDuplicatesSuppressed": true,
+      "rawInlineValuesPersisted": false
+    },
+    "ocrWordJoinNormalization": {
+      "fileFormat": "image_ocr",
+      "inputShape": "tesseract_tsv_character_level_cjk_words",
+      "coveredSignals": [
+        "person_name",
+        "phone_number",
+        "address"
+      ],
+      "hasPageRegion": true,
+      "rawOcrTextPersisted": false,
+      "rawImagePersisted": false
+    },
+    "csvHeaderRows": {
+      "fileFormat": "csv",
+      "delimiterSniffing": [
+        "comma",
+        "semicolon",
+        "tab",
+        "pipe"
+      ],
+      "coveredSignals": [
+        "person_name",
+        "date_of_birth",
+        "address",
+        "phone_number"
+      ],
+      "anchorType": "tableCell",
+      "rawCellValuesPersisted": false
+    },
+    "markdownTables": {
+      "fileFormat": "markdown",
+      "extractionMethod": "markdown_text",
+      "coveredSignals": [
+        "person_name",
+        "phone_number",
+        "address"
+      ],
+      "tableAnchorType": "tableCell",
+      "nonTableAnchorType": "textPosition",
+      "rawMarkdownValuesPersisted": false
+    },
+    "mixedPdf": {
+      "fileFormat": "pdf_mixed",
+      "extractionMethod": "pdf_text_layer_with_page_ocr",
+      "textLayerPagesPreserved": true,
+      "blankPageOcrBounded": true,
+      "anchorFormats": [
+        "pdf_text_layer",
+        "pdf_ocr"
+      ],
+      "rawOcrTextPersisted": false,
+      "pageImagesPersisted": false
+    },
+    "sourceReviewContextWindows": {
+      "redactionMode": "signal_span_context",
+      "targetSignalRedacted": true,
+      "neighborSignalValuesRedacted": true,
+      "rawSourceContextPersisted": false,
+      "privateAbsolutePathsPersisted": false
+    }
+  },
+  "rawVideoFrameOcrValidation": {
+    "result": "passed",
+    "localMockedBackendTest": "python3 -m unittest tests.test_format_recognition",
+    "localRuntimeTest": {
+      "command": "python3 -m unittest tests.test_video_frame_ocr_runtime",
+      "result": "skipped",
+      "reason": "Local workstation lacks Tesseract."
+    },
+    "agentUsRuntimeTest": "cd /srv/datasentinel/app/current && python3 -m unittest tests.test_video_frame_ocr_runtime tests.test_format_recognition",
+    "fixturePolicy": "The MP4 fixture is generated in a temporary directory from synthetic text during the runtime test and is not persisted.",
+    "fileFormat": "video_ocr",
+    "extractionMethod": "ffmpeg_frame_tesseract_ocr",
+    "recognitionDifficulty": "hard",
+    "boundedFrameLimit": 4,
+    "maxVideoBytes": 8000000,
+    "signalTypes": [
+      "email"
+    ],
+    "hasFrameIndex": true,
+    "hasPageRegion": true,
+    "rawVideoPersisted": false,
+    "rawFramePersisted": false,
+    "rawOcrTextPersisted": false,
+    "rawValuePersisted": false,
+    "modelCalls": 0,
+    "estimatedCostUsd": 0.0
+  },
+  "legacyOfficeConversionValidation": {
+    "result": "passed",
+    "localMockedBackendTest": "python3 -m unittest tests.test_format_recognition",
+    "localRuntimeTest": {
+      "command": "python3 -m unittest tests.test_legacy_office_runtime",
+      "result": "skipped",
+      "reason": "Local workstation lacks LibreOffice."
+    },
+    "agentUsRuntimeTest": "cd /srv/datasentinel/app/current && python3 -m unittest tests.test_legacy_office_runtime tests.test_format_recognition",
+    "fixturePolicy": "The legacy DOC fixture is generated in a temporary directory during the runtime test and is not persisted.",
+    "fileFormats": [
+      "doc",
+      "xls",
+      "ppt"
+    ],
+    "extractionMethod": "libreoffice_legacy_office_text",
+    "recognitionDifficulty": "hard",
+    "signalTypes": [
+      "email",
+      "bank_account",
+      "phone"
+    ],
+    "hasSourceOffsets": true,
+    "rawBinaryOfficePersisted": false,
+    "convertedRawTextPersisted": false,
+    "privateAbsolutePathsPersisted": false,
+    "rawValuePersisted": false,
+    "modelCalls": 0,
+    "estimatedCostUsd": 0.0
+  },
+  "performanceBenchmark": {
+    "localReport": "tests/fixtures/gdpr_data_samples_main/core_engine_performance_report.json",
+    "agentUsReport": "tests/fixtures/gdpr_data_samples_main/core_engine_performance_report_agent_us.json",
+    "agentUsResult": "passed",
+    "agentUsProcessedFiles": 35,
+    "agentUsUnsupportedFiles": 0,
+    "agentUsOcrDeferredFiles": 0,
+    "agentUsThroughputFilesPerSecond": 13.268,
+    "agentUsPeakRssMiB": 64.059,
+    "agentUsModelCalls": 0,
+    "agentUsEstimatedCostUsd": 0.0,
+    "rawTextPersisted": false,
+    "rawDetectedValuesPersisted": false,
+    "sourceBodiesPersisted": false,
+    "privateAbsolutePathsPersisted": false
+  },
+  "sourceReviewPreviewValidation": {
+    "result": "passed",
+    "localBackendTest": "python3 -m unittest tests.test_source_review_preview",
+    "localFrontendTest": "cd frontend && npm test -- mockApi.sourcePreview FileReviewEditor",
+    "localBrowserCheck": {
+      "target": "http://127.0.0.1:5175/findings/finding_001",
+      "authGateDisabledForMockOnly": true,
+      "containsSourcePreviewSummary": true,
+      "containsRedactedSourceContextWindow": true,
+      "redactedContextWindowCount": 1,
+      "containsRedactedMarker": true,
+      "sourcePreviewSummaryHeightPx": 38.523,
+      "rawBoundaryLabel": "Raw boundary sealed",
+      "rawPreviewEmailPresent": false,
+      "rawMarkdownEmailPresent": false,
+      "rawPersonNamePresent": false,
+      "privateAbsolutePathsPresent": false,
+      "consoleErrorsOrWarnings": 0,
+      "screenshotArtifact": "tests/fixtures/gdpr_data_samples_main/artifacts/source_review_context_window_local.jpg",
+      "screenshotSha256": "76a1fe8cca13984fdb8ffd285918e0fd0d7875f1e3ab4ec06d0bf1d255ef8887"
+    },
+    "agentUsBackendTest": "cd /srv/datasentinel/app/current && python3 -m unittest tests.test_source_review_preview tests.test_backend_api_server",
+    "frontendAssetCheck": {
+      "publicFindingUrl": "https://founder-force.uk/findings/finding_001",
+      "publicFindingUiAuthGated": true,
+      "containsSourcePreviewSummaryCss": true,
+      "containsSourceReviewPreviewRuntime": true
+    },
+    "rawContentExposed": false,
+    "pageImagesExposed": false,
+    "rawValuePersisted": false,
+    "privateAbsolutePathsPersisted": false
+  },
+  "liveDriveScan": {
+    "report": "tests/fixtures/gdpr_data_samples_main/live_drive_scan_report_agent_us.json",
+    "result": "passed",
+    "folderId": "1AmTxh7RhEyvgo400SAZHI8s_CawvAdQn",
+    "bindingConnected": true,
+    "scanStatus": "completed",
+    "processedFiles": 18,
+    "successfulFiles": 16,
+    "unsupportedFiles": 2,
+    "ocrDeferredFiles": 0,
+    "detectedSignals": 75,
+    "assembledFindings": 11,
+    "sourceReviewPreviewSampledFindings": 5,
+    "rawContentExposed": false,
+    "pageImagesExposed": false,
+    "providerTokensPersisted": false,
+    "refreshTokensPersistedInReport": false,
+    "driveUrlsPersisted": false,
+    "privateAbsolutePathsPersisted": false,
+    "driveFilesMutated": false
+  },
+  "remainingBoundaries": [
+    {
+      "id": "BND-004",
+      "status": "redacted_preview_verified",
+      "reason": "Finding details now include sourceReviewPreview packages assembled from redacted evidence anchors only, and the file review surface consumes them for consistent page-region focus. A raw full-source viewer remains a separate security and source-byte access decision outside the current public payload boundary."
+    }
+  ]
+}

@@ -16,7 +16,7 @@ from typing import Any, Iterable
 from .envelope import utc_now
 from .source_store import default_sources, demo_fixtures_enabled, demo_source_ids
 
-SCHEMA_VERSION = "3"
+SCHEMA_VERSION = "4"
 WORKFLOW_STATE_KEY = "demo_workflow_state"
 OWNER_GLOBAL = "global"
 OWNER_LEGACY = "legacy_shared"
@@ -40,12 +40,14 @@ class SQLiteDocumentStore:
             workflow_count = connection.execute("SELECT COUNT(*) AS count FROM workflow_documents").fetchone()
             user_count = connection.execute("SELECT COUNT(*) AS count FROM account_users").fetchone()
             session_count = connection.execute("SELECT COUNT(*) AS count FROM auth_sessions").fetchone()
+            drive_binding_count = connection.execute("SELECT COUNT(*) AS count FROM google_drive_bindings").fetchone()
 
         return {
             "path": str(self.path),
             "schemaVersion": schema_version["value"] if schema_version else None,
             "accountUserCount": user_count["count"],
             "authSessionCount": session_count["count"],
+            "googleDriveBindingCount": drive_binding_count["count"],
             "sourceCount": source_count["count"],
             "workflowDocumentCount": workflow_count["count"],
         }
@@ -180,6 +182,14 @@ class SQLiteDocumentStore:
                         user_id TEXT NOT NULL,
                         expires_at INTEGER NOT NULL,
                         created_at TEXT NOT NULL
+                    );
+
+                    CREATE TABLE IF NOT EXISTS google_drive_bindings (
+                        user_id TEXT PRIMARY KEY,
+                        provider_subject TEXT NOT NULL,
+                        email TEXT,
+                        payload_json TEXT NOT NULL,
+                        updated_at TEXT NOT NULL
                     );
                     """
                 )
@@ -372,6 +382,55 @@ class SQLiteAuthStore:
         with self.documents._lock:
             with self.documents._connection() as connection:
                 connection.execute("DELETE FROM auth_sessions WHERE session_id = ?", (session_id,))
+
+
+class SQLiteDriveBindingStore:
+    """Persists account-scoped Google Drive bindings in local SQLite."""
+
+    def __init__(self, documents: SQLiteDocumentStore) -> None:
+        self.documents = documents
+
+    def get_binding(self, user_id: str) -> dict[str, Any] | None:
+        with self.documents._connection() as connection:
+            row = connection.execute(
+                "SELECT payload_json FROM google_drive_bindings WHERE user_id = ?",
+                (user_id,),
+            ).fetchone()
+        return _load(row["payload_json"]) if row else None
+
+    def upsert_binding(self, binding: dict[str, Any]) -> dict[str, Any]:
+        stored = copy.deepcopy(binding)
+        with self.documents._lock:
+            with self.documents._connection() as connection:
+                connection.execute(
+                    """
+                    INSERT INTO google_drive_bindings (user_id, provider_subject, email, payload_json, updated_at)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT(user_id) DO UPDATE SET
+                        provider_subject = excluded.provider_subject,
+                        email = excluded.email,
+                        payload_json = excluded.payload_json,
+                        updated_at = excluded.updated_at
+                    """,
+                    (
+                        stored["userId"],
+                        stored["providerSubject"],
+                        stored.get("email"),
+                        _dump(stored),
+                        utc_now(),
+                    ),
+                )
+        return copy.deepcopy(stored)
+
+    def delete_binding(self, user_id: str) -> dict[str, Any] | None:
+        existing = self.get_binding(user_id)
+        if not existing:
+            return None
+
+        with self.documents._lock:
+            with self.documents._connection() as connection:
+                connection.execute("DELETE FROM google_drive_bindings WHERE user_id = ?", (user_id,))
+        return existing
 
 
 def _dump(payload: dict[str, Any]) -> str:

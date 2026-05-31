@@ -40,9 +40,9 @@ The future product experience should make GDPR data cleanup feel like an account
 | Surface | Purpose |
 | --- | --- |
 | Public Project Homepage | Introduce DataSentinel, explain the workflow, and link into the internal dashboard without showing the app shell. |
-| Sign-In Gate | Let users start Google or GitHub login when configured, and show setup status when providers are unavailable. |
+| Sign-In Gate | Present a minimal centered login surface with DataSentinel branding, only Google and GitHub branded provider buttons, and short setup status when providers are unavailable. |
 | App Shell, Workspace, and Account Menus | Show a page-title-focused top bar that can render route hierarchy with clickable non-current levels, keep an interactive session notification center and auto-dismissing latest-message preview, keep workspace context and current membership groups in the top-left sidebar control, keep authenticated account controls in the bottom-left sidebar menu, and support sidebar collapse. |
-| Workspace Admin | Show compact member and group summaries, compact invite-link rows, permission boundaries, management charts, Workspace profile settings for name/introduction, and the Danger Zone as the final page section; member and group panels link to dedicated admin subpages. |
+| Workspace Admin | Show compact member and group summaries, compact invite-link rows, permission boundaries, management charts, Workspace profile settings for name/introduction, and the Danger Zone as the final page section with concise operational copy; member and group panels link to dedicated admin subpages. |
 | Workspace Members | Let admins browse all Workspace members with search, filters, grouping, and sorting by group, status, join date, and last activity. |
 | Workspace Group Controls | Let admins create groups, rename groups, edit permissions from the catalog, and delete allowed groups from a dedicated `/workspace/admin/groups` subpage. |
 | Source Connector | Select or register an allowed source and start full or delta scans. |
@@ -103,17 +103,17 @@ The full-scan start interaction connects Source Connector and Admin Dashboard su
 
 ## Prelaunch Source Input Interaction
 
-The source-input interaction is documented in `docs/design/google-drive-source-integration.md`, `docs/design/local-format-recognition-difficulty.md`, and `docs/design/source-scan-failure-state.md`.
+The source-input interaction is documented in `docs/design/google-drive-source-integration.md`, `docs/design/google-drive-account-binding.md`, `docs/design/local-format-recognition-difficulty.md`, and `docs/design/source-scan-failure-state.md`.
 
 - The Source Connector offers direct HTTPS file links, Google Drive selected files/folders, and host-allowed local paths as explicit modes.
 - Source setup offers an optional direct owner dropdown backed by active Workspace members; admin Source rows expose edit controls for changing that owner.
 - Google Drive selection opens the official Picker UI when host public credentials are configured.
-- Drive file/folder selections store metadata only; the browser keeps the short-lived access token in memory and sends it only when starting a scan.
-- Saved Google Drive sources require a current in-memory Picker token before scan controls are enabled; when that token exists, the Sources row presents the source as connected for the current browser session even though the persisted server record does not store the token.
+- Drive file/folder selections store metadata only; one-off scans can use a short-lived Picker token, while Account settings can store a server-side personal Drive binding for refresh-safe scans.
+- Saved Google Drive sources require a current in-memory Picker token or a connected account-level Drive binding before scan controls are enabled; when either exists, the Sources row presents the source as connected even though the source record does not store an access token.
 - Source-read failures clear visible scan-derived findings instead of falling back to local mock findings.
 - Scan-derived findings inherit the selected Source owner or Data Steward fallback, and non-assigned Workspace members do not see those findings.
 - Direct HTTPS links are treated as one-file sources and must show connection or scan errors when the URL fails policy checks.
-- PDF files are accepted only when they have an extractable text layer; DOCX, XLSX, and PPTX are accepted through deterministic Office Open XML extraction; image files are scanned through local OCR when available; VTT/SRT transcripts are scanned as video transcript text; image-only or unreadable PDFs and raw video media remain OCR-deferred in prelaunch.
+- PDF files prefer an extractable text layer and may fall back to bounded local PDF OCR when host tooling is available; XML, JSON/JSONL/NDJSON, and HTML/HTM are accepted through bounded structure extraction; RTF is accepted through bounded rich-text extraction; EML is accepted through bounded RFC 5322/MIME text extraction; ZIP archives are accepted through bounded non-recursive member extraction; DOCX, XLSX, and PPTX are accepted through deterministic Office Open XML extraction; legacy DOC, XLS, and PPT are accepted through bounded host-local LibreOffice conversion; ODT, ODS, and ODP are accepted through bounded OpenDocument extraction; image files are scanned through local OCR when available; VTT/SRT transcripts are scanned as video transcript text; bounded raw video media is sampled into temporary frames through host-local FFmpeg and scanned through local OCR when available; unreadable PDFs, missing OCR tooling, missing FFmpeg, missing LibreOffice, nested archives, and over-limit media remain OCR-deferred or unsupported in prelaunch.
 - The Sources page shows the current prelaunch supported file-type list below the source table or empty state.
 - The UI states that DataSentinel reads source content during scan execution and stores metadata, redacted evidence, findings, and audit events.
 - Source deletion removes the registration from DataSentinel state and must not claim to delete external files.
@@ -148,9 +148,9 @@ The signal-detection interaction extends the Dashboard latest-scan and pipeline 
 
 - Running scan state shows deterministic signal detection as pending until extraction is ready.
 - Completed scan state shows detector rules version/hash, evidence requirements, detected/redacted signal counts, findings-with-signals count, and signal-type counts.
-- Completed sample-form scans show findings for labeled contact, identity, government ID, employment, education, financial, online/device, location, vehicle, health, biometric, genetic, special-category, family/minor, credential, incident, and access fields when completed values exist.
+- Completed sample-form scans show findings for English and common multilingual labeled contact, identity, government ID, employment, education, financial, online/device, location, vehicle, health, biometric, genetic, special-category, family/minor, credential, incident, and access fields when completed values exist.
 - The pipeline summary shows `detecting_signals` after `extracting_content` and before `judging_context_risk`.
-- Finding details continue to show redacted detector evidence with detector, confidence, snippet, and location when available.
+- Finding details continue to show redacted detector evidence with detector, confidence, snippet, and source-data-derived evidence anchors when available.
 - The UI must avoid raw source content, raw source URLs, absolute host paths, adjacent raw match context, unredacted personal data, detector secrets, legal conclusions, deletion instructions, or claims of GDPR compliance.
 
 ## Context and Risk Judgment Interaction
@@ -181,7 +181,7 @@ The finding-assembly interaction connects completed owner routing to the finding
 - Completed scan state shows assembled findings, evidence cards, redacted evidence signals, and missing-card count.
 - The pipeline summary shows `assembling_findings` after `assigning_owner`.
 - Findings table rows show evidence signal count when the contract provides it.
-- Evidence cards show redacted signals, policy context, owner assignment, retention status, action boundary, and audit timeline.
+- Evidence cards show redacted signals, optional evidence anchors, policy context, owner assignment, retention status, action boundary, and audit timeline.
 - The UI shows allowed and denied actions before review submission when the contract provides them.
 - The UI must avoid legal conclusions, raw source content, unredacted personal data, hidden permission decisions, production parser assumptions, and deletion instructions.
 
@@ -263,9 +263,13 @@ The evaluation interaction turns prior workflow outputs into measurable quality 
 The file review editor adds source-context inspection to Finding Detail:
 
 - The editor opens from the finding header or from a redacted evidence card.
+- Opening the editor requires current finding review authority from review-support data or workspace-level `review_findings` permission-boundary authority; view-only actors see disabled navigation controls and the boundary reason.
 - Opening from the finding header focuses the first available evidence anchor.
 - Opening from an evidence card focuses that evidence anchor.
-- The preview shows only redacted evidence snippets and location fallback labels until explicit file-rendering anchors are added to the contract.
+- The preview resolves `textPosition` anchors against the normalized extracted text stream, including legacy Office converted text, resolves CSV/TSV/XLSX/ODS `tableCell` anchors against source-derived row, column, and sheet metadata, resolves ZIP member ordinal metadata before child selectors, and resolves DOCX/PPTX/ODT/ODP/EML/HTML/XML/JSON/JSONL/NDJSON `structurePath` anchors against source-derived paragraph, slide/shape, email header/body-part, HTML-node, XML element/attribute ordinal, JSON record/field, or OpenDocument content metadata when available to the authorized review surface; text-like, XML, JSON-like, RTF, EML, ZIP, Office Open XML, legacy Office conversion, OpenDocument, image OCR, transcript, and PDF anchors may include format labels and source-local offsets, and PDF anchors may also include page metadata, estimated PDF page-region coordinates, or OCR pixel word-box regions for page-focused review. When region geometry is available, the editor maps PDF bottom-left coordinates and OCR top-left coordinates into one scalable redacted focus box. Otherwise the preview shows only redacted evidence snippets and location fallback labels.
+- The editor consumes optional `sourceReviewPreview` packages assembled from redacted anchors only; the package can summarize pages, redacted source-context windows, text ranges, table cells, and structure blocks for privileged review while keeping raw source content and page images outside the payload.
+- Evidence cards and the editor prefer contract `signal.evidenceAnchor` labels, redacted text, selector type, page, page-local offsets, estimated PDF region labels, and OCR image-region labels before falling back to legacy `signal.page` and redacted snippets.
+- PDF, text, table, image, and structured-document anchors must use the same open-and-focus interaction even when their selector data differs.
 - The editor must support unsupported or imprecise file formats by showing a redacted fallback location instead of blocking review.
 - Closing the editor must not change scan state, finding state, source files, or review state.
 

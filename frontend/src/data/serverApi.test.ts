@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getEmptyData } from './emptyData'
-import { isApiRequestError, loadServerData, startServerScan, switchServerWorkspace } from './serverApi'
+import { getServerFinding, isApiRequestError, loadServerData, startServerScan, switchServerWorkspace } from './serverApi'
 
 function envelope(data: unknown) {
   return {
@@ -93,6 +93,30 @@ describe('server API loading', () => {
 
     expect(requests).toEqual([{ body: JSON.stringify({ workspaceId: 'ws_target' }), path: '/workspaces/current' }])
     expect(switched.data.currentWorkspaceId).toBe('ws_target')
+  })
+
+  it('loads a requested finding detail by id instead of relying on the first list row', async () => {
+    const requests: string[] = []
+
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      requests.push(String(input).replace('/api', ''))
+      return new Response(JSON.stringify(envelope({
+        findingId: 'finding_target',
+        fileName: 'target.csv',
+        riskLevel: 'high',
+        riskScore: 91,
+        signals: [{ confidence: 0.98, detector: 'regex', snippet: '[REDACTED_EMAIL]', type: 'email' }],
+        status: 'assigned',
+      })), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }))
+
+    const detail = await getServerFinding('finding_target')
+
+    expect(requests).toEqual(['/findings/finding_target'])
+    expect(detail.data.signals).toHaveLength(1)
   })
 
   it('preserves API rejection status so callers do not treat command rejection as server outage', async () => {

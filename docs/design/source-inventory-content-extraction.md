@@ -12,7 +12,7 @@ In scope:
 
 - Deterministic sample-source file inventory summaries.
 - Internal file inventory items with path, size, modified timestamp, sample family, permission snapshot, readability status, and stable file fingerprint.
-- Deterministic content extraction summaries for text, metadata, table, local image OCR, transcript text, and deferred media handling.
+- Deterministic content extraction summaries for text, PDF text layers, bounded PDF OCR fallback, metadata, table, bounded archive members, local image OCR, host-local legacy Office conversion, transcript text, and deferred media handling.
 - Redacted evidence-candidate counts only, not raw extracted text.
 - Scan-stage visibility through the existing scan, metrics, audit, and evaluation surfaces.
 - Partial-data warnings while the scan is running.
@@ -22,7 +22,7 @@ Out of scope:
 
 - Production Microsoft Graph, OAuth, tenant, or deletion integrations.
 - Downloading or vendoring organizer sample files.
-- Production parser, NER, LLM, storage, queue, database selection, or full video media processing.
+- Production parser, NER, LLM, storage, queue, database selection, or full all-frame/audio video processing.
 - Automatic deletion, legal conclusions, or unreviewed retention decisions.
 - New public extraction endpoints.
 
@@ -68,6 +68,7 @@ Out of scope:
 | Inventorying files | Inventory has recoverable gaps | Source remains readable | Extracting content with warnings | Mark partial data and keep warning messages |
 | Inventorying files | Inventory fails | Failure is blocking | Scan failed | Keep prior findings intact and emit problem details in backend implementations |
 | Extracting content | Supported content parsed | Raw text remains internal | Extraction summarized | Count successful files and redacted evidence candidates |
+| Extracting content | PDF text layer missing | Local OCR tooling is available | PDF OCR summarized | Count extracted PDF OCR text as hard difficulty without exposing raw page images |
 | Extracting content | File unsupported or OCR deferred | Failure is recoverable | Extraction summarized with warnings | Count warning files without exposing raw content |
 | Extraction summarized | Scan continues | Deterministic signal detection is next | Detecting signals | Downstream stages may create findings from redacted evidence candidates |
 | Extraction summarized | Scan completes | Metrics are available | Scan completed | Publish final counts, duration, throughput, and evaluation links |
@@ -90,7 +91,7 @@ The admin metrics payload may include optional inventory and extraction counters
 - Do not expose raw source text, full file bodies, page images, or unredacted personal data.
 - Redacted evidence snippets remain part of finding evidence cards, not this inventory/extraction summary.
 - Warning text must describe processing limitations without copying source content.
-- Broad parser execution and raw video media processing are deferred until sandboxing, file-size limits, MIME allowlists, and malware handling are designed. Image OCR is limited to host-local Tesseract under the prelaunch media boundary.
+- Broad parser execution and full all-frame/audio video processing are deferred until sandboxing, file-size limits, MIME allowlists, and malware handling are designed. Image, PDF OCR, bounded legacy Office conversion, and bounded video frame OCR are limited to host-local tooling under the prelaunch boundaries.
 - P0 uses zero model calls and zero paid services.
 
 ## Economic Affordability
@@ -100,7 +101,7 @@ P0 remains deterministic and cost-free. A later production path should prefer th
 1. Metadata and file fingerprinting for all candidates.
 2. Text-layer extraction for supported files.
 3. Deterministic pattern detectors.
-4. OCR only for suspicious or sampled image/PDF files.
+4. OCR only for suspicious, sampled, or text-layer-missing image/PDF files.
 5. AI context classification only when deterministic context is insufficient and policy allows it.
 
 This order minimizes expensive OCR/model usage while preserving auditability and reproducibility.
@@ -117,5 +118,6 @@ If this slice creates UI or contract noise, remove the optional scan and metrics
 - Completing the scan marks inventory and extraction stages complete and preserves deterministic evaluation with zero model calls.
 - Optional fields remain compatible with the existing `ScanEnvelope` and `AdminMetricsEnvelope`.
 - Unsupported or OCR-deferred files are counted as warnings, not fatal errors.
+- PDF text-layer extraction is preferred, and text-layer-missing PDFs can fall back to bounded local OCR when host tooling is available.
 - The UI shows candidate files, fingerprinted files, extracted files, redacted evidence candidates, warning counts, and raw-content boundary status.
 - Behavior tests cover running, completed, partial-warning, no-raw-content, and not-ready-source paths.

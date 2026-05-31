@@ -1,0 +1,248 @@
+{
+  "command": "python3 tests/core_engine_performance_benchmark.py --output tests/fixtures/gdpr_data_samples_main/core_engine_performance_report_agent_us.json",
+  "generatedAt": "2026-05-31T22:00:08Z",
+  "host": {
+    "machine": "x86_64",
+    "platform": "Linux-6.17.0-1015-azure-x86_64-with-glibc2.39",
+    "python": "3.12.3"
+  },
+  "limits": {
+    "maxDocumentBytes": 1000000,
+    "maxSignalScanChars": 200000,
+    "maxSignalsPerDocument": 32,
+    "maxSourceFiles": 500
+  },
+  "ocrCapabilities": {
+    "imageOcrAvailable": true,
+    "languagesConfigured": [
+      "eng",
+      "chi_sim",
+      "deu",
+      "fra",
+      "spa",
+      "por",
+      "ita",
+      "nld",
+      "pol",
+      "jpn",
+      "kor",
+      "ara"
+    ],
+    "ocrMode": "local",
+    "pdfOcrAvailable": true,
+    "pdftoppmAvailable": true,
+    "tesseractAvailable": true
+  },
+  "privacyRule": "This benchmark records aggregate counts, timings, formats, signal types, and resource usage only. It must not include raw extracted text, raw detected values, provider tokens, source bodies, Drive URLs, or private absolute paths.",
+  "reportId": "core_engine_performance_2026-05-31_mixed_corpus",
+  "safetyChecks": {
+    "privateAbsolutePathsPersisted": false,
+    "providerTokensPersisted": false,
+    "rawDetectedValuesPersisted": false,
+    "rawTextPersisted": false,
+    "sourceBodiesPersisted": false
+  },
+  "suites": [
+    {
+      "durationMs": 13.757,
+      "extractedCharsPerSecond": 77122.9,
+      "formatCounts": {
+        "csv": 1,
+        "docx": 1,
+        "eml": 1,
+        "html": 1,
+        "image_ocr": 1,
+        "jsonl": 1,
+        "odp": 1,
+        "ods": 1,
+        "odt": 1,
+        "pdf_ocr": 1,
+        "pptx": 1,
+        "rtf": 1,
+        "txt": 1,
+        "video_transcript": 1,
+        "xlsx": 1,
+        "xml": 1,
+        "zip": 1
+      },
+      "maxSignalsInDocument": 5,
+      "methodCounts": {
+        "html_text": 1,
+        "json_structure_text": 1,
+        "odf_odp_text": 1,
+        "odf_ods_text": 1,
+        "odf_odt_text": 1,
+        "ooxml_docx_text": 1,
+        "ooxml_pptx_text": 1,
+        "ooxml_xlsx_text": 1,
+        "pdf_page_image_ocr": 1,
+        "rfc5322_mime_text": 1,
+        "rtf_text": 1,
+        "tesseract_image_ocr": 1,
+        "utf8_text": 2,
+        "utf8_video_transcript": 1,
+        "xml_structure_text": 1,
+        "zip_member_text": 1
+      },
+      "name": "generated_format_challenges",
+      "note": "Uses generated multilingual challenge cases; image/PDF OCR challenge entries use the deterministic test helper's mocked OCR text to isolate parser/detector throughput.",
+      "ocrDeferredFiles": 0,
+      "processedFiles": 17,
+      "recognitionDifficulty": {
+        "easy": 5,
+        "hard": 2,
+        "moderate": 10
+      },
+      "signalTypeCounts": {
+        "address": 1,
+        "bank_account": 1,
+        "credential_secret": 1,
+        "date_of_birth": 1,
+        "email": 6,
+        "expense_amount": 2,
+        "health_data": 3,
+        "iban_like": 1,
+        "national_identifier": 5,
+        "person_name": 18,
+        "phone_number": 29,
+        "salary_compensation": 2,
+        "tax_id": 1
+      },
+      "skippedFiles": 0,
+      "successfulFiles": 17,
+      "throughputFilesPerSecond": 1235.711,
+      "totalExtractedChars": 1061,
+      "totalSignals": 71,
+      "totalSourceBytes": 1434,
+      "unsupportedFiles": 0
+    },
+    {
+      "durationMs": 2614.809,
+      "extractedCharsPerSecond": 10416.4,
+      "formatCounts": {
+        "image_ocr": 1,
+        "pdf_text_layer": 16
+      },
+      "maxSignalsInDocument": 10,
+      "methodCounts": {
+        "pdf_text_layer": 16,
+        "tesseract_image_ocr": 1
+      },
+      "name": "raw_drive_corpus",
+      "note": "Uses immutable local raw corpus copies represented by the Drive manifest; source metadata files are skipped.",
+      "ocrDeferredFiles": 0,
+      "processedFiles": 17,
+      "recognitionDifficulty": {
+        "hard": 1,
+        "moderate": 16
+      },
+      "signalTypeCounts": {
+        "access_context": 10,
+        "address": 2,
+        "email": 4,
+        "employee_id": 4,
+        "expense_amount": 6,
+        "free_text_personal_context": 8,
+        "incident_context": 10,
+        "location_data": 2,
+        "organization_identifier": 2,
+        "person_name": 21,
+        "phone_number": 2,
+        "tax_id": 4
+      },
+      "skippedFiles": 2,
+      "successfulFiles": 17,
+      "throughputFilesPerSecond": 6.501,
+      "totalExtractedChars": 27237,
+      "totalSignals": 75,
+      "totalSourceBytes": 6415159,
+      "unsupportedFiles": 0
+    },
+    {
+      "durationMs": 9.406,
+      "extractedCharsPerSecond": 22108642.3,
+      "formatCounts": {
+        "synthetic_text": 1
+      },
+      "maxSignalsInDocument": 32,
+      "methodCounts": {
+        "signal_cap_detection_only": 1
+      },
+      "name": "large_signal_cap",
+      "note": "Uses an in-memory oversized text stream to verify scan-window and per-document signal caps under load.",
+      "ocrDeferredFiles": 0,
+      "processedFiles": 1,
+      "recognitionDifficulty": {
+        "easy": 1
+      },
+      "signalCapEnforced": true,
+      "signalTypeCounts": {
+        "person_name": 32
+      },
+      "skippedFiles": 0,
+      "successfulFiles": 1,
+      "throughputFilesPerSecond": 106.315,
+      "totalExtractedChars": 207954,
+      "totalSignals": 32,
+      "totalSourceBytes": 207954,
+      "unsupportedFiles": 0
+    }
+  ],
+  "totals": {
+    "durationMs": 2637.972,
+    "estimatedCostUsd": 0.0,
+    "extractedCharsPerSecond": 89558.2,
+    "formatCounts": {
+      "csv": 1,
+      "docx": 1,
+      "eml": 1,
+      "html": 1,
+      "image_ocr": 2,
+      "jsonl": 1,
+      "odp": 1,
+      "ods": 1,
+      "odt": 1,
+      "pdf_ocr": 1,
+      "pdf_text_layer": 16,
+      "pptx": 1,
+      "rtf": 1,
+      "synthetic_text": 1,
+      "txt": 1,
+      "video_transcript": 1,
+      "xlsx": 1,
+      "xml": 1,
+      "zip": 1
+    },
+    "modelCalls": 0,
+    "ocrDeferredFiles": 0,
+    "peakRssMiB": 64.059,
+    "processedFiles": 35,
+    "signalTypeCounts": {
+      "access_context": 10,
+      "address": 3,
+      "bank_account": 1,
+      "credential_secret": 1,
+      "date_of_birth": 1,
+      "email": 10,
+      "employee_id": 4,
+      "expense_amount": 8,
+      "free_text_personal_context": 8,
+      "health_data": 3,
+      "iban_like": 1,
+      "incident_context": 10,
+      "location_data": 2,
+      "national_identifier": 5,
+      "organization_identifier": 2,
+      "person_name": 71,
+      "phone_number": 31,
+      "salary_compensation": 2,
+      "tax_id": 5
+    },
+    "successfulFiles": 35,
+    "throughputFilesPerSecond": 13.268,
+    "totalExtractedChars": 236252,
+    "totalSignals": 178,
+    "totalSourceBytes": 6624547,
+    "unsupportedFiles": 0
+  }
+}

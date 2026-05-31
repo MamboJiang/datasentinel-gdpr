@@ -1,31 +1,11 @@
 import { FileText, Highlighter, LocateFixed, ShieldCheck, X } from 'lucide-react'
 import { useState } from 'react'
-import type { Finding, Signal } from '../types'
+import type { Finding, SourceReviewContextWindow } from '../types'
 import { safeFindingSourceLabel } from './findingDisplay'
 import { humanize } from './formatters'
+import { attachPreviewContextWindows, buildEvidenceAnchors, buildPreviewPageRegionFocus, buildSourcePreviewSummary } from './fileReviewEditorModel'
 import { RiskBadge } from './ui'
-
-type EvidenceAnchor = {
-  anchorId: string
-  label: string
-  locationLabel: string
-  redactedText: string
-  detector: string
-  confidence: number
-  page: number
-}
-
-function buildEvidenceAnchors(signals: Signal[] = []): EvidenceAnchor[] {
-  return signals.map((signal, index) => ({
-    anchorId: `${signal.type}-${signal.detector}-${index}`,
-    label: humanize(signal.type),
-    locationLabel: signal.page ? `Page ${signal.page}` : 'Fallback location',
-    redactedText: signal.snippet,
-    detector: humanize(signal.detector),
-    confidence: signal.confidence,
-    page: signal.page ?? 1,
-  }))
-}
+import './FileReviewEditor.css'
 
 export function FileReviewEditor({
   finding,
@@ -36,9 +16,11 @@ export function FileReviewEditor({
   initialSignalIndex?: number
   onClose: () => void
 }) {
-  const anchors = buildEvidenceAnchors(finding.signals)
+  const anchors = attachPreviewContextWindows(buildEvidenceAnchors(finding.signals), finding.sourceReviewPreview)
   const [activeIndex, setActiveIndex] = useState(Math.min(initialSignalIndex, Math.max(anchors.length - 1, 0)))
   const activeAnchor = anchors[activeIndex]
+  const previewSummary = buildSourcePreviewSummary(finding.sourceReviewPreview)
+  const activeRegionFocus = buildPreviewPageRegionFocus(finding.sourceReviewPreview, activeAnchor?.anchorId) ?? activeAnchor?.pageRegionFocus
 
   return (
     <div className="file-editor-overlay" role="presentation">
@@ -90,14 +72,45 @@ export function FileReviewEditor({
           <main className="document-review-pane">
             <div className="document-toolbar">
               <span>{activeAnchor?.locationLabel ?? 'No location'}</span>
-              <span>{activeAnchor?.detector ?? 'No detector'}</span>
+              <span>{activeAnchor ? `${activeAnchor.detector} · ${activeAnchor.format}` : 'No detector'}</span>
             </div>
+            {previewSummary ? (
+              <div className="source-preview-summary" aria-label="Redacted source preview package">
+                <span>{previewSummary.formatLabel}</span>
+                <span>{previewSummary.redactionLabel}</span>
+                <span>{previewSummary.anchorCount} anchors</span>
+                <span>{previewSummary.pageCount} pages</span>
+                <span>{previewSummary.tableCellCount} cells</span>
+                <span>{previewSummary.structureCount} blocks</span>
+                <span>{previewSummary.rawBoundaryLabel}</span>
+              </div>
+            ) : null}
 
             <div className="document-page" aria-label="Redacted file preview">
               <div className="document-page-header">
                 <span>{finding.contextCategory ? humanize(finding.contextCategory) : 'Document context'}</span>
                 <span>Page {activeAnchor?.page ?? 1}</span>
               </div>
+              {activeRegionFocus ? (
+                <div className="document-region-map" aria-label="Source-derived region focus">
+                  <div
+                    className={`document-region-frame document-region-${activeRegionFocus.kind}`}
+                    style={activeRegionFocus.frameStyle}
+                  >
+                    <button
+                      aria-label={`Focused source region: ${activeAnchor.selectorLabel}`}
+                      className="document-region-box"
+                      style={activeRegionFocus.boxStyle}
+                      type="button"
+                    >
+                      <span>{activeAnchor.redactedText}</span>
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+              {activeAnchor?.contextWindow ? (
+                <RedactedContextWindow context={activeAnchor.contextWindow} />
+              ) : null}
               <div className="document-lines">
                 {anchors.map((anchor, index) => (
                   <button
@@ -107,7 +120,10 @@ export function FileReviewEditor({
                     type="button"
                   >
                     <Highlighter aria-hidden="true" size={15} />
-                    <span>{anchor.redactedText}</span>
+                    <span>
+                      <strong>{anchor.locationLabel} · {anchor.selectorLabel}</strong>
+                      <small>{anchor.redactedText}</small>
+                    </span>
                   </button>
                 ))}
               </div>
@@ -120,6 +136,31 @@ export function FileReviewEditor({
           </main>
         </div>
       </section>
+    </div>
+  )
+}
+
+function RedactedContextWindow({ context }: { context: SourceReviewContextWindow }) {
+  const text = context.redactedContext
+  const start = typeof context.highlightStart === 'number' ? context.highlightStart : -1
+  const end = typeof context.highlightEnd === 'number' ? context.highlightEnd : -1
+  const canHighlight = start >= 0 && end > start && end <= text.length
+
+  return (
+    <div className="document-context-window" aria-label="Redacted source context window">
+      <div>
+        <strong>Redacted source context</strong>
+        <span>{context.rawContentExposed ? 'Raw boundary open' : 'Raw boundary sealed'}</span>
+      </div>
+      <p>
+        {canHighlight ? (
+          <>
+            {text.slice(0, start)}
+            <mark>{text.slice(start, end)}</mark>
+            {text.slice(end)}
+          </>
+        ) : text}
+      </p>
     </div>
   )
 }

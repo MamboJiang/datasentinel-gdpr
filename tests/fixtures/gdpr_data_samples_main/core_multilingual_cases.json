@@ -1,0 +1,91 @@
+{
+  "datasetId": "gdpr-data-samples-main-core-engine-multilingual-v1",
+  "sourceFolderId": "1AmTxh7RhEyvgo400SAZHI8s_CawvAdQn",
+  "description": "Synthetic multilingual source-text cases for deterministic core-engine tests.",
+  "cases": [
+    {
+      "caseId": "zh_contact_identity",
+      "language": "zh-Hans",
+      "text": "姓名：王芳\n电话：13800138000\n身份证号：11010519491231002X\n地址：上海市浦东新区世纪大道100号",
+      "expectedTypes": ["person_name", "phone_number", "national_identifier", "address"],
+      "forbiddenValues": ["王芳", "13800138000", "11010519491231002X", "上海市浦东新区世纪大道100号"]
+    },
+    {
+      "caseId": "zh_ocr_inline_contact",
+      "language": "zh-Hans",
+      "text": "姓名 王芳 电话 13800138000 地址 北京市朝阳区建国路88号",
+      "expectedTypes": ["person_name", "phone_number", "address"],
+      "forbiddenValues": ["王芳", "13800138000", "北京市朝阳区建国路88号"]
+    },
+    {
+      "caseId": "fr_contact_birth",
+      "language": "fr",
+      "text": "Nom: Claire Martin\nTéléphone: +33 6 12 34 56 78\nDate de naissance: 1988-04-02\nAdresse: 10 Rue Victor Hugo",
+      "expectedTypes": ["person_name", "phone_number", "date_of_birth", "address"],
+      "forbiddenValues": ["Claire Martin", "+33 6 12 34 56 78", "1988-04-02", "10 Rue Victor Hugo"]
+    },
+    {
+      "caseId": "es_identity_email",
+      "language": "es",
+      "text": "Nombre: Lucia Garcia\nCorreo electrónico: lucia.garcia@example.es\nDNI: 12345678Z\nSalario: 54000 EUR",
+      "expectedTypes": ["person_name", "email", "national_identifier", "salary_compensation"],
+      "forbiddenValues": ["Lucia Garcia", "lucia.garcia@example.es", "12345678Z", "54000 EUR"]
+    },
+    {
+      "caseId": "de_health_finance_secret",
+      "language": "de",
+      "text": "Geburtsdatum: 1990-10-05\nBankkonto: DE89370400440532013000\nPasswort: geheim-token-42\nDiagnose: Asthma-Behandlungsplan",
+      "expectedTypes": ["date_of_birth", "bank_account", "credential_secret", "health_data"],
+      "forbiddenValues": ["1990-10-05", "DE89370400440532013000", "geheim-token-42", "Asthma-Behandlungsplan"]
+    },
+    {
+      "caseId": "it_tax_passport_health",
+      "language": "it",
+      "text": "Nome: Giulia Rossi\nTelefono: +39 021234567\nCodice fiscale: RSSGLI80A01H501U\nPassaporto: YA1234567\nDiagnosi: piano allergia",
+      "expectedTypes": ["person_name", "phone_number", "tax_id", "passport_number", "health_data"],
+      "forbiddenValues": ["Giulia Rossi", "+39 021234567", "RSSGLI80A01H501U", "YA1234567", "piano allergia"]
+    },
+    {
+      "caseId": "pt_identity_bank_secret",
+      "language": "pt-BR",
+      "text": "Nome: Mariana Silva\nTelefone: +55 11987654321\nCPF: 123.456.789-09\nConta bancária: BR1500000000000010932840814\nSenha: segredo-pt-77",
+      "expectedTypes": ["person_name", "phone_number", "national_identifier", "bank_account", "credential_secret"],
+      "forbiddenValues": ["Mariana Silva", "+55 11987654321", "123.456.789-09", "BR1500000000000010932840814", "segredo-pt-77"]
+    },
+    {
+      "caseId": "nl_contact_address_compensation",
+      "language": "nl",
+      "text": "Naam: Sophie de Vries\nTelefoon: +31 612345678\nBSN: 123456782\nAdres: Keizersgracht 10\nSalaris: EUR 62000",
+      "expectedTypes": ["person_name", "phone_number", "national_identifier", "address", "salary_compensation"],
+      "forbiddenValues": ["Sophie de Vries", "+31 612345678", "123456782", "Keizersgracht 10", "EUR 62000"]
+    },
+    {
+      "caseId": "pl_identity_medical",
+      "language": "pl",
+      "text": "Imię i nazwisko: Anna Kowalska\nTelefon: +48 501234567\nPESEL: 44051401359\nAdres: ul. Dluga 5\nDiagnoza: cukrzyca typu 1",
+      "expectedTypes": ["person_name", "phone_number", "national_identifier", "address", "health_data"],
+      "forbiddenValues": ["Anna Kowalska", "+48 501234567", "44051401359", "ul. Dluga 5", "cukrzyca typu 1"]
+    },
+    {
+      "caseId": "ja_identity_bank",
+      "language": "ja",
+      "text": "氏名：佐藤花子\n電話：+81 9012345678\nマイナンバー：123456789012\n銀行口座：JP90BANK000000123456",
+      "expectedTypes": ["person_name", "phone_number", "national_identifier", "bank_account"],
+      "forbiddenValues": ["佐藤花子", "+81 9012345678", "123456789012", "JP90BANK000000123456"]
+    },
+    {
+      "caseId": "ko_contact_health_secret",
+      "language": "ko",
+      "text": "이름: 김민준\n전화: +82 1012345678\n주민등록번호: 900101-1234567\n진단: 고혈압 관리\n비밀번호: ko-secret-91",
+      "expectedTypes": ["person_name", "phone_number", "national_identifier", "health_data", "credential_secret"],
+      "forbiddenValues": ["김민준", "+82 1012345678", "900101-1234567", "고혈압 관리", "ko-secret-91"]
+    },
+    {
+      "caseId": "ar_contact_identity",
+      "language": "ar",
+      "text": "الاسم: ليلى حسن\nالهاتف: +971 501234567\nرقم الهوية: 784199012345678\nالعنوان: شارع الاتحاد 12\nالراتب: AED 18000",
+      "expectedTypes": ["person_name", "phone_number", "national_identifier", "address", "salary_compensation"],
+      "forbiddenValues": ["ليلى حسن", "+971 501234567", "784199012345678", "شارع الاتحاد 12", "AED 18000"]
+    }
+  ]
+}

@@ -9,6 +9,9 @@ from unittest import mock
 from zipfile import ZipFile
 
 from backend.datasentinel.source_http import build_sqlite_app
+from backend.datasentinel.source_image_ocr import ImageOcrResult
+from backend.datasentinel.source_legacy_office import LegacyOfficeExtractionResult
+from backend.datasentinel.source_video_ocr import VideoFrameOcrResult
 
 
 class FormatRecognitionTests(unittest.TestCase):
@@ -72,6 +75,151 @@ class FormatRecognitionTests(unittest.TestCase):
         self.assertNotIn("DE89370400440532013000", serialized)
         self.assertNotIn("+491711234567", serialized)
 
+    def test_legacy_office_files_scan_through_bounded_converter(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory) / "source"
+            root.mkdir()
+            (root / "legacy.doc").write_bytes(b"fake-doc")
+            (root / "legacy.xls").write_bytes(b"fake-xls")
+            (root / "legacy.ppt").write_bytes(b"fake-ppt")
+            db_path = Path(directory) / "datasentinel.sqlite3"
+
+            def fake_legacy_extract(_body: bytes, name: str, file_format: str) -> LegacyOfficeExtractionResult:
+                text_by_format = {
+                    "doc": "Legacy doc email privacy.legacy-doc@example.org",
+                    "xls": "Legacy xls IBAN DE89370400440532013000",
+                    "ppt": "Legacy ppt phone +491711234567",
+                }
+                text = text_by_format[file_format]
+                return LegacyOfficeExtractionResult(
+                    text,
+                    locations=({"format": file_format, "label": f"Legacy {file_format.upper()} text", "start": 0, "end": len(text)},),
+                )
+
+            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}), mock.patch(
+                "backend.datasentinel.source_format_recognition.extract_legacy_office_text",
+                side_effect=fake_legacy_extract,
+            ):
+                app = build_sqlite_app(db_path, [root])
+                app.handle(
+                    "POST",
+                    "/api/sources",
+                    "trace_legacy_office_create",
+                    json.dumps({
+                        "sourceId": "source_legacy_office",
+                        "name": "Legacy Office source",
+                        "sourceType": "local_repo",
+                        "rootLabel": str(root),
+                        "config": {"rootPath": str(root)},
+                    }),
+                    "application/json",
+                )
+                app.handle("POST", "/api/sources/source_legacy_office/connect-test", "trace_legacy_office_connect")
+                started = app.handle(
+                    "POST",
+                    "/api/scans/full",
+                    "trace_legacy_office_scan",
+                    json.dumps({"sourceId": "source_legacy_office"}),
+                    "application/json",
+                )
+                time.sleep(1.1)
+                scan = app.handle("GET", f"/api/scans/{started['body']['data']['scanId']}", "trace_legacy_office_done")
+                findings = app.handle("GET", "/api/findings", "trace_legacy_office_findings")
+                details = [
+                    app.handle("GET", f"/api/findings/{finding['findingId']}", f"trace_legacy_office_detail_{index}")
+                    for index, finding in enumerate(findings["body"]["data"])
+                ]
+                serialized = json.dumps({"scan": scan["body"], "details": [detail["body"] for detail in details]})
+
+        extraction = scan["body"]["data"]["contentExtraction"]
+        formats = {item["format"]: item for item in extraction["formatCounts"]}
+
+        self.assertEqual(len(findings["body"]["data"]), 3)
+        self.assertEqual(extraction["successfulFiles"], 3)
+        self.assertEqual(extraction["unsupportedFiles"], 0)
+        self.assertEqual(extraction["recognitionDifficulty"]["hard"], 3)
+        self.assertEqual(extraction["modelCalls"], 0)
+        self.assertIn("doc", formats)
+        self.assertIn("xls", formats)
+        self.assertIn("ppt", formats)
+        self.assertIn("[REDACTED_", serialized)
+        self.assertNotIn("privacy.legacy-doc@example.org", serialized)
+        self.assertNotIn("DE89370400440532013000", serialized)
+        self.assertNotIn("+491711234567", serialized)
+
+    def test_structured_text_like_files_scan_multilingual_labels_with_anchors(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory) / "source"
+            root.mkdir()
+            (root / "contacts.csv").write_text("field,value\n姓名：王芳\n电话：13800138000\n", encoding="utf-8")
+            (root / "case.json").write_text(
+                '{"Correo electrónico":"privacidad.structured@example.org","Gehalt":"EUR 3200.00"}',
+                encoding="utf-8",
+            )
+            (root / "profile.html").write_text(
+                "<section><p>Téléphone: +33123456789</p><p>Adresse: 18 Rue Example</p></section>",
+                encoding="utf-8",
+            )
+            db_path = Path(directory) / "datasentinel.sqlite3"
+
+            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+                app = build_sqlite_app(db_path, [root])
+                app.handle(
+                    "POST",
+                    "/api/sources",
+                    "trace_structured_text_create",
+                    json.dumps({
+                        "sourceId": "source_structured_text",
+                        "name": "Structured text source",
+                        "sourceType": "local_repo",
+                        "rootLabel": str(root),
+                        "config": {"rootPath": str(root)},
+                    }),
+                    "application/json",
+                )
+                app.handle("POST", "/api/sources/source_structured_text/connect-test", "trace_structured_text_connect")
+                started = app.handle(
+                    "POST",
+                    "/api/scans/full",
+                    "trace_structured_text_scan",
+                    json.dumps({"sourceId": "source_structured_text"}),
+                    "application/json",
+                )
+                time.sleep(1.1)
+                scan = app.handle("GET", f"/api/scans/{started['body']['data']['scanId']}", "trace_structured_text_done")
+                findings = app.handle("GET", "/api/findings", "trace_structured_text_findings")
+                details = [
+                    app.handle("GET", f"/api/findings/{finding['findingId']}", f"trace_structured_text_detail_{index}")
+                    for index, finding in enumerate(findings["body"]["data"])
+                ]
+                serialized = json.dumps({"scan": scan["body"], "details": [detail["body"] for detail in details]}, ensure_ascii=False)
+
+        extraction = scan["body"]["data"]["contentExtraction"]
+        formats = {item["format"]: item for item in extraction["formatCounts"]}
+        all_signals = [
+            signal
+            for detail in details
+            for signal in detail["body"]["data"]["signals"]
+        ]
+
+        self.assertEqual(len(findings["body"]["data"]), 3)
+        self.assertEqual(extraction["successfulFiles"], 3)
+        self.assertEqual(extraction["recognitionDifficulty"]["easy"], 3)
+        self.assertIn("csv", formats)
+        self.assertIn("json", formats)
+        self.assertIn("html", formats)
+        anchor_types = {
+            signal.get("evidenceAnchor", {}).get("selector", {}).get("type")
+            for signal in all_signals
+        }
+        self.assertIn("tableCell", anchor_types)
+        self.assertIn("structurePath", anchor_types)
+        self.assertIn("[REDACTED_", serialized)
+        self.assertNotIn("王芳", serialized)
+        self.assertNotIn("13800138000", serialized)
+        self.assertNotIn("privacidad.structured@example.org", serialized)
+        self.assertNotIn("+33123456789", serialized)
+
     def test_image_ocr_scan_counts_hard_difficulty_without_raw_text(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory) / "source"
@@ -79,9 +227,13 @@ class FormatRecognitionTests(unittest.TestCase):
             (root / "badge.png").write_bytes(b"not-a-real-image")
             db_path = Path(directory) / "datasentinel.sqlite3"
 
+            image_text = "Scanned visitor badge privacy.image@example.org"
             with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}), mock.patch(
-                "backend.datasentinel.source_format_recognition.extract_image_text",
-                return_value="Scanned visitor badge privacy.image@example.org",
+                "backend.datasentinel.source_format_recognition.extract_image_content",
+                return_value=ImageOcrResult(
+                    image_text,
+                    text_locations=({"format": "image_ocr", "label": "Image OCR text", "start": 0, "end": len(image_text)},),
+                ),
             ):
                 app = build_sqlite_app(db_path, [root])
                 app.handle(
@@ -178,6 +330,85 @@ class FormatRecognitionTests(unittest.TestCase):
         self.assertIn("ocr_deferred", formats)
         self.assertIn("[REDACTED_", serialized)
         self.assertNotIn("privacy.video@example.org", serialized)
+
+    def test_video_media_scans_with_bounded_frame_ocr_when_available(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory) / "source"
+            root.mkdir()
+            (root / "walkthrough.mp4").write_bytes(b"fake-video")
+            db_path = Path(directory) / "datasentinel.sqlite3"
+            video_text = "Walkthrough screen email privacy.video-frame@example.org"
+
+            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}), mock.patch(
+                "backend.datasentinel.source_format_recognition.extract_video_frame_content",
+                return_value=VideoFrameOcrResult(
+                    video_text,
+                    text_locations=({
+                        "format": "video_ocr",
+                        "label": "Frame 1 OCR text",
+                        "start": 0,
+                        "end": len(video_text),
+                        "frameIndex": 1,
+                        "page": 1,
+                        "regions": ({
+                            "start": 26,
+                            "end": len(video_text),
+                            "x": 64,
+                            "y": 40,
+                            "width": 420,
+                            "height": 32,
+                            "unit": "px",
+                            "origin": "top_left",
+                            "confidence": "ocr",
+                            "pageWidth": 640,
+                            "pageHeight": 240,
+                        },),
+                    },),
+                ),
+            ):
+                app = build_sqlite_app(db_path, [root])
+                app.handle(
+                    "POST",
+                    "/api/sources",
+                    "trace_video_frame_create",
+                    json.dumps({
+                        "sourceId": "source_video_frame",
+                        "name": "Video frame source",
+                        "sourceType": "local_repo",
+                        "rootLabel": str(root),
+                        "config": {"rootPath": str(root)},
+                    }),
+                    "application/json",
+                )
+                app.handle("POST", "/api/sources/source_video_frame/connect-test", "trace_video_frame_connect")
+                started = app.handle(
+                    "POST",
+                    "/api/scans/full",
+                    "trace_video_frame_scan",
+                    json.dumps({"sourceId": "source_video_frame"}),
+                    "application/json",
+                )
+                time.sleep(1.1)
+                scan = app.handle("GET", f"/api/scans/{started['body']['data']['scanId']}", "trace_video_frame_done")
+                findings = app.handle("GET", "/api/findings", "trace_video_frame_findings")
+                detail = app.handle("GET", f"/api/findings/{findings['body']['data'][0]['findingId']}", "trace_video_frame_detail")
+                serialized = json.dumps({"scan": scan["body"], "detail": detail["body"]})
+
+        extraction = scan["body"]["data"]["contentExtraction"]
+        formats = {item["format"]: item for item in extraction["formatCounts"]}
+        preview = detail["body"]["data"]["sourceReviewPreview"]
+
+        self.assertEqual(len(findings["body"]["data"]), 1)
+        self.assertEqual(extraction["successfulFiles"], 1)
+        self.assertEqual(extraction["unsupportedFiles"], 0)
+        self.assertEqual(extraction["ocrDeferredFiles"], 0)
+        self.assertEqual(extraction["recognitionDifficulty"]["hard"], 1)
+        self.assertIn("video_ocr", formats)
+        self.assertEqual(preview["fileFormat"], "video_ocr")
+        self.assertFalse(preview["rawContentExposed"])
+        self.assertFalse(preview["pageImagesExposed"])
+        self.assertIn("[REDACTED_", serialized)
+        self.assertNotIn("privacy.video-frame@example.org", serialized)
 
 
 def _write_docx(path: Path, text: str) -> None:

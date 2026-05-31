@@ -11,13 +11,14 @@ from urllib.parse import parse_qs, unquote, urlparse
 from .auth import AuthService
 from .demo_state import DemoState
 from .envelope import envelope, problem, response
+from .google_drive_binding import GoogleDriveBindingService
 from .google_drive_config import picker_config_response
 from .persistent_demo_state import PersistentDemoState, PersistentPrelaunchState
 from .prelaunch_state import PrelaunchState
 from .source_api import SourceApi
 from .source_connection import ConnectionPolicy, SourceConnectionService
 from .source_store import SourceStore, demo_fixtures_enabled
-from .sqlite_store import SQLiteAuthStore, SQLiteDocumentStore, SQLiteSourceStore, SQLiteWorkflowStore
+from .sqlite_store import SQLiteAuthStore, SQLiteDocumentStore, SQLiteDriveBindingStore, SQLiteSourceStore, SQLiteWorkflowStore
 from .workspace import WorkspaceService, actor_from_headers
 
 
@@ -33,12 +34,14 @@ class SourceHttpApp:
         source_api: SourceApi | None = None,
         demo_state: DemoState | None = None,
         auth_service: AuthService | None = None,
+        drive_binding_service: GoogleDriveBindingService | None = None,
         options: SourceHttpOptions | None = None,
     ) -> None:
         runtime_options = options or SourceHttpOptions()
         self.source_api = source_api or SourceApi()
         self.demo_state = demo_state or (DemoState(self.source_api.store) if demo_fixtures_enabled() else PrelaunchState(self.source_api.store))
         self.auth_service = auth_service or AuthService()
+        self.drive_binding_service = drive_binding_service or GoogleDriveBindingService(settings=self.auth_service.settings)
         self.sqlite_documents = runtime_options.sqlite_documents
         self.allowed_roots = runtime_options.allowed_roots or []
         self.workspace_service = WorkspaceService.with_sqlite(self.sqlite_documents) if self.sqlite_documents else WorkspaceService()
@@ -60,7 +63,8 @@ class SourceHttpApp:
         roots = allowed_roots or []
         documents = SQLiteDocumentStore(db_path)
         auth_service = AuthService(SQLiteAuthStore(documents))
-        return cls(auth_service=auth_service, options=SourceHttpOptions(sqlite_documents=documents, allowed_roots=roots))
+        drive_binding_service = GoogleDriveBindingService(SQLiteDriveBindingStore(documents), auth_service.settings)
+        return cls(auth_service=auth_service, drive_binding_service=drive_binding_service, options=SourceHttpOptions(sqlite_documents=documents, allowed_roots=roots))
 
     def handle(
         self,
@@ -122,6 +126,26 @@ class SourceHttpApp:
 
         if method == "POST" and route == "/auth/logout":
             return self.auth_service.logout(headers, trace_id)
+
+        if method == "GET" and route == "/integrations/google-drive/binding":
+            user = self._session_user(headers)
+            return self.drive_binding_service.status(user, trace_id, f"/api{route}")
+
+        if method == "POST" and route == "/integrations/google-drive/picker-token":
+            user = self._session_user(headers)
+            return self.drive_binding_service.picker_token(user, trace_id, f"/api{route}")
+
+        if method == "GET" and route == "/integrations/google-drive/bind/start":
+            user = self._session_user(headers)
+            return self.drive_binding_service.start_binding(user, trace_id, f"/api{route}")
+
+        if method == "GET" and route == "/integrations/google-drive/bind/callback":
+            user = self._session_user(headers)
+            return self.drive_binding_service.complete_callback(query, headers, user, trace_id)
+
+        if method == "DELETE" and route == "/integrations/google-drive/binding":
+            user = self._session_user(headers)
+            return self.drive_binding_service.disconnect(user, trace_id, f"/api{route}")
 
         if method == "GET" and route == "/health":
             return self.demo_state.health(trace_id)
@@ -265,6 +289,10 @@ class SourceHttpApp:
                 source = source_api.store.get(source_id_for_scan)
                 if workflow_access_context and source and source not in _visible_sources([source], workflow_access_context):
                     return _source_access_problem(trace_id, f"/api{route}")
+                if source and source.get("sourceType") == "google_drive_selection" and not _has_google_drive_access_token(payload_response["payload"]):
+                    access_token = self.drive_binding_service.access_token(self._session_user(headers))
+                    if access_token:
+                        payload_response["payload"] = _with_google_drive_access_token(payload_response["payload"], access_token)
             scan_type = "delta" if route.endswith("/delta") else "full"
             return demo_state.start_scan(scan_type, payload_response["payload"], trace_id, f"/api{route}")
 
@@ -416,6 +444,11 @@ class SourceHttpApp:
             return f"account:{user['userId']}"
         return "anonymous"
 
+    def _session_user(self, headers: dict[str, str]) -> dict[str, Any] | None:
+        session = self.auth_service.session_payload(headers)
+        user = session.get("user") if session.get("authenticated") else None
+        return user if isinstance(user, dict) and isinstance(user.get("userId"), str) else None
+
 
 def _source_assignment_payload(
     payload: dict[str, Any],
@@ -551,6 +584,17 @@ def _source_access_problem(trace_id: str, path: str) -> dict[str, Any]:
         trace_id,
         content_type="application/problem+json",
     )
+
+
+def _has_google_drive_access_token(payload: dict[str, Any]) -> bool:
+    authorization = payload.get("authorization")
+    token = authorization.get("googleDriveAccessToken") if isinstance(authorization, dict) else None
+    return isinstance(token, str) and bool(token.strip())
+
+
+def _with_google_drive_access_token(payload: dict[str, Any], access_token: str) -> dict[str, Any]:
+    authorization = payload.get("authorization") if isinstance(payload.get("authorization"), dict) else {}
+    return {**payload, "authorization": {**authorization, "googleDriveAccessToken": access_token}}
 
 
 def build_default_app() -> SourceHttpApp:

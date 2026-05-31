@@ -3,7 +3,7 @@
     "findingId": "finding_001",
     "scanId": "scan_001",
     "fileName": "supplier_onboarding_2021.pdf",
-    "sourcePath": "/finance/shared/suppliers/supplier_onboarding_2021.pdf",
+    "sourcePath": "source_reference:demo_finance_supplier_pdf",
     "riskLevel": "high",
     "riskScore": 88,
     "contextCategory": "supplier_onboarding",
@@ -43,14 +43,63 @@
         "detector": "financial_identifier_pattern",
         "confidence": 0.91,
         "snippet": "IBAN-like value: [REDACTED_FINANCIAL_ID]",
-        "page": 1
+        "page": 1,
+        "evidenceAnchor": {
+          "anchorId": "anchor_demo_iban",
+          "format": "pdf_text_layer",
+          "label": "Iban Like",
+          "redactedText": "IBAN-like value: [REDACTED_FINANCIAL_ID]",
+          "selector": {
+            "type": "textPosition",
+            "start": 128,
+            "end": 162,
+            "sourceStart": 128,
+            "sourceEnd": 162,
+            "page": 1,
+            "pageRegion": {
+              "x": 72,
+              "y": 640,
+              "width": 204,
+              "height": 12,
+              "pageWidth": 612,
+              "pageHeight": 792,
+              "unit": "pt",
+              "origin": "bottom_left",
+              "confidence": "estimated"
+            }
+          },
+          "fallback": {
+            "label": "Page 1 / text layer",
+            "redactedText": "IBAN-like value: [REDACTED_FINANCIAL_ID]"
+          },
+          "rawContentExposed": false
+        }
       },
       {
         "type": "email",
         "detector": "email_regex",
         "confidence": 0.99,
         "snippet": "Contact: [REDACTED_EMAIL]",
-        "page": 1
+        "page": 1,
+        "evidenceAnchor": {
+          "anchorId": "anchor_demo_email",
+          "format": "pdf_text_layer",
+          "label": "Email",
+          "redactedText": "Contact: [REDACTED_EMAIL]",
+          "selector": {
+            "type": "textPosition",
+            "start": 214,
+            "end": 238,
+            "sourceStart": 214,
+            "sourceEnd": 238,
+            "page": 1
+          },
+          "fallback": {
+            "label": "Page 1 / text layer",
+            "redactedText": "Contact: [REDACTED_EMAIL]"
+          },
+          "rawContentExposed": false
+        }
       },
       {
         "type": "signature",
@@ -60,6 +109,158 @@
         "page": 2
       }
     ],
+    "sourceReviewPreview": {
+      "sourcePreviewId": "source_preview_demo_001",
+      "sourceName": "supplier_onboarding_2021.pdf",
+      "fileFormat": "pdf_text_layer",
+      "extractionMethod": "pdf_text_layer",
+      "recognitionDifficulty": "moderate",
+      "redactionMode": "anchor_only",
+      "rawContentExposed": false,
+      "pageImagesExposed": false,
+      "anchors": [
+        {
+          "anchorId": "anchor_demo_iban",
+          "label": "Iban Like",
+          "format": "pdf_text_layer",
+          "redactedText": "IBAN-like value: [REDACTED_FINANCIAL_ID]",
+          "fallbackLabel": "Page 1 / text layer",
+          "selector": {
+            "type": "textPosition",
+            "start": 128,
+            "end": 162,
+            "sourceStart": 128,
+            "sourceEnd": 162,
+            "page": 1,
+            "pageRegion": {
+              "x": 72,
+              "y": 640,
+              "width": 204,
+              "height": 12,
+              "pageWidth": 612,
+              "pageHeight": 792,
+              "unit": "pt",
+              "origin": "bottom_left",
+              "confidence": "estimated"
+            }
+          },
+          "contextWindow": {
+            "anchorId": "anchor_demo_iban",
+            "redactedContext": "IBAN-like value: [REDACTED_FINANCIAL_ID]",
+            "contextStart": 118,
+            "contextEnd": 168,
+            "highlightStart": 17,
+            "highlightEnd": 40,
+            "redactionMode": "signal_span_context",
+            "rawContentExposed": false
+          },
+          "confidence": 0.91,
+          "rawContentExposed": false
+        },
+        {
+          "anchorId": "anchor_demo_email",
+          "label": "Email",
+          "format": "pdf_text_layer",
+          "redactedText": "Contact: [REDACTED_EMAIL]",
+          "fallbackLabel": "Page 1 / text layer",
+          "selector": {
+            "type": "textPosition",
+            "start": 214,
+            "end": 238,
+            "sourceStart": 214,
+            "sourceEnd": 238,
+            "page": 1
+          },
+          "contextWindow": {
+            "anchorId": "anchor_demo_email",
+            "redactedContext": "Contact: [REDACTED_EMAIL]",
+            "contextStart": 205,
+            "contextEnd": 242,
+            "highlightStart": 9,
+            "highlightEnd": 25,
+            "redactionMode": "signal_span_context",
+            "rawContentExposed": false
+          },
+          "confidence": 0.99,
+          "rawContentExposed": false
+        }
+      ],
+      "contextWindows": [
+        {
+          "anchorId": "anchor_demo_iban",
+          "redactedContext": "IBAN-like value: [REDACTED_FINANCIAL_ID]",
+          "contextStart": 118,
+          "contextEnd": 168,
+          "highlightStart": 17,
+          "highlightEnd": 40,
+          "redactionMode": "signal_span_context",
+          "rawContentExposed": false
+        },
+        {
+          "anchorId": "anchor_demo_email",
+          "redactedContext": "Contact: [REDACTED_EMAIL]",
+          "contextStart": 205,
+          "contextEnd": 242,
+          "highlightStart": 9,
+          "highlightEnd": 25,
+          "redactionMode": "signal_span_context",
+          "rawContentExposed": false
+        }
+      ],
+      "pages": [
+        {
+          "page": 1,
+          "label": "Page 1",
+          "unit": "pt",
+          "origin": "bottom_left",
+          "coordinateSystem": "pdf_user_space_points_bottom_left",
+          "width": 612,
+          "height": 792,
+          "pageImageExposed": false,
+          "regions": [
+            {
+              "anchorId": "anchor_demo_iban",
+              "label": "Iban Like",
+              "redactedText": "IBAN-like value: [REDACTED_FINANCIAL_ID]",
+              "region": {
+                "x": 72,
+                "y": 640,
+                "width": 204,
+                "height": 12,
+                "pageWidth": 612,
+                "pageHeight": 792,
+                "unit": "pt",
+                "origin": "bottom_left",
+                "confidence": "estimated"
+              },
+              "rawContentExposed": false
+            }
+          ]
+        }
+      ],
+      "textRanges": [
+        {
+          "anchorId": "anchor_demo_iban",
+          "label": "Iban Like",
+          "format": "pdf_text_layer",
+          "redactedText": "IBAN-like value: [REDACTED_FINANCIAL_ID]",
+          "fallbackLabel": "Page 1 / text layer",
+          "selector": {
+            "type": "textPosition",
+            "start": 128,
+            "end": 162,
+            "sourceStart": 128,
+            "sourceEnd": 162,
+            "page": 1
+          },
+          "confidence": 0.91,
+          "rawContentExposed": false
+        }
+      ],
+      "tableCells": [],
+      "structureBlocks": [],
+      "warnings": []
+    },
     "riskExplanation": "The document appears to contain supplier payment information and personal contact details. Retention review is recommended because the file was last modified more than three years ago.",
     "availableActions": [
       "delete_candidate",

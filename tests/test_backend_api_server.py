@@ -13,11 +13,12 @@ from tempfile import TemporaryDirectory
 from backend.datasentinel.auth import AUTH_TX_COOKIE, SESSION_COOKIE, AuthService, InMemoryAuthStore
 from backend.datasentinel.auth_support import cookie_value, unsign
 from backend.datasentinel import build_default_app, make_handler
-from backend.datasentinel.source_http import SourceHttpApp, build_sqlite_app
+from backend.datasentinel.google_drive_binding import DRIVE_BIND_TX_COOKIE, GoogleDriveBindingService
+from backend.datasentinel.source_http import SourceHttpApp, SourceHttpOptions, build_sqlite_app
 from backend.datasentinel.source_documents import SourceDocument, SourceDocumentBatch
 from backend.datasentinel.deterministic_signals import detect_signals
 from backend.datasentinel.persistent_demo_state import PersistentPrelaunchState
-from backend.datasentinel.sqlite_store import SQLiteAuthStore, SQLiteDocumentStore
+from backend.datasentinel.sqlite_store import SQLiteAuthStore, SQLiteDocumentStore, SQLiteDriveBindingStore
 from backend.datasentinel.source_store import SourceStore
 
 
@@ -31,6 +32,37 @@ class FakeOAuthTransport:
         if url.endswith("/user/emails"):
             return [{"email": "privacy.reviewer@example.org", "primary": True, "verified": True}]
         return {"id": 42, "login": "privacy-reviewer", "name": "Privacy Reviewer", "email": None, "avatar_url": "https://avatars.example/reviewer.png"}
+
+
+class FakeDriveBindingTransport:
+    def __init__(self) -> None:
+        self.refresh_count = 0
+        self.revoked_tokens: list[str] = []
+
+    def post_form(self, url: str, payload: dict[str, str], headers: dict[str, str]) -> dict[str, str]:
+        if payload.get("grant_type") == "authorization_code":
+            return {
+                "access_token": "drive_callback_access_not_returned",
+                "refresh_token": "drive_refresh_not_returned",
+                "scope": "openid email profile https://www.googleapis.com/auth/drive.readonly",
+                "token_type": "Bearer",
+            }
+        if payload.get("grant_type") == "refresh_token":
+            self.refresh_count += 1
+            return {"access_token": "drive_refreshed_access", "token_type": "Bearer"}
+        return {}
+
+    def get_json(self, url: str, headers: dict[str, str]) -> dict[str, object]:
+        return {
+            "sub": "google-drive-subject",
+            "name": "Drive Reviewer",
+            "email": "drive.reviewer@example.org",
+            "picture": "https://photos.example/drive-reviewer.png",
+        }
+
+    def revoke_token(self, token: str) -> bool:
+        self.revoked_tokens.append(token)
+        return True
 
 
 def auth_settings(auth_required: bool = False) -> dict[str, object]:
@@ -167,6 +199,43 @@ class BackendApiServerTests(unittest.TestCase):
 
         self.assertFalse(logged_out["body"]["data"]["authenticated"])
         self.assertFalse(after_logout["body"]["data"]["authenticated"])
+
+    def test_google_drive_binding_connect_status_and_disconnect_do_not_expose_tokens(self) -> None:
+        auth_service = AuthService(InMemoryAuthStore(), auth_settings(), FakeOAuthTransport())
+        drive_transport = FakeDriveBindingTransport()
+        drive_service = GoogleDriveBindingService(settings=auth_service.settings, transport=drive_transport)
+        app = SourceHttpApp(auth_service=auth_service, drive_binding_service=drive_service)
+        session_cookie = start_github_session(app)
+
+        start = app.handle("GET", "/api/integrations/google-drive/bind/start", "trace_drive_bind_start", None, None, {"Cookie": session_cookie})
+        tx_cookie = start["headers"]["Set-Cookie"][0]
+        tx_value = cookie_value(tx_cookie, DRIVE_BIND_TX_COOKIE)
+        assert tx_value is not None
+        tx = unsign(tx_value, "test-session-secret")
+        assert tx is not None
+        callback = app.handle(
+            "GET",
+            f"/api/integrations/google-drive/bind/callback?code=drive_code&state={tx['state']}",
+            "trace_drive_bind_callback",
+            None,
+            None,
+            {"Cookie": f"{session_cookie}; {DRIVE_BIND_TX_COOKIE}={tx_value}"},
+        )
+        status = app.handle("GET", "/api/integrations/google-drive/binding", "trace_drive_bind_status", None, None, {"Cookie": session_cookie})
+        serialized = json.dumps(status["body"])
+        disconnected = app.handle("DELETE", "/api/integrations/google-drive/binding", "trace_drive_bind_disconnect", None, None, {"Cookie": session_cookie})
+
+        self.assertEqual(start["status"], 302)
+        self.assertIn("access_type=offline", start["headers"]["Location"])
+        self.assertIn("drive.readonly", start["headers"]["Location"])
+        self.assertEqual(callback["status"], 302)
+        self.assertIn("driveBinding=success", callback["headers"]["Location"])
+        self.assertTrue(status["body"]["data"]["connected"])
+        self.assertEqual(status["body"]["data"]["email"], "drive.reviewer@example.org")
+        self.assertNotIn("drive_refresh_not_returned", serialized)
+        self.assertNotIn("drive_callback_access_not_returned", serialized)
+        self.assertFalse(disconnected["body"]["data"]["connected"])
+        self.assertEqual(drive_transport.revoked_tokens, ["drive_refresh_not_returned"])
 
     def test_auth_required_protects_workflow_routes(self) -> None:
         app = auth_app(auth_required=True)
@@ -819,6 +888,83 @@ class BackendApiServerTests(unittest.TestCase):
         self.assertEqual(findings["body"]["data"], [])
         self.assertEqual(drive_source["status"], "authorization_required")
 
+    def test_google_drive_scan_uses_persisted_account_binding_after_refresh(self) -> None:
+        with TemporaryDirectory() as directory:
+            db_path = Path(directory) / "datasentinel.sqlite3"
+            documents = SQLiteDocumentStore(db_path)
+            auth_service = AuthService(SQLiteAuthStore(documents), auth_settings(), FakeOAuthTransport())
+            drive_transport = FakeDriveBindingTransport()
+            drive_service = GoogleDriveBindingService(SQLiteDriveBindingStore(documents), auth_service.settings, drive_transport)
+            cookie = create_sqlite_session(db_path, "user_drive_bound", "drive-bound")
+            drive_service.store.upsert_binding({
+                "userId": "user_drive_bound",
+                "provider": "google_drive",
+                "providerSubject": "google-drive-subject",
+                "displayName": "Drive Reviewer",
+                "email": "drive.reviewer@example.org",
+                "avatarUrl": None,
+                "scopes": ["https://www.googleapis.com/auth/drive.readonly"],
+                "refreshToken": "stored_drive_refresh",
+                "connectedAt": "2026-05-31T00:00:00Z",
+                "updatedAt": "2026-05-31T00:00:00Z",
+            })
+            observed_payloads: list[dict[str, object]] = []
+
+            def fake_reader(source: dict[str, object], payload: dict[str, object]) -> SourceDocumentBatch:
+                observed_payloads.append(payload)
+                self.assertEqual(source["sourceType"], "google_drive_selection")
+                return SourceDocumentBatch(
+                    documents=[SourceDocument("contacts.txt", "google-drive://file-id", "Contact Email: drive.owner@example.org", 36, "Google_Drive")],
+                    total_files=1,
+                    total_bytes=36,
+                    unsupported_files=0,
+                    warnings=[],
+                    family="Google_Drive",
+                    extraction_method="google_drive_export",
+                )
+
+            with mock.patch.dict("os.environ", {
+                "DATASENTINEL_ENABLE_DEMO_FIXTURES": "false",
+                "GOOGLE_CLIENT_ID": "google-client-id",
+                "GOOGLE_CLIENT_SECRET": "google-secret",
+                "GOOGLE_PICKER_API_KEY": "picker-public-key",
+                "GOOGLE_CLOUD_PROJECT_NUMBER": "1234567890",
+            }):
+                app = SourceHttpApp(
+                    auth_service=auth_service,
+                    drive_binding_service=drive_service,
+                    options=SourceHttpOptions(sqlite_documents=documents, allowed_roots=[]),
+                )
+                created_drive = app.handle(
+                    "POST",
+                    "/api/sources",
+                    "trace_drive_bound_create",
+                    json.dumps({
+                        "sourceId": "source_drive_bound",
+                        "name": "Bound Drive Selection",
+                        "sourceType": "google_drive_selection",
+                        "rootLabel": "Selected Drive file",
+                        "config": {"items": [{"id": "drive-file-id", "name": "contacts.txt", "mimeType": "text/plain"}]},
+                    }),
+                    "application/json",
+                    {"Cookie": cookie},
+                )
+                with mock.patch("backend.datasentinel.prelaunch_state.read_source_documents", fake_reader):
+                    started = app.handle(
+                        "POST",
+                        "/api/scans/full",
+                        "trace_drive_bound_scan",
+                        json.dumps({"sourceId": "source_drive_bound"}),
+                        "application/json",
+                        {"Cookie": cookie},
+                    )
+
+        self.assertEqual(created_drive["status"], 201)
+        self.assertEqual(created_drive["body"]["data"]["status"], "authorization_required")
+        self.assertEqual(started["status"], 202)
+        self.assertEqual(drive_transport.refresh_count, 1)
+        self.assertEqual(observed_payloads[0]["authorization"], {"googleDriveAccessToken": "drive_refreshed_access"})
+
     def test_source_registration_strips_runtime_tokens_from_config(self) -> None:
         with TemporaryDirectory() as directory:
             db_path = Path(directory) / "datasentinel.sqlite3"
@@ -962,6 +1108,21 @@ class BackendApiServerTests(unittest.TestCase):
         self.assertEqual(completed["body"]["data"]["status"], "completed")
         self.assertEqual(completed["body"]["data"]["flaggedFiles"], 17)
         self.assertEqual(metrics["body"]["data"]["flaggedFiles"], 17)
+
+    def test_non_primary_demo_finding_detail_includes_redacted_context(self) -> None:
+        app = build_default_app()
+
+        detail = app.handle("GET", "/api/findings/finding_002", "trace_non_primary_finding")
+        serialized = json.dumps(detail["body"])
+
+        self.assertEqual(detail["status"], 200)
+        self.assertEqual(detail["body"]["data"]["findingId"], "finding_002")
+        self.assertGreater(len(detail["body"]["data"]["signals"]), 0)
+        self.assertIn("[REDACTED_EMAIL]", serialized)
+        self.assertEqual(detail["body"]["data"]["policyContext"]["policyPackVersion"], "2026.05-demo")
+        self.assertFalse(detail["body"]["data"]["signals"][0]["evidenceAnchor"]["rawContentExposed"])
+        self.assertFalse(detail["body"]["data"]["auditTimeline"][0]["rawContentExposed"])
+        self.assertNotIn("markus.keller@example.org", serialized)
 
     def test_review_records_audit_event_without_real_deletion(self) -> None:
         app = build_default_app()

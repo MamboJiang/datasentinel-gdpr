@@ -2,14 +2,23 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from io import BytesIO
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-from xml.etree import ElementTree
-from zipfile import BadZipFile, LargeZipFile, ZipFile
 
-from .source_image_ocr import ImageOcrIssue, extract_image_text
+from .source_archive_text import ArchiveExtractionIssue, SUPPORTED_ARCHIVE_SUFFIXES, extract_zip_archive_text, is_archive_like
+from .source_batch_metrics import difficulty_counts, format_counts, method_counts
+from .source_email_text import EmailExtractionIssue, extract_email_text
+from .source_image_ocr import ImageOcrIssue, extract_image_content
+from .source_json_text import JsonExtractionIssue, extract_json_text
+from .source_legacy_office import (
+    LEGACY_OFFICE_SUFFIXES,
+    LegacyOfficeExtractionIssue,
+    extract_legacy_office_text,
+    is_legacy_office,
+    legacy_office_format,
+)
+from .source_markdown_text import MarkdownExtractionIssue, extract_markdown_text
 from .source_media_recognition import (
     MEDIA_ACCEPT_HEADER,
     SUPPORTED_MEDIA_SUFFIXES,
@@ -18,38 +27,60 @@ from .source_media_recognition import (
     is_video_media,
     is_video_transcript,
 )
+from .source_opendocument_text import OpenDocumentExtractionIssue, extract_opendocument_text
+from .source_pdf_text import PdfExtractionIssue, PdfExtractionResult, extract_pdf_content
+from .source_rtf_text import RtfExtractionIssue, extract_rtf_text
+from .source_structured_text import (
+    StructuredExtractionIssue,
+    extract_docx_text,
+    extract_html_text,
+    extract_pptx_text,
+    extract_xml_text,
+)
+from .source_tabular_text import TabularExtractionIssue, extract_delimited_text, extract_xlsx_text
+from .source_text_decoding import decode_text_body
+from .source_text_locations import text_stream_location
+from .source_video_ocr import VideoFrameOcrIssue, extract_video_frame_content
 
 try:
     from pypdf import PdfReader
 except Exception:  # pragma: no cover - exercised when optional runtime dependency is absent
     PdfReader = None  # type: ignore[assignment]
 
-SUPPORTED_TEXT_SUFFIXES = {".txt", ".csv", ".tsv", ".json", ".md", ".log", ".xml", ".html"}
+SUPPORTED_TEXT_SUFFIXES = {".txt", ".csv", ".tsv", ".json", ".jsonl", ".ndjson", ".md", ".log", ".xml", ".html", ".htm", ".rtf"}
 SUPPORTED_PDF_SUFFIXES = {".pdf"}
 SUPPORTED_OFFICE_SUFFIXES = {".docx", ".xlsx", ".pptx"}
+SUPPORTED_OPENDOCUMENT_SUFFIXES = {".odt", ".ods", ".odp"}
+SUPPORTED_EMAIL_SUFFIXES = {".eml"}
 SUPPORTED_SUFFIXES = (
     SUPPORTED_TEXT_SUFFIXES
     | SUPPORTED_PDF_SUFFIXES
     | SUPPORTED_OFFICE_SUFFIXES
+    | LEGACY_OFFICE_SUFFIXES
+    | SUPPORTED_OPENDOCUMENT_SUFFIXES
+    | SUPPORTED_EMAIL_SUFFIXES
+    | SUPPORTED_ARCHIVE_SUFFIXES
     | SUPPORTED_MEDIA_SUFFIXES
 )
-TEXT_CONTENT_TYPES = {"text/", "application/json", "application/xml", "application/x-ndjson"}
+TEXT_CONTENT_TYPES = {"text/", "application/json", "application/xml", "application/x-ndjson", "application/rtf"}
 PDF_CONTENT_TYPES = {"application/pdf"}
+EMAIL_CONTENT_TYPES = {"message/rfc822", "application/eml"}
 OFFICE_CONTENT_TYPES = {
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 }
+LEGACY_OFFICE_ACCEPT_HEADER = "application/msword;q=0.8, application/vnd.ms-excel;q=0.8, application/vnd.ms-powerpoint;q=0.8"
+OPENDOCUMENT_CONTENT_TYPES = {"application/vnd.oasis.opendocument.text", "application/vnd.oasis.opendocument.spreadsheet", "application/vnd.oasis.opendocument.presentation"}
+OPENDOCUMENT_ACCEPT_HEADER = "application/vnd.oasis.opendocument.text;q=0.8, application/vnd.oasis.opendocument.spreadsheet;q=0.8, application/vnd.oasis.opendocument.presentation;q=0.8"
 DOWNLOAD_ACCEPT_HEADER = (
-    "text/*, application/json, application/xml;q=0.9, application/pdf;q=0.8, "
+    f"text/*, application/json, application/xml;q=0.9, application/rtf;q=0.9, message/rfc822;q=0.8, application/zip;q=0.8, application/pdf;q=0.8, {OPENDOCUMENT_ACCEPT_HEADER}, {LEGACY_OFFICE_ACCEPT_HEADER}, "
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document;q=0.8, "
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;q=0.8, "
     f"application/vnd.openxmlformats-officedocument.presentationml.presentation;q=0.8, {MEDIA_ACCEPT_HEADER}, */*;q=0.1"
 )
-DIFFICULTY_LEVELS = ("easy", "moderate", "hard", "unsupported")
 MAX_OOXML_XML_BYTES = 4_000_000
 MAX_OOXML_MEMBER_BYTES = 2_000_000
-MAX_EXTRACTED_TEXT_CHARS = 300_000
 _DEFAULT_PDF_READER = object()
 
 
@@ -63,6 +94,7 @@ class SourceDocument:
     file_format: str = "text"
     extraction_method: str = "utf8_text"
     recognition_difficulty: str = "easy"
+    text_locations: tuple[dict[str, Any], ...] = field(default=(), kw_only=True)
 
 
 @dataclass(frozen=True)
@@ -86,6 +118,7 @@ class ExtractedDocumentContent:
     file_format: str
     extraction_method: str
     recognition_difficulty: str
+    text_locations: tuple[dict[str, Any], ...] = field(default=(), kw_only=True)
 
 
 class DocumentExtractionIssue(Exception):
@@ -117,9 +150,9 @@ def build_document_batch(
         warnings=warnings,
         family=family,
         extraction_method=extraction_method,
-        method_counts=_method_counts(documents, unsupported_files, ocr_deferred_files),
-        format_counts=_format_counts(documents, failures),
-        recognition_difficulty=_difficulty_counts(documents, failures),
+        method_counts=method_counts(documents, unsupported_files, ocr_deferred_files),
+        format_counts=format_counts(documents, failures),
+        recognition_difficulty=difficulty_counts(documents, failures),
         ocr_deferred_files=ocr_deferred_files,
     )
 
@@ -135,91 +168,207 @@ def extract_document_content(
     normalized_type = content_type.lower().split(";", 1)[0].strip()
 
     if _is_pdf(normalized_type, suffix):
+        extracted = _extract_pdf_content(body, name, pdf_reader)
         return ExtractedDocumentContent(
-            text=_extract_pdf_text(body, name, pdf_reader),
-            file_format="pdf_text_layer",
-            extraction_method="pdf_text_layer",
-            recognition_difficulty="moderate",
+            text=extracted.text,
+            file_format=extracted.file_format,
+            extraction_method=extracted.extraction_method,
+            recognition_difficulty=extracted.recognition_difficulty,
+            text_locations=extracted.text_locations,
         )
 
     if suffix == ".docx" or normalized_type.endswith("wordprocessingml.document"):
-        return ExtractedDocumentContent(_extract_docx_text(body, name), "docx", "ooxml_docx_text", "moderate")
+        try:
+            extracted = extract_docx_text(
+                body,
+                name,
+                max_xml_bytes=MAX_OOXML_XML_BYTES,
+                max_member_bytes=MAX_OOXML_MEMBER_BYTES,
+            )
+        except StructuredExtractionIssue as error:
+            raise DocumentExtractionIssue(error.detail, recognition_difficulty=error.recognition_difficulty) from error
+        return ExtractedDocumentContent(extracted.text, "docx", "ooxml_docx_text", "moderate", text_locations=extracted.locations)
 
     if suffix == ".xlsx" or normalized_type.endswith("spreadsheetml.sheet"):
-        return ExtractedDocumentContent(_extract_xlsx_text(body, name), "xlsx", "ooxml_xlsx_text", "moderate")
+        try:
+            extracted = extract_xlsx_text(
+                body,
+                name,
+                max_xml_bytes=MAX_OOXML_XML_BYTES,
+                max_member_bytes=MAX_OOXML_MEMBER_BYTES,
+            )
+        except TabularExtractionIssue as error:
+            raise DocumentExtractionIssue(error.detail, recognition_difficulty=error.recognition_difficulty) from error
+        return ExtractedDocumentContent(extracted.text, "xlsx", "ooxml_xlsx_text", "moderate", text_locations=extracted.locations)
 
     if suffix == ".pptx" or normalized_type.endswith("presentationml.presentation"):
-        return ExtractedDocumentContent(_extract_pptx_text(body, name), "pptx", "ooxml_pptx_text", "moderate")
+        try:
+            extracted = extract_pptx_text(
+                body,
+                name,
+                max_xml_bytes=MAX_OOXML_XML_BYTES,
+                max_member_bytes=MAX_OOXML_MEMBER_BYTES,
+            )
+        except StructuredExtractionIssue as error:
+            raise DocumentExtractionIssue(error.detail, recognition_difficulty=error.recognition_difficulty) from error
+        return ExtractedDocumentContent(extracted.text, "pptx", "ooxml_pptx_text", "moderate", text_locations=extracted.locations)
+
+    if is_legacy_office(normalized_type, suffix):
+        file_format = legacy_office_format(normalized_type, suffix)
+        try:
+            extracted = extract_legacy_office_text(body, name, file_format)
+        except LegacyOfficeExtractionIssue as error:
+            raise DocumentExtractionIssue(error.detail, recognition_difficulty="hard") from error
+        return ExtractedDocumentContent(extracted.text, file_format, "libreoffice_legacy_office_text", "hard", text_locations=extracted.locations)
+
+    if suffix in SUPPORTED_OPENDOCUMENT_SUFFIXES or normalized_type in OPENDOCUMENT_CONTENT_TYPES:
+        file_format = _opendocument_file_format(normalized_type, suffix)
+        try:
+            extracted = extract_opendocument_text(
+                body,
+                name,
+                file_format,
+                max_xml_bytes=MAX_OOXML_XML_BYTES,
+                max_member_bytes=MAX_OOXML_MEMBER_BYTES,
+            )
+        except OpenDocumentExtractionIssue as error:
+            raise DocumentExtractionIssue(error.detail, recognition_difficulty=error.recognition_difficulty) from error
+        return ExtractedDocumentContent(extracted.text, file_format, extracted.extraction_method, "moderate", text_locations=extracted.locations)
+
+    if _is_email_like(normalized_type, suffix):
+        try:
+            extracted = extract_email_text(body, name)
+        except EmailExtractionIssue as error:
+            raise DocumentExtractionIssue(error.detail, recognition_difficulty=error.recognition_difficulty) from error
+        return ExtractedDocumentContent(extracted.text, "eml", "rfc5322_mime_text", "moderate", text_locations=extracted.locations)
+
+    if is_archive_like(normalized_type, suffix):
+        try:
+            extracted = extract_zip_archive_text(
+                body,
+                name,
+                lambda member_body, member_name: extract_document_content(
+                    body=member_body,
+                    content_type="",
+                    name=member_name,
+                    pdf_reader=pdf_reader,
+                ),
+            )
+        except ArchiveExtractionIssue as error:
+            raise DocumentExtractionIssue(error.detail, recognition_difficulty=error.recognition_difficulty) from error
+        return ExtractedDocumentContent(extracted.text, "zip", "zip_member_text", "moderate", text_locations=extracted.locations)
 
     if is_image(normalized_type, suffix):
         try:
-            text = extract_image_text(body, name)
+            extracted = extract_image_content(body, name)
         except ImageOcrIssue as error:
             raise DocumentExtractionIssue(error.detail, recognition_difficulty="hard", ocr_deferred=True) from error
-        return ExtractedDocumentContent(text, "image_ocr", "tesseract_image_ocr", "hard")
+        return ExtractedDocumentContent(extracted.text, "image_ocr", "tesseract_image_ocr", "hard", text_locations=extracted.text_locations)
 
     if is_video_transcript(normalized_type, suffix):
         try:
             text = clean_video_transcript(body, name)
         except ValueError as error:
             raise DocumentExtractionIssue(str(error), recognition_difficulty="hard") from error
-        return ExtractedDocumentContent(text, "video_transcript", "utf8_video_transcript", "moderate")
+        return ExtractedDocumentContent(text, "video_transcript", "utf8_video_transcript", "moderate", text_locations=text_stream_location(text, "video_transcript", "Transcript text"))
 
     if is_video_media(normalized_type, suffix):
-        raise DocumentExtractionIssue(
-            f"{name} requires a transcript/subtitle file or an approved video media processor before scanning.",
-            recognition_difficulty="hard",
-            ocr_deferred=True,
+        try:
+            extracted = extract_video_frame_content(body, name)
+        except VideoFrameOcrIssue as error:
+            raise DocumentExtractionIssue(error.detail, recognition_difficulty="hard", ocr_deferred=True) from error
+        return ExtractedDocumentContent(extracted.text, "video_ocr", "ffmpeg_frame_tesseract_ocr", "hard", text_locations=extracted.text_locations)
+
+    if suffix in {".csv", ".tsv"} or normalized_type in {"text/csv", "text/tab-separated-values"}:
+        file_format = "tsv" if suffix == ".tsv" or normalized_type == "text/tab-separated-values" else "csv"
+        delimiter = "\t" if file_format == "tsv" else ","
+        extracted = extract_delimited_text(body, name, delimiter=delimiter, file_format=file_format, content_type=content_type)
+        return ExtractedDocumentContent(
+            text=extracted.text,
+            file_format=file_format,
+            extraction_method="utf8_text",
+            recognition_difficulty="easy",
+            text_locations=extracted.locations,
+        )
+
+    if suffix in {".html", ".htm"} or normalized_type == "text/html":
+        try:
+            extracted = extract_html_text(body, name, "html", content_type=content_type)
+        except StructuredExtractionIssue as error:
+            raise DocumentExtractionIssue(error.detail, recognition_difficulty=error.recognition_difficulty) from error
+        return ExtractedDocumentContent(
+            text=extracted.text,
+            file_format="html",
+            extraction_method="html_text",
+            recognition_difficulty="easy",
+            text_locations=extracted.locations,
+        )
+
+    if suffix == ".md" or normalized_type in {"text/markdown", "text/x-markdown"}:
+        try:
+            extracted = extract_markdown_text(body, name, content_type=content_type)
+        except MarkdownExtractionIssue as error:
+            raise DocumentExtractionIssue(error.detail, recognition_difficulty=error.recognition_difficulty) from error
+        return ExtractedDocumentContent(
+            text=extracted.text,
+            file_format="markdown",
+            extraction_method="markdown_text",
+            recognition_difficulty="easy",
+            text_locations=extracted.locations,
+        )
+
+    if _is_xml_like(normalized_type, suffix):
+        try:
+            extracted = extract_xml_text(body, name, content_type=content_type)
+        except StructuredExtractionIssue as error:
+            raise DocumentExtractionIssue(error.detail, recognition_difficulty=error.recognition_difficulty) from error
+        return ExtractedDocumentContent(
+            text=extracted.text,
+            file_format="xml",
+            extraction_method="xml_structure_text",
+            recognition_difficulty="easy",
+            text_locations=extracted.locations,
+        )
+
+    if _is_rtf_like(normalized_type, suffix):
+        try:
+            extracted = extract_rtf_text(body, name)
+        except RtfExtractionIssue as error:
+            raise DocumentExtractionIssue(error.detail, recognition_difficulty=error.recognition_difficulty) from error
+        return ExtractedDocumentContent(
+            text=extracted.text,
+            file_format="rtf",
+            extraction_method="rtf_text",
+            recognition_difficulty="moderate",
+            text_locations=text_stream_location(extracted.text, "rtf", "RTF text"),
+        )
+
+    if _is_json_like(normalized_type, suffix):
+        file_format = _json_file_format(normalized_type, suffix)
+        try:
+            extracted = extract_json_text(body, name, file_format, content_type=content_type)
+        except JsonExtractionIssue as error:
+            raise DocumentExtractionIssue(error.detail, recognition_difficulty=error.recognition_difficulty) from error
+        return ExtractedDocumentContent(
+            text=extracted.text,
+            file_format=file_format,
+            extraction_method="json_structure_text",
+            recognition_difficulty="easy",
+            text_locations=extracted.locations,
         )
 
     if _is_text_like(normalized_type, suffix):
+        text = decode_text_body(body, content_type)
+        file_format = suffix.lstrip(".") or "text"
         return ExtractedDocumentContent(
-            text=body.decode("utf-8", errors="ignore"),
-            file_format=suffix.lstrip(".") or "text",
+            text=text,
+            file_format=file_format,
             extraction_method="utf8_text",
             recognition_difficulty="easy",
+            text_locations=text_stream_location(text, file_format, "Text content"),
         )
 
     raise DocumentExtractionIssue(f"{name} is not a supported text-like file.")
-
-
-def _method_counts(documents: list[SourceDocument], unsupported_files: int, ocr_deferred_files: int) -> list[dict[str, Any]]:
-    counts: dict[str, int] = {}
-    for document in documents:
-        counts[document.extraction_method] = counts.get(document.extraction_method, 0) + 1
-    if ocr_deferred_files:
-        counts["ocr_deferred"] = ocr_deferred_files
-    skipped = unsupported_files - ocr_deferred_files
-    if skipped > 0:
-        counts["unsupported"] = skipped
-    return [
-        {"method": method, "files": files, "status": "warning" if method in {"ocr_deferred", "unsupported"} else "completed"}
-        for method, files in sorted(counts.items())
-    ]
-
-
-def _format_counts(documents: list[SourceDocument], failure_difficulties: list[str]) -> list[dict[str, Any]]:
-    counts: dict[tuple[str, str, str], int] = {}
-    for document in documents:
-        key = (document.file_format, document.recognition_difficulty, document.extraction_method)
-        counts[key] = counts.get(key, 0) + 1
-    for difficulty in failure_difficulties:
-        key = ("ocr_deferred", "hard", "ocr_deferred") if difficulty == "ocr_deferred" else ("unsupported", difficulty, "unsupported")
-        counts[key] = counts.get(key, 0) + 1
-    return [
-        {"format": file_format, "difficulty": difficulty, "method": method, "files": files}
-        for (file_format, difficulty, method), files in sorted(counts.items())
-    ]
-
-
-def _difficulty_counts(documents: list[SourceDocument], failure_difficulties: list[str]) -> dict[str, int]:
-    counts = {level: 0 for level in DIFFICULTY_LEVELS}
-    for document in documents:
-        counts[document.recognition_difficulty] = counts.get(document.recognition_difficulty, 0) + 1
-    for difficulty in failure_difficulties:
-        key = "hard" if difficulty == "ocr_deferred" else difficulty
-        counts[key] = counts.get(key, 0) + 1
-    return counts
 
 
 def _is_pdf(content_type: str, suffix: str) -> bool:
@@ -230,161 +379,45 @@ def _is_text_like(content_type: str, suffix: str) -> bool:
     return suffix in SUPPORTED_TEXT_SUFFIXES or any(content_type.startswith(prefix) for prefix in TEXT_CONTENT_TYPES)
 
 
-def _extract_pdf_text(body: bytes, name: str, pdf_reader: Any) -> str:
+def _is_json_like(content_type: str, suffix: str) -> bool:
+    return suffix in {".json", ".jsonl", ".ndjson"} or content_type in {"application/json", "application/x-ndjson"}
+
+
+def _is_xml_like(content_type: str, suffix: str) -> bool:
+    return suffix == ".xml" or content_type in {"application/xml", "text/xml"}
+
+
+def _is_rtf_like(content_type: str, suffix: str) -> bool:
+    return suffix == ".rtf" or content_type in {"application/rtf", "text/rtf", "application/x-rtf"}
+
+
+def _is_email_like(content_type: str, suffix: str) -> bool:
+    return suffix in SUPPORTED_EMAIL_SUFFIXES or content_type in EMAIL_CONTENT_TYPES
+
+
+def _json_file_format(content_type: str, suffix: str) -> str:
+    if suffix == ".jsonl":
+        return "jsonl"
+    if suffix == ".ndjson" or content_type == "application/x-ndjson":
+        return "ndjson"
+    return "json"
+
+
+def _opendocument_file_format(content_type: str, suffix: str) -> str:
+    if suffix == ".ods" or content_type.endswith(".spreadsheet"):
+        return "ods"
+    if suffix == ".odp" or content_type.endswith(".presentation"):
+        return "odp"
+    return "odt"
+
+
+def _extract_pdf_content(body: bytes, name: str, pdf_reader: Any) -> PdfExtractionResult:
     reader_cls = PdfReader if pdf_reader is _DEFAULT_PDF_READER else pdf_reader
-    if reader_cls is None:
-        raise DocumentExtractionIssue(f"{name} is a PDF, but PDF text extraction is not installed on this host.")
-
     try:
-        reader = reader_cls(BytesIO(body), strict=False)
-        text = "\n".join(page.extract_text() or "" for page in reader.pages)
-    except Exception as error:
-        raise DocumentExtractionIssue(f"{name} PDF text extraction failed.", recognition_difficulty="hard") from error
-
-    if not text.strip():
+        return extract_pdf_content(body, name, reader_cls)
+    except PdfExtractionIssue as error:
         raise DocumentExtractionIssue(
-            f"{name} has no extractable PDF text layer; OCR is not enabled in prelaunch.",
-            recognition_difficulty="hard",
-            ocr_deferred=True,
-        )
-
-    return text
-
-
-def _extract_docx_text(body: bytes, name: str) -> str:
-    parts = _read_ooxml_parts(body, name, _is_docx_text_part)
-    return _extract_text_tags(parts, name)
-
-
-def _extract_pptx_text(body: bytes, name: str) -> str:
-    parts = _read_ooxml_parts(body, name, _is_pptx_text_part)
-    return _extract_text_tags(parts, name)
-
-
-def _extract_xlsx_text(body: bytes, name: str) -> str:
-    try:
-        with ZipFile(BytesIO(body)) as archive:
-            _validate_ooxml_budget(archive, name)
-            shared_strings = _xlsx_shared_strings(archive, name)
-            fragments: list[str] = []
-            for part_name in _matching_members(archive, _is_xlsx_sheet_part):
-                fragments.extend(_xlsx_sheet_text(archive.read(part_name), shared_strings, name))
-    except (BadZipFile, LargeZipFile) as error:
-        raise DocumentExtractionIssue(f"{name} is not a readable Office Open XML package.") from error
-
-    return _joined_text(fragments, name)
-
-
-def _read_ooxml_parts(body: bytes, name: str, predicate: Any) -> list[bytes]:
-    try:
-        with ZipFile(BytesIO(body)) as archive:
-            _validate_ooxml_budget(archive, name)
-            return [archive.read(part_name) for part_name in _matching_members(archive, predicate)]
-    except (BadZipFile, LargeZipFile) as error:
-        raise DocumentExtractionIssue(f"{name} is not a readable Office Open XML package.") from error
-
-
-def _validate_ooxml_budget(archive: ZipFile, name: str) -> None:
-    total = 0
-    for info in archive.infolist():
-        if info.is_dir() or not info.filename.endswith(".xml"):
-            continue
-        if info.file_size > MAX_OOXML_MEMBER_BYTES:
-            raise DocumentExtractionIssue(f"{name} has an Office XML part over the prelaunch extraction limit.")
-        total += info.file_size
-        if total > MAX_OOXML_XML_BYTES:
-            raise DocumentExtractionIssue(f"{name} exceeds the prelaunch Office XML extraction limit.")
-
-
-def _matching_members(archive: ZipFile, predicate: Any) -> list[str]:
-    return sorted(info.filename for info in archive.infolist() if not info.is_dir() and predicate(info.filename))
-
-
-def _is_docx_text_part(filename: str) -> bool:
-    return filename == "word/document.xml" or (
-        filename.startswith("word/")
-        and filename.endswith(".xml")
-        and Path(filename).name.startswith(("header", "footer", "footnotes", "endnotes", "comments"))
-    )
-
-
-def _is_pptx_text_part(filename: str) -> bool:
-    return (
-        filename.startswith("ppt/slides/slide")
-        or filename.startswith("ppt/notesSlides/notesSlide")
-    ) and filename.endswith(".xml")
-
-
-def _is_xlsx_sheet_part(filename: str) -> bool:
-    return filename.startswith("xl/worksheets/sheet") and filename.endswith(".xml")
-
-
-def _extract_text_tags(parts: list[bytes], name: str) -> str:
-    fragments: list[str] = []
-    for xml_bytes in parts:
-        try:
-            root = ElementTree.fromstring(xml_bytes)
-        except ElementTree.ParseError as error:
-            raise DocumentExtractionIssue(f"{name} contains malformed Office XML.") from error
-        fragments.extend(element.text or "" for element in root.iter() if _local_name(element.tag) == "t")
-    return _joined_text(fragments, name)
-
-
-def _xlsx_shared_strings(archive: ZipFile, name: str) -> list[str]:
-    if "xl/sharedStrings.xml" not in archive.namelist():
-        return []
-    try:
-        root = ElementTree.fromstring(archive.read("xl/sharedStrings.xml"))
-    except ElementTree.ParseError as error:
-        raise DocumentExtractionIssue(f"{name} contains malformed shared strings.") from error
-
-    values: list[str] = []
-    for item in root:
-        if _local_name(item.tag) != "si":
-            continue
-        values.append("".join(node.text or "" for node in item.iter() if _local_name(node.tag) == "t"))
-    return values
-
-
-def _xlsx_sheet_text(xml_bytes: bytes, shared_strings: list[str], name: str) -> list[str]:
-    try:
-        root = ElementTree.fromstring(xml_bytes)
-    except ElementTree.ParseError as error:
-        raise DocumentExtractionIssue(f"{name} contains malformed worksheet XML.") from error
-
-    values: list[str] = []
-    for cell in root.iter():
-        if _local_name(cell.tag) != "c":
-            continue
-        cell_type = cell.attrib.get("t")
-        if cell_type == "s":
-            index_text = _first_child_text(cell, "v")
-            if index_text and index_text.isdigit():
-                index = int(index_text)
-                if index < len(shared_strings):
-                    values.append(shared_strings[index])
-        elif cell_type == "inlineStr":
-            values.append("".join(node.text or "" for node in cell.iter() if _local_name(node.tag) == "t"))
-        else:
-            value = _first_child_text(cell, "v")
-            if value:
-                values.append(value)
-    return values
-
-
-def _first_child_text(element: ElementTree.Element, local_name: str) -> str | None:
-    for child in element:
-        if _local_name(child.tag) == local_name:
-            return child.text
-    return None
-
-
-def _local_name(tag: str) -> str:
-    return tag.rsplit("}", 1)[-1]
-
-
-def _joined_text(fragments: list[str], name: str) -> str:
-    text = "\n".join(fragment.strip() for fragment in fragments if fragment and fragment.strip())
-    if not text:
-        raise DocumentExtractionIssue(f"{name} has no extractable Office text.", recognition_difficulty="hard")
-    return text[:MAX_EXTRACTED_TEXT_CHARS]
+            error.detail,
+            recognition_difficulty=error.recognition_difficulty,
+            ocr_deferred=error.ocr_deferred,
+        ) from error

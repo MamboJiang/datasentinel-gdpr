@@ -57,7 +57,9 @@ python3 -m backend.datasentinel.db_tool init --db-path /srv/datasentinel/data/da
 python3 -m backend.datasentinel.source_server --host 127.0.0.1 --port 8000 --db-path /srv/datasentinel/data/datasentinel.sqlite3
 ```
 
-`requirements.txt` includes the PDF text-layer extraction dependency used by prelaunch source scans. DOCX, XLSX, and PPTX text extraction uses Python stdlib ZIP/XML modules and does not add another runtime dependency. Install the requirements on the same Python environment that runs the API service.
+`requirements.txt` includes the PDF text-layer extraction dependency used by prelaunch source scans. DOCX, XLSX, PPTX, ODT, ODS, ODP, ZIP, and EML text extraction uses Python stdlib ZIP/XML/email modules and does not add another runtime dependency. Legacy DOC/XLS/PPT extraction depends on host-local LibreOffice (`soffice` or `libreoffice`) for headless conversion. Install the requirements on the same Python environment that runs the API service. Text-layer-missing PDF OCR is optional and depends on host `pdftoppm` plus Tesseract, not on another Python package.
+
+`agent-us` final-hardening runtime includes `libreoffice-writer`, `libreoffice-calc`, and `libreoffice-impress` so bounded legacy Office conversion can run without sending source files to an external service.
 On Ubuntu/Debian hosts where Python reports an externally managed environment, either install into a virtual environment and point the service at that Python, or use the host-approved user-site override:
 
 ```bash
@@ -98,16 +100,17 @@ Register provider callbacks as:
 
 The provider credentials authenticate users only. They must not be reused for source connectors, Microsoft Graph, tenant inventory, deletion, or authorization policy.
 
-Google Drive source selection also requires Google Picker public setup. See `docs/GOOGLE_DRIVE_SETUP.md` for the focused checklist.
+Google Drive source selection also requires Google Picker public setup. Account-level Drive binding additionally uses the Google OAuth web client to store a server-side prelaunch refresh token for the signed-in account. This is still selected-source access, not tenant inventory or production authorization. See `docs/GOOGLE_DRIVE_SETUP.md` for the focused checklist.
 
 - Enable the Google Drive API and Google Picker API on the same Google Cloud project.
 - Create an API key for Picker and restrict it to the preview origin, such as `https://founder-force.uk/*`, plus localhost origins used for development.
 - Set `GOOGLE_PICKER_API_KEY` to that API key.
 - Set `GOOGLE_CLOUD_PROJECT_NUMBER` to the numeric Google Cloud project number used as Picker `appId`.
 - Add `https://founder-force.uk` as an authorized JavaScript origin on the Google OAuth web client.
+- Add `https://founder-force.uk/api/integrations/google-drive/bind/callback` as an authorized redirect URI on the Google OAuth web client.
 - Add Drive scopes to the OAuth consent screen: `https://www.googleapis.com/auth/drive.file` for selected files and `https://www.googleapis.com/auth/drive.readonly` when folder traversal is enabled.
 
-The Picker API key and project number are browser setup configuration, but they still belong in ignored host environment files so deployments can rotate or disable them. The Google OAuth client secret remains server-only and must never be returned by `/api/integrations/google-drive/picker-config`. In prelaunch, the route is protected by the first-party session cookie when `DATASENTINEL_AUTH_REQUIRED=true`.
+The Picker API key and project number are browser setup configuration, but they still belong in ignored host environment files so deployments can rotate or disable them. The Google OAuth client secret remains server-only and must never be returned by `/api/integrations/google-drive/picker-config` or `/api/integrations/google-drive/binding`. In prelaunch, Picker config is protected by the first-party session cookie when `DATASENTINEL_AUTH_REQUIRED=true`; Drive binding routes always require a first-party session.
 
 Start the API with one or more local roots that users may register as sources:
 
@@ -134,11 +137,12 @@ DATASENTINEL_AI_FAIL_CLOSED=true
 DATASENTINEL_AI_MAX_PROMPT_TOKENS=6000
 DATASENTINEL_AI_MAX_COMPLETION_TOKENS=350
 DATASENTINEL_OCR_MODE=local
+DATASENTINEL_OCR_LANGS=eng
 ```
 
 The server loads `.env.local` on startup without overriding existing process environment variables. The app reports AI readiness through `/api/health` and optional `aiProcessing` metadata in scan, metrics, and evaluation responses. Existing scans remain deterministic and show zero model calls unless a redacted assistive AI classification path is explicitly invoked.
 
-Install the host `tesseract` binary when `DATASENTINEL_OCR_MODE=local`; otherwise supported image files are counted as hard/OCR-deferred warnings. Raw video media remains deferred until a separate approved FFmpeg-based processor is deployed.
+Install the host `tesseract` binary when `DATASENTINEL_OCR_MODE=local`; otherwise supported image files are counted as hard/OCR-deferred warnings. Set `DATASENTINEL_OCR_LANGS` to installed Tesseract language packs such as `eng+chi_sim+deu+fra+spa` for multilingual OCR. Text-layer-missing PDF OCR also requires host `pdftoppm`. Raw video frame OCR requires host `ffmpeg`; when it is missing, bounded raw video media is counted as hard/OCR-deferred.
 
 OpenRouter bills in USD credits, so the runtime uses a conservative 25 USD application cap for the requested 25 EUR budget. Set the OpenRouter dashboard key credit limit as well when available; the application guard is not a replacement for provider-side spend limits.
 

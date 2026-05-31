@@ -95,7 +95,6 @@ export function WorkspaceMembersPage() {
       <PageHeader
         eyebrow="Workspace admin"
         title="Members"
-        description={canManageMembers ? 'Search, filter, group, sort, and manage every member in this Workspace.' : 'Search, filter, group, and sort every member in this Workspace.'}
         actions={<Link className="button button-secondary" to="/workspace/admin"><ArrowLeft aria-hidden="true" size={16} /> Admin</Link>}
       />
 

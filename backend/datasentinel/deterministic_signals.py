@@ -4,8 +4,18 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from hashlib import sha256
 from typing import Any, Callable
+
+from .signal_inline_labels import inline_label_value_spans
+from .signal_label_rules import rule_for_label
+from .signal_evidence_anchors import (
+    display_type,
+    line_number as source_line_number,
+    safe_public_source_path,
+    sanitize_public_signal,
+    text_position_anchor,
+    trim_span,
+)
 
 MAX_SIGNAL_SCAN_CHARS = 200_000
 MAX_SIGNALS_PER_DOCUMENT = 32
@@ -27,10 +37,8 @@ GEO_COORD_RE = re.compile(r"\b[-+]?(?:[1-8]?\d(?:\.\d+)?|90(?:\.0+)?)\s*,\s*[-+]
 URL_RE = re.compile(r"\bhttps?://[^\s<>()\"']{6,}\b", re.IGNORECASE)
 USERNAME_RE = re.compile(r"(?<![A-Za-z0-9._%+-])@[A-Za-z0-9_]{3,30}\b")
 DATE_LIKE_RE = re.compile(r"\b(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4})\b")
-LABEL_RE = re.compile(r"^\s*(?P<label>[A-Za-z][A-Za-z0-9 /_-]{1,54})\s*[:：]\s*(?P<value>.+?)\s*$")
+LABEL_RE = re.compile(r"^\s*(?P<label>[^:：\r\n]{1,72})\s*[:：]\s*(?P<value>.+?)\s*$")
 PLACEHOLDER_RE = re.compile(r"^[\s._/\\|()[\]{}-]+$")
-REDACTED_MARKER_RE = re.compile(r"\[REDACTED_[A-Z0-9_]+\]")
-SOURCE_REFERENCE_PREFIX = "source_reference:"
 
 
 @dataclass(frozen=True)
@@ -41,14 +49,6 @@ class RegexRule:
     pattern: re.Pattern[str]
     confidence: float
     validator: Callable[[str], bool] | None = None
-
-
-@dataclass(frozen=True)
-class LabelRule:
-    signal_type: str
-    detector: str
-    marker: str
-    confidence: float
 
 
 REGEX_RULES = (
@@ -69,42 +69,6 @@ REGEX_RULES = (
     RegexRule("url", "url_pattern", "[REDACTED_URL]", URL_RE, 0.68, lambda value: _url_has_personal_hint(value)),
     RegexRule("account_handle", "account_handle_pattern", "[REDACTED_HANDLE]", USERNAME_RE, 0.7),
 )
-LABEL_MARKERS = {rule.signal_type: rule.marker for rule in REGEX_RULES} | {
-    "person_name": "[REDACTED_PERSON_NAME]",
-    "date_of_birth": "[REDACTED_DATE_OF_BIRTH]",
-    "address": "[REDACTED_ADDRESS]",
-    "location_data": "[REDACTED_LOCATION]",
-    "passport_number": "[REDACTED_PASSPORT]",
-    "driver_license": "[REDACTED_DRIVER_LICENSE]",
-    "license_plate": "[REDACTED_LICENSE_PLATE]",
-    "bank_account": "[REDACTED_BANK_ACCOUNT]",
-    "salary_compensation": "[REDACTED_COMPENSATION]",
-    "student_identifier": "[REDACTED_STUDENT_ID]",
-    "health_data": "[REDACTED_HEALTH_DATA]",
-    "medical_identifier": "[REDACTED_MEDICAL_ID]",
-    "biometric_data": "[REDACTED_BIOMETRIC_DATA]",
-    "genetic_data": "[REDACTED_GENETIC_DATA]",
-    "race_ethnicity": "[REDACTED_RACE_ETHNICITY]",
-    "political_opinion": "[REDACTED_POLITICAL_DATA]",
-    "religious_belief": "[REDACTED_BELIEF_DATA]",
-    "trade_union": "[REDACTED_UNION_DATA]",
-    "sex_life_orientation": "[REDACTED_SEXUAL_ORIENTATION]",
-    "criminal_record": "[REDACTED_CRIMINAL_RECORD]",
-    "family_data": "[REDACTED_FAMILY_DATA]",
-    "minor_data": "[REDACTED_MINOR_DATA]",
-    "credential_secret": "[REDACTED_SECRET]",
-    "device_identifier": "[REDACTED_DEVICE_ID]",
-    "online_identifier": "[REDACTED_ONLINE_ID]",
-    "national_identifier": "[REDACTED_NATIONAL_ID]",
-    "government_identifier": "[REDACTED_GOVERNMENT_ID]",
-    "account_handle": "[REDACTED_HANDLE]",
-    "url": "[REDACTED_URL]",
-    "organization_identifier": "[REDACTED_ORGANIZATION]",
-    "free_text_personal_context": "[REDACTED_FREE_TEXT]",
-    "access_context": "[REDACTED_ACCESS_CONTEXT]",
-    "incident_context": "[REDACTED_INCIDENT_CONTEXT]",
-}
-
 
 def detect_signals(text: str) -> list[dict[str, Any]]:
     """Return public-safe signal records without raw adjacent source context."""
@@ -112,12 +76,16 @@ def detect_signals(text: str) -> list[dict[str, Any]]:
     signals: list[dict[str, Any]] = []
     seen: set[tuple[str, str]] = set()
 
-    for line in scanned_text.splitlines():
-        label_signal = _signal_from_label_line(line)
-        if label_signal:
+    line_start = 0
+    current_line_number = 1
+    for line in scanned_text.splitlines(keepends=True):
+        visible_line = line.rstrip("\r\n")
+        for label_signal in _signals_from_label_line(visible_line, line_start, current_line_number):
             _append_signal(signals, seen, label_signal)
             if len(signals) >= MAX_SIGNALS_PER_DOCUMENT:
                 return signals
+        line_start += len(line)
+        current_line_number += 1
 
     for rule in REGEX_RULES:
         for match in rule.pattern.finditer(scanned_text):
@@ -125,31 +93,74 @@ def detect_signals(text: str) -> list[dict[str, Any]]:
                 continue
             if rule.validator and not rule.validator(match.group(0)):
                 continue
-            _append_signal(signals, seen, _signal(rule.signal_type, rule.detector, rule.confidence, f"{_display_type(rule.signal_type)}: {rule.marker}"))
+            snippet = f"{_display_type(rule.signal_type)}: {rule.marker}"
+            _append_signal(
+                signals,
+                seen,
+                _signal(
+                    rule.signal_type,
+                    rule.detector,
+                    rule.confidence,
+                    snippet,
+                    evidence_anchor=text_position_anchor(
+                        rule.signal_type,
+                        rule.detector,
+                        match.start(),
+                        match.end(),
+                        source_line_number(scanned_text, match.start()),
+                        snippet,
+                    ),
+                ),
+            )
             if len(signals) >= MAX_SIGNALS_PER_DOCUMENT:
                 return signals
 
     return signals
 
 
-def safe_public_source_path(source_path: str) -> str:
-    if source_path.startswith(SOURCE_REFERENCE_PREFIX):
-        return source_path
-    if _is_unsafe_source_path(source_path):
-        return f"{SOURCE_REFERENCE_PREFIX}{sha256(source_path.encode('utf-8')).hexdigest()[:12]}"
-    return source_path
+def _signals_from_label_line(line: str, line_start: int, line_number: int) -> list[dict[str, Any]]:
+    inline_signals = [
+        signal
+        for signal in (
+            _signal_from_label_span(line, line_start, line_number, label, value_start, value_end)
+            for label, value_start, value_end in inline_label_value_spans(line)
+        )
+        if signal
+    ]
+    if inline_signals:
+        return inline_signals
+
+    fallback = _signal_from_label_line(line, line_start, line_number)
+    return [fallback] if fallback else []
 
 
-def sanitize_public_signal(signal: dict[str, Any]) -> dict[str, Any]:
-    sanitized = dict(signal)
-    signal_type = str(sanitized.get("type") or "value")
-    snippet = str(sanitized.get("snippet") or "")
-    marker = _redacted_marker(snippet, signal_type)
-    sanitized["snippet"] = f"{_display_type(signal_type)}: {marker}"[:180]
-    return sanitized
+def _signal_from_label_span(line: str, line_start: int, line_number: int, label: str, value_start: int, value_end: int) -> dict[str, Any] | None:
+    value = line[value_start:value_end].strip()
+    if not _has_filled_value(value):
+        return None
+
+    rule = rule_for_label(label, value)
+    if not rule:
+        return None
+
+    snippet = f"{label}: {rule.marker}"
+    return _signal(
+        rule.signal_type,
+        rule.detector,
+        rule.confidence,
+        snippet,
+        evidence_anchor=text_position_anchor(
+            rule.signal_type,
+            rule.detector,
+            line_start + value_start,
+            line_start + value_end,
+            line_number,
+            snippet,
+        ),
+    )
 
 
-def _signal_from_label_line(line: str) -> dict[str, Any] | None:
+def _signal_from_label_line(line: str, line_start: int, line_number: int) -> dict[str, Any] | None:
     match = LABEL_RE.match(line)
     if not match:
         return None
@@ -159,115 +170,53 @@ def _signal_from_label_line(line: str) -> dict[str, Any] | None:
     if not _has_filled_value(value):
         return None
 
-    rule = _rule_for_label(label, value)
+    rule = rule_for_label(label, value)
     if not rule:
         return None
 
-    return _signal(rule.signal_type, rule.detector, rule.confidence, f"{label}: {rule.marker}")
+    snippet = f"{label}: {rule.marker}"
+    value_start, value_end = trim_span(line, match.start("value"), match.end("value"))
+    return _signal(
+        rule.signal_type,
+        rule.detector,
+        rule.confidence,
+        snippet,
+        evidence_anchor=text_position_anchor(
+            rule.signal_type,
+            rule.detector,
+            line_start + value_start,
+            line_start + value_end,
+            line_number,
+            snippet,
+        ),
+    )
 
 
-def _rule_for_label(label: str, value: str) -> LabelRule | None:
-    normalized = _normalize_label(label)
-    lowered_value = value.lower()
+def _overlaps_existing_signal(signal: dict[str, Any], signals: list[dict[str, Any]]) -> bool:
+    span = _signal_text_span(signal)
+    if not span:
+        return False
+    for existing in signals:
+        if existing.get("type") != signal.get("type"):
+            continue
+        existing_span = _signal_text_span(existing)
+        if existing_span and existing_span[0] < span[1] and span[0] < existing_span[1]:
+            return True
+    return False
 
-    if "email" in normalized:
-        return LabelRule("email", "email_label", "[REDACTED_EMAIL]", 0.86)
-    if "phone" in normalized or "mobile" in normalized:
-        return LabelRule("phone_number", "phone_label", "[REDACTED_PHONE]", 0.84)
-    if any(token in normalized for token in ("date of birth", "birth date", "dob", "born")):
-        return LabelRule("date_of_birth", "date_of_birth_label", "[REDACTED_DATE_OF_BIRTH]", 0.86)
-    if "tax" in normalized or "vat" in normalized:
-        return LabelRule("tax_id", "tax_id_label", "[REDACTED_TAX_ID]", 0.84)
-    if any(token in normalized for token in ("passport", "passport number")):
-        return LabelRule("passport_number", "passport_label", "[REDACTED_PASSPORT]", 0.87)
-    if any(token in normalized for token in ("driver license", "driving licence", "drivers license", "license number", "licence number")):
-        return LabelRule("driver_license", "driver_license_label", "[REDACTED_DRIVER_LICENSE]", 0.84)
-    if any(token in normalized for token in ("national id", "identity number", "identification number", "ssn", "social security", "nino")):
-        return LabelRule("national_identifier", "national_identifier_label", "[REDACTED_NATIONAL_ID]", 0.86)
-    if any(token in normalized for token in ("government id", "resident permit", "visa number", "citizen id")):
-        return LabelRule("government_identifier", "government_identifier_label", "[REDACTED_GOVERNMENT_ID]", 0.82)
-    if any(token in normalized for token in ("student id", "student number", "learner id")):
-        return LabelRule("student_identifier", "student_identifier_label", "[REDACTED_STUDENT_ID]", 0.82)
-    if any(token in normalized for token in ("medical record", "patient id", "health insurance", "insurance id", "nhs number")):
-        return LabelRule("medical_identifier", "medical_identifier_label", "[REDACTED_MEDICAL_ID]", 0.86)
-    if any(token in normalized for token in ("employee id", "staff id", "personnel number", "worker id")) or EMPLOYEE_ID_RE.search(value):
-        return LabelRule("employee_id", "employee_id_label", "[REDACTED_EMPLOYEE_ID]", 0.85)
-    if any(token in normalized for token in ("credit card", "card number", "payment card")):
-        return LabelRule("payment_card", "payment_card_label", "[REDACTED_PAYMENT_CARD]", 0.86)
-    if any(token in normalized for token in ("bank account", "account number", "routing number", "sort code", "bic", "swift")):
-        return LabelRule("bank_account", "bank_account_label", "[REDACTED_BANK_ACCOUNT]", 0.84)
-    if "iban" in normalized:
-        return LabelRule("iban_like", "iban_label", "[REDACTED_FINANCIAL_ID]", 0.88)
-    if any(token in normalized for token in ("salary", "compensation", "payroll", "bonus", "wage")):
-        return LabelRule("salary_compensation", "compensation_label", "[REDACTED_COMPENSATION]", 0.8)
-    if any(token in normalized for token in ("amount", "expense", "reimbursement")) or AMOUNT_RE.search(value):
-        return LabelRule("expense_amount", "amount_label", "[REDACTED_AMOUNT]", 0.82)
-    if any(token in normalized for token in ("ip address", "ipv4", "ipv6", "online identifier", "cookie id", "advertising id", "tracking id")):
-        return LabelRule("online_identifier", "online_identifier_label", "[REDACTED_ONLINE_ID]", 0.78)
-    if any(token in normalized for token in ("device id", "imei", "serial number", "mac address", "hardware id")):
-        return LabelRule("device_identifier", "device_identifier_label", "[REDACTED_DEVICE_ID]", 0.8)
-    if any(token in normalized for token in ("address", "street address", "home address", "postal address")):
-        return LabelRule("address", "address_label", "[REDACTED_ADDRESS]", 0.79)
-    if any(token in normalized for token in ("location", "gps", "latitude", "longitude", "geo", "geolocation")):
-        return LabelRule("location_data", "location_label", "[REDACTED_LOCATION]", 0.8)
-    if any(token in normalized for token in ("license plate", "licence plate", "registration plate", "vehicle registration", "plate number")):
-        return LabelRule("license_plate", "license_plate_label", "[REDACTED_LICENSE_PLATE]", 0.78)
-    if any(token in normalized for token in ("username", "user name", "handle", "account id", "profile id", "login id")):
-        return LabelRule("account_handle", "account_handle_label", "[REDACTED_HANDLE]", 0.76)
-    if any(token in normalized for token in ("profile url", "personal url", "social link", "account url")):
-        return LabelRule("url", "url_label", "[REDACTED_URL]", 0.72)
-    if any(token in normalized for token in ("password", "passcode", "api key", "secret", "token", "session id", "cookie")):
-        return LabelRule("credential_secret", "credential_secret_label", "[REDACTED_SECRET]", 0.76)
-    if any(token in normalized for token in ("diagnosis", "medical condition", "medication", "allergy", "disability", "sick leave", "health status", "doctor", "patient")):
-        return LabelRule("health_data", "health_data_label", "[REDACTED_HEALTH_DATA]", 0.82)
-    if any(token in normalized for token in ("fingerprint", "face id", "facial recognition", "voiceprint", "iris", "retina", "biometric")):
-        return LabelRule("biometric_data", "biometric_data_label", "[REDACTED_BIOMETRIC_DATA]", 0.84)
-    if any(token in normalized for token in ("dna", "genetic", "genome")):
-        return LabelRule("genetic_data", "genetic_data_label", "[REDACTED_GENETIC_DATA]", 0.84)
-    if any(token in normalized for token in ("race", "racial", "ethnicity", "ethnic origin")):
-        return LabelRule("race_ethnicity", "race_ethnicity_label", "[REDACTED_RACE_ETHNICITY]", 0.8)
-    if any(token in normalized for token in ("political", "party membership", "political opinion")):
-        return LabelRule("political_opinion", "political_opinion_label", "[REDACTED_POLITICAL_DATA]", 0.8)
-    if any(token in normalized for token in ("religion", "religious", "belief", "philosophical")):
-        return LabelRule("religious_belief", "religious_belief_label", "[REDACTED_BELIEF_DATA]", 0.8)
-    if any(token in normalized for token in ("trade union", "union membership")):
-        return LabelRule("trade_union", "trade_union_label", "[REDACTED_UNION_DATA]", 0.8)
-    if any(token in normalized for token in ("sexual orientation", "sex life")):
-        return LabelRule("sex_life_orientation", "sex_life_orientation_label", "[REDACTED_SEXUAL_ORIENTATION]", 0.8)
-    if any(token in normalized for token in ("criminal", "conviction", "offence", "offense", "background check")):
-        return LabelRule("criminal_record", "criminal_record_label", "[REDACTED_CRIMINAL_RECORD]", 0.8)
-    if any(token in normalized for token in ("child", "minor", "guardian", "parent name")):
-        return LabelRule("minor_data", "minor_data_label", "[REDACTED_MINOR_DATA]", 0.76)
-    if any(token in normalized for token in ("spouse", "dependent", "emergency contact", "next of kin", "family")):
-        return LabelRule("family_data", "family_data_label", "[REDACTED_FAMILY_DATA]", 0.76)
-    if any(token in normalized for token in ("access", "system", "department", "role", "justification")):
-        return LabelRule("access_context", "access_context_label", "[REDACTED_ACCESS_CONTEXT]", 0.76)
-    if any(token in normalized for token in ("incident", "description", "root cause", "corrective action", "deadline", "location", "impact")):
-        return LabelRule("incident_context", "incident_context_label", "[REDACTED_INCIDENT_CONTEXT]", 0.76)
-    if any(token in normalized for token in ("comment", "recommendation", "feedback", "evaluation")):
-        return LabelRule("free_text_personal_context", "free_text_context_label", "[REDACTED_FREE_TEXT]", 0.74)
-    if _looks_like_person_label(normalized) and not any(token in lowered_value for token in ("ltd", "llc", "gmbh", "inc", "limited")):
-        return LabelRule("person_name", "person_label", "[REDACTED_PERSON_NAME]", 0.78)
-    if "company" in normalized or "supplier" in normalized:
-        return LabelRule("organization_identifier", "organization_label", "[REDACTED_ORGANIZATION]", 0.7)
+
+def _signal_text_span(signal: dict[str, Any]) -> tuple[int, int] | None:
+    anchor = signal.get("evidenceAnchor")
+    if not isinstance(anchor, dict):
+        return None
+    selector = anchor.get("selector")
+    if not isinstance(selector, dict) or selector.get("type") != "textPosition":
+        return None
+    start = selector.get("start")
+    end = selector.get("end")
+    if isinstance(start, int) and isinstance(end, int):
+        return start, end
     return None
-
-
-def _looks_like_person_label(normalized: str) -> bool:
-    return any(token in normalized for token in (
-        "name",
-        "employee",
-        "participant",
-        "manager",
-        "approver",
-        "reviewer",
-        "owner",
-        "requester",
-        "reported by",
-        "signature",
-        "contact person",
-        "trainer",
-    ))
 
 
 def _has_filled_value(value: str) -> bool:
@@ -282,46 +231,29 @@ def _has_filled_value(value: str) -> bool:
     return any(character.isalnum() for character in cleaned)
 
 
-def _is_unsafe_source_path(source_path: str) -> bool:
-    lowered = source_path.lower()
-    return (
-        "://" in source_path
-        or lowered.startswith("www.")
-        or source_path.startswith("/")
-        or source_path.startswith("~/")
-        or bool(re.match(r"^[A-Za-z]:[\\/]", source_path))
-    )
-
-
-def _redacted_marker(snippet: str, signal_type: str) -> str:
-    marker = REDACTED_MARKER_RE.search(snippet)
-    if marker:
-        return marker.group(0)
-    return LABEL_MARKERS.get(signal_type, "[REDACTED_VALUE]")
-
-
 def _append_signal(signals: list[dict[str, Any]], seen: set[tuple[str, str]], signal: dict[str, Any]) -> None:
     key = (signal["type"], signal["snippet"])
     if key in seen:
+        return
+    if _overlaps_existing_signal(signal, signals):
         return
     seen.add(key)
     signals.append(signal)
 
 
-def _signal(signal_type: str, detector: str, confidence: float, snippet: str) -> dict[str, Any]:
-    return {"type": signal_type, "detector": detector, "confidence": confidence, "snippet": snippet[:180], "page": None}
+def _signal(signal_type: str, detector: str, confidence: float, snippet: str, *, evidence_anchor: dict[str, Any] | None = None) -> dict[str, Any]:
+    signal = {"type": signal_type, "detector": detector, "confidence": confidence, "snippet": snippet[:180], "page": None}
+    if evidence_anchor:
+        signal["evidenceAnchor"] = evidence_anchor
+    return signal
 
 
 def _clean_label(label: str) -> str:
     return " ".join(label.replace("_", " ").replace("-", " ").split()).strip()
 
 
-def _normalize_label(label: str) -> str:
-    return _clean_label(label).lower()
-
-
 def _display_type(signal_type: str) -> str:
-    return signal_type.replace("_", " ").title()
+    return display_type(signal_type)
 
 
 def _valid_ipv4(value: str) -> bool:

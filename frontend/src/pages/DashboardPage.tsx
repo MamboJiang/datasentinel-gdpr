@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useData } from '../data/useData'
-import { canStartDeltaScan, getDefaultFullScanSource, isSourceScanReady } from '../data/scanWorkflow'
+import { canStartDeltaScan } from '../data/scanWorkflow'
 import { canStartSourceScan } from '../data/sourceScanReadiness'
 import { formatBytes, formatDate, humanize } from '../components/formatters'
 import type { AdminMetricsAggregationSummary } from '../types'
@@ -30,16 +30,16 @@ import {
 } from '../components/ui'
 
 export function DashboardPage() {
-  const { metrics, scan, findings, auditEvents, meta, sources, governanceConfig, runtimeAuthorizedSourceIds, startScan } = useData()
+  const { metrics, scan, findings, auditEvents, meta, sources, governanceConfig, googleDriveBinding, runtimeAuthorizedSourceIds, startScan } = useData()
   const highRisk = findings.filter((finding) => finding.riskLevel === 'high').slice(0, 3)
-  const startableSources = sources.filter((source) => canStartSourceScan(source, governanceConfig, runtimeAuthorizedSourceIds))
-  const defaultFullScanSource = getDefaultFullScanSource(startableSources, governanceConfig)
+  const googleDriveBindingConnected = Boolean(googleDriveBinding?.connected)
+  const startableSources = sources.filter((source) => canStartSourceScan(source, governanceConfig, runtimeAuthorizedSourceIds, googleDriveBindingConnected))
+  const defaultFullScanSource = startableSources.find((source) => source.sourceType === 'organizer_sample_repo') ?? startableSources[0]
   const currentScanSource = sources.find((source) => source.sourceId === scan.sourceId)
   const scanIsRunning = scan.status === 'running'
   const canRunDelta = Boolean(
     currentScanSource
-    && isSourceScanReady(currentScanSource, governanceConfig)
-    && canStartSourceScan(currentScanSource, governanceConfig, runtimeAuthorizedSourceIds)
+    && canStartSourceScan(currentScanSource, governanceConfig, runtimeAuthorizedSourceIds, googleDriveBindingConnected)
     && !scanIsRunning
     && canStartDeltaScan(scan, currentScanSource.sourceId),
   )
@@ -98,13 +98,14 @@ export function DashboardPage() {
       </section>
 
       <div className="dashboard-grid dashboard-overview-grid">
-        <section className="panel scan-panel dashboard-primary-panel">
+        <section className={`panel scan-panel dashboard-primary-panel${scanIsRunning ? ' scan-panel-running' : ''}`}>
           <SectionHeader
             title="Latest scan"
             action={<StatusBadge value={scan.status} />}
           />
           <div className="scan-summary-row">
             <div className="scan-hero">
+              {scanIsRunning ? <span className="scan-loading-indicator" aria-label="Scan running" role="status" /> : null}
               <div>
                 <span className="scan-type">{scanTypeLabel}</span>
                 <strong>{Math.round(scan.progress * 100)}%</strong>
@@ -118,7 +119,7 @@ export function DashboardPage() {
               <div><span>Warnings</span><strong>{extraction?.warningFiles ?? 0}</strong></div>
             </div>
           </div>
-          <ProgressBar value={scan.progress} />
+          <ProgressBar active={scanIsRunning} value={scan.progress} />
           <div className="scan-footer">
             <div className="scan-boundary-note">
               <ShieldCheck aria-hidden="true" size={17} />

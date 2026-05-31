@@ -1,0 +1,118 @@
+{
+  "datasetId": "google-drive-gdpr-data-samples-main",
+  "displayName": "GDPR-data-samples-main",
+  "driveFolderId": "1AmTxh7RhEyvgo400SAZHI8s_CawvAdQn",
+  "driveFolderUrl": "https://drive.google.com/drive/folders/1AmTxh7RhEyvgo400SAZHI8s_CawvAdQn",
+  "observedAt": "2026-05-31",
+  "maintenanceRule": "Preserve Drive IDs and original filenames when adding, refreshing, or converting corpus files.",
+  "files": [
+    {
+      "id": "1jeh5Ci79Z6t68q5wmD_5istsXljnJMrc",
+      "name": "da243f78edd96abc7a1e1ce5041f2480.png",
+      "mimeType": "image/png",
+      "role": "image_ocr_challenge"
+    },
+    {
+      "id": "1FHflbykOaqGMnML6AIafNGLlKeQ5T6hS",
+      "name": "欧洲经典线家庭旅行规划_V4_14至18天弹性版_巴黎或伦敦终点模块_厦门出发法兰克福入境(2).pdf",
+      "mimeType": "application/pdf",
+      "role": "multilingual_pdf_text_layer_challenge"
+    },
+    {
+      "id": "13EWoY2YIULQ63Cv6WomjTtObjzSJZBzl",
+      "name": "Supplier_Onboarding_Example_A.pdf",
+      "mimeType": "application/pdf",
+      "role": "supplier_onboarding"
+    },
+    {
+      "id": "1RB2tdiL-j7qyLj_qjwzRpv9c0CU5FM9b",
+      "name": "IT_Access_Request_Example_A.pdf",
+      "mimeType": "application/pdf",
+      "role": "it_access_request"
+    },
+    {
+      "id": "14bfvKqk_rUoTg1K5kY-OAbdRwcE670zg",
+      "name": "Supplier_Onboarding.pdf",
+      "mimeType": "application/pdf",
+      "role": "supplier_onboarding_template"
+    },
+    {
+      "id": "1JOEFWx-JZYTG_Pi01Gag9CG-0yg9ALGv",
+      "name": "IT_Access_Request.pdf",
+      "mimeType": "application/pdf",
+      "role": "it_access_request_template"
+    },
+    {
+      "id": "1bQirhbxtBAFmPcehDqMVIDK6XUOgV-7O",
+      "name": "Training_Evaluation_Example_A.pdf",
+      "mimeType": "application/pdf",
+      "role": "training_evaluation"
+    },
+    {
+      "id": "1qHtxJu3ZQ1BmLiIvosYDk0cpUhrU6B4Z",
+      "name": "Training_Evaluation_Example_B.pdf",
+      "mimeType": "application/pdf",
+      "role": "training_evaluation"
+    },
+    {
+      "id": "1k7CAYxKfmL8fscX9Io2wIdagw2ACHs7z",
+      "name": "Expense_Report_Example_B.pdf",
+      "mimeType": "application/pdf",
+      "role": "expense_report"
+    },
+    {
+      "id": "1KdVLTohedm6BtxVBE9GWeK-GtFmgGlib",
+      "name": "Supplier_Onboarding_Example_B.pdf",
+      "mimeType": "application/pdf",
+      "role": "supplier_onboarding"
+    },
+    {
+      "id": "1heV-wNsxl6Wam-s6CvIvEhc2T0WuA9Vx",
+      "name": "Expense_Report.pdf",
+      "mimeType": "application/pdf",
+      "role": "expense_report_template"
+    },
+    {
+      "id": "1oHGVDLNnfCaGR6MykpXSzqVUTx4CtkRr",
+      "name": "Incident_Report_Example_A.pdf",
+      "mimeType": "application/pdf",
+      "role": "incident_report"
+    },
+    {
+      "id": "139mpKG_RvK-6qwbmlJP65x6zUfBnOs8p",
+      "name": "Training_Evaluation.pdf",
+      "mimeType": "application/pdf",
+      "role": "training_evaluation_template"
+    },
+    {
+      "id": "1DfTPN0w9WivaPIGnewB88M6RIJu4Tp68",
+      "name": ".gitignore",
+      "mimeType": "application/octet-stream",
+      "role": "source_repo_metadata"
+    },
+    {
+      "id": "1HJA66VGmPNv02wZhQNhh7JucD_js3Ezm",
+      "name": "Expense_Report_Example_A.pdf",
+      "mimeType": "application/pdf",
+      "role": "expense_report"
+    },
+    {
+      "id": "14g_-WmK7WdAE9RhEC5R6Q-cUWNd2CyTx",
+      "name": "Incident_Report_Example_B.pdf",
+      "mimeType": "application/pdf",
+      "role": "incident_report"
+    },
+    {
+      "id": "19ib9VeJwyo_tg7r5E6o0JA9ImSF2DuGv",
+      "name": "Incident_Report.pdf",
+      "mimeType": "application/pdf",
+      "role": "incident_report_template"
+    },
+    {
+      "id": "1nsy3ZDcDnhEpAMplOTGcu-n17pGvnSbL",
+      "name": "IT_Access_Request_Example_B.pdf",
+      "mimeType": "application/pdf",
+      "role": "it_access_request"
+    }
+  ]
+}

@@ -1,9 +1,10 @@
-import { ArrowRight, CheckCircle2, ExternalLink, ShieldCheck } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Cloud, ExternalLink, RefreshCw, ShieldCheck, Unplug } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button, PageHeader, SectionHeader, StatusBadge } from '../components/ui'
 import { humanize } from '../components/formatters'
 import { useAuth } from '../data/AuthContext'
+import { disconnectGoogleDriveBinding, googleDriveBindingStartUrl } from '../data/authApi'
 import { useData } from '../data/useData'
 import {
   changelogItems,
@@ -16,11 +17,32 @@ import {
 import './SupportPages.css'
 
 export function AccountPage() {
-  const { permissionBoundary, meta, workspaceAdmin, workspaceDirectory } = useData()
+  const { googleDriveBinding, permissionBoundary, meta, refreshGoogleDriveBinding, workspaceAdmin, workspaceDirectory } = useData()
   const { session } = useAuth()
   const user = session.user
+  const [driveBusy, setDriveBusy] = useState(false)
+  const [driveMessage, setDriveMessage] = useState<string | null>(null)
   const workspace = workspaceDirectory.workspaces.find((item) => item.workspaceId === workspaceDirectory.currentWorkspaceId)
     ?? workspaceAdmin.workspace
+  const driveConnected = Boolean(googleDriveBinding?.connected)
+
+  async function disconnectDriveBinding() {
+    if (!window.confirm('Disconnect Google Drive from this DataSentinel account? Existing source registrations will stay, but scans will need a new binding or Picker authorization.')) {
+      return
+    }
+
+    setDriveBusy(true)
+    setDriveMessage(null)
+    try {
+      const result = await disconnectGoogleDriveBinding()
+      await refreshGoogleDriveBinding()
+      setDriveMessage(result.revoked ? 'Google Drive binding disconnected and provider token revocation was accepted.' : 'Google Drive binding disconnected locally.')
+    } catch (error) {
+      setDriveMessage(error instanceof Error ? error.message : 'Google Drive disconnect failed.')
+    } finally {
+      setDriveBusy(false)
+    }
+  }
 
   return (
     <>
@@ -50,6 +72,37 @@ export function AccountPage() {
             <div><dt>Groups</dt><dd>{workspaceAdmin.currentMembership?.groupIds.map(humanize).join(', ') || 'None'}</dd></div>
             <div><dt>Pending invite links</dt><dd>{workspaceDirectory.pendingInvitations.length}</dd></div>
           </dl>
+        </section>
+
+        <section className="panel">
+          <SectionHeader title="Google Drive binding" description="Personal Drive access is stored server-side for prelaunch scans." />
+          <dl className="definition-list">
+            <div><dt>Status</dt><dd>{driveConnected ? 'Connected' : 'Not connected'}</dd></div>
+            <div><dt>Drive account</dt><dd>{googleDriveBinding?.email ?? googleDriveBinding?.displayName ?? 'Not connected'}</dd></div>
+            <div><dt>Updated</dt><dd>{googleDriveBinding?.updatedAt ? humanizeDateTime(googleDriveBinding.updatedAt) : 'Unavailable'}</dd></div>
+            <div><dt>Token boundary</dt><dd>{googleDriveBinding?.serverSideOnly ? 'Server-side only' : 'No provider token exposed'}</dd></div>
+          </dl>
+          <div className="support-actions">
+            <Button
+              disabled={!user || googleDriveBinding?.configured === false || driveBusy}
+              icon={driveConnected ? RefreshCw : Cloud}
+              onClick={() => window.location.assign(googleDriveBindingStartUrl())}
+            >
+              {driveConnected ? 'Change binding' : 'Connect Google Drive'}
+            </Button>
+            <Button disabled={!driveConnected || driveBusy} icon={Unplug} onClick={disconnectDriveBinding} variant="ghost">
+              Disconnect
+            </Button>
+          </div>
+          {googleDriveBinding?.configured === false ? (
+            <p className="form-error">Google OAuth client credentials are not configured on this host.</p>
+          ) : null}
+          {driveMessage ? (
+            <p className="support-success" role="status">
+              <CheckCircle2 aria-hidden="true" size={16} />
+              {driveMessage}
+            </p>
+          ) : null}
         </section>
       </div>
 
@@ -96,6 +149,11 @@ export function AccountPage() {
       </section>
     </>
   )
+}
+
+function humanizeDateTime(value: string): string {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
 }
 
 export function FeedbackPage() {

@@ -38,7 +38,7 @@ CreateSourceRequest:
     config:
       type: object
       additionalProperties: true
-      description: Source-specific configuration. For `remote_file_link`, use `url` for a supported text-like file or PDF text layer. For `google_drive_selection`, use selected `items` returned by Google Picker. For `local_repo`, use `rootPath`.
+      description: Source-specific configuration. For `remote_file_link`, use `url` for supported BOM/charset-aware Unicode text-like, structured document, email, ZIP archive, PDF text-layer, or bounded local PDF OCR candidate content. For `google_drive_selection`, use selected `items` returned by Google Picker. For `local_repo`, use `rootPath`.
     assignedOwnerUserId:
       type: [string, "null"]
       description: Optional active Workspace member account ID selected as the direct Source owner.

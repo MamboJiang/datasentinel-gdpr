@@ -15,6 +15,8 @@ In scope:
 - Detector rules version/hash, active policy evidence requirements, evaluated evidence-candidate count, redacted signal count, findings-with-signals count, signal-type counts, warnings, and `rawContentExposed = false`.
 - Finding evidence cards continue to expose redacted signal details through existing finding payloads.
 - Prelaunch rules cover labeled names, dates of birth, employee/student/government identifiers, passport and driver-license fields, payment and bank data, online and device identifiers, location data, vehicle plates, access context, incident descriptions, supplier tax IDs/addresses, health, biometric, genetic, race/ethnicity, political, religious, trade-union, sexual-orientation, criminal-record, family/minor, compensation, credential-secret, and feedback-comment fields in addition to email, phone, URL, handle, SSN/NINO, IP, MAC, UUID, coordinate, payment-card, and IBAN-like patterns.
+- Multilingual label detection covers common Chinese, EU-language, Japanese, Korean, and Arabic labels for names, phone numbers, email, birth dates, national IDs, passports, addresses, bank accounts, health data, compensation, and credentials.
+- Static-text and OCR-normalized lines can contain more than one label/value pair. The detector splits known inline labels such as `Name: ... Phone: ...`, dash-delimited labels such as `Name - ...`, punctuation-missing CJK/Kana/Hangul/Arabic OCR labels such as `姓名 王芳 电话 ...`, and separatorless CJK/Kana/Hangul OCR output such as `姓名王芳电话...` into separate redacted signals with source-local offsets.
 - Evaluation and admin metrics preserve signal-detection rules traceability.
 
 Out of scope:
@@ -68,6 +70,9 @@ References:
 | Extracting content | Extraction completed | Raw text remains internal and evidence candidates exist | Detecting signals | Apply deterministic P0 detector rules |
 | Detecting signals | Signal matched | Snippet can be redacted | Redacted signal available | Count type, detector, confidence, and redacted signal |
 | Detecting signals | Candidate has no match | Candidate was evaluated | No signal | Count evaluated candidate without creating a finding |
+| Detecting signals | Multilingual label has a filled value | Label maps to a supported signal type | Redacted signal available | Emit label-derived signal with a redaction marker and no raw value |
+| Detecting signals | Inline static-text or OCR line has multiple known labels | Each label has a filled value before the next known label | Redacted signal available | Emit one source-offset signal per label/value segment and suppress same-type overlapping regex duplicates |
+| Detecting signals | OCR output joins CJK/Kana/Hangul labels and values without visible separators | A known separatorless label is followed by a filled value and another label or line end | Redacted signal available | Segment by known labels and keep source offsets from the normalized OCR text |
 | Detecting signals | Unsupported/OCR-deferred input exists | Failure is recoverable | Detection completed with warnings | Keep warning visible for metrics/evaluation |
 | Detecting signals | Raw-content boundary fails | `rawContentExposed = true` | Detection failed or unsafe | Backend implementations must stop public publication |
 | Detection completed | Signal summary ready | Rules hash and policy evidence requirements are attached | Judging context risk | Context/risk can consume redacted signal counts and references |
@@ -88,7 +93,7 @@ The public contract does not gain a new endpoint. `GET /api/scans/{scanId}` may 
 - `signalTypeCounts`
 - `warnings`
 
-Finding details continue to expose redacted `signals` with detector, confidence, snippet, and location when available. Clients must ignore unknown fields and render missing optional signal summaries neutrally.
+Finding details continue to expose redacted `signals` with detector, confidence, snippet, and optional evidence anchors when available. PDF text-layer anchors may include page and page-local source offsets. Clients must ignore unknown fields and render missing optional signal summaries neutrally.
 
 ## Privacy and Security Boundaries
 
@@ -96,6 +101,7 @@ Finding details continue to expose redacted `signals` with detector, confidence,
 - Signal snippets must be redacted before they are assembled into evidence cards and must not include adjacent raw source context around the match.
 - Human-entered reasons remain handled by the audit sanitization boundary, not by detector output.
 - Signal detection is evidence generation, not legal advice and not deletion execution.
+- Signal detection must stay bounded for large or adversarial extracted text streams: public signal output is capped per document and detection does not scan beyond the configured prefix window.
 
 ## Impact Surface
 
@@ -112,8 +118,11 @@ Remove optional `scan.signalDetection`, optional signal counters, `signalDetecti
 - Running scans expose `signalDetection.status = pending` while extraction is incomplete.
 - Completed scans expose `detecting_signals` between `extracting_content` and `judging_context_risk`.
 - Completed scans expose detector rules version/hash, policy evidence requirements, evaluated evidence candidates, detected/redacted signal counts, findings-with-signals count, signal-type counts, warnings, and `rawContentExposed = false`.
-- Finding details expose only redacted signal snippets; no raw extracted text, full file bodies, page images, adjacent raw match context, source URLs, absolute source paths, or unredacted personal data appear in public payloads or UI surfaces.
+- Finding details expose only redacted signal snippets and public-safe evidence anchors; no raw extracted text, full file bodies, page images, adjacent raw match context, source URLs, absolute source paths, or unredacted personal data appear in public payloads or UI surfaces.
 - Labeled forms with completed identifiers, contact, employment, financial, location, online/device, health, biometric, genetic, special-category, family/minor, credential, and incident/access fields produce findings even when the file contains no email address.
+- Multilingual source labels such as Chinese `姓名`/`电话`, French `Téléphone`, Spanish `Correo electrónico`, German `Geburtsdatum`, Japanese `氏名`, Korean `이름`, and Arabic `الاسم` produce redacted signals without exposing matched values.
+- Inline and OCR-normalized static text such as `姓名：... 电话：... 地址：...`, `姓名 ... 电话 ... 地址 ...`, `姓名王芳电话...`, and `Name - ...` produces separate redacted signals with non-overlapping `textPosition` anchors.
+- Large extracted text streams are bounded by the configured scan-character limit and per-document signal cap; content beyond the scan window does not create public findings, and documents with many matches do not create unbounded signal lists.
 - Admin metrics expose signal counts, and evaluation preserves the signal-detection rules hash.
 - Not-ready sources cannot create extraction, signal-detection, finding, audit, metric, or evaluation state.
 - Automated behavior tests cover running pending state, completed signal counts, redaction boundary, rules hash, metrics, evaluation traceability, and not-ready-source continuity.
