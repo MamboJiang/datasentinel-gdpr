@@ -3,13 +3,19 @@
   "bindingStatusCode": 200,
   "contentExtraction": {
     "aiAssistanceUsed": false,
-    "extractionFingerprint": "sha256:scan_1780265814403_google_drive_export",
+    "extractionFingerprint": "sha256:scan_1780275134877_google_drive_export",
     "formatCounts": [
       {
         "difficulty": "hard",
         "files": 1,
         "format": "image_ocr",
         "method": "tesseract_image_ocr"
+      },
+      {
+        "difficulty": "hard",
+        "files": 1,
+        "format": "pdf_mixed",
+        "method": "pdf_text_layer_with_page_ocr"
       },
       {
         "difficulty": "moderate",
@@ -19,7 +25,7 @@
       },
       {
         "difficulty": "unsupported",
-        "files": 2,
+        "files": 1,
         "format": "unsupported",
         "method": "unsupported"
       }
@@ -32,11 +38,16 @@
       },
       {
         "files": 1,
+        "method": "pdf_text_layer_with_page_ocr",
+        "status": "completed"
+      },
+      {
+        "files": 1,
         "method": "tesseract_image_ocr",
         "status": "completed"
       },
       {
-        "files": 2,
+        "files": 1,
         "method": "unsupported",
         "status": "warning"
       }
@@ -47,62 +58,79 @@
     "rawContentExposed": false,
     "recognitionDifficulty": {
       "easy": 0,
-      "hard": 1,
+      "hard": 2,
       "moderate": 15,
-      "unsupported": 2
+      "unsupported": 1
     },
-    "redactedEvidenceCandidates": 75,
+    "redactedEvidenceCandidates": 74,
     "status": "completed",
-    "successfulFiles": 16,
-    "unsupportedFiles": 2,
-    "warningFiles": 2,
+    "successfulFiles": 17,
+    "unsupportedFiles": 1,
+    "warningFiles": 1,
     "warnings": [
-      "1 file exceeded the prelaunch 1 MB text extraction limit.",
-      "1 unsupported metadata or control file was skipped.",
-      "2 unsupported files skipped by the prelaunch scanner."
+      ".gitignore is not a supported text-like file.",
+      "1 unsupported files skipped by the prelaunch scanner."
     ]
   },
   "fileInventory": {
     "fingerprintedFiles": 18,
-    "inventoryFingerprint": "sha256:scan_1780265814403_inventory",
+    "inventoryFingerprint": "sha256:scan_1780275134877_inventory",
     "permissionSnapshots": 18,
     "sampleFamilies": [
       {
-        "bytes": 149930,
+        "bytes": 6415159,
         "candidateFiles": 18,
         "family": "Google_Drive",
-        "flaggedFiles": 11,
-        "processedFiles": 16
+        "flaggedFiles": 12,
+        "processedFiles": 17
       }
     ],
     "skippedFiles": 0,
-    "sourceSnapshotId": "snapshot_source_drive_live_gdpr_samples_1780265814_scan_1780265814403",
+    "sourceSnapshotId": "snapshot_source_drive_live_gdpr_samples_1780275134_scan_1780275134877",
     "status": "completed",
-    "totalBytes": 149930,
+    "totalBytes": 6415159,
     "totalCandidateFiles": 18,
     "warnings": []
   },
   "findingAssembly": {
-    "assembledFindings": 11,
-    "assemblyRulesFingerprint": "sha256:scan_1780265814403_assembly",
-    "deniedActionCount": 11,
-    "evidenceCards": 11,
-    "evidenceSignals": 75,
+    "assembledFindings": 12,
+    "assemblyRulesFingerprint": "sha256:scan_1780275134877_assembly",
+    "deniedActionCount": 12,
+    "evidenceCards": 12,
+    "evidenceSignals": 74,
     "legalConclusionProvided": false,
     "missingEvidenceCards": 0,
     "policyPackVersion": "2026.05-demo",
     "rawContentExposed": false,
-    "redactedEvidenceSnippets": 75,
-    "sourceSnapshotId": "snapshot_source_drive_live_gdpr_samples_1780265814_scan_1780265814403",
+    "redactedEvidenceSnippets": 74,
+    "sourceSnapshotId": "snapshot_source_drive_live_gdpr_samples_1780275134_scan_1780275134877",
     "status": "completed",
     "warnings": []
   },
   "findingsListStatusCode": 200,
-  "findingsVisibleCount": 11,
+  "findingsVisibleCount": 12,
   "folderId": "1AmTxh7RhEyvgo400SAZHI8s_CawvAdQn",
-  "generatedAt": "2026-05-31T22:17:07Z",
+  "generatedAt": "2026-06-01T00:53:54Z",
+  "mixedPdfPreviewSample": {
+    "anchorCount": 7,
+    "anchorFormats": [
+      "pdf_ocr",
+      "pdf_text_layer"
+    ],
+    "extractionMethod": "pdf_text_layer_with_page_ocr",
+    "fileFormat": "pdf_mixed",
+    "pageCount": 5,
+    "pageImagesExposed": false,
+    "pageRegionAnchorCount": 7,
+    "rawContentExposed": false,
+    "recognitionDifficulty": "hard",
+    "redactionMode": "anchor_only",
+    "structureBlockCount": 0,
+    "tableCellCount": 0,
+    "textRangeCount": 7
+  },
   "privacyRule": "Aggregate server-side Drive scan evidence only; no raw extracted text, raw detected values, source bodies, provider tokens, refresh tokens, Drive URLs, or private absolute paths.",
-  "reportId": "live_drive_scan_agent_us_2026-06-01",
+  "reportId": "live_drive_scan_agent_us_2026-06-01_after_mixed_pdf_ocr_fix",
   "safetyChecks": {
     "driveFilesMutated": false,
     "driveUrlsPersisted": false,
@@ -113,24 +141,24 @@
     "refreshTokensPersistedInReport": false,
     "sourceBodiesPersisted": false
   },
-  "scanId": "scan_1780265814403",
+  "scanId": "scan_1780275134877",
   "scanStage": "completed",
   "scanStartStatusCode": 202,
   "scanStatus": "completed",
   "signalDetection": {
-    "detectedSignals": 75,
-    "detectorRulesHash": "sha256:scan_1780265814403_signals",
+    "detectedSignals": 74,
+    "detectorRulesHash": "sha256:scan_1780275134877_signals",
     "detectorRulesVersion": "prelaunch-local-v2",
-    "evaluatedEvidenceCandidates": 75,
+    "evaluatedEvidenceCandidates": 74,
     "evidenceRequirements": [
       "redacted_snippet",
       "detector_signal",
       "owner_assignment",
       "policy_version"
     ],
-    "findingsWithSignals": 11,
+    "findingsWithSignals": 12,
     "rawContentExposed": false,
-    "redactedSignals": 75,
+    "redactedSignals": 74,
     "signalTypeCounts": [
       {
         "evidenceRequirement": "detector_signal",
@@ -139,22 +167,22 @@
       },
       {
         "evidenceRequirement": "detector_signal",
-        "signals": 2,
+        "signals": 3,
         "type": "address"
       },
       {
         "evidenceRequirement": "detector_signal",
-        "signals": 4,
+        "signals": 3,
         "type": "email"
       },
       {
         "evidenceRequirement": "detector_signal",
-        "signals": 4,
+        "signals": 2,
         "type": "employee_id"
       },
       {
         "evidenceRequirement": "detector_signal",
-        "signals": 6,
+        "signals": 4,
         "type": "expense_amount"
       },
       {
@@ -169,17 +197,22 @@
       },
       {
         "evidenceRequirement": "detector_signal",
-        "signals": 2,
+        "signals": 3,
         "type": "location_data"
       },
       {
         "evidenceRequirement": "detector_signal",
-        "signals": 2,
+        "signals": 3,
         "type": "organization_identifier"
       },
       {
         "evidenceRequirement": "detector_signal",
-        "signals": 21,
+        "signals": 2,
+        "type": "passport_number"
+      },
+      {
+        "evidenceRequirement": "detector_signal",
+        "signals": 22,
         "type": "person_name"
       },
       {
@@ -189,7 +222,7 @@
       },
       {
         "evidenceRequirement": "detector_signal",
-        "signals": 4,
+        "signals": 2,
         "type": "tax_id"
       }
     ],
@@ -197,16 +230,23 @@
     "warnings": []
   },
   "sourceCreateStatusCode": 201,
-  "sourceId": "source_drive_live_gdpr_samples_1780265814",
+  "sourceId": "source_drive_live_gdpr_samples_1780275134",
   "sourceReviewPreviewSample": {
-    "anchorCount": 5,
+    "anchorCount": 3,
+    "anchorFormats": [
+      "image_ocr"
+    ],
+    "extractionMethod": "tesseract_image_ocr",
     "fileFormat": "image_ocr",
     "pageCount": 1,
     "pageImagesExposed": false,
+    "pageRegionAnchorCount": 3,
     "rawContentExposed": false,
+    "recognitionDifficulty": "hard",
     "redactionMode": "anchor_only",
     "structureBlockCount": 0,
-    "tableCellCount": 0
+    "tableCellCount": 0,
+    "textRangeCount": 3
   },
-  "sourceReviewPreviewSampledFindings": 5
+  "sourceReviewPreviewSampledFindings": 2
 }

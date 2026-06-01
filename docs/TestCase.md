@@ -173,7 +173,7 @@
 | SRCIN-015 | Scan an image file with host OCR available | The scanner extracts OCR text during scan execution, creates only redacted findings, reports `image_ocr` and hard difficulty, and keeps model calls at zero. |
 | SRCIN-016 | Scan a VTT/SRT transcript and a bounded raw video file | The transcript can produce redacted findings, and the raw video can produce redacted findings through host-local FFmpeg frame extraction plus local Tesseract OCR. Missing tools, disabled OCR, over-limit video, or empty frame OCR remain hard/OCR-deferred. |
 | SRCIN-017 | Scan legacy binary Office inputs through host-local conversion | A bounded DOC/XLS/PPT input is converted to UTF-8 text through host-local LibreOffice during scan execution only; missing converter, failed conversion, empty output, or over-limit input is recorded as hard unsupported without raw binary bytes, converted raw text, or fake findings in public payloads. |
-| SRCIN-018 | Run deployed Google Drive binding scan on `agent-us` | A selected `GDPR-data-samples-main` Drive folder scan starts without a browser-memory Picker token, completes through the account binding, and records only aggregate redacted evidence in `live_drive_scan_report_agent_us.json`. |
+| SRCIN-018 | Run deployed Google Drive binding scan on `agent-us` | A selected `GDPR-data-samples-main` Drive folder scan starts without a browser-memory Picker token, completes through the account binding, records `pdf_mixed` evidence for the V4 PDF, and stores only aggregate redacted evidence in `live_drive_scan_report_agent_us.json`. |
 
 ## Core Engine Corpus and Multilingual Detection Checks
 

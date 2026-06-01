@@ -11,7 +11,7 @@ This directory preserves the project-facing test-corpus contract for the Google 
 - `engine_hardening_validation_report.json` records the latest final-hardening validation evidence for local tests, static-format CSV/Markdown/PDF deepening, redacted source-review context windows, supported-format UI proof, agent-us deployment, OCR/runtime converter capability, and real OCR/image/PDF/video-frame/legacy-Office smoke tests without raw values or provider tokens.
 - `core_engine_performance_report.json` records the latest local mixed-format benchmark evidence as counts, throughput, peak RSS, format counts, signal-type counts, OCR-deferred counts, and signal-cap behavior without raw values, source bodies, provider tokens, or private absolute paths.
 - `core_engine_performance_report_agent_us.json` records the same benchmark from the deployed `agent-us` runtime with host-local OCR packages available.
-- `live_drive_scan_report_agent_us.json` records a server-side Google Drive scan of the `GDPR-data-samples-main` folder through the deployed `agent-us` account binding as aggregate counts and redaction-boundary evidence only.
+- `live_drive_scan_report_agent_us.json` records a server-side Google Drive scan of the `GDPR-data-samples-main` folder through the deployed `agent-us` account binding as aggregate counts, mixed PDF OCR evidence, and redaction-boundary evidence only. Regenerate it with `scripts/generate_live_drive_scan_report.py` on the deployed host.
 
 The core engine tests read the local multilingual cases and the raw corpus manifest without requiring a live Google Drive token.
 
