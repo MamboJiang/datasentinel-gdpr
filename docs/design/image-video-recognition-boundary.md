@@ -30,6 +30,7 @@ References: [Tesseract User Manual](https://tesseract-ocr.github.io/tessdoc/), [
 ## Selected Approach
 
 - Image files (`PNG`, `JPG/JPEG`, `TIFF`, `BMP`, `WEBP`) are scanned through local Tesseract when `LAWDIT_OCR_MODE=local` and the host binary is available. `LAWDIT_OCR_LANGS` may select installed Tesseract language packs for multilingual OCR; large configured language lists are split into bounded profiles so one slow/noisy all-language invocation cannot hide OCR output.
+- Non-PNG image inputs get a temporary PNG-normalized OCR fallback before colored-overlay preprocessing. This keeps declared `JPG/JPEG`, `TIFF`, `BMP`, and `WEBP` support from depending only on the host Tesseract image codec set while preserving source-local pixel coordinates.
 - PDF files are scanned through the text layer first. If no text layer is available, the scanner may rasterize a bounded page range through host-local `pdftoppm` and run the same local Tesseract OCR path. If a PDF has both text-layer pages and blank/scanned or image-bearing pages, bounded page OCR is attempted and the resulting document is reported as `pdf_mixed` when OCR adds text.
 - OCR capability reporting records mode, configured languages, Tesseract availability, `pdftoppm` availability, image OCR availability, and PDF OCR availability so deferred cases are explainable without reading source content.
 - Image OCR output is treated as extracted text only inside scan execution. Public payloads keep redacted evidence, source-local offsets, and optional pixel word-box metadata, not raw OCR text or raw images.
@@ -46,6 +47,7 @@ References: [Tesseract User Manual](https://tesseract-ocr.github.io/tessdoc/), [
 | State | Event | Guard | Next state | Side effect |
 | --- | --- | --- | --- | --- |
 | Candidate file | Suffix or MIME recognized as image | File is within prelaunch size limit and local OCR is enabled | OCR requested | Write bytes to a temporary local file and invoke Tesseract. |
+| OCR requested | Direct image OCR fails or returns no text | Pillow can decode the source image | OCR requested | Write a temporary PNG-normalized fallback and invoke Tesseract without persisting source images. |
 | OCR requested | OCR succeeds with text | Text is non-empty | Text extracted | Scan redacted text candidates; discard temporary file. |
 | OCR requested | OCR succeeds with TSV word boxes | Boxes overlap a redacted signal range | Anchor region available | Attach pixel `pageRegion` metadata to the redacted anchor without storing raw OCR text. |
 | OCR requested | OCR succeeds with CJK/Kana/Hangul character-level TSV words | Known labels can be reconstructed in scan memory | Text extracted | Join compatible OCR tokens without synthetic spaces and scan the normalized text without storing raw OCR text. |
@@ -76,6 +78,7 @@ Remove the media suffixes from `SUPPORTED_SUFFIXES`, remove the Tesseract and FF
 ## Primitive Acceptance Criteria
 
 - A supported image file can produce redacted findings through local OCR when OCR mode is local and Tesseract is installed or mocked in tests.
+- JPG/JPEG, TIFF, BMP, and WEBP image inputs use a temporary PNG-normalized fallback when direct Tesseract image decoding is unavailable.
 - A PDF with no extractable text layer can produce redacted findings through local PDF OCR when OCR mode is local and the host PDF rasterizer and Tesseract are available or mocked in tests.
 - A mixed PDF with extractable text pages and blank/scanned pages can produce `pdf_mixed` redacted findings from bounded page OCR while preserving per-page text-layer and OCR anchors.
 - Image OCR and PDF OCR findings can include pixel region anchors from Tesseract TSV word boxes without exposing raw OCR text or page images.

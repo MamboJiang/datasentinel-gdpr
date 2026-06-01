@@ -202,6 +202,39 @@
       "forbiddenValues": ["김민준", "+82 1012345678", "고혈압 관리"]
     },
     {
+      "caseId": "image_ocr_bmp_chinese_travel_identity",
+      "fileKind": "image_ocr",
+      "fileName": "chinese_travel_identity.bmp",
+      "contentType": "image/bmp",
+      "expectedFormat": "image_ocr",
+      "expectedDifficulty": "hard",
+      "text": "姓名：陈元昊\n地址：Paulinestr. 13 Heilbronn 74076\nPassport: EN3457864",
+      "expectedTypes": ["person_name", "address", "passport_number"],
+      "forbiddenValues": ["陈元昊", "Paulinestr. 13 Heilbronn 74076", "EN3457864"]
+    },
+    {
+      "caseId": "image_ocr_tiff_driver_signature",
+      "fileKind": "image_ocr",
+      "fileName": "driver_signature.tiff",
+      "contentType": "image/tiff",
+      "expectedFormat": "image_ocr",
+      "expectedDifficulty": "hard",
+      "text": "Name: Anna Muller\nDriver License: D7654321\nSignature: Anna Muller",
+      "expectedTypes": ["person_name", "driver_license", "signature"],
+      "forbiddenValues": ["Anna Muller", "D7654321"]
+    },
+    {
+      "caseId": "image_ocr_webp_travel_record",
+      "fileKind": "image_ocr",
+      "fileName": "travel_record.webp",
+      "contentType": "image/webp",
+      "expectedFormat": "image_ocr",
+      "expectedDifficulty": "hard",
+      "text": "Passenger: Emilia Rossi\nBooking Reference: ZX98YT\nPhone: +39 0612345678",
+      "expectedTypes": ["person_name", "travel_record", "phone_number"],
+      "forbiddenValues": ["Emilia Rossi", "ZX98YT", "+39 0612345678"]
+    },
+    {
       "caseId": "pdf_ocr_chinese_identity",
       "fileKind": "pdf_ocr",
       "fileName": "chinese_identity_scan.pdf",

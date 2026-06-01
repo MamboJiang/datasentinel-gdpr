@@ -11,11 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .ocr_capabilities import configured_ocr_languages, ocr_mode, tesseract_path
-
-try:
-    from PIL import Image
-except Exception:  # pragma: no cover - optional OCR enhancement dependency
-    Image = None  # type: ignore[assignment]
+from .source_image_preprocessing import ocr_candidate_images
 
 
 @dataclass(frozen=True)
@@ -49,7 +45,7 @@ def extract_image_content(body: bytes, name: str, timeout_seconds: int = 12) -> 
         ocr_results = []
         failed = False
         timed_out = False
-        for candidate in _ocr_candidate_images(image_path, Path(directory)):
+        for candidate in ocr_candidate_images(image_path, Path(directory)):
             for language_profile in _ocr_language_profiles():
                 try:
                     result = subprocess.run(
@@ -131,81 +127,6 @@ def _unique_languages(languages: tuple[str, ...]) -> tuple[str, ...]:
             unique.append(language)
             seen.add(language)
     return tuple(unique)
-
-
-def _ocr_candidate_images(image_path: Path, directory: Path) -> tuple[Path, ...]:
-    return (image_path, *_preprocessed_overlay_images(image_path, directory))
-
-
-def _preprocessed_overlay_images(image_path: Path, directory: Path) -> tuple[Path, ...]:
-    if Image is None:
-        return ()
-    try:
-        image = Image.open(image_path).convert("RGB")
-    except Exception:
-        return ()
-    candidates: list[Path] = []
-    red_path = directory / "source_red_overlay.png"
-    if _write_mask_variant(image, red_path, "red"):
-        candidates.append(red_path)
-    saturated_path = directory / "source_saturated_overlay.png"
-    if _write_mask_variant(image, saturated_path, "saturated"):
-        candidates.append(saturated_path)
-    return tuple(candidates)
-
-
-def _write_mask_variant(image: Any, path: Path, mode: str) -> bool:
-    width, height = image.size
-    total = width * height
-    output = []
-    selected = 0
-    min_x, min_y, max_x, max_y = width, height, -1, -1
-    if mode == "saturated":
-        pixels = image.convert("HSV").getdata()
-        for index, (_hue, saturation, value) in enumerate(pixels):
-            foreground = saturation > 90 and value > 80
-            if foreground:
-                selected += 1
-                x, y = index % width, index // width
-                min_x, min_y = min(min_x, x), min(min_y, y)
-                max_x, max_y = max(max_x, x), max(max_y, y)
-            output.append(0 if foreground else 255)
-    else:
-        for index, (red, green, blue) in enumerate(image.getdata()):
-            foreground = red > 120 and red > green + 35 and red > blue + 35
-            if foreground:
-                selected += 1
-                x, y = index % width, index // width
-                min_x, min_y = min(min_x, x), min(min_y, y)
-                max_x, max_y = max(max_x, x), max(max_y, y)
-            output.append(0 if foreground else 255)
-    ratio = selected / total if total else 0
-    if selected < 24 or ratio > 0.35:
-        return False
-    mask = Image.new("L", image.size, 255)
-    mask.putdata(output)
-    mask = _crop_and_scale_mask(mask, (min_x, min_y, max_x + 1, max_y + 1))
-    mask.save(path)
-    return True
-
-
-def _crop_and_scale_mask(mask: Any, bbox: tuple[int, int, int, int]) -> Any:
-    width, height = mask.size
-    left, top, right, bottom = bbox
-    margin = max(24, min(width, height) // 80)
-    left = max(0, left - margin)
-    top = max(0, top - margin)
-    right = min(width, right + margin)
-    bottom = min(height, bottom + margin)
-    if left < right and top < bottom:
-        mask = mask.crop((left, top, right, bottom))
-
-    max_side = max(mask.size)
-    if max_side and max_side < 1600:
-        scale = 2 if max_side >= 800 else 3
-        resampling = getattr(getattr(Image, "Resampling", Image), "NEAREST", 0)
-        mask = mask.resize((mask.size[0] * scale, mask.size[1] * scale), resampling)
-    return mask
 
 
 def _join_ocr_results(results: list[tuple[str, tuple[dict[str, Any], ...]]]) -> tuple[str, tuple[dict[str, Any], ...]]:
