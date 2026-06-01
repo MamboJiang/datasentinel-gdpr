@@ -1,6 +1,6 @@
 {
   "command": "python3 tests/core_engine_performance_benchmark.py --output tests/fixtures/gdpr_data_samples_main/core_engine_performance_report.json",
-  "generatedAt": "2026-06-01T03:57:34Z",
+  "generatedAt": "2026-06-01T05:01:18Z",
   "host": {
     "machine": "arm64",
     "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
@@ -32,8 +32,8 @@
   },
   "suites": [
     {
-      "durationMs": 24.659,
-      "extractedCharsPerSecond": 67034.6,
+      "durationMs": 28.339,
+      "extractedCharsPerSecond": 58330.0,
       "formatCounts": {
         "csv": 2,
         "docx": 1,
@@ -103,15 +103,15 @@
       },
       "skippedFiles": 0,
       "successfulFiles": 24,
-      "throughputFilesPerSecond": 973.279,
+      "throughputFilesPerSecond": 846.897,
       "totalExtractedChars": 1653,
       "totalSignals": 77,
       "totalSourceBytes": 2089,
       "unsupportedFiles": 0
     },
     {
-      "durationMs": 639.948,
-      "extractedCharsPerSecond": 42237.8,
+      "durationMs": 713.463,
+      "extractedCharsPerSecond": 37885.6,
       "formatCounts": {
         "pdf_text_layer": 16
       },
@@ -145,15 +145,15 @@
       },
       "skippedFiles": 2,
       "successfulFiles": 16,
-      "throughputFilesPerSecond": 25.002,
+      "throughputFilesPerSecond": 22.426,
       "totalExtractedChars": 27030,
       "totalSignals": 67,
       "totalSourceBytes": 6300801,
       "unsupportedFiles": 1
     },
     {
-      "durationMs": 11.602,
-      "extractedCharsPerSecond": 17923399.3,
+      "durationMs": 12.397,
+      "extractedCharsPerSecond": 16774260.8,
       "formatCounts": {
         "synthetic_text": 1
       },
@@ -174,7 +174,7 @@
       },
       "skippedFiles": 0,
       "successfulFiles": 1,
-      "throughputFilesPerSecond": 86.189,
+      "throughputFilesPerSecond": 80.663,
       "totalExtractedChars": 207954,
       "totalSignals": 32,
       "totalSourceBytes": 207954,
@@ -182,9 +182,9 @@
     }
   ],
   "totals": {
-    "durationMs": 676.209,
+    "durationMs": 754.199,
     "estimatedCostUsd": 0.0,
-    "extractedCharsPerSecond": 349946.5,
+    "extractedCharsPerSecond": 313759.4,
     "formatCounts": {
       "csv": 2,
       "docx": 1,
@@ -210,7 +210,7 @@
     },
     "modelCalls": 0,
     "ocrDeferredFiles": 1,
-    "peakRssMiB": 66.766,
+    "peakRssMiB": 67.109,
     "processedFiles": 41,
     "signalTypeCounts": {
       "access_context": 10,
@@ -238,7 +238,7 @@
       "travel_record": 4
     },
     "successfulFiles": 41,
-    "throughputFilesPerSecond": 60.632,
+    "throughputFilesPerSecond": 54.362,
     "totalExtractedChars": 236637,
     "totalSignals": 176,
     "totalSourceBytes": 6510844,

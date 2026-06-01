@@ -99,6 +99,32 @@ class CoreEngineDetectionTests(unittest.TestCase):
         self.assertNotIn("13800138000", serialized)
         self.assertNotIn("北京市朝阳区建国路88号", serialized)
 
+    def test_stacked_ocr_form_labels_detect_values_on_following_lines(self) -> None:
+        text = (
+            "姓名\n"
+            "陈元昊\n"
+            "护照号\n"
+            "EN3457864\n"
+            "地址\n"
+            "Paulinestr. 13 Heilbronn 74076\n"
+            "Phone\n"
+            "+49 7131 555013\n"
+        )
+
+        signals = detect_signals(text)
+        signal_types = {signal["type"] for signal in signals}
+        signal_by_type = {signal["type"]: signal for signal in signals}
+        serialized = json.dumps(signals, ensure_ascii=False)
+
+        self.assertTrue({"person_name", "passport_number", "address", "phone_number"}.issubset(signal_types))
+        self.assertEqual(signal_by_type["person_name"]["detector"], "multilingual_person_label_stacked")
+        self.assertEqual(signal_by_type["person_name"]["evidenceAnchor"]["selector"]["start"], text.index("陈元昊"))
+        self.assertEqual(signal_by_type["passport_number"]["evidenceAnchor"]["fallback"]["label"], "Line 4")
+        self.assertNotIn("陈元昊", serialized)
+        self.assertNotIn("EN3457864", serialized)
+        self.assertNotIn("Paulinestr. 13 Heilbronn 74076", serialized)
+        self.assertNotIn("+49 7131 555013", serialized)
+
     def test_dash_delimited_static_text_labels_detect_without_raw_values(self) -> None:
         text = "Name - Alice Example\nPhone - +1 415 555 0134\nAddress - 1 Market St\n"
 

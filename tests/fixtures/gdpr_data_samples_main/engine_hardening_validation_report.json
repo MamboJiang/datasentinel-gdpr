@@ -1,6 +1,6 @@
 {
   "reportId": "engine_hardening_2026-05-31_final_acceptance",
-  "generatedAt": "2026-06-01T04:19:22Z",
+  "generatedAt": "2026-06-01T05:09:32Z",
   "privacyRule": "This report records commands, counts, capabilities, redacted signal types, and release identifiers only. It must not include raw extracted text, raw detected values, provider tokens, refresh tokens, source bodies, or private absolute source paths.",
   "scope": {
     "goal": "Core multilingual GDPR discovery engine hardening for Drive corpus fixtures, supported file formats, OCR-backed PDF/image/video-frame extraction, legacy Office conversion, evidence anchors, local validation, and agent-us deployment proof.",
@@ -49,9 +49,9 @@
   ],
   "localValidation": {
     "backendTests": {
-      "command": "python3 -m pytest -q",
+      "command": "python3 -m unittest discover -s tests",
       "result": "passed",
-      "testCount": 156,
+      "testCount": 162,
       "skippedCount": 2,
       "skipReason": "Local workstation lacks Tesseract and LibreOffice, so video OCR and legacy Office runtime smoke tests are skipped locally and executed on agent-us."
     },
@@ -63,7 +63,7 @@
       "testCount": 71
     },
     "backendCompile": {
-      "command": "python3 -m compileall -q backend",
+      "command": "python3 -m py_compile backend/lawdit/deterministic_signals.py backend/lawdit/signal_regex_rules.py backend/lawdit/signal_stacked_labels.py",
       "result": "passed"
     },
     "frontendBuild": {
@@ -90,7 +90,7 @@
     }
   },
   "agentUsDeployment": {
-    "appRelease": "/srv/lawdit/app/releases/20260601041659-text-anchor-line-columns",
+    "appRelease": "/srv/lawdit/app/releases/20260601050302-stacked-ocr-labels",
     "frontendRelease": "/srv/lawdit/frontend/releases/20260601041115-lawdit-public-experience-rebased",
     "apiService": "lawdit-api.service",
     "apiServiceState": "active",
@@ -122,7 +122,13 @@
     "remoteBackendTests": {
       "command": "cd /srv/lawdit/app/current && python3 -m unittest discover -s tests",
       "result": "passed",
-      "testCount": 158
+      "testCount": 162
+    },
+    "remoteStackedLabelTests": {
+      "command": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_core_engine_detection.CoreEngineDetectionTests.test_stacked_ocr_form_labels_detect_values_on_following_lines tests.test_ocr_degraded_label_detection.OcrDegradedLabelDetectionTests.test_clean_stacked_product_labels_do_not_trigger_person_names tests.test_core_engine_quality_report tests.test_core_engine_performance_report",
+      "result": "passed",
+      "testCount": 7,
+      "smokeResult": "stacked Chinese OCR/PDF labels detected person, passport, and address; stacked release metadata produced zero findings"
     },
     "remoteImageOcrFormatTests": {
       "command": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_image_ocr_format_support tests.test_ocr_region_anchors tests.test_generated_format_challenges tests.test_core_engine_quality_report tests.test_core_engine_performance_report",
@@ -387,7 +393,7 @@
     "agentUsUnsupportedFiles": 0,
     "agentUsOcrDeferredFiles": 0,
     "agentUsThroughputFilesPerSecond": 0.569,
-    "agentUsPeakRssMiB": 219.07,
+    "agentUsPeakRssMiB": 219.008,
     "agentUsModelCalls": 0,
     "agentUsEstimatedCostUsd": 0.0,
     "rawTextPersisted": false,

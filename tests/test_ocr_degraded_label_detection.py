@@ -37,6 +37,11 @@ class OcrDegradedLabelDetectionTests(unittest.TestCase):
         self.assertNotIn("expense_amount", signal_types)
         self.assertNotIn("tax_id", signal_types)
 
+    def test_clean_stacked_product_labels_do_not_trigger_person_names(self) -> None:
+        text = "Release Name\nPhoenix\nBuild Owner\nPlatform Team\nPassport applications\nDue Friday\n"
+
+        self.assertEqual(detect_signals(text), [])
+
 
 if __name__ == "__main__":
     unittest.main()

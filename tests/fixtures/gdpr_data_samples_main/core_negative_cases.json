@@ -111,6 +111,15 @@
       "text": "Section,Reference,Amount\nInventory,SKU-74076,EUR 62000\nOperations,BATCH-20260601,USD 120000\n",
       "expectedTypes": [],
       "forbiddenValues": ["SKU-74076", "EUR 62000", "USD 120000"]
+    },
+    {
+      "caseId": "stacked_release_metadata_clean",
+      "language": "en",
+      "fileName": "stacked_release_metadata_clean.txt",
+      "contentType": "text/plain",
+      "text": "Release Name\nPhoenix\nBuild Owner\nPlatform Team\nPassport applications\nDue Friday\n",
+      "expectedTypes": [],
+      "forbiddenValues": ["Phoenix", "Platform Team", "Passport applications"]
     }
   ]
 }

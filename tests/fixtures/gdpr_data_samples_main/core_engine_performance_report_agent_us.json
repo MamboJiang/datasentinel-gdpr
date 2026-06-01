@@ -1,6 +1,6 @@
 {
   "command": "python3 tests/core_engine_performance_benchmark.py --output tests/fixtures/gdpr_data_samples_main/core_engine_performance_report_agent_us.json",
-  "generatedAt": "2026-06-01T04:05:10Z",
+  "generatedAt": "2026-06-01T05:06:53Z",
   "host": {
     "machine": "x86_64",
     "platform": "Linux-6.17.0-1015-azure-x86_64-with-glibc2.39",
@@ -45,8 +45,8 @@
   },
   "suites": [
     {
-      "durationMs": 37.27,
-      "extractedCharsPerSecond": 44352.0,
+      "durationMs": 37.65,
+      "extractedCharsPerSecond": 43904.1,
       "formatCounts": {
         "csv": 2,
         "docx": 1,
@@ -116,15 +116,15 @@
       },
       "skippedFiles": 0,
       "successfulFiles": 24,
-      "throughputFilesPerSecond": 643.949,
+      "throughputFilesPerSecond": 637.446,
       "totalExtractedChars": 1653,
       "totalSignals": 77,
       "totalSourceBytes": 2089,
       "unsupportedFiles": 0
     },
     {
-      "durationMs": 73782.015,
-      "extractedCharsPerSecond": 435.8,
+      "durationMs": 73755.104,
+      "extractedCharsPerSecond": 436.0,
       "formatCounts": {
         "image_ocr": 1,
         "pdf_mixed": 1,
@@ -169,8 +169,8 @@
       "unsupportedFiles": 0
     },
     {
-      "durationMs": 17.997,
-      "extractedCharsPerSecond": 11554842.4,
+      "durationMs": 18.16,
+      "extractedCharsPerSecond": 11451032.4,
       "formatCounts": {
         "synthetic_text": 1
       },
@@ -191,7 +191,7 @@
       },
       "skippedFiles": 0,
       "successfulFiles": 1,
-      "throughputFilesPerSecond": 55.564,
+      "throughputFilesPerSecond": 55.065,
       "totalExtractedChars": 207954,
       "totalSignals": 32,
       "totalSourceBytes": 207954,
@@ -199,9 +199,9 @@
     }
   ],
   "totals": {
-    "durationMs": 73837.282,
+    "durationMs": 73810.914,
     "estimatedCostUsd": 0.0,
-    "extractedCharsPerSecond": 3274.2,
+    "extractedCharsPerSecond": 3275.4,
     "formatCounts": {
       "csv": 2,
       "docx": 1,
@@ -228,7 +228,7 @@
     },
     "modelCalls": 0,
     "ocrDeferredFiles": 0,
-    "peakRssMiB": 219.07,
+    "peakRssMiB": 219.008,
     "processedFiles": 42,
     "signalTypeCounts": {
       "access_context": 10,

@@ -165,7 +165,7 @@ The signal-detection interaction extends the Dashboard latest-scan and pipeline 
 
 - Running scan state shows deterministic signal detection as pending until extraction is ready.
 - Completed scan state shows detector rules version/hash, evidence requirements, detected/redacted signal counts, findings-with-signals count, and signal-type counts.
-- Completed sample-form scans show findings for English and common multilingual labeled contact, identity, government ID, employment, education, financial, online/device, location, vehicle, health, biometric, genetic, special-category, family/minor, credential, incident, and access fields when completed values exist.
+- Completed sample-form scans show findings for English and common multilingual labeled contact, identity, government ID, employment, education, financial, online/device, location, vehicle, health, biometric, genetic, special-category, family/minor, credential, incident, and access fields when completed values exist, including OCR/PDF form layouts where a known label appears on one line and the value appears on the next nearby line.
 - The pipeline summary shows `detecting_signals` after `extracting_content` and before `judging_context_risk`.
 - Finding details continue to show redacted detector evidence with detector, confidence, snippet, and source-data-derived evidence anchors when available.
 - The UI must avoid raw source content, raw source URLs, absolute host paths, adjacent raw match context, unredacted personal data, detector secrets, legal conclusions, deletion instructions, or claims of GDPR compliance.

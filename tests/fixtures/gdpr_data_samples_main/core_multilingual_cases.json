@@ -100,6 +100,20 @@
       "text": "الاسم: ليلى حسن\nالهاتف: +971 501234567\nرقم الهوية: 784199012345678\nالعنوان: شارع الاتحاد 12\nالراتب: AED 18000",
       "expectedTypes": ["person_name", "phone_number", "national_identifier", "address", "salary_compensation"],
       "forbiddenValues": ["ليلى حسن", "+971 501234567", "784199012345678", "شارع الاتحاد 12", "AED 18000"]
+    },
+    {
+      "caseId": "zh_stacked_pdf_ocr_travel_identity",
+      "language": "zh-Hans",
+      "text": "姓名\n陈元昊\n护照号\nEN3457864\n地址\nPaulinestr. 13 Heilbronn 74076\n电话\n+49 7131 555013",
+      "expectedTypes": ["person_name", "passport_number", "address", "phone_number"],
+      "forbiddenValues": ["陈元昊", "EN3457864", "Paulinestr. 13 Heilbronn 74076", "+49 7131 555013"]
+    },
+    {
+      "caseId": "de_stacked_pdf_ocr_travel_identity",
+      "language": "de",
+      "text": "Reisender\nAnna Becker\nFührerschein\nB1234567\nBuchungsnummer\nAB12CD\nUnterschrift\nAnna Becker",
+      "expectedTypes": ["person_name", "driver_license", "travel_record", "signature"],
+      "forbiddenValues": ["Anna Becker", "B1234567", "AB12CD"]
     }
   ]
 }

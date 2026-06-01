@@ -1,6 +1,6 @@
 {
   "command": "python3 tests/core_engine_quality_report.py --output tests/fixtures/gdpr_data_samples_main/core_engine_quality_report.json",
-  "generatedAt": "2026-06-01T03:57:29Z",
+  "generatedAt": "2026-06-01T04:55:26Z",
   "privacyRule": "This report stores case IDs, language/format labels, expected signal types, actual signal types, negative-case signal counts, and aggregate quality metrics only. It must not include raw source text, raw detected values, source bodies, provider tokens, Drive URLs, page images, or private absolute paths.",
   "reportId": "core_engine_quality_2026-06-01_positive_negative_oracles",
   "safetyChecks": {
@@ -13,21 +13,21 @@
   "suites": [
     {
       "actualTypeCounts": {
-        "address": 6,
+        "address": 7,
         "bank_account": 3,
         "credential_secret": 3,
         "date_of_birth": 2,
-        "driver_license": 2,
+        "driver_license": 3,
         "email": 1,
         "health_data": 4,
         "national_identifier": 8,
-        "passport_number": 1,
-        "person_name": 13,
-        "phone_number": 10,
+        "passport_number": 2,
+        "person_name": 15,
+        "phone_number": 11,
         "salary_compensation": 3,
-        "signature": 2,
+        "signature": 3,
         "tax_id": 1,
-        "travel_record": 2
+        "travel_record": 3
       },
       "cases": [
         {
@@ -436,31 +436,87 @@
           "perfectTypeMatch": true,
           "signalCount": 5,
           "suite": "core_multilingual_cases"
+        },
+        {
+          "actualTypes": [
+            "address",
+            "passport_number",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "zh_stacked_pdf_ocr_travel_identity",
+          "expectedTypes": [
+            "address",
+            "passport_number",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "zh-Hans",
+          "matchedTypes": [
+            "address",
+            "passport_number",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 4,
+          "suite": "core_multilingual_cases"
+        },
+        {
+          "actualTypes": [
+            "driver_license",
+            "person_name",
+            "signature",
+            "travel_record"
+          ],
+          "caseId": "de_stacked_pdf_ocr_travel_identity",
+          "expectedTypes": [
+            "driver_license",
+            "person_name",
+            "signature",
+            "travel_record"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "de",
+          "matchedTypes": [
+            "driver_license",
+            "person_name",
+            "signature",
+            "travel_record"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 4,
+          "suite": "core_multilingual_cases"
         }
       ],
       "expectedTypeCounts": {
-        "address": 6,
+        "address": 7,
         "bank_account": 3,
         "credential_secret": 3,
         "date_of_birth": 2,
-        "driver_license": 2,
+        "driver_license": 3,
         "email": 1,
         "health_data": 4,
         "national_identifier": 8,
-        "passport_number": 1,
-        "person_name": 13,
-        "phone_number": 10,
+        "passport_number": 2,
+        "person_name": 15,
+        "phone_number": 11,
         "salary_compensation": 3,
-        "signature": 2,
+        "signature": 3,
         "tax_id": 1,
-        "travel_record": 2
+        "travel_record": 3
       },
       "formatCounts": {
-        "txt": 14
+        "txt": 16
       },
       "languageCounts": {
         "ar": 1,
-        "de": 2,
+        "de": 3,
         "es": 1,
         "fr": 1,
         "it": 1,
@@ -469,16 +525,16 @@
         "nl": 1,
         "pl": 1,
         "pt-BR": 1,
-        "zh-Hans": 3
+        "zh-Hans": 4
       },
       "metrics": {
-        "actualTypeAssertions": 61,
-        "caseCount": 14,
-        "expectedTypeAssertions": 61,
+        "actualTypeAssertions": 69,
+        "caseCount": 16,
+        "expectedTypeAssertions": 69,
         "falseNegativeTypeCount": 0,
         "falsePositiveTypeCount": 0,
-        "matchedTypeAssertions": 61,
-        "perfectCaseCount": 14,
+        "matchedTypeAssertions": 69,
+        "perfectCaseCount": 16,
         "typeF1": 1.0,
         "typePrecision": 1.0,
         "typeRecall": 1.0
@@ -1326,6 +1382,19 @@
           "perfectTypeMatch": true,
           "signalCount": 0,
           "suite": "core_negative_cases"
+        },
+        {
+          "actualTypes": [],
+          "caseId": "stacked_release_metadata_clean",
+          "expectedTypes": [],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "en",
+          "matchedTypes": [],
+          "perfectTypeMatch": true,
+          "signalCount": 0,
+          "suite": "core_negative_cases"
         }
       ],
       "expectedTypeCounts": {},
@@ -1336,21 +1405,21 @@
         "log": 2,
         "markdown": 1,
         "pdf_ocr": 1,
-        "txt": 4
+        "txt": 5
       },
       "languageCounts": {
         "de": 1,
-        "en": 10,
+        "en": 11,
         "zh-Hans": 1
       },
       "metrics": {
         "actualTypeAssertions": 0,
-        "caseCount": 12,
+        "caseCount": 13,
         "expectedTypeAssertions": 0,
         "falseNegativeTypeCount": 0,
         "falsePositiveTypeCount": 0,
         "matchedTypeAssertions": 0,
-        "perfectCaseCount": 12,
+        "perfectCaseCount": 13,
         "typeF1": 1.0,
         "typePrecision": 1.0,
         "typeRecall": 1.0
@@ -1359,13 +1428,13 @@
     }
   ],
   "totals": {
-    "actualTypeAssertions": 135,
-    "caseCount": 50,
-    "expectedTypeAssertions": 135,
+    "actualTypeAssertions": 143,
+    "caseCount": 53,
+    "expectedTypeAssertions": 143,
     "falseNegativeTypeCount": 0,
     "falsePositiveTypeCount": 0,
-    "matchedTypeAssertions": 135,
-    "perfectCaseCount": 50,
+    "matchedTypeAssertions": 143,
+    "perfectCaseCount": 53,
     "suiteCount": 3,
     "typeF1": 1.0,
     "typePrecision": 1.0,
