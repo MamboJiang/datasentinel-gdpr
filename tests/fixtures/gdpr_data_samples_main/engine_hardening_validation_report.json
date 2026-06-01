@@ -1,6 +1,6 @@
 {
   "reportId": "engine_hardening_2026-05-31_final_acceptance",
-  "generatedAt": "2026-06-01T04:05:55Z",
+  "generatedAt": "2026-06-01T04:19:22Z",
   "privacyRule": "This report records commands, counts, capabilities, redacted signal types, and release identifiers only. It must not include raw extracted text, raw detected values, provider tokens, refresh tokens, source bodies, or private absolute source paths.",
   "scope": {
     "goal": "Core multilingual GDPR discovery engine hardening for Drive corpus fixtures, supported file formats, OCR-backed PDF/image/video-frame extraction, legacy Office conversion, evidence anchors, local validation, and agent-us deployment proof.",
@@ -90,7 +90,7 @@
     }
   },
   "agentUsDeployment": {
-    "appRelease": "/srv/lawdit/app/releases/20260601040103-image-ocr-normalization",
+    "appRelease": "/srv/lawdit/app/releases/20260601041659-text-anchor-line-columns",
     "frontendRelease": "/srv/lawdit/frontend/releases/20260601041115-lawdit-public-experience-rebased",
     "apiService": "lawdit-api.service",
     "apiServiceState": "active",
@@ -128,6 +128,11 @@
       "command": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_image_ocr_format_support tests.test_ocr_region_anchors tests.test_generated_format_challenges tests.test_core_engine_quality_report tests.test_core_engine_performance_report",
       "result": "passed",
       "testCount": 12
+    },
+    "remoteTextAnchorLineColumnTests": {
+      "command": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_text_decoding tests.test_markdown_extraction tests.test_source_review_preview tests.test_core_engine_detection tests.test_pdf_region_anchors tests.test_generated_format_challenges",
+      "result": "passed",
+      "testCount": 30
     },
     "remoteFormatRuntimeTests": {
       "command": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_legacy_office_runtime tests.test_format_recognition tests.test_video_frame_ocr_runtime tests.test_table_cell_anchors tests.test_markdown_extraction tests.test_pdf_region_anchors tests.test_source_review_preview",
@@ -412,6 +417,21 @@
       "screenshotSha256": "76a1fe8cca13984fdb8ffd285918e0fd0d7875f1e3ab4ec06d0bf1d255ef8887"
     },
     "agentUsBackendTest": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_source_review_preview tests.test_backend_api_server",
+    "agentUsTextAnchorSmoke": {
+      "result": "passed",
+      "format": "txt",
+      "personNameSelector": {
+        "sourceStart": 13,
+        "lineNumber": 2,
+        "columnNumber": 7
+      },
+      "emailSelector": {
+        "sourceStart": 34,
+        "lineNumber": 3,
+        "columnNumber": 8
+      },
+      "rawValuePrinted": false
+    },
     "frontendAssetCheck": {
       "publicFindingUrl": "https://founder-force.uk/findings/finding_001",
       "publicFindingUiAuthGated": true,
