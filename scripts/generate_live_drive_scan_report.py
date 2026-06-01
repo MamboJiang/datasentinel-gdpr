@@ -88,7 +88,7 @@ def generate_report(
         preview_summary, mixed_pdf_summary, sampled = _preview_summaries(app, headers, findings, trace_id)
 
         return {
-            "reportId": "live_drive_scan_agent_us_2026-06-01_after_mixed_pdf_ocr_fix",
+            "reportId": "live_drive_scan_agent_us_current_core_engine",
             "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "folderId": folder_id,
             "bindingStatusCode": binding["status"],

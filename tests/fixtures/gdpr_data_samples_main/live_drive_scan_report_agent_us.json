@@ -3,7 +3,7 @@
   "bindingStatusCode": 200,
   "contentExtraction": {
     "aiAssistanceUsed": false,
-    "extractionFingerprint": "sha256:scan_1780283003193_google_drive_export",
+    "extractionFingerprint": "sha256:scan_1780291158876_google_drive_export",
     "formatCounts": [
       {
         "difficulty": "hard",
@@ -74,7 +74,7 @@
   },
   "fileInventory": {
     "fingerprintedFiles": 18,
-    "inventoryFingerprint": "sha256:scan_1780283003193_inventory",
+    "inventoryFingerprint": "sha256:scan_1780291158876_inventory",
     "permissionSnapshots": 18,
     "sampleFamilies": [
       {
@@ -86,7 +86,7 @@
       }
     ],
     "skippedFiles": 0,
-    "sourceSnapshotId": "snapshot_source_drive_live_gdpr_samples_1780283002_scan_1780283003193",
+    "sourceSnapshotId": "snapshot_source_drive_live_gdpr_samples_1780291158_scan_1780291158876",
     "status": "completed",
     "totalBytes": 6415159,
     "totalCandidateFiles": 18,
@@ -94,7 +94,7 @@
   },
   "findingAssembly": {
     "assembledFindings": 12,
-    "assemblyRulesFingerprint": "sha256:scan_1780283003193_assembly",
+    "assemblyRulesFingerprint": "sha256:scan_1780291158876_assembly",
     "deniedActionCount": 12,
     "evidenceCards": 12,
     "evidenceSignals": 74,
@@ -103,14 +103,14 @@
     "policyPackVersion": "2026.05-demo",
     "rawContentExposed": false,
     "redactedEvidenceSnippets": 74,
-    "sourceSnapshotId": "snapshot_source_drive_live_gdpr_samples_1780283002_scan_1780283003193",
+    "sourceSnapshotId": "snapshot_source_drive_live_gdpr_samples_1780291158_scan_1780291158876",
     "status": "completed",
     "warnings": []
   },
   "findingsListStatusCode": 200,
   "findingsVisibleCount": 12,
   "folderId": "1AmTxh7RhEyvgo400SAZHI8s_CawvAdQn",
-  "generatedAt": "2026-06-01T03:04:50Z",
+  "generatedAt": "2026-06-01T05:20:46Z",
   "mixedPdfPreviewSample": {
     "anchorCount": 9,
     "anchorFormats": [
@@ -130,7 +130,7 @@
     "textRangeCount": 9
   },
   "privacyRule": "Aggregate server-side Drive scan evidence only; no raw extracted text, raw detected values, source bodies, provider tokens, refresh tokens, Drive URLs, or private absolute paths.",
-  "reportId": "live_drive_scan_agent_us_2026-06-01_after_mixed_pdf_ocr_fix",
+  "reportId": "live_drive_scan_agent_us_current_core_engine",
   "safetyChecks": {
     "driveFilesMutated": false,
     "driveUrlsPersisted": false,
@@ -141,13 +141,13 @@
     "refreshTokensPersistedInReport": false,
     "sourceBodiesPersisted": false
   },
-  "scanId": "scan_1780283003193",
+  "scanId": "scan_1780291158876",
   "scanStage": "completed",
   "scanStartStatusCode": 202,
   "scanStatus": "completed",
   "signalDetection": {
     "detectedSignals": 74,
-    "detectorRulesHash": "sha256:scan_1780283003193_signals",
+    "detectorRulesHash": "sha256:scan_1780291158876_signals",
     "detectorRulesVersion": "prelaunch-local-v2",
     "evaluatedEvidenceCandidates": 74,
     "evidenceRequirements": [
@@ -212,13 +212,18 @@
       },
       {
         "evidenceRequirement": "detector_signal",
-        "signals": 23,
+        "signals": 21,
         "type": "person_name"
       },
       {
         "evidenceRequirement": "detector_signal",
         "signals": 2,
         "type": "phone_number"
+      },
+      {
+        "evidenceRequirement": "detector_signal",
+        "signals": 2,
+        "type": "signature"
       },
       {
         "evidenceRequirement": "detector_signal",
@@ -230,7 +235,7 @@
     "warnings": []
   },
   "sourceCreateStatusCode": 201,
-  "sourceId": "source_drive_live_gdpr_samples_1780283002",
+  "sourceId": "source_drive_live_gdpr_samples_1780291158",
   "sourceReviewPreviewSample": {
     "anchorCount": 3,
     "anchorFormats": [

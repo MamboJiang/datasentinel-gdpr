@@ -1,6 +1,6 @@
 {
   "reportId": "engine_hardening_2026-05-31_final_acceptance",
-  "generatedAt": "2026-06-01T05:09:32Z",
+  "generatedAt": "2026-06-01T05:20:46Z",
   "privacyRule": "This report records commands, counts, capabilities, redacted signal types, and release identifiers only. It must not include raw extracted text, raw detected values, provider tokens, refresh tokens, source bodies, or private absolute source paths.",
   "scope": {
     "goal": "Core multilingual GDPR discovery engine hardening for Drive corpus fixtures, supported file formats, OCR-backed PDF/image/video-frame extraction, legacy Office conversion, evidence anchors, local validation, and agent-us deployment proof.",
@@ -90,7 +90,7 @@
     }
   },
   "agentUsDeployment": {
-    "appRelease": "/srv/lawdit/app/releases/20260601050302-stacked-ocr-labels",
+    "appRelease": "/srv/lawdit/app/releases/20260601051100-stacked-ocr-labels",
     "frontendRelease": "/srv/lawdit/frontend/releases/20260601041115-lawdit-public-experience-rebased",
     "apiService": "lawdit-api.service",
     "apiServiceState": "active",
