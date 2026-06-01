@@ -1,6 +1,6 @@
 {
   "command": "python3 tests/core_engine_performance_benchmark.py --output tests/fixtures/gdpr_data_samples_main/core_engine_performance_report_agent_us.json",
-  "generatedAt": "2026-06-01T02:57:35Z",
+  "generatedAt": "2026-06-01T03:25:05Z",
   "host": {
     "machine": "x86_64",
     "platform": "Linux-6.17.0-1015-azure-x86_64-with-glibc2.39",
@@ -45,10 +45,10 @@
   },
   "suites": [
     {
-      "durationMs": 22.495,
-      "extractedCharsPerSecond": 48633.1,
+      "durationMs": 26.888,
+      "extractedCharsPerSecond": 45335.9,
       "formatCounts": {
-        "csv": 1,
+        "csv": 2,
         "docx": 1,
         "eml": 1,
         "html": 1,
@@ -66,7 +66,7 @@
         "xml": 1,
         "zip": 1
       },
-      "maxSignalsInDocument": 4,
+      "maxSignalsInDocument": 5,
       "methodCounts": {
         "html_text": 1,
         "json_structure_text": 1,
@@ -80,7 +80,7 @@
         "rfc5322_mime_text": 1,
         "rtf_text": 1,
         "tesseract_image_ocr": 1,
-        "utf8_text": 2,
+        "utf8_text": 3,
         "utf8_video_transcript": 1,
         "xml_structure_text": 1,
         "zip_member_text": 1
@@ -88,37 +88,41 @@
       "name": "generated_format_challenges",
       "note": "Uses generated multilingual challenge cases; image/PDF OCR challenge entries use the deterministic test helper's mocked OCR text to isolate parser/detector throughput.",
       "ocrDeferredFiles": 0,
-      "processedFiles": 18,
+      "processedFiles": 19,
       "recognitionDifficulty": {
-        "easy": 5,
+        "easy": 6,
         "hard": 3,
         "moderate": 10
       },
       "signalTypeCounts": {
+        "account_handle": 1,
         "address": 2,
         "bank_account": 1,
         "credential_secret": 1,
         "date_of_birth": 1,
+        "driver_license": 1,
         "email": 4,
         "health_data": 3,
         "national_identifier": 5,
         "passport_number": 1,
-        "person_name": 19,
+        "person_name": 20,
         "phone_number": 14,
         "salary_compensation": 2,
-        "tax_id": 1
+        "signature": 1,
+        "tax_id": 1,
+        "travel_record": 1
       },
       "skippedFiles": 0,
-      "successfulFiles": 18,
-      "throughputFilesPerSecond": 800.18,
-      "totalExtractedChars": 1094,
-      "totalSignals": 54,
-      "totalSourceBytes": 1511,
+      "successfulFiles": 19,
+      "throughputFilesPerSecond": 706.631,
+      "totalExtractedChars": 1219,
+      "totalSignals": 59,
+      "totalSourceBytes": 1631,
       "unsupportedFiles": 0
     },
     {
-      "durationMs": 73878.983,
-      "extractedCharsPerSecond": 435.2,
+      "durationMs": 73842.165,
+      "extractedCharsPerSecond": 435.4,
       "formatCounts": {
         "image_ocr": 1,
         "pdf_mixed": 1,
@@ -149,8 +153,9 @@
         "location_data": 3,
         "organization_identifier": 3,
         "passport_number": 2,
-        "person_name": 23,
+        "person_name": 21,
         "phone_number": 2,
+        "signature": 2,
         "tax_id": 2
       },
       "skippedFiles": 2,
@@ -162,8 +167,8 @@
       "unsupportedFiles": 0
     },
     {
-      "durationMs": 14.919,
-      "extractedCharsPerSecond": 13938839.1,
+      "durationMs": 17.574,
+      "extractedCharsPerSecond": 11833036.7,
       "formatCounts": {
         "synthetic_text": 1
       },
@@ -184,7 +189,7 @@
       },
       "skippedFiles": 0,
       "successfulFiles": 1,
-      "throughputFilesPerSecond": 67.028,
+      "throughputFilesPerSecond": 56.902,
       "totalExtractedChars": 207954,
       "totalSignals": 32,
       "totalSourceBytes": 207954,
@@ -192,11 +197,11 @@
     }
   ],
   "totals": {
-    "durationMs": 73916.397,
+    "durationMs": 73886.627,
     "estimatedCostUsd": 0.0,
-    "extractedCharsPerSecond": 3263.2,
+    "extractedCharsPerSecond": 3266.2,
     "formatCounts": {
-      "csv": 1,
+      "csv": 2,
       "docx": 1,
       "eml": 1,
       "html": 1,
@@ -219,14 +224,16 @@
     },
     "modelCalls": 0,
     "ocrDeferredFiles": 0,
-    "peakRssMiB": 218.98,
-    "processedFiles": 36,
+    "peakRssMiB": 218.996,
+    "processedFiles": 37,
     "signalTypeCounts": {
       "access_context": 10,
+      "account_handle": 1,
       "address": 5,
       "bank_account": 1,
       "credential_secret": 1,
       "date_of_birth": 1,
+      "driver_license": 1,
       "email": 8,
       "employee_id": 2,
       "expense_amount": 2,
@@ -237,16 +244,18 @@
       "national_identifier": 5,
       "organization_identifier": 3,
       "passport_number": 3,
-      "person_name": 74,
+      "person_name": 73,
       "phone_number": 16,
       "salary_compensation": 2,
-      "tax_id": 3
+      "signature": 3,
+      "tax_id": 3,
+      "travel_record": 1
     },
-    "successfulFiles": 36,
-    "throughputFilesPerSecond": 0.487,
-    "totalExtractedChars": 241202,
-    "totalSignals": 160,
-    "totalSourceBytes": 6624624,
+    "successfulFiles": 37,
+    "throughputFilesPerSecond": 0.501,
+    "totalExtractedChars": 241327,
+    "totalSignals": 165,
+    "totalSourceBytes": 6624744,
     "unsupportedFiles": 0
   }
 }
