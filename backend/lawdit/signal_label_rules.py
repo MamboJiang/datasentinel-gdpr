@@ -71,7 +71,9 @@ def rule_for_label(label: str, value: str) -> LabelRule | None:
         return LabelRule("location_data", "location_label", "[REDACTED_LOCATION]", 0.8)
     if any(token in normalized for token in ("license plate", "licence plate", "registration plate", "vehicle registration", "plate number")):
         return LabelRule("license_plate", "license_plate_label", "[REDACTED_LICENSE_PLATE]", 0.78)
-    if any(token in normalized for token in ("username", "user name", "handle", "account id", "profile id", "login id")):
+    if any(token in normalized for token in ("username", "user name", "user id", "handle", "account id", "profile id", "login id")):
+        return LabelRule("account_handle", "account_handle_label", "[REDACTED_HANDLE]", 0.76)
+    if normalized == "user" and _looks_like_account_handle_value(value):
         return LabelRule("account_handle", "account_handle_label", "[REDACTED_HANDLE]", 0.76)
     if any(token in normalized for token in ("booking reference", "reservation code", "pnr", "ticket number", "itinerary id", "travel booking", "frequent flyer")):
         return LabelRule("travel_record", "travel_record_label", "[REDACTED_TRAVEL_RECORD]", 0.76)
@@ -143,3 +145,14 @@ def _looks_like_person_label(normalized: str) -> bool:
         "contact person",
         "trainer",
     ))
+
+
+def _looks_like_account_handle_value(value: str) -> bool:
+    normalized = value.strip().strip("'\"")
+    if not 3 <= len(normalized) <= 64:
+        return False
+    if any(character.isspace() for character in normalized):
+        return False
+    if "@" in normalized:
+        return True
+    return bool(re.fullmatch(r"[A-Za-z][A-Za-z0-9._-]{2,63}", normalized))

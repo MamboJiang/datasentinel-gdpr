@@ -26,6 +26,28 @@
       "forbiddenValues": ["Alice Example", "D1234567", "@alice_private", "AB12CD"]
     },
     {
+      "caseId": "tsv_multilingual_travel_identity",
+      "fileKind": "utf8_text",
+      "fileName": "travel_identity.tsv",
+      "contentType": "text/tab-separated-values",
+      "expectedFormat": "tsv",
+      "expectedDifficulty": "easy",
+      "text": "旅客\tFührerschein\tPassport Number\tBooking Reference\tPhone\n陈元昊\tB1234567\tEN3457864\tAB12CD\t+49 301234567",
+      "expectedTypes": ["person_name", "driver_license", "passport_number", "travel_record", "phone_number"],
+      "forbiddenValues": ["陈元昊", "B1234567", "EN3457864", "AB12CD", "+49 301234567"]
+    },
+    {
+      "caseId": "log_key_value_travel_identity",
+      "fileKind": "utf8_text",
+      "fileName": "access_review.log",
+      "contentType": "text/plain",
+      "expectedFormat": "log",
+      "expectedDifficulty": "easy",
+      "text": "ts=2026-06-01 level=info user=alice_private passport_number=EN3457864 booking_reference=AB12CD signature=\"Alice Example\" action=review",
+      "expectedTypes": ["account_handle", "passport_number", "travel_record", "signature"],
+      "forbiddenValues": ["alice_private", "EN3457864", "AB12CD", "Alice Example"]
+    },
+    {
       "caseId": "html_arabic_contact",
       "fileKind": "utf8_text",
       "fileName": "arabic_contact.html",

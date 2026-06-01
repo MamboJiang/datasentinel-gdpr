@@ -109,7 +109,7 @@ def _has_source_anchor(signal: dict[str, object], expected_format: object) -> bo
     selector = anchor.get("selector")
     if not isinstance(selector, dict) or "sourceStart" not in selector or "sourceEnd" not in selector:
         return False
-    if expected_format in {"csv", "xlsx", "ods"}:
+    if expected_format in {"csv", "tsv", "xlsx", "ods"}:
         return selector.get("type") == "tableCell" and "row" in selector and "column" in selector
     if expected_format in {"docx", "pptx", "html", "xml", "json", "jsonl", "ndjson", "odt", "odp", "eml"}:
         return selector.get("type") == "structurePath" and "path" in selector

@@ -75,6 +75,15 @@
       "forbiddenValues": ["20260601", "12345678", "120000"]
     },
     {
+      "caseId": "log_signature_metadata_clean",
+      "language": "en",
+      "fileName": "signature_metadata_clean.log",
+      "contentType": "text/plain",
+      "text": "signature_algorithm=SHA256 passport_policy=EN3457864 user=\"Alice Example\" role=worker department=platform build=20260601 rows=120000\n",
+      "expectedTypes": [],
+      "forbiddenValues": ["SHA256", "EN3457864", "Alice Example", "worker", "platform", "20260601", "120000"]
+    },
+    {
       "caseId": "image_ocr_store_receipt_clean",
       "language": "en",
       "fileKind": "image_ocr",

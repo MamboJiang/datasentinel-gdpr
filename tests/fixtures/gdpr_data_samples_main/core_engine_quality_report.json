@@ -1,6 +1,6 @@
 {
   "command": "python3 tests/core_engine_quality_report.py --output tests/fixtures/gdpr_data_samples_main/core_engine_quality_report.json",
-  "generatedAt": "2026-06-01T03:15:35Z",
+  "generatedAt": "2026-06-01T03:41:15Z",
   "privacyRule": "This report stores case IDs, language/format labels, expected signal types, actual signal types, negative-case signal counts, and aggregate quality metrics only. It must not include raw source text, raw detected values, source bodies, provider tokens, Drive URLs, page images, or private absolute paths.",
   "reportId": "core_engine_quality_2026-06-01_positive_negative_oracles",
   "safetyChecks": {
@@ -487,22 +487,22 @@
     },
     {
       "actualTypeCounts": {
-        "account_handle": 1,
+        "account_handle": 2,
         "address": 2,
         "bank_account": 1,
         "credential_secret": 1,
         "date_of_birth": 1,
-        "driver_license": 1,
+        "driver_license": 2,
         "email": 3,
         "health_data": 3,
         "national_identifier": 5,
-        "passport_number": 1,
-        "person_name": 19,
-        "phone_number": 13,
+        "passport_number": 3,
+        "person_name": 20,
+        "phone_number": 14,
         "salary_compensation": 2,
-        "signature": 1,
+        "signature": 2,
         "tax_id": 1,
-        "travel_record": 1
+        "travel_record": 3
       },
       "cases": [
         {
@@ -559,6 +559,65 @@
           ],
           "perfectTypeMatch": true,
           "signalCount": 5,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "driver_license",
+            "passport_number",
+            "person_name",
+            "phone_number",
+            "travel_record"
+          ],
+          "caseId": "tsv_multilingual_travel_identity",
+          "expectedTypes": [
+            "driver_license",
+            "passport_number",
+            "person_name",
+            "phone_number",
+            "travel_record"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "tsv",
+          "language": "mixed",
+          "matchedTypes": [
+            "driver_license",
+            "passport_number",
+            "person_name",
+            "phone_number",
+            "travel_record"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 5,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "account_handle",
+            "passport_number",
+            "signature",
+            "travel_record"
+          ],
+          "caseId": "log_key_value_travel_identity",
+          "expectedTypes": [
+            "account_handle",
+            "passport_number",
+            "signature",
+            "travel_record"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "log",
+          "language": "mixed",
+          "matchedTypes": [
+            "account_handle",
+            "passport_number",
+            "signature",
+            "travel_record"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 4,
           "suite": "generated_format_challenges"
         },
         {
@@ -979,22 +1038,22 @@
         }
       ],
       "expectedTypeCounts": {
-        "account_handle": 1,
+        "account_handle": 2,
         "address": 2,
         "bank_account": 1,
         "credential_secret": 1,
         "date_of_birth": 1,
-        "driver_license": 1,
+        "driver_license": 2,
         "email": 3,
         "health_data": 3,
         "national_identifier": 5,
-        "passport_number": 1,
-        "person_name": 19,
-        "phone_number": 13,
+        "passport_number": 3,
+        "person_name": 20,
+        "phone_number": 14,
         "salary_compensation": 2,
-        "signature": 1,
+        "signature": 2,
         "tax_id": 1,
-        "travel_record": 1
+        "travel_record": 3
       },
       "formatCounts": {
         "csv": 2,
@@ -1003,12 +1062,14 @@
         "html": 1,
         "image_ocr": 1,
         "jsonl": 1,
+        "log": 1,
         "odp": 1,
         "ods": 1,
         "odt": 1,
         "pdf_ocr": 2,
         "pptx": 1,
         "rtf": 1,
+        "tsv": 1,
         "txt": 1,
         "video_transcript": 1,
         "xlsx": 1,
@@ -1016,16 +1077,16 @@
         "zip": 1
       },
       "languageCounts": {
-        "mixed": 19
+        "mixed": 21
       },
       "metrics": {
-        "actualTypeAssertions": 56,
-        "caseCount": 19,
-        "expectedTypeAssertions": 56,
+        "actualTypeAssertions": 65,
+        "caseCount": 21,
+        "expectedTypeAssertions": 65,
         "falseNegativeTypeCount": 0,
         "falsePositiveTypeCount": 0,
-        "matchedTypeAssertions": 56,
-        "perfectCaseCount": 19,
+        "matchedTypeAssertions": 65,
+        "perfectCaseCount": 21,
         "typeF1": 1.0,
         "typePrecision": 1.0,
         "typeRecall": 1.0
@@ -1141,6 +1202,19 @@
         },
         {
           "actualTypes": [],
+          "caseId": "log_signature_metadata_clean",
+          "expectedTypes": [],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "log",
+          "language": "en",
+          "matchedTypes": [],
+          "perfectTypeMatch": true,
+          "signalCount": 0,
+          "suite": "core_negative_cases"
+        },
+        {
+          "actualTypes": [],
           "caseId": "image_ocr_store_receipt_clean",
           "expectedTypes": [],
           "falseNegativeTypes": [],
@@ -1184,24 +1258,24 @@
         "csv": 2,
         "image_ocr": 1,
         "json": 1,
-        "log": 1,
+        "log": 2,
         "markdown": 1,
         "pdf_ocr": 1,
         "txt": 4
       },
       "languageCounts": {
         "de": 1,
-        "en": 9,
+        "en": 10,
         "zh-Hans": 1
       },
       "metrics": {
         "actualTypeAssertions": 0,
-        "caseCount": 11,
+        "caseCount": 12,
         "expectedTypeAssertions": 0,
         "falseNegativeTypeCount": 0,
         "falsePositiveTypeCount": 0,
         "matchedTypeAssertions": 0,
-        "perfectCaseCount": 11,
+        "perfectCaseCount": 12,
         "typeF1": 1.0,
         "typePrecision": 1.0,
         "typeRecall": 1.0
@@ -1210,13 +1284,13 @@
     }
   ],
   "totals": {
-    "actualTypeAssertions": 117,
-    "caseCount": 44,
-    "expectedTypeAssertions": 117,
+    "actualTypeAssertions": 126,
+    "caseCount": 47,
+    "expectedTypeAssertions": 126,
     "falseNegativeTypeCount": 0,
     "falsePositiveTypeCount": 0,
-    "matchedTypeAssertions": 117,
-    "perfectCaseCount": 44,
+    "matchedTypeAssertions": 126,
+    "perfectCaseCount": 47,
     "suiteCount": 3,
     "typeF1": 1.0,
     "typePrecision": 1.0,
