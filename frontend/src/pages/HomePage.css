@@ -10,8 +10,10 @@
   --landing-surface: #ffffff;
   background: #ffffff;
   color: var(--landing-ink);
+  isolation: isolate;
   min-height: 100vh;
   overflow-x: hidden;
+  position: relative;
 }
 
 .landing-page *, .landing-page *::before, .landing-page *::after {
@@ -19,9 +21,36 @@
   letter-spacing: 0;
 }
 
+.landing-page > :not(.landing-dot-grid-background) {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-dot-grid-background {
+  height: 100vh;
+  inset: 0;
+  opacity: .68;
+  pointer-events: none;
+  position: fixed;
+  width: 100vw;
+  z-index: 0;
+}
+
 .landing-page a {
   color: inherit;
   text-decoration: none;
+}
+
+@property --landing-button-orbit {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@property --workflow-node-glow-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
 }
 
 .landing-announcement {
@@ -47,7 +76,8 @@
 
 .landing-nav-shell {
   align-items: center;
-  background: rgba(255, 255, 255, .92);
+  background: rgba(255, 255, 255, .96);
+  backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--landing-border);
   display: flex;
   gap: 30px;
@@ -137,8 +167,10 @@
 .landing-hero-scene {
   inset: 0;
   overflow: hidden;
+  perspective: 1100px;
   pointer-events: none;
   position: absolute;
+  transform-style: preserve-3d;
   z-index: -1;
 }
 
@@ -156,22 +188,66 @@
 .landing-file-card,
 .landing-route-card,
 .landing-audit-card {
-  background: rgba(255, 255, 255, .92);
-  border: 1px solid var(--landing-border);
-  border-radius: 8px;
-  box-shadow: 0 18px 45px rgba(25, 25, 28, .1);
+  pointer-events: auto;
   position: absolute;
+  transform-style: preserve-3d;
   will-change: transform;
 }
 
+.landing-card-face {
+  background: rgba(255, 255, 255, .98);
+  border: 1px solid var(--landing-border);
+  border-radius: 8px;
+  box-shadow: 0 18px 45px rgba(25, 25, 28, .1);
+  backface-visibility: hidden;
+  position: relative;
+  transform-style: preserve-3d;
+  transform:
+    translate3d(var(--card-shift-x, 0), var(--card-shift-y, 0), var(--card-z, 0))
+    rotateX(calc(var(--card-rotate-x, 0deg) + var(--tilt-x, 0deg)))
+    rotateY(calc(var(--card-rotate-y, 0deg) + var(--tilt-y, 0deg)))
+    rotateZ(var(--card-rotate-z, 0deg));
+  transition: transform .42s cubic-bezier(.22, 1, .36, 1), box-shadow .42s cubic-bezier(.22, 1, .36, 1);
+  width: 100%;
+  will-change: transform;
+}
+
+.landing-file-card,
+.landing-route-card {
+  animation: landing-card-float 6.8s ease-in-out infinite;
+}
+
+.landing-route-card {
+  animation-delay: -2.4s;
+}
+
+.landing-file-card:hover .landing-card-face,
+.landing-route-card:hover .landing-card-face,
+.landing-audit-card:hover .landing-card-face {
+  box-shadow: 0 26px 64px rgba(25, 25, 28, .15);
+}
+
 .landing-file-card {
+  --card-rotate-x: 2deg;
+  --card-rotate-y: 8deg;
   left: 6vw;
-  padding: 18px;
   top: 120px;
   width: 320px;
 }
 
-.landing-file-card div {
+.landing-file-card .landing-card-face {
+  padding: 18px;
+  transform-origin: center center 0;
+}
+
+.landing-file-card:hover {
+  --card-rotate-x: 0deg;
+  --card-rotate-y: 0deg;
+  --card-shift-y: -4px;
+  --card-z: 14px;
+}
+
+.landing-file-card-header {
   align-items: center;
   display: flex;
   justify-content: space-between;
@@ -210,10 +286,25 @@
 }
 
 .landing-route-card {
-  padding: 18px;
-  right: 8vw;
+  --card-rotate-x: 2deg;
+  --card-rotate-y: -8deg;
+  --card-rotate-z: -1deg;
+  right: 3vw;
   top: 140px;
   width: 260px;
+}
+
+.landing-route-card .landing-card-face {
+  padding: 18px;
+  transform-origin: center center 0;
+}
+
+.landing-route-card:hover {
+  --card-rotate-x: 0deg;
+  --card-rotate-y: 0deg;
+  --card-rotate-z: 0deg;
+  --card-shift-y: -4px;
+  --card-z: 14px;
 }
 
 .landing-route-card strong {
@@ -222,7 +313,7 @@
   margin-top: 8px;
 }
 
-.landing-route-card div {
+.landing-route-graph {
   align-items: center;
   display: grid;
   gap: 8px;
@@ -248,10 +339,27 @@
 }
 
 .landing-audit-card {
+  --card-rotate-x: 1.5deg;
+  --card-rotate-y: -6deg;
+  --card-rotate-z: 1.4deg;
+  --card-shift-x: 22px;
+  --card-shift-y: -10px;
   bottom: 90px;
-  padding: 16px;
-  right: 20vw;
+  right: 7vw;
   width: 230px;
+}
+
+.landing-audit-card .landing-card-face {
+  padding: 16px;
+  transform-origin: center center 0;
+}
+
+.landing-audit-card:hover {
+  --card-rotate-x: 0deg;
+  --card-rotate-y: 0deg;
+  --card-rotate-z: 0deg;
+  --card-shift-y: -14px;
+  --card-z: 12px;
 }
 
 .landing-audit-card p {
@@ -278,6 +386,40 @@
   line-height: .96;
 }
 
+.landing-hero-title {
+  display: inline-grid;
+  position: relative;
+  transition: opacity .18s ease-out;
+  white-space: nowrap;
+}
+
+.landing-hero-title-caret {
+  animation: landing-title-caret-blink .82s step-end infinite;
+  background: currentColor;
+  display: inline-block;
+  height: .82em;
+  margin-left: .04em;
+  opacity: .86;
+  transform: translateY(.08em);
+  vertical-align: baseline;
+  width: .055em;
+}
+
+.landing-hero-title-text,
+.landing-hero-title-measure {
+  grid-area: 1 / 1;
+}
+
+.landing-hero-title-text {
+  justify-self: start;
+}
+
+.landing-hero-title-measure {
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
 .landing-hero-copy p {
   color: #4b4f55;
   font-size: 1.28rem;
@@ -292,6 +434,80 @@
   gap: 18px;
   justify-content: center;
   margin-top: 30px;
+  position: relative;
+}
+
+.landing-hero-primary {
+  isolation: isolate;
+  overflow: visible;
+  position: relative;
+  transition: box-shadow .35s ease, transform .35s ease;
+}
+
+.landing-hero-primary::before,
+.landing-hero-primary::after {
+  border-radius: inherit;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity .28s ease;
+}
+
+.landing-hero-primary::before {
+  background:
+    conic-gradient(
+      from var(--landing-button-orbit),
+      transparent 0deg,
+      transparent 196deg,
+      rgba(138, 180, 255, .16) 226deg,
+      rgba(255, 255, 255, .98) 262deg,
+      rgba(110, 123, 255, .86) 294deg,
+      rgba(11, 87, 208, .5) 326deg,
+      transparent 354deg,
+      transparent 360deg
+    );
+  inset: -3px;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  padding: 3px;
+  z-index: 0;
+}
+
+.landing-hero-primary::after {
+  background:
+    radial-gradient(118% 118% at 50% 50%, rgba(255, 255, 255, .5), transparent 24%),
+    radial-gradient(112% 112% at 50% 50%, rgba(111, 120, 255, .34), transparent 50%),
+    radial-gradient(96% 96% at 50% 50%, rgba(11, 87, 208, .24), transparent 70%);
+  filter: blur(18px);
+  inset: -34px -36px;
+  z-index: -1;
+}
+
+.landing-hero-primary:hover {
+  animation: landing-button-scale-breathe 1.75s ease-in-out infinite;
+  box-shadow: 0 18px 42px rgba(11, 87, 208, .22);
+}
+
+.landing-hero-primary:hover::before,
+.landing-hero-primary:hover::after {
+  opacity: 1;
+}
+
+.landing-hero-primary:hover::before {
+  animation: landing-button-orbit 2.8s linear infinite;
+}
+
+.landing-hero-primary:hover::after {
+  animation: landing-button-aura-breathe 1.75s ease-in-out infinite;
+}
+
+.landing-primary-content {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
 }
 
 .landing-feature-rail {
@@ -304,9 +520,19 @@
 }
 
 .landing-proof {
+  background: rgba(255, 255, 255, .96);
   border-radius: 8px;
+  cursor: default;
   min-height: 142px;
+  pointer-events: auto;
   padding: 22px;
+  transition: background .3s ease, box-shadow .3s ease, color .3s ease, filter .3s ease, transform .3s ease;
+  will-change: transform;
+}
+
+.landing-proof:hover {
+  box-shadow: 0 16px 34px rgba(24, 24, 28, .12);
+  transform: scale(1.02);
 }
 
 .landing-proof svg {
@@ -327,21 +553,132 @@
   font-size: .84rem;
   line-height: 1.48;
   margin-top: 8px;
+  transition: color .3s ease;
 }
 
 .landing-proof-red {
-  background: var(--landing-red);
-  color: #ffffff;
+  color: var(--landing-ink);
 }
 
-.landing-proof-red p {
-  color: rgba(255, 255, 255, .86);
+.landing-proof-red:hover {
+  background: linear-gradient(145deg, rgba(214, 69, 61, .15), rgba(214, 69, 61, .06));
+  color: var(--landing-ink);
+}
+
+.landing-proof-blue:hover {
+  background: linear-gradient(145deg, rgba(11, 87, 208, .16), rgba(11, 87, 208, .07));
+}
+
+.landing-proof-green:hover {
+  background: linear-gradient(145deg, rgba(20, 122, 66, .17), rgba(20, 122, 66, .07));
+}
+
+.landing-proof-amber:hover {
+  background: linear-gradient(145deg, rgba(177, 105, 0, .18), rgba(177, 105, 0, .07));
+}
+
+.landing-proof-ink:hover {
+  background: linear-gradient(145deg, rgba(92, 74, 134, .18), rgba(92, 74, 134, .07));
+}
+
+.landing-proof-red:hover p {
+  color: #33383d;
+}
+
+.landing-proof-blue:hover p,
+.landing-proof-green:hover p,
+.landing-proof-amber:hover p,
+.landing-proof-ink:hover p {
+  color: #33383d;
 }
 
 .landing-proof-blue svg { color: var(--landing-blue); }
 .landing-proof-green svg { color: var(--landing-green); }
 .landing-proof-amber svg { color: var(--landing-amber); }
 .landing-proof-ink svg { color: #5c4a86; }
+
+@keyframes landing-card-float {
+  0%, 100% {
+    margin-top: 0;
+  }
+
+  50% {
+    margin-top: -8px;
+  }
+}
+
+@keyframes landing-title-caret-blink {
+  0%, 100% {
+    opacity: .86;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes landing-button-orbit {
+  to {
+    --landing-button-orbit: 360deg;
+  }
+}
+
+@keyframes landing-button-aura-breathe {
+  0%, 100% {
+    opacity: .62;
+    transform: scale(.96);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes landing-button-scale-breathe {
+  0%, 100% {
+    transform: translateY(-2px) scale(1.04);
+  }
+
+  50% {
+    transform: translateY(-3px) scale(1.065);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-dot-grid-background {
+    opacity: .28;
+  }
+
+  .landing-file-card,
+  .landing-route-card {
+    animation: none;
+  }
+
+  .landing-hero-title,
+  .landing-hero-title-caret {
+    animation: none;
+  }
+
+  .landing-hero-primary,
+  .landing-hero-primary::before,
+  .landing-hero-primary::after {
+    animation: none;
+  }
+
+  .landing-hero-title-caret {
+    display: none;
+  }
+
+  .landing-card-face,
+  .landing-proof {
+    transition: none;
+  }
+
+  .landing-proof:hover {
+    transform: none;
+  }
+}
 
 @media (min-width: 981px) and (max-width: 1320px) {
   .landing-file-card {

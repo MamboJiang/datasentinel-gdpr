@@ -1,18 +1,12 @@
 import {
   Activity,
-  ClipboardCheck,
   Database,
-  EyeOff,
   FileSearch,
   Gauge,
   GitBranch,
-  History,
   LockKeyhole,
-  Scale,
-  Settings2,
   ShieldCheck,
   UserCheck,
-  Users,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -30,7 +24,7 @@ export type WorkflowStep = {
   description: string
 }
 
-export type ContractSection = {
+type BoundarySection = {
   title: string
   description: string
   icon: LucideIcon
@@ -116,48 +110,6 @@ export const workflowSteps: WorkflowStep[] = [
   },
 ]
 
-export const contractSections: ContractSection[] = [
-  {
-    title: 'Problem to govern',
-    description: 'Distributed file stores make manual review hard to scale, and simple detection is not enough without evidence, ownership, review, audit, and quality metrics.',
-    icon: Scale,
-  },
-  {
-    title: 'Redacted evidence',
-    description: 'Reviewer-facing surfaces use masked snippets, safe metadata, and fallback locations instead of exposing raw source content.',
-    icon: EyeOff,
-  },
-  {
-    title: 'Accountable routing',
-    description: 'Owner assignment, Master of Data fallback, and escalation paths prevent review-required findings from becoming silently unowned.',
-    icon: Users,
-  },
-  {
-    title: 'Human review',
-    description: 'Guidance appears before action, permission boundaries stay visible, and every review decision needs human context.',
-    icon: ClipboardCheck,
-  },
-  {
-    title: 'Audit evidence',
-    description: 'Scan, assignment, and review actions preserve actor, timestamp, reason, outcome, and policy context when available.',
-    icon: History,
-  },
-  {
-    title: 'Adaptable governance',
-    description: 'Policy packs, organization models, permission boundaries, and change previews avoid hard-coding one legal snapshot into scanner logic.',
-    icon: Settings2,
-  },
-]
-
-export const evaluationMetrics = [
-  { label: 'Precision', value: 'After scan' },
-  { label: 'Recall', value: 'After scan' },
-  { label: 'F1', value: 'After scan' },
-  { label: 'Model calls', value: 'Tracked' },
-  { label: 'Estimated cost', value: 'Tracked' },
-  { label: 'Reproducibility', value: 'Tracked' },
-]
-
 export const sampleFamilies = [
   'Expense_Report',
   'IT_Access_Request',
@@ -179,7 +131,7 @@ export const consoleSurfaces = [
   'Permission boundary',
 ]
 
-export const safetyBoundaries: ContractSection[] = [
+export const safetyBoundaries: BoundarySection[] = [
   {
     title: 'Deletion is simulated',
     description: 'delete_candidate is a review status in P0 and does not execute source-file deletion.',
