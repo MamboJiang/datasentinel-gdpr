@@ -11,6 +11,10 @@ export function shouldUseLocalFallback(error: unknown): boolean {
   return !isApiRequestError(error)
 }
 
+export function canUseLocalFallback(error: unknown, localMocksEnabled: boolean): boolean {
+  return localMocksEnabled && shouldUseLocalFallback(error)
+}
+
 export function findFindingInData(current: MockData, findingId: string): Finding | undefined {
   if (current.findingDetails[findingId]) {
     return current.findingDetails[findingId]

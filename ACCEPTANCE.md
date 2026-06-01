@@ -522,7 +522,7 @@ The frontend-backend integration is accepted when:
 
 - The backend source package exposes `GET /api/health`, `GET /api/sources`, scan, finding, review, audit, metrics, evaluation, governance, permissions, and review-support paths from the existing P0 contract.
 - Successful backend responses use the standard envelope and rejected commands use `application/problem+json`.
-- The frontend requests `/api` first and falls back to the local mock workflow when the backend is unavailable.
+- The frontend requests `/api` first and enters the local mock workflow only when `VITE_LAWDIT_ENABLE_LOCAL_MOCKS=true`; production/prelaunch builds with local mocks disabled show server-unavailable notifications and do not run local scan, finding review, or Workspace mutation workflows.
 - Vite development mode proxies `/api` to the local Python API server without hard-coding a public host.
 - `POST /api/scans/full` accepts the controlled `mock_ready` source and rejects not-ready sources without adding audit events.
 - Accepted prelaunch scan starts return `202` with `status = running` immediately after backend command validation, without waiting for source document reading or signal detection to finish.

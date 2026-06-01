@@ -53,6 +53,6 @@ The frontend can render the P0 workflow from local mocks, but `agent-us` needs t
 - `POST /api/scans/full` accepts only a scan-ready controlled source and returns a running scan envelope.
 - Rejected scan commands return `application/problem+json` and do not add audit events.
 - `POST /api/findings/{findingId}/review` records a review decision, updates the finding status, adds an audit event, and keeps `deletionExecuted = false`.
-- The frontend requests `/api` first and continues rendering from local mocks when the backend is unavailable.
+- The frontend requests `/api` first and continues into local mock workflows only when the backend is unavailable and `VITE_LAWDIT_ENABLE_LOCAL_MOCKS=true`.
 - Vite dev mode proxies `/api` to the local backend; Caddy on `agent-us` proxies `/api/*` to the loopback backend.
 - No Microsoft Graph, OAuth, tenant integration, production database, queue, AI service, production source connector, or deletion service is introduced.

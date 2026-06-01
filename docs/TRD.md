@@ -344,7 +344,7 @@ The approved first server integration is a stdlib Python HTTP server with no add
 
 Technical constraints:
 
-- The frontend calls `/api` first and falls back to local mock workflow only when the server is unavailable; `application/problem+json` command rejections remain server responses and must not trigger mock scanning.
+- The frontend calls `/api` first and falls back to local mock workflow only when the server is unavailable and `VITE_LAWDIT_ENABLE_LOCAL_MOCKS=true`; production/prelaunch builds with local mocks disabled must show a server-unavailable boundary instead of running local scan, finding review, or Workspace mutation workflows.
 - Vite proxies `/api` to `127.0.0.1:8000` in development.
 - Caddy proxies `/api/*` to the loopback API process on `agent-us`.
 - `--db-path` or `LAWDIT_DB_PATH` may point the API server to a local SQLite file for restart-safe P0 state.

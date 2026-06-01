@@ -6,6 +6,7 @@ import { getInitialMockData, type MockData } from './mockApi'
 import { buildReviewSupport } from './reviewSupport'
 import { completeScanWorkflow, getSourceConnectionMessage, startScanWorkflow, type StartScanOptions } from './scanWorkflow'
 import {
+  canUseLocalFallback,
   findFindingInData,
   isScanCompletionTransition,
   mergeVisibleFindingDetails,
@@ -72,6 +73,7 @@ import type {
 const localMocksEnabled = import.meta.env.VITE_LAWDIT_ENABLE_LOCAL_MOCKS === 'true'
 const BACKGROUND_REFRESH_MS = 5000
 const RUNNING_SCAN_REFRESH_MS = 1000
+const LOCAL_MOCK_FALLBACK_DISABLED_MESSAGE = 'Project server unavailable; local mock fallback is disabled for this deployment.'
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState(localMocksEnabled ? getInitialMockData : getEmptyData)
@@ -120,6 +122,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const notifyApiRejection = useCallback((error: unknown, fallbackMessage: string) => {
     notify(error instanceof Error ? error.message : fallbackMessage)
+  }, [notify])
+
+  const continueAfterServerOutage = useCallback((error: unknown, localFallbackMessage: string): boolean => {
+    markServerUnavailable()
+
+    if (!canUseLocalFallback(error, localMocksEnabled)) {
+      notify(LOCAL_MOCK_FALLBACK_DISABLED_MESSAGE)
+      return false
+    }
+
+    notify(error instanceof Error ? error.message : localFallbackMessage)
+    return true
+  }, [markServerUnavailable, notify])
+
+  const canRunLocalMockWorkflow = useCallback((): boolean => {
+    if (localMocksEnabled) {
+      return true
+    }
+
+    notify(LOCAL_MOCK_FALLBACK_DISABLED_MESSAGE)
+    return false
   }, [notify])
 
   const buildFallbackData = useCallback(() => (
@@ -279,9 +302,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           notifyApiRejection(error, 'Scan was rejected by the project server.')
           return
         }
-        markServerUnavailable()
-        notify(error instanceof Error ? error.message : 'Project server unavailable; using local mock workflow.')
+        if (!continueAfterServerOutage(error, 'Project server unavailable; using local mock workflow.')) {
+          return
+        }
       }
+    }
+
+    if (!canRunLocalMockWorkflow()) {
+      return
     }
 
     startLocalScan(scanOptions)
@@ -335,9 +363,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           notifyApiRejection(error, 'Source connection check was rejected by the project server.')
           return
         }
-        markServerUnavailable()
-        notify(error instanceof Error ? error.message : 'Project server unavailable; using local source check.')
+        if (!continueAfterServerOutage(error, 'Project server unavailable; using local source check.')) {
+          return
+        }
       }
+    }
+
+    if (!canRunLocalMockWorkflow()) {
+      return
     }
 
     const source = data.sources.find((candidate) => candidate.sourceId === sourceId)
@@ -421,9 +454,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           notifyApiRejection(error, 'Review decision was rejected by the project server.')
           return
         }
-        markServerUnavailable()
-        notify(error instanceof Error ? error.message : 'Project server unavailable; using local review workflow.')
+        if (!continueAfterServerOutage(error, 'Project server unavailable; using local review workflow.')) {
+          return
+        }
       }
+    }
+
+    if (!canRunLocalMockWorkflow()) {
+      return
     }
 
     const occurredAt = new Date().toISOString()
@@ -465,9 +503,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           notifyApiRejection(error, 'Workspace creation was rejected by the project server.')
           return
         }
-        markServerUnavailable()
-        notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
+        if (!continueAfterServerOutage(error, 'Project server unavailable; using local Workspace mock.')) {
+          return
+        }
       }
+    }
+
+    if (!canRunLocalMockWorkflow()) {
+      return
     }
 
     setData((current) => applyLocalWorkspaceCreation(current, input))
@@ -493,6 +536,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const workspace = data.workspaceDirectory.workspaces.find((candidate) => candidate.workspaceId === workspaceId)
     if (!workspace) {
       notify('Workspace membership is required.')
+      return false
+    }
+
+    if (!canRunLocalMockWorkflow()) {
       return false
     }
 
@@ -546,9 +593,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           notifyApiRejection(error, 'Workspace settings update was rejected by the project server.')
           return false
         }
-        markServerUnavailable()
-        notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
+        if (!continueAfterServerOutage(error, 'Project server unavailable; using local Workspace mock.')) {
+          return false
+        }
       }
+    }
+
+    if (!canRunLocalMockWorkflow()) {
+      return false
     }
 
     if (!canManageWorkspaceSettings()) {
@@ -572,9 +624,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           notifyApiRejection(error, 'Workspace invitation was rejected by the project server.')
           return null
         }
-        markServerUnavailable()
-        notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
+        if (!continueAfterServerOutage(error, 'Project server unavailable; using local Workspace mock.')) {
+          return null
+        }
       }
+    }
+
+    if (!canRunLocalMockWorkflow()) {
+      return null
     }
 
     if (!data.workspaceAdmin.permissionBoundary.allowedActions.includes('invite_workspace_members')) {
@@ -627,9 +684,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           notifyApiRejection(error, 'Workspace invitation acceptance was rejected by the project server.')
           return false
         }
-        markServerUnavailable()
-        notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
+        if (!continueAfterServerOutage(error, 'Project server unavailable; using local Workspace mock.')) {
+          return false
+        }
       }
+    }
+
+    if (!canRunLocalMockWorkflow()) {
+      return false
     }
 
     const invitation = data.workspaceDirectory.pendingInvitations.find((item) => item.invitationId === invitationId)
@@ -677,9 +739,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           notifyApiRejection(error, 'Workspace group creation was rejected by the project server.')
           return null
         }
-        markServerUnavailable()
-        notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
+        if (!continueAfterServerOutage(error, 'Project server unavailable; using local Workspace mock.')) {
+          return null
+        }
       }
+    }
+
+    if (!canRunLocalMockWorkflow()) {
+      return null
     }
 
     if (!canManageWorkspaceGroups()) {
@@ -704,9 +771,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           notifyApiRejection(error, 'Workspace group update was rejected by the project server.')
           return null
         }
-        markServerUnavailable()
-        notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
+        if (!continueAfterServerOutage(error, 'Project server unavailable; using local Workspace mock.')) {
+          return null
+        }
       }
+    }
+
+    if (!canRunLocalMockWorkflow()) {
+      return null
     }
 
     if (!canManageWorkspaceGroups()) {
@@ -757,9 +829,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           notifyApiRejection(error, 'Workspace group deletion was rejected by the project server.')
           return false
         }
-        markServerUnavailable()
-        notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
+        if (!continueAfterServerOutage(error, 'Project server unavailable; using local Workspace mock.')) {
+          return false
+        }
       }
+    }
+
+    if (!canRunLocalMockWorkflow()) {
+      return false
     }
 
     if (!canManageWorkspaceGroups()) {
@@ -788,9 +865,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           notifyApiRejection(error, 'Workspace member update was rejected by the project server.')
           return false
         }
-        markServerUnavailable()
-        notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
+        if (!continueAfterServerOutage(error, 'Project server unavailable; using local Workspace mock.')) {
+          return false
+        }
       }
+    }
+
+    if (!canRunLocalMockWorkflow()) {
+      return false
     }
 
     if (!canManageWorkspaceMembers()) {
@@ -838,9 +920,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           notifyApiRejection(error, 'Workspace member removal was rejected by the project server.')
           return false
         }
-        markServerUnavailable()
-        notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
+        if (!continueAfterServerOutage(error, 'Project server unavailable; using local Workspace mock.')) {
+          return false
+        }
       }
+    }
+
+    if (!canRunLocalMockWorkflow()) {
+      return false
     }
 
     if (!canManageWorkspaceMembers()) {
@@ -890,9 +977,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           notifyApiRejection(error, 'Workspace owner transfer was rejected by the project server.')
           return false
         }
-        markServerUnavailable()
-        notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
+        if (!continueAfterServerOutage(error, 'Project server unavailable; using local Workspace mock.')) {
+          return false
+        }
       }
+    }
+
+    if (!canRunLocalMockWorkflow()) {
+      return false
     }
 
     if (!canManageWorkspaceOwnership()) {
@@ -922,9 +1014,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           notifyApiRejection(error, 'Workspace deletion was rejected by the project server.')
           return false
         }
-        markServerUnavailable()
-        notify(error instanceof Error ? error.message : 'Project server unavailable; using local Workspace mock.')
+        if (!continueAfterServerOutage(error, 'Project server unavailable; using local Workspace mock.')) {
+          return false
+        }
       }
+    }
+
+    if (!canRunLocalMockWorkflow()) {
+      return false
     }
 
     if (!canManageWorkspaceOwnership()) {
@@ -1021,13 +1118,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           notifyApiRejection(error, 'Finding detail was rejected by the project server.')
           return cachedFinding
         }
-        markServerUnavailable()
-        notify(error instanceof Error ? error.message : 'Project server unavailable; using local finding detail.')
+        if (!continueAfterServerOutage(error, 'Project server unavailable; using local finding detail.')) {
+          return cachedFinding
+        }
       }
     }
 
     return findFindingInData(dataRef.current, findingId)
-  }, [markServerUnavailable, notify, notifyApiRejection])
+  }, [continueAfterServerOutage, notifyApiRejection])
 
   function isGoogleDriveSource(sourceId: string): boolean {
     return data.sources.some((source) => source.sourceId === sourceId && source.sourceType === 'google_drive_selection')
@@ -1070,9 +1168,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           notifyApiRejection(error, 'Review support was rejected by the project server.')
           return getReviewSupport(findingId)
         }
-        markServerUnavailable()
-        notify(error instanceof Error ? error.message : 'Project server unavailable; using local review support.')
+        if (!continueAfterServerOutage(error, 'Project server unavailable; using local review support.')) {
+          return getReviewSupport(findingId)
+        }
       }
+    }
+
+    if (!canRunLocalMockWorkflow()) {
+      return data.reviewSupport
     }
 
     const reviewSupport = getReviewSupport(findingId)
