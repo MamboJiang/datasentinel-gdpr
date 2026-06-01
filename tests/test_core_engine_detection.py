@@ -116,6 +116,8 @@ class CoreEngineDetectionTests(unittest.TestCase):
             "Bankkonto: DE89370400440532013000\n"
             "Salaris: EUR 62000\n"
             "BSN: 123456782\n"
+            "Project budget: USD 120000\n"
+            "Product SKU: AB12345678\n"
         )
 
         signals = detect_signals(text)
@@ -126,6 +128,7 @@ class CoreEngineDetectionTests(unittest.TestCase):
         self.assertIn("national_identifier", signal_types)
         self.assertNotIn("iban_like", signal_types)
         self.assertNotIn("expense_amount", signal_types)
+        self.assertNotIn("tax_id", signal_types)
 
     def test_signal_sanitizer_redacts_persisted_anchor_text(self) -> None:
         signal = {

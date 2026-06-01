@@ -1,8 +1,8 @@
 {
   "command": "python3 tests/core_engine_quality_report.py --output tests/fixtures/gdpr_data_samples_main/core_engine_quality_report.json",
-  "generatedAt": "2026-06-01T01:47:22Z",
-  "privacyRule": "This report stores case IDs, language/format labels, expected signal types, actual signal types, and aggregate quality metrics only. It must not include raw source text, raw detected values, source bodies, provider tokens, Drive URLs, page images, or private absolute paths.",
-  "reportId": "core_engine_quality_2026-06-01_multilingual_format_oracles",
+  "generatedAt": "2026-06-01T02:25:49Z",
+  "privacyRule": "This report stores case IDs, language/format labels, expected signal types, actual signal types, negative-case signal counts, and aggregate quality metrics only. It must not include raw source text, raw detected values, source bodies, provider tokens, Drive URLs, page images, or private absolute paths.",
+  "reportId": "core_engine_quality_2026-06-01_positive_negative_oracles",
   "safetyChecks": {
     "privateAbsolutePathsPersisted": false,
     "providerTokensPersisted": false,
@@ -903,17 +903,152 @@
         "typeRecall": 1.0
       },
       "name": "generated_format_challenges"
+    },
+    {
+      "actualTypeCounts": {},
+      "cases": [
+        {
+          "actualTypes": [],
+          "caseId": "corporate_budget_clean",
+          "expectedTypes": [],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "en",
+          "matchedTypes": [],
+          "perfectTypeMatch": true,
+          "signalCount": 0,
+          "suite": "core_negative_cases"
+        },
+        {
+          "actualTypes": [],
+          "caseId": "product_sku_clean",
+          "expectedTypes": [],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "en",
+          "matchedTypes": [],
+          "perfectTypeMatch": true,
+          "signalCount": 0,
+          "suite": "core_negative_cases"
+        },
+        {
+          "actualTypes": [],
+          "caseId": "inventory_csv_clean",
+          "expectedTypes": [],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "csv",
+          "language": "en",
+          "matchedTypes": [],
+          "perfectTypeMatch": true,
+          "signalCount": 0,
+          "suite": "core_negative_cases"
+        },
+        {
+          "actualTypes": [],
+          "caseId": "json_release_config_clean",
+          "expectedTypes": [],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "json",
+          "language": "en",
+          "matchedTypes": [],
+          "perfectTypeMatch": true,
+          "signalCount": 0,
+          "suite": "core_negative_cases"
+        },
+        {
+          "actualTypes": [],
+          "caseId": "markdown_roadmap_clean",
+          "expectedTypes": [],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "markdown",
+          "language": "en",
+          "matchedTypes": [],
+          "perfectTypeMatch": true,
+          "signalCount": 0,
+          "suite": "core_negative_cases"
+        },
+        {
+          "actualTypes": [],
+          "caseId": "chinese_project_clean",
+          "expectedTypes": [],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "zh-Hans",
+          "matchedTypes": [],
+          "perfectTypeMatch": true,
+          "signalCount": 0,
+          "suite": "core_negative_cases"
+        },
+        {
+          "actualTypes": [],
+          "caseId": "german_procurement_clean",
+          "expectedTypes": [],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "de",
+          "matchedTypes": [],
+          "perfectTypeMatch": true,
+          "signalCount": 0,
+          "suite": "core_negative_cases"
+        },
+        {
+          "actualTypes": [],
+          "caseId": "numeric_operations_log_clean",
+          "expectedTypes": [],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "log",
+          "language": "en",
+          "matchedTypes": [],
+          "perfectTypeMatch": true,
+          "signalCount": 0,
+          "suite": "core_negative_cases"
+        }
+      ],
+      "expectedTypeCounts": {},
+      "formatCounts": {
+        "csv": 1,
+        "json": 1,
+        "log": 1,
+        "markdown": 1,
+        "txt": 4
+      },
+      "languageCounts": {
+        "de": 1,
+        "en": 6,
+        "zh-Hans": 1
+      },
+      "metrics": {
+        "actualTypeAssertions": 0,
+        "caseCount": 8,
+        "expectedTypeAssertions": 0,
+        "falseNegativeTypeCount": 0,
+        "falsePositiveTypeCount": 0,
+        "matchedTypeAssertions": 0,
+        "perfectCaseCount": 8,
+        "typeF1": 1.0,
+        "typePrecision": 1.0,
+        "typeRecall": 1.0
+      },
+      "name": "core_negative_cases"
     }
   ],
   "totals": {
     "actualTypeAssertions": 101,
-    "caseCount": 29,
+    "caseCount": 37,
     "expectedTypeAssertions": 101,
     "falseNegativeTypeCount": 0,
     "falsePositiveTypeCount": 0,
     "matchedTypeAssertions": 101,
-    "perfectCaseCount": 29,
-    "suiteCount": 2,
+    "perfectCaseCount": 37,
+    "suiteCount": 3,
     "typeF1": 1.0,
     "typePrecision": 1.0,
     "typeRecall": 1.0

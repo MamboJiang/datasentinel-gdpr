@@ -24,7 +24,7 @@ EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 IBAN_RE = re.compile(r"\b[A-Z]{2}\d{2}(?:[ -]?[A-Z0-9]){11,30}\b")
 PHONE_RE = re.compile(r"\b(?:\+\d{1,3}[ -]?)?(?:\(?\d{2,4}\)?[ -]?){2,4}\d{2,4}\b")
 EMPLOYEE_ID_RE = re.compile(r"\b(?:EMP|EE|E)-\d{3,8}\b", re.IGNORECASE)
-TAX_ID_RE = re.compile(r"\b(?:[A-Z]{2}\d{8,12}|(?:tax|vat)\s*id\s*[:#]?\s*[A-Z0-9 -]{6,20})\b", re.IGNORECASE)
+TAX_ID_RE = re.compile(r"\b(?:tax|vat)\s*id\s*[:#]?\s*[A-Z0-9 -]{6,20}\b", re.IGNORECASE)
 AMOUNT_RE = re.compile(r"\b(?:EUR|USD|GBP|CHF)\s?\d{1,6}(?:[,.]\d{2})?\b|\b\d{1,6}(?:[,.]\d{2})\s?(?:EUR|USD|GBP|CHF)\b")
 SSN_RE = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
 UK_NINO_RE = re.compile(r"\b(?!BG|GB|KN|NK|NT|TN|ZZ)[A-CEGHJ-PR-TW-Z]{2}\s?\d{2}\s?\d{2}\s?\d{2}\s?[A-D]\b", re.IGNORECASE)
@@ -104,6 +104,10 @@ def detect_signals(text: str) -> list[dict[str, Any]]:
     for rule in REGEX_RULES:
         for match in rule.pattern.finditer(scanned_text):
             if rule.signal_type == "phone_number" and _phone_match_embedded_in_long_digit_run(scanned_text, match.start(), match.end()):
+                continue
+            if rule.signal_type == "phone_number" and not _phone_match_has_phone_context(scanned_text, match.start(), match.end()):
+                continue
+            if rule.signal_type == "expense_amount" and not _amount_match_has_personal_context(scanned_text, match.start(), match.end()):
                 continue
             if rule.validator and not rule.validator(match.group(0)):
                 continue
@@ -328,6 +332,52 @@ def _phone_match_embedded_in_long_digit_run(text: str, start: int, end: int) -> 
         right += 1
     digit_run = re.sub(r"\D", "", text[left:right])
     return len(digit_run) > 15 or _valid_payment_card(text[left:right])
+
+
+def _phone_match_has_phone_context(text: str, start: int, end: int) -> bool:
+    value = text[start:end]
+    if "+" in value or any(character in value for character in " -()."):
+        return True
+    context = text[max(0, start - 32):min(len(text), end + 32)].lower()
+    return any(token in context for token in (
+        "phone",
+        "mobile",
+        "tel",
+        "telephone",
+        "telefon",
+        "téléphone",
+        "teléfono",
+        "telefone",
+        "telefoon",
+        "電話",
+        "电话",
+        "전화",
+        "الهاتف",
+    ))
+
+
+def _amount_match_has_personal_context(text: str, start: int, end: int) -> bool:
+    context = text[max(0, start - 48):min(len(text), end + 48)].lower()
+    return any(token in context for token in (
+        "salary",
+        "salaris",
+        "salario",
+        "gehalt",
+        "compensation",
+        "payroll",
+        "bonus",
+        "wage",
+        "expense",
+        "reimbursement",
+        "receipt",
+        "claim",
+        "allowance",
+        "employee",
+        "staff",
+        "participant",
+        "requester",
+        "traveler",
+    ))
 
 
 def _url_has_personal_hint(value: str) -> bool:

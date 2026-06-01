@@ -56,7 +56,7 @@ def rule_for_label(label: str, value: str) -> LabelRule | None:
         return LabelRule("iban_like", "iban_label", "[REDACTED_FINANCIAL_ID]", 0.88)
     if any(token in normalized for token in ("salary", "compensation", "payroll", "bonus", "wage")):
         return LabelRule("salary_compensation", "compensation_label", "[REDACTED_COMPENSATION]", 0.8)
-    if any(token in normalized for token in ("amount", "expense", "reimbursement")) or AMOUNT_VALUE_RE.search(value):
+    if any(token in normalized for token in ("expense", "reimbursement", "receipt", "claim", "allowance")):
         return LabelRule("expense_amount", "amount_label", "[REDACTED_AMOUNT]", 0.82)
     if any(token in normalized for token in ("ip address", "ipv4", "ipv6", "online identifier", "cookie id", "advertising id", "tracking id")):
         return LabelRule("online_identifier", "online_identifier_label", "[REDACTED_ONLINE_ID]", 0.78)
@@ -118,6 +118,8 @@ def _normalize_label(label: str) -> str:
 
 
 def _looks_like_person_label(normalized: str) -> bool:
+    if any(token in normalized for token in ("team", "department", "group", "workstream", "queue", "service")):
+        return False
     return any(token in normalized for token in (
         "name",
         "employee",

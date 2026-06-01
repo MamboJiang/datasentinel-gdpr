@@ -1,0 +1,78 @@
+{
+  "datasetId": "gdpr-data-samples-main-core-engine-negative-v1",
+  "description": "Synthetic no-sensitive-info cases for deterministic false-positive regression tests.",
+  "cases": [
+    {
+      "caseId": "corporate_budget_clean",
+      "language": "en",
+      "fileName": "corporate_budget_clean.txt",
+      "contentType": "text/plain",
+      "text": "Project budget: EUR 62000\nForecast amount: USD 120000\nCost center: CC-4200\n",
+      "expectedTypes": [],
+      "forbiddenValues": ["EUR 62000", "USD 120000", "CC-4200"]
+    },
+    {
+      "caseId": "product_sku_clean",
+      "language": "en",
+      "fileName": "product_sku_clean.txt",
+      "contentType": "text/plain",
+      "text": "Product SKU: AB12345678\nBatch code: FR1234567890\nRelease candidate: RC-2026-06\n",
+      "expectedTypes": [],
+      "forbiddenValues": ["AB12345678", "FR1234567890", "RC-2026-06"]
+    },
+    {
+      "caseId": "inventory_csv_clean",
+      "language": "en",
+      "fileName": "inventory_clean.csv",
+      "contentType": "text/csv",
+      "text": "Item,SKU,Quantity\nWidget,AB12345678,42\nCable,FR1234567890,8\n",
+      "expectedTypes": [],
+      "forbiddenValues": ["AB12345678", "FR1234567890"]
+    },
+    {
+      "caseId": "json_release_config_clean",
+      "language": "en",
+      "fileName": "release_config.json",
+      "contentType": "application/json",
+      "text": "{\"service\":\"reporting\",\"build\":\"AB12345678\",\"budget\":\"EUR 62000\",\"ownerTeam\":\"Platform Ops\"}",
+      "expectedTypes": [],
+      "forbiddenValues": ["AB12345678", "EUR 62000", "Platform Ops"]
+    },
+    {
+      "caseId": "markdown_roadmap_clean",
+      "language": "en",
+      "fileName": "roadmap_clean.md",
+      "contentType": "text/markdown",
+      "text": "| Workstream | Quarter | Budget |\n| --- | --- | --- |\n| Search migration | Q4 | EUR 62000 |\n| Export cleanup | Q1 | USD 120000 |\n",
+      "expectedTypes": [],
+      "forbiddenValues": ["Search migration", "EUR 62000", "USD 120000"]
+    },
+    {
+      "caseId": "chinese_project_clean",
+      "language": "zh-Hans",
+      "fileName": "chinese_project_clean.txt",
+      "contentType": "text/plain",
+      "text": "项目名称：数据目录升级\n预算：EUR 62000\n批次编号：CN12345678\n",
+      "expectedTypes": [],
+      "forbiddenValues": ["数据目录升级", "EUR 62000", "CN12345678"]
+    },
+    {
+      "caseId": "german_procurement_clean",
+      "language": "de",
+      "fileName": "german_procurement_clean.txt",
+      "contentType": "text/plain",
+      "text": "Projektbudget: EUR 62000\nArtikelnummer: DE12345678\nLieferfenster: KW 42\n",
+      "expectedTypes": [],
+      "forbiddenValues": ["EUR 62000", "DE12345678", "KW 42"]
+    },
+    {
+      "caseId": "numeric_operations_log_clean",
+      "language": "en",
+      "fileName": "operations_clean.log",
+      "contentType": "text/plain",
+      "text": "Build 20260601 completed\nBatch 12345678 archived\nShard 42 processed 120000 rows\n",
+      "expectedTypes": [],
+      "forbiddenValues": ["20260601", "12345678", "120000"]
+    }
+  ]
+}

@@ -60,7 +60,7 @@ class CoreEngineQualityReportTests(unittest.TestCase):
         self.assertEqual(report["safetyChecks"]["rawTextPersisted"], False)
         self.assertEqual(report["safetyChecks"]["rawDetectedValuesPersisted"], False)
         self.assertEqual(report["safetyChecks"]["sourceBodiesPersisted"], False)
-        self.assertGreaterEqual(report["totals"]["caseCount"], 25)
+        self.assertGreaterEqual(report["totals"]["caseCount"], 35)
         self.assertGreaterEqual(report["totals"]["expectedTypeAssertions"], 100)
         self.assertEqual(report["totals"]["falseNegativeTypeCount"], 0)
         self.assertEqual(report["totals"]["falsePositiveTypeCount"], 0)
@@ -68,14 +68,19 @@ class CoreEngineQualityReportTests(unittest.TestCase):
         self.assertEqual(report["totals"]["typeRecall"], 1.0)
         self.assertEqual(report["totals"]["typeF1"], 1.0)
         self.assertTrue(report["command"].startswith("python3 tests/core_engine_quality_report.py --output "))
-        self.assertEqual({suite["name"] for suite in report["suites"]}, {"core_multilingual_cases", "generated_format_challenges"})
+        self.assertEqual({suite["name"] for suite in report["suites"]}, {"core_multilingual_cases", "generated_format_challenges", "core_negative_cases"})
+        negative_suite = next(suite for suite in report["suites"] if suite["name"] == "core_negative_cases")
+        self.assertGreaterEqual(negative_suite["metrics"]["caseCount"], 8)
+        self.assertEqual(negative_suite["metrics"]["actualTypeAssertions"], 0)
+        self.assertEqual(negative_suite["metrics"]["falsePositiveTypeCount"], 0)
 
 
 def _forbidden_values() -> list[str]:
     core_cases = json.loads((FIXTURE_DIR / "core_multilingual_cases.json").read_text(encoding="utf-8"))["cases"]
     generated_cases = json.loads((FIXTURE_DIR / "generated_format_challenges.json").read_text(encoding="utf-8"))["cases"]
+    negative_cases = json.loads((FIXTURE_DIR / "core_negative_cases.json").read_text(encoding="utf-8"))["cases"]
     values = []
-    for case in [*core_cases, *generated_cases]:
+    for case in [*core_cases, *generated_cases, *negative_cases]:
         values.extend(str(value) for value in case["forbiddenValues"])
     return values
 

@@ -1,6 +1,6 @@
 {
   "command": "python3 tests/core_engine_performance_benchmark.py --output tests/fixtures/gdpr_data_samples_main/core_engine_performance_report.json",
-  "generatedAt": "2026-06-01T01:50:56Z",
+  "generatedAt": "2026-06-01T02:25:50Z",
   "host": {
     "machine": "arm64",
     "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
@@ -32,8 +32,8 @@
   },
   "suites": [
     {
-      "durationMs": 14.934,
-      "extractedCharsPerSecond": 69304.2,
+      "durationMs": 12.173,
+      "extractedCharsPerSecond": 85021.9,
       "formatCounts": {
         "csv": 1,
         "docx": 1,
@@ -96,15 +96,15 @@
       },
       "skippedFiles": 0,
       "successfulFiles": 17,
-      "throughputFilesPerSecond": 1138.329,
+      "throughputFilesPerSecond": 1396.495,
       "totalExtractedChars": 1035,
       "totalSignals": 51,
       "totalSourceBytes": 1434,
       "unsupportedFiles": 0
     },
     {
-      "durationMs": 695.141,
-      "extractedCharsPerSecond": 38884.2,
+      "durationMs": 575.257,
+      "extractedCharsPerSecond": 46987.7,
       "formatCounts": {
         "pdf_text_layer": 16
       },
@@ -125,7 +125,7 @@
         "address": 3,
         "email": 2,
         "employee_id": 2,
-        "expense_amount": 4,
+        "expense_amount": 2,
         "free_text_personal_context": 8,
         "incident_context": 10,
         "location_data": 2,
@@ -137,15 +137,15 @@
       },
       "skippedFiles": 2,
       "successfulFiles": 16,
-      "throughputFilesPerSecond": 23.017,
+      "throughputFilesPerSecond": 27.814,
       "totalExtractedChars": 27030,
-      "totalSignals": 69,
+      "totalSignals": 67,
       "totalSourceBytes": 6300801,
       "unsupportedFiles": 1
     },
     {
-      "durationMs": 10.469,
-      "extractedCharsPerSecond": 19862919.3,
+      "durationMs": 9.655,
+      "extractedCharsPerSecond": 21537828.3,
       "formatCounts": {
         "synthetic_text": 1
       },
@@ -166,7 +166,7 @@
       },
       "skippedFiles": 0,
       "successfulFiles": 1,
-      "throughputFilesPerSecond": 95.516,
+      "throughputFilesPerSecond": 103.57,
       "totalExtractedChars": 207954,
       "totalSignals": 32,
       "totalSourceBytes": 207954,
@@ -174,9 +174,9 @@
     }
   ],
   "totals": {
-    "durationMs": 720.544,
+    "durationMs": 597.085,
     "estimatedCostUsd": 0.0,
-    "extractedCharsPerSecond": 327556.7,
+    "extractedCharsPerSecond": 395285.4,
     "formatCounts": {
       "csv": 1,
       "docx": 1,
@@ -200,7 +200,7 @@
     },
     "modelCalls": 0,
     "ocrDeferredFiles": 1,
-    "peakRssMiB": 66.812,
+    "peakRssMiB": 66.844,
     "processedFiles": 34,
     "signalTypeCounts": {
       "access_context": 10,
@@ -210,7 +210,7 @@
       "date_of_birth": 1,
       "email": 6,
       "employee_id": 2,
-      "expense_amount": 4,
+      "expense_amount": 2,
       "free_text_personal_context": 8,
       "health_data": 3,
       "incident_context": 10,
@@ -224,9 +224,9 @@
       "tax_id": 3
     },
     "successfulFiles": 34,
-    "throughputFilesPerSecond": 47.187,
+    "throughputFilesPerSecond": 56.943,
     "totalExtractedChars": 236019,
-    "totalSignals": 152,
+    "totalSignals": 150,
     "totalSourceBytes": 6510189,
     "unsupportedFiles": 1
   }

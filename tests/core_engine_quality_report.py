@@ -37,12 +37,13 @@ def build_report(*, command: str) -> dict[str, Any]:
     suites = [
         evaluate_core_multilingual_cases(),
         evaluate_generated_format_challenges(),
+        evaluate_core_negative_cases(),
     ]
     totals = aggregate_suites(suites)
     return {
-        "reportId": "core_engine_quality_2026-06-01_multilingual_format_oracles",
+        "reportId": "core_engine_quality_2026-06-01_positive_negative_oracles",
         "generatedAt": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
-        "privacyRule": "This report stores case IDs, language/format labels, expected signal types, actual signal types, and aggregate quality metrics only. It must not include raw source text, raw detected values, source bodies, provider tokens, Drive URLs, page images, or private absolute paths.",
+        "privacyRule": "This report stores case IDs, language/format labels, expected signal types, actual signal types, negative-case signal counts, and aggregate quality metrics only. It must not include raw source text, raw detected values, source bodies, provider tokens, Drive URLs, page images, or private absolute paths.",
         "command": command,
         "suites": suites,
         "totals": totals,
@@ -94,6 +95,27 @@ def evaluate_generated_format_challenges() -> dict[str, Any]:
             text_locations=extracted.text_locations,
         ))
     return _suite_report("generated_format_challenges", cases)
+
+
+def evaluate_core_negative_cases() -> dict[str, Any]:
+    payload = json.loads((FIXTURE_DIR / "core_negative_cases.json").read_text(encoding="utf-8"))
+    cases = []
+    for case in payload["cases"]:
+        extracted = extract_document_content(
+            body=str(case["text"]).encode("utf-8"),
+            content_type=str(case["contentType"]),
+            name=str(case["fileName"]),
+        )
+        cases.append(_evaluate_case(
+            suite="core_negative_cases",
+            case_id=str(case["caseId"]),
+            language=str(case["language"]),
+            file_format=extracted.file_format,
+            expected_types=tuple(str(signal_type) for signal_type in case.get("expectedTypes", ())),
+            extracted_text=extracted.text,
+            text_locations=extracted.text_locations,
+        ))
+    return _suite_report("core_negative_cases", cases)
 
 
 def _evaluate_case(
