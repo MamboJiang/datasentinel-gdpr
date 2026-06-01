@@ -11,6 +11,7 @@ from typing import Any
 
 from .ocr_capabilities import ocr_mode, pdftoppm_path
 from .source_image_ocr import ImageOcrIssue, extract_image_content
+from .source_text_locations import text_line_starts
 
 try:
     from pypdf import mult as _pdf_matrix_mult
@@ -381,6 +382,9 @@ def _join_page_records(page_records: tuple[dict[str, Any], ...], file_format: st
                 "start": start,
                 "end": end,
                 "page": page_index,
+                "lineNumber": 1,
+                "columnNumber": 1,
+                "lineStarts": text_line_starts(page_text),
             }
             regions = page_record.get("regions")
             if regions:

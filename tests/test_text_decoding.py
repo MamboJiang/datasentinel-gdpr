@@ -23,6 +23,13 @@ class TextDecodingTests(unittest.TestCase):
         self.assertEqual(extracted.file_format, "txt")
         self.assertTrue({"person_name", "phone_number"}.issubset({signal["type"] for signal in signals}))
         self.assertTrue(all(signal["evidenceAnchor"]["selector"]["type"] == "textPosition" for signal in signals))
+        name_selector = next(signal["evidenceAnchor"]["selector"] for signal in signals if signal["type"] == "person_name")
+        phone_selector = next(signal["evidenceAnchor"]["selector"] for signal in signals if signal["type"] == "phone_number")
+        self.assertEqual(name_selector["sourceStart"], text.index("王芳"))
+        self.assertEqual(name_selector["lineNumber"], 1)
+        self.assertEqual(name_selector["columnNumber"], 4)
+        self.assertEqual(phone_selector["lineNumber"], 2)
+        self.assertEqual(phone_selector["columnNumber"], 4)
         self.assertNotIn("王芳", serialized)
         self.assertNotIn("13800138000", serialized)
 

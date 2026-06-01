@@ -64,7 +64,7 @@ Primitive selectors:
 | ODS | Sheet/table, row, column, cell range. | Highlight cell or row in grid preview. | Row/column label plus redacted quote. |
 | EML | Header/body-part ordinal path plus optional redacted text position in the extracted email view. | Highlight the email header or body part in generated preview. | Header or body-part label plus redacted quote. |
 | ZIP | Ordinal member metadata plus the child selector for supported member content. | Show archive member context and then focus the child selector when supported. | Member ordinal plus redacted quote. |
-| TXT/Markdown | Text position or line number plus quote. | Highlight line and masked phrase. | Line number plus redacted quote. |
+| TXT/Markdown | Text position, source-local line/column number, or redacted quote. | Highlight line and masked phrase. | Line number plus redacted quote. |
 | Unknown | Redacted quote only. | Evidence list focus. | File metadata and signal card. |
 
 ## Source-Data Anchor Contract
@@ -72,7 +72,7 @@ Primitive selectors:
 Backend signal payloads may include explicit `evidenceAnchor` objects. Each anchor should depend only on stable data derived from the source file, not on a particular browser viewer implementation.
 
 - PDF text-layer sources currently use page number plus page-local text offsets and may include estimated PDF user-space page regions derived from scan-time text matrices. Image OCR and bounded PDF OCR may include pixel regions derived from scan-time Tesseract TSV word boxes. The editor normalizes bottom-left PDF regions and top-left OCR regions into one redacted focus box. Future renderer-backed sources may add normalized region percentages that the UI can scale to any viewer size.
-- Plain text, Markdown, logs, and extracted text streams use text-position offsets plus optional redacted text quotes.
+- Plain text, Markdown, logs, and extracted text streams use text-position offsets plus source-local line/column metadata when available and optional redacted text quotes.
 - CSV, XLSX, and ODS sources use table, sheet, row, column, and optional cell text selectors.
 - ZIP archives use ordinal member metadata and then delegate to the child member selector; public selectors must not show raw member names.
 - DOCX, PPTX, ODT, ODP, EML, and HTML sources use structure paths plus optional redacted text quotes.

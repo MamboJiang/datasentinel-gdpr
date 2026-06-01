@@ -42,6 +42,7 @@ EvidenceAnchor:
         nodeIndex: { type: integer, minimum: 1 }
         recordIndex: { type: integer, minimum: 1 }
         lineNumber: { type: integer, minimum: 1 }
+        columnNumber: { type: integer, minimum: 1 }
         fieldIndex: { type: integer, minimum: 1 }
         elementIndex: { type: integer, minimum: 1 }
         attributeIndex: { type: integer, minimum: 1 }

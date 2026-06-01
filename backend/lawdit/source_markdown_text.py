@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .source_text_decoding import decode_text_body
+from .source_text_locations import text_line_starts
 
 
 @dataclass(frozen=True)
@@ -41,7 +42,8 @@ def extract_markdown_text(body: bytes, name: str, *, content_type: str = "", fil
                 index += 1
             continue
 
-        line = lines[index].strip()
+        raw_line = lines[index]
+        line = raw_line.strip()
         if line:
             start = _append_fragment(fragments, line)
             locations.append({
@@ -49,6 +51,9 @@ def extract_markdown_text(body: bytes, name: str, *, content_type: str = "", fil
                 "label": f"Line {index + 1}",
                 "start": start,
                 "end": start + len(line),
+                "lineNumber": index + 1,
+                "columnNumber": len(raw_line) - len(raw_line.lstrip()) + 1,
+                "lineStarts": text_line_starts(line),
             })
         index += 1
 

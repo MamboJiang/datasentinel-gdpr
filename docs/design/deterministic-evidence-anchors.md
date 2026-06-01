@@ -46,6 +46,8 @@ Finding signals may include:
       "page": 2,
       "sourceStart": 4,
       "sourceEnd": 22,
+      "lineNumber": 3,
+      "columnNumber": 5,
       "pageRegion": { "x": 72, "y": 640, "width": 120, "height": 12, "unit": "pt", "origin": "bottom_left", "confidence": "estimated" }
     },
     "fallback": { "label": "Page 2", "redactedText": "Email: [REDACTED_EMAIL]" },
@@ -58,6 +60,7 @@ Rules:
 
 - `selector.start` and `selector.end` are offsets in the normalized extracted text stream for the scan, with `start` inclusive and `end` exclusive.
 - `selector.sourceStart` and `selector.sourceEnd` are optional source-local refinements for the extracted representation segment that contained the match. Text-like, XML, RTF, EML, Office Open XML, OpenDocument, image OCR, video transcript, video frame OCR, PDF text-layer, and bounded PDF OCR extraction can use them while preserving the global text-position selector.
+- `selector.lineNumber` and `selector.columnNumber` are optional one-based source-local text refinements for extractors that can derive line starts from the scan-time source representation, such as TXT, Markdown non-table text, transcripts, RTF, PDF page text, and OCR text streams.
 - OpenDocument extraction reuses existing public-safe selector shapes: ODS cells use `tableCell`, while ODT and ODP paragraphs use `structurePath` over `content.xml` ordinal metadata.
 - EML extraction reuses `structurePath` selectors over ordinal header and body-part metadata and does not expose raw header values, raw body text, or attachment filenames.
 - ZIP extraction wraps child selectors with `containerType = "zip"`, `memberIndex`, and ordinal `memberPath` metadata. It does not expose raw member names, raw archive paths, or nested archive contents in public selectors.
@@ -76,6 +79,7 @@ Rules:
 | `no_anchor_candidate` | Detector emits a match | Match has source offsets in the extracted text stream | `anchor_building` | Capture signal type, detector, start, end, and fallback line number in memory. |
 | `anchor_building` | Anchor is created | Start and end are non-negative and end is not before start | `anchor_sanitized` | Generate stable `anchorId`; write only redacted text into anchor fields. |
 | `anchor_sanitized` | Scan-time source text metadata is available | Match range is contained in one source text segment | `anchor_sanitized` | Add source-local offsets and a fallback label without adding raw text. |
+| `anchor_sanitized` | Scan-time source text line metadata is available | Match range starts inside one known source line | `anchor_sanitized` | Add one-based source-local line and column metadata without adding raw text. |
 | `anchor_sanitized` | Scan-time XML structure metadata is available | Match range is contained in one parsed XML scalar value | `anchor_sanitized` | Add XML element/attribute ordinal metadata without adding raw XML values or raw tag/attribute names. |
 | `anchor_sanitized` | Scan-time JSON structure metadata is available | Match range is contained in one parsed scalar value | `anchor_sanitized` | Add JSON record/field ordinal metadata without adding raw JSON values or raw property names. |
 | `anchor_sanitized` | Scan-time page metadata is available | Match range is contained in one page text segment | `anchor_sanitized` | Add page number, page-local source offsets, and page fallback label without adding raw text. |
@@ -109,6 +113,7 @@ Failure and rollback paths:
 
 - A detected label signal has a `textPosition` selector whose start/end offsets point to the raw matched value in the normalized extracted text stream.
 - A detected regex signal has a `textPosition` selector whose start/end offsets point to the regex match.
+- A TXT or Markdown non-table signal includes source-local `lineNumber` and `columnNumber` when scan-time line metadata is available, while serialized public payloads still contain only redacted evidence.
 - A PDF text-layer signal whose match is contained in one scan-time page segment includes `format = pdf_text_layer`, page number, page-local source offsets, and a redacted page fallback label.
 - A PDF text-layer signal whose match overlaps scan-time text-fragment coordinates may include `pageRegion` with PDF user-space coordinates, unit, origin, and estimated confidence, without exposing raw text.
 - An image OCR or PDF OCR signal whose match overlaps scan-time OCR word boxes may include `pageRegion` with pixel coordinates, top-left origin, OCR confidence when available, and no raw OCR text.

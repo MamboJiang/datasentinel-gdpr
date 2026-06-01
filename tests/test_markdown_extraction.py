@@ -60,7 +60,11 @@ class MarkdownExtractionTests(unittest.TestCase):
 
         self.assertEqual(name_signal["evidenceAnchor"]["format"], "markdown")
         self.assertEqual(name_signal["evidenceAnchor"]["selector"]["type"], "textPosition")
+        self.assertEqual(name_signal["evidenceAnchor"]["selector"]["lineNumber"], 3)
+        self.assertEqual(name_signal["evidenceAnchor"]["selector"]["columnNumber"], 7)
         self.assertEqual(email_signal["evidenceAnchor"]["format"], "markdown")
+        self.assertEqual(email_signal["evidenceAnchor"]["selector"]["lineNumber"], 4)
+        self.assertEqual(email_signal["evidenceAnchor"]["selector"]["columnNumber"], 8)
         self.assertNotIn("Alice Example", serialized)
         self.assertNotIn("alice.markdown@example.org", serialized)
 

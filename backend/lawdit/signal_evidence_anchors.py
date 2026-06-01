@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from bisect import bisect_right
 from hashlib import sha256
 from typing import Any
 
@@ -107,6 +108,10 @@ def _with_source_location(signal: dict[str, Any], text_locations: tuple[dict[str
     location_start = int(location["start"])
     localized_selector["sourceStart"] = start - location_start
     localized_selector["sourceEnd"] = end - location_start
+    line_column = _source_line_column(location, localized_selector["sourceStart"])
+    if line_column:
+        localized_selector["lineNumber"] = line_column[0]
+        localized_selector["columnNumber"] = line_column[1]
     if isinstance(location.get("page"), int):
         localized_selector["page"] = location["page"]
     if isinstance(location.get("frameIndex"), int):
@@ -153,6 +158,23 @@ def _matching_region(location: dict[str, Any], source_start: int, source_end: in
     if not matches:
         return None
     return _region_union(matches)
+
+
+def _source_line_column(location: dict[str, Any], source_start: int) -> tuple[int, int] | None:
+    line_starts = location.get("lineStarts")
+    if not isinstance(line_starts, (list, tuple)) or not line_starts:
+        return None
+    starts = [start for start in line_starts if isinstance(start, int) and start >= 0]
+    if not starts:
+        return None
+    line_index = max(0, bisect_right(starts, max(source_start, 0)) - 1)
+    relative_line = line_index + 1
+    base_line = int(location.get("lineNumber")) if isinstance(location.get("lineNumber"), int) else 1
+    base_column = int(location.get("columnNumber")) if isinstance(location.get("columnNumber"), int) else 1
+    column = max(source_start - starts[line_index] + 1, 1)
+    if relative_line == 1:
+        column = base_column + column - 1
+    return base_line + relative_line - 1, column
 
 
 def _region_union(regions: list[dict[str, Any]]) -> dict[str, Any] | None:

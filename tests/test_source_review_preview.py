@@ -34,6 +34,8 @@ class SourceReviewPreviewTests(unittest.TestCase):
                     "page": 1,
                     "sourceStart": email_start,
                     "sourceEnd": email_start + len(email),
+                    "lineNumber": 1,
+                    "columnNumber": email_start + 1,
                 },
                 "fallback": {
                     "label": "Page 1",
@@ -59,6 +61,8 @@ class SourceReviewPreviewTests(unittest.TestCase):
         serialized = json.dumps(preview, ensure_ascii=False)
 
         self.assertEqual(window["redactedContext"], "Requester: [REDACTED_CONTEXT]; Contact Email: [REDACTED_EMAIL]")
+        self.assertEqual(preview["anchors"][0]["selector"]["lineNumber"], 1)
+        self.assertEqual(preview["anchors"][0]["selector"]["columnNumber"], email_start + 1)
         self.assertEqual(window["rawContentExposed"], False)
         self.assertGreaterEqual(window["highlightStart"], 0)
         self.assertGreater(window["highlightEnd"], window["highlightStart"])

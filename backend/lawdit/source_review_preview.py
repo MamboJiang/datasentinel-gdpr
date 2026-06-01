@@ -95,6 +95,7 @@ def _safe_selector(selector: dict[str, Any]) -> dict[str, Any]:
         "nodeIndex",
         "recordIndex",
         "lineNumber",
+        "columnNumber",
         "fieldIndex",
         "elementIndex",
         "attributeIndex",
