@@ -174,6 +174,8 @@ Errors use `application/problem+json`.
 
 The public analysis entry is unauthenticated and uses `X-Lawdit-Trial-Session` only as a transient browser-session capacity key. It does not create Workspace sources, findings, audit events, deletion actions, durable jobs, or legal conclusions.
 
+The upload intake accepts core-supported file suffixes and core-supported MIME types. A supported MIME type such as `application/pdf` can reach extraction even when the uploaded filename has no extension. Suffixless octet-stream uploads are treated only as bounded Unicode text-sniffing candidates; binary candidates fail with `failed_unsupported` before finding creation.
+
 Capacity response:
 
 ```json

@@ -54,6 +54,7 @@ The public website upload-analysis entry is accepted when:
 - The entry accepts exactly one uploaded file per browser analysis session at a time, rejects files larger than 10 MB, and allows at most 10 active public analyses globally in the API process.
 - Oversized, duplicate-active, capacity-full, unsupported, failed, completed, and start-over states are visible and non-destructive.
 - Accepted analyses return a concise redacted summary with detected categories, risk level, redacted evidence snippets, warnings, review guidance, and accountable next steps.
+- Public upload intake routes core-supported MIME types such as `application/pdf` to extraction even when filenames have no extension, accepts suffixless octet-stream text only through bounded Unicode sniffing, and rejects suffixless binary content without creating findings.
 - The frontend can render optional backend-provided processing stages, Workspace handoff readiness, next steps, and boundary notes without requiring a contract version bump.
 - Entry output does not expose raw sensitive values, provide legal advice, claim full GDPR compliance, execute deletion, or imply production tenant or Microsoft Graph integration.
 - The public entry remains separate from the full Workspace console and does not create Workspace sources, findings, audit events, or deletion actions.

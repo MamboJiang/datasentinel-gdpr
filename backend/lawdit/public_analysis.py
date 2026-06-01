@@ -15,7 +15,19 @@ from .deterministic_signals import detect_signals
 from .envelope import envelope, problem, response
 from .public_analysis_capacity import MAX_UPLOAD_BYTES, PublicAnalysisCapacity
 from .signal_evidence_anchors import apply_source_locations, sanitize_public_signal
-from .source_format_recognition import DocumentExtractionIssue, SUPPORTED_SUFFIXES, extract_document_content
+from .source_archive_text import ARCHIVE_CONTENT_TYPES
+from .source_format_recognition import (
+    EMAIL_CONTENT_TYPES,
+    OFFICE_CONTENT_TYPES,
+    OPENDOCUMENT_CONTENT_TYPES,
+    PDF_CONTENT_TYPES,
+    SNIFFABLE_TEXT_CONTENT_TYPES,
+    SUPPORTED_SUFFIXES,
+    DocumentExtractionIssue,
+    extract_document_content,
+)
+from .source_legacy_office import LEGACY_OFFICE_CONTENT_TYPES
+from .source_media_recognition import IMAGE_CONTENT_TYPES, VIDEO_TRANSCRIPT_CONTENT_TYPES
 
 MAX_MULTIPART_OVERHEAD_BYTES = 256 * 1024
 MAX_MULTIPART_REQUEST_BYTES = MAX_UPLOAD_BYTES + MAX_MULTIPART_OVERHEAD_BYTES
@@ -35,6 +47,17 @@ _PUBLIC_TEXT_CONTENT_TYPES = {
     "text/tab-separated-values",
     "text/xml",
 }
+_PUBLIC_DOCUMENT_CONTENT_TYPES = (
+    _PUBLIC_TEXT_CONTENT_TYPES
+    | PDF_CONTENT_TYPES
+    | EMAIL_CONTENT_TYPES
+    | OFFICE_CONTENT_TYPES
+    | LEGACY_OFFICE_CONTENT_TYPES
+    | OPENDOCUMENT_CONTENT_TYPES
+    | ARCHIVE_CONTENT_TYPES
+    | IMAGE_CONTENT_TYPES
+    | VIDEO_TRANSCRIPT_CONTENT_TYPES
+)
 _HIGH_RISK_SIGNAL_TYPES = {"health_data", "national_identifier", "payment_card", "iban_like", "tax_id"}
 _MEDIUM_RISK_SIGNAL_TYPES = {"email", "phone_number", "employee_id", "location_data", "device_identifier", "online_identifier"}
 
@@ -96,7 +119,7 @@ class PublicAnalysisService:
             return _problem_response(
                 422,
                 "Unsupported file",
-                "The public analysis entry supports text-like, PDF, email, archive, Office, OpenDocument, image, and transcript inputs only.",
+                "The public analysis entry supports text-like, PDF, email, archive, Office, OpenDocument, image, transcript, and bounded video inputs only.",
                 path,
                 trace_id,
                 "unsupported-file",
@@ -247,7 +270,13 @@ def _safe_filename(filename: str | None) -> str:
 def _is_supported_upload(name: str, content_type: str) -> bool:
     suffix = Path(name).suffix.lower()
     normalized_type = content_type.lower().split(";", 1)[0].strip()
-    return suffix in SUPPORTED_SUFFIXES or normalized_type.startswith("text/") or normalized_type in _PUBLIC_TEXT_CONTENT_TYPES
+    if suffix in SUPPORTED_SUFFIXES:
+        return True
+    if normalized_type.startswith("text/") or normalized_type.startswith("video/"):
+        return True
+    if normalized_type in _PUBLIC_DOCUMENT_CONTENT_TYPES:
+        return True
+    return not suffix and normalized_type in SNIFFABLE_TEXT_CONTENT_TYPES
 
 
 def _detected_types(signals: list[dict[str, Any]]) -> list[dict[str, Any]]:

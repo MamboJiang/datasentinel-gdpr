@@ -16,6 +16,7 @@ from backend.lawdit import build_default_app, make_handler
 from backend.lawdit.google_drive_binding import DRIVE_BIND_TX_COOKIE, GoogleDriveBindingService
 from backend.lawdit.public_analysis import MAX_UPLOAD_BYTES, PublicAnalysisService
 from backend.lawdit.public_analysis_capacity import PublicAnalysisCapacity
+from backend.lawdit.source_format_recognition import ExtractedDocumentContent
 from backend.lawdit.source_http import SourceHttpApp, SourceHttpOptions, build_sqlite_app
 from backend.lawdit.source_documents import SourceDocument, SourceDocumentBatch
 from backend.lawdit.deterministic_signals import detect_signals
@@ -194,6 +195,81 @@ class BackendApiServerTests(unittest.TestCase):
         self.assertIn("[REDACTED", serialized)
         self.assertNotIn("privacy.reviewer@example.org", serialized)
         self.assertNotIn("123-45-6789", serialized)
+
+    def test_public_analysis_accepts_suffixless_octet_stream_text(self) -> None:
+        app = build_default_app()
+        body, content_type = multipart_file(
+            "travel-plan",
+            "姓名: 陈元昊\n地址: Paulinestr. 13 Heilbronn 74076\nPassport: EN3457864\n".encode("utf-8"),
+            "application/octet-stream",
+        )
+
+        analyzed = app.handle(
+            "POST",
+            "/api/public-analysis/analyze",
+            "trace_public_suffixless_text",
+            body,
+            content_type,
+            {"X-Lawdit-Trial-Session": "trial-session-suffixless-text"},
+        )
+        serialized = json.dumps(analyzed["body"], ensure_ascii=False)
+        detected_types = {item["type"] for item in analyzed["body"]["data"]["summary"]["detectedTypes"]}
+
+        self.assertEqual(analyzed["status"], 200)
+        self.assertEqual(analyzed["body"]["data"]["file"]["fileFormat"], "text")
+        self.assertEqual(analyzed["body"]["data"]["file"]["extractionMethod"], "sniffed_unicode_text")
+        self.assertIn("person_name", detected_types)
+        self.assertIn("address", detected_types)
+        self.assertIn("passport_number", detected_types)
+        self.assertNotIn("陈元昊", serialized)
+        self.assertNotIn("EN3457864", serialized)
+
+    def test_public_analysis_routes_suffixless_pdf_mime_to_extractor(self) -> None:
+        app = build_default_app()
+        body, content_type = multipart_file("travel-plan", b"%PDF-1.4\n...", "application/pdf")
+
+        with mock.patch(
+            "backend.lawdit.public_analysis.extract_document_content",
+            return_value=ExtractedDocumentContent(
+                text="姓名: 陈元昊\n地址: Paulinestr. 13 Heilbronn 74076\nPassport: EN3457864\n",
+                file_format="pdf_mixed",
+                extraction_method="pdf_text_layer_with_page_ocr",
+                recognition_difficulty="hard",
+            ),
+        ) as extract:
+            analyzed = app.handle(
+                "POST",
+                "/api/public-analysis/analyze",
+                "trace_public_suffixless_pdf",
+                body,
+                content_type,
+                {"X-Lawdit-Trial-Session": "trial-session-suffixless-pdf"},
+            )
+
+        self.assertEqual(analyzed["status"], 200)
+        extract.assert_called_once_with(body=b"%PDF-1.4\n...", content_type="application/pdf", name="travel-plan")
+        self.assertEqual(analyzed["body"]["data"]["file"]["fileFormat"], "pdf_mixed")
+        self.assertEqual(analyzed["body"]["data"]["file"]["extractionMethod"], "pdf_text_layer_with_page_ocr")
+        self.assertEqual(analyzed["body"]["data"]["summary"]["riskLevel"], "medium")
+
+    def test_public_analysis_rejects_suffixless_binary_after_extractor_probe(self) -> None:
+        app = build_default_app()
+        body, content_type = multipart_file("opaque", b"\x00\x01\x02\x03\x04\x05\x06\x07", "application/octet-stream")
+
+        rejected = app.handle(
+            "POST",
+            "/api/public-analysis/analyze",
+            "trace_public_suffixless_binary",
+            body,
+            content_type,
+            {"X-Lawdit-Trial-Session": "trial-session-suffixless-binary"},
+        )
+
+        self.assertEqual(rejected["status"], 422)
+        self.assertEqual(rejected["contentType"], "application/problem+json")
+        self.assertEqual(rejected["body"]["title"], "File could not be analyzed")
+        self.assertTrue(rejected["body"]["type"].endswith("/unsupported-file"))
+        self.assertEqual(rejected["body"]["capacity"]["activeAnalyses"], 0)
 
     def test_public_analysis_rejects_oversized_file_before_analysis(self) -> None:
         app = build_default_app()

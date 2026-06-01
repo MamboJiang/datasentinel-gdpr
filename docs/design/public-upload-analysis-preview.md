@@ -48,6 +48,7 @@ Selected direction: capacity guard with transient waiting-at-intake counts. The 
 | Per-session active files | 1 file | A session with an active analysis receives a duplicate-active rejection until the current analysis reaches a terminal state. |
 | File size | 10 MB maximum | Oversized files are rejected before extraction or signal detection starts. |
 | Upload shape | One `multipart/form-data` field named `file` | Missing, malformed, empty, or multi-file uploads are rejected. |
+| Format gate | Core-supported suffix or MIME, plus suffixless text sniff candidates | Supported MIME types such as `application/pdf` can reach extraction even when the filename has no extension; suffixless octet-stream files must pass bounded Unicode text sniffing before producing findings. |
 | Result depth | Short summary plus optional stages | The result returns categories, risk level, redacted evidence snippets, warnings, review guidance, accountable next steps, and optional handoff detail, not a full evidence workspace. |
 | Deletion | Not available | Trial output cannot request, schedule, or imply deletion execution. |
 
@@ -71,6 +72,8 @@ Selected direction: capacity guard with transient waiting-at-intake counts. The 
 
 - Server-side size validation is authoritative; client-side checks are only UX assistance.
 - Server must not trust filename, MIME type, or browser metadata alone.
+- The public intake gate must not reject a core-supported MIME type solely because the filename lacks an extension.
+- Suffixless octet-stream files are accepted only as bounded text-sniffing candidates; binary candidates fail before finding creation.
 - Only one active analysis is permitted for the same public analysis session ID.
 - Capacity is counted by active analysis, not by page view.
 - Slot reservation and release must be protected by a lock inside the API process.
@@ -89,7 +92,7 @@ Selected direction: capacity guard with transient waiting-at-intake counts. The 
 - Oversized file: reject before extraction and signal detection.
 - Capacity full: reject at intake, add the session to the transient waiting-at-intake set, and do not reserve an active slot.
 - Same session already active: reject the second submission without replacing the first analysis.
-- Unsupported file: release any reserved slot and show an unsupported-file problem response.
+- Unsupported file: reject unsupported suffix/MIME combinations before reserving a slot, or release any reserved slot when extractor probing rejects a suffixless candidate.
 - Analysis crash: release the slot and return a neutral failure without raw-content output.
 
 ## Rollback Path
@@ -113,6 +116,8 @@ Selected direction: capacity guard with transient waiting-at-intake counts. The 
 - A visitor can identify the entry as a single-file, short-result experience before uploading.
 - The page displays real capacity data from `/api/public-analysis/capacity`.
 - A file larger than 10 MB is rejected before extraction or signal detection starts.
+- Core-supported MIME types such as PDFs can be analyzed even when the uploaded filename has no extension.
+- Suffixless octet-stream text can be analyzed through bounded Unicode sniffing, while suffixless binary content remains unsupported and creates no finding.
 - A session with an active analysis cannot start a second file analysis.
 - The system never runs more than 10 active public analyses in the API process at the same time.
 - Capacity-full users see a clear non-destructive state with live waiting-at-intake data and no analysis slot is consumed.
