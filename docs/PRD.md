@@ -30,25 +30,25 @@ Provide a prototype workflow that shows how an organization can discover GDPR-re
 - Prelaunch account concept for Google and GitHub login through backend-owned OAuth, first-party sessions, visible user profile, and logout.
 - Workspace administration concept for Workspace-scoped admins, user groups, invitation-based membership, visible permission boundaries, and operational charts.
 - Prelaunch source-input concept for Google Drive selected files or folders, direct HTTPS file links, RFC 5322/MIME email extraction, bounded ZIP archive member extraction, host-local legacy Office conversion, PDF text-layer extraction with bounded local OCR fallback, and source-registration deletion without long-term raw source-file storage or source-file deletion.
-- Public upload-analysis trial for the website: one uploaded file per browser trial session, 10 MB maximum file size, at most 5 active public analyses globally in the API process, live capacity data, short redacted result summary, and no automatic deletion or legal advice.
+- Public upload-analysis entry for the website: one uploaded file per browser analysis session, 10 MB maximum file size, at most 10 active public analyses globally in the API process, live capacity data, a short redacted result summary generated from actual detected signals, and no automatic deletion or legal advice.
 
-## Public Upload Analysis Trial
+## Public Upload Analysis Entry
 
-The public website includes a simple trial entrypoint that lets a visitor upload one file and receive a short lawdit analysis summary before entering the full Workspace console.
+The public website includes a simple analysis entrypoint that lets a visitor upload one file and receive a short lawdit analysis summary before entering the full Workspace console.
 
 Product constraints:
 
-- One active uploaded file per browser trial session.
+- One active uploaded file per browser analysis session.
 - 10 MB maximum file size.
-- 5 active public analyses globally at the same time in the API process.
+- 10 active public analyses globally at the same time in the API process.
 - Live capacity data must show active analyses, available slots, waiting-at-intake count, and the file-size limit.
-- The upload experience must be labeled as a public preview, not the full product.
+- The upload experience must be labeled as a website analysis boundary, not as a placeholder preview or the full product.
 - The experience must educate users that governed source setup, owners, review decisions, audit trails, and evaluation live in the Workspace, with a direct link to `/dashboard`.
 - Capacity-full, oversized, duplicate-active, unsupported, failed, and completed states must be visible and non-destructive.
-- Trial results must be concise, redacted, and separate from the full Workspace console.
-- The trial must not claim full GDPR compliance, provide legal advice, execute deletion, or imply production tenant integration.
+- Website analysis results must be concise, redacted, generated from actual detected signals, and separate from the full Workspace console.
+- The website analysis entry must not claim full GDPR compliance, provide legal advice, execute deletion, or imply production tenant integration.
 
-The detailed design note is `docs/design/public-upload-analysis-preview.md`. The trial contract is defined in `contracts/openapi.yaml`, `docs/API_CONTRACT.md`, `contracts/schemas/public-analysis.yaml`, and the public-analysis mock payloads.
+The detailed design note is `docs/design/public-upload-analysis-preview.md`. The website analysis contract is defined in `contracts/openapi.yaml`, `docs/API_CONTRACT.md`, `contracts/schemas/public-analysis.yaml`, and the public-analysis mock payloads.
 
 ## Backend Planning Sequence After Sample Source Connection
 

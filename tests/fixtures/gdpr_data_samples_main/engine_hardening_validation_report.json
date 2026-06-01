@@ -1,6 +1,6 @@
 {
   "reportId": "engine_hardening_2026-05-31_final_acceptance",
-  "generatedAt": "2026-06-01T07:30:57Z",
+  "generatedAt": "2026-06-01T07:33:34Z",
   "privacyRule": "This report records commands, counts, capabilities, redacted signal types, and release identifiers only. It must not include raw extracted text, raw detected values, provider tokens, refresh tokens, source bodies, or private absolute source paths.",
   "scope": {
     "goal": "Core multilingual GDPR discovery engine hardening for Drive corpus fixtures, supported file formats, OCR-backed PDF/image/video-frame extraction, legacy Office conversion, evidence anchors, local validation, and agent-us deployment proof.",
@@ -50,9 +50,9 @@
   ],
   "localValidation": {
     "backendTests": {
-      "command": "python3 -m pytest -q",
+      "command": "python3 -m unittest discover -s tests",
       "result": "passed",
-      "testCount": 171,
+      "testCount": 173,
       "skippedCount": 2,
       "skipReason": "Local workstation lacks Tesseract and LibreOffice, so video OCR and legacy Office runtime smoke tests are skipped locally and executed on agent-us."
     },
@@ -91,8 +91,9 @@
     }
   },
   "agentUsDeployment": {
-    "appRelease": "/srv/lawdit/app/releases/20260601092808-public-evidence-location",
-    "frontendRelease": "/srv/lawdit/frontend/releases/20260601092808-public-evidence-location",
+    "appRelease": "/srv/lawdit/app/releases/20260601092937-public-plain-summary",
+    "frontendRelease": "/srv/lawdit/frontend/releases/20260601092937-public-plain-summary",
+    "docsRelease": "/srv/lawdit/docs/releases/20260601092937-public-plain-summary",
     "apiService": "lawdit-api.service",
     "apiServiceState": "active",
     "publicHealthUrl": "https://founder-force.uk/api/health",
@@ -126,14 +127,17 @@
       "testCount": 173
     },
     "remotePublicAnalysisLocationSmoke": {
-      "command": "POST a temporary synthetic text file to https://founder-force.uk/api/public-analysis/analyze and assert redacted evidence location metadata is returned.",
+      "command": "POST a temporary synthetic text file to https://founder-force.uk/api/public-analysis/analyze and assert generated plain-language summary plus redacted evidence location metadata is returned.",
       "result": "passed",
       "httpCode": 200,
       "status": "completed",
-      "riskLevel": "medium",
+      "riskLevel": "high",
       "plainHeadlineContainsEmailAddress": true,
+      "plainHeadlineContainsNationalIdentifier": true,
+      "plainGdprRelevanceMentionsIdentifier": true,
       "signalTypes": [
-        "email"
+        "email",
+        "national_identifier"
       ],
       "locationLabel": "Line 1",
       "locationFormat": "txt",

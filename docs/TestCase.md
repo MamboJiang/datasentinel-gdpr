@@ -40,17 +40,17 @@
 | USERDOC-011 | Compare homepage and nested docs layouts | `/docs` renders as a standalone homepage without the Fumadocs sidebar, while `/docs/quick-start` keeps sidebar navigation. |
 | USERDOC-012 | Review screenshot and data aids | Quick Start, Sources, Dashboard and Scans, Findings and Review, and Audit and Evaluation include cropped non-sensitive screenshots plus tables that explain fields, metrics, and next actions; screenshot URLs are served under `/docs/media/`. |
 
-## Public Upload Analysis Trial Checks
+## Public Upload Analysis Entry Checks
 
 | ID | Scenario | Expected Result |
 | --- | --- | --- |
-| UPLOAD-001 | Request public trial capacity | `/api/public-analysis/capacity` returns max active analyses, active analyses, available slots, waiting users, queue mode, per-session active state, and the 10 MB file-size limit. |
+| UPLOAD-001 | Request website analysis capacity | `/api/public-analysis/capacity` returns max active analyses, active analyses, available slots, waiting users, queue mode, per-session active state, and the 10 MB file-size limit. |
 | UPLOAD-002 | Submit a supported single file | `/api/public-analysis/analyze` returns a completed redacted result with detected categories, risk level, evidence snippets, warnings, and fresh capacity data. |
 | UPLOAD-003 | Submit a file larger than 10 MB | The backend returns `413 application/problem+json`, does not start extraction or signal detection, and leaves active capacity unchanged. |
-| UPLOAD-004 | Submit a second file for the same active trial session | The backend returns `409 application/problem+json` with `userHasActiveAnalysis = true`. |
+| UPLOAD-004 | Submit a second file for the same active website analysis session | The backend returns `409 application/problem+json` with `userHasActiveAnalysis = true`. |
 | UPLOAD-005 | Submit when all 10 active slots are occupied | The backend returns `429 application/problem+json`, reports live waiting-at-intake data, and does not reserve an analysis slot. |
-| UPLOAD-006 | Review safety boundaries | Trial output keeps raw sensitive values out of public output and prohibits legal advice, full GDPR-compliance claims, automatic deletion, and production tenant integration. |
-| UPLOAD-007 | Use the homepage trial UI | The root homepage shows a prominent upload entry, live capacity data, one-file/10 MB limits, start-over behavior, and redacted results separate from the full Workspace console. |
+| UPLOAD-006 | Review safety boundaries | Website analysis output keeps raw sensitive values out of public output and prohibits legal advice, full GDPR-compliance claims, automatic deletion, and production tenant integration. |
+| UPLOAD-007 | Use the homepage website analysis UI | The root homepage shows a prominent upload entry, live capacity data, one-file/10 MB limits, start-over behavior, and redacted results separate from the full Workspace console. |
 | UPLOAD-008 | Review website analysis education copy | The entry is labeled as a website analysis boundary, states that the full governed product workflow lives in the Workspace, and links to `/dashboard` for source setup, owner routing, review decisions, audit trails, and evaluation. |
 | UPLOAD-009 | Submit a no-extension file with a supported MIME type | The backend routes core-supported MIME types such as `application/pdf` to extraction instead of rejecting them solely because the filename has no extension. |
 | UPLOAD-010 | Submit suffixless octet-stream text and binary samples | Unicode text candidates can complete with redacted findings through bounded sniffing, while binary candidates return a safe unsupported problem response and create no findings. |
