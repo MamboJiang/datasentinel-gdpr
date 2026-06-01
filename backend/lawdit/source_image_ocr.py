@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 from dataclasses import dataclass, field
 from io import StringIO
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -12,6 +13,7 @@ from typing import Any
 
 from .ocr_capabilities import configured_ocr_languages, ocr_mode, tesseract_path
 from .source_image_preprocessing import ocr_candidate_images
+from .signal_multilingual_labels import multilingual_label_tokens
 
 
 @dataclass(frozen=True)
@@ -24,6 +26,32 @@ class ImageOcrIssue(Exception):
     def __init__(self, detail: str) -> None:
         super().__init__(detail)
         self.detail = detail
+
+
+OCR_PROFILE_ACCEPT_SCORE = 45
+OCR_LABEL_TOKENS = tuple(sorted({
+    "account number",
+    "address",
+    "bank account",
+    "date of birth",
+    "driver license",
+    "email",
+    "full name",
+    "home address",
+    "mobile",
+    "name",
+    "passport",
+    "passport number",
+    "phone",
+    "signature",
+    "street address",
+    "tax id",
+    "telephone",
+    *multilingual_label_tokens(),
+}, key=len, reverse=True))
+OCR_PASSPORT_VALUE_RE = re.compile(r"\b(?=[A-Z0-9]{6,15}\b)(?=[A-Z0-9]*\d)[A-Z]{1,3}[A-Z0-9]{5,12}\b", re.IGNORECASE)
+OCR_EMAIL_VALUE_RE = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE)
+OCR_PHONE_VALUE_RE = re.compile(r"(?:\+\d{1,3}[\s.-]?)?(?:\(?\d{2,4}\)?[\s.-]?){2,}\d{2,6}")
 
 
 def extract_image_text(body: bytes, name: str, timeout_seconds: int = 12) -> str:
@@ -46,6 +74,7 @@ def extract_image_content(body: bytes, name: str, timeout_seconds: int = 12) -> 
         failed = False
         timed_out = False
         for candidate in ocr_candidate_images(image_path, Path(directory)):
+            profile_results = []
             for language_profile in _ocr_language_profiles():
                 try:
                     result = subprocess.run(
@@ -63,8 +92,12 @@ def extract_image_content(body: bytes, name: str, timeout_seconds: int = 12) -> 
                 if result.returncode == 0:
                     text, regions = _parse_tesseract_tsv(result.stdout)
                     if text:
-                        ocr_results.append((text, regions))
-                        break
+                        profile_results.append((text, regions))
+                        if _ocr_result_score(text, regions) >= OCR_PROFILE_ACCEPT_SCORE:
+                            break
+            best_profile = _best_ocr_profile_result(profile_results)
+            if best_profile:
+                ocr_results.append(best_profile)
 
     if not ocr_results and timed_out:
         raise ImageOcrIssue(f"{name} image OCR timed out.")
@@ -94,8 +127,6 @@ def _ocr_language_profiles() -> tuple[str | None, ...]:
     languages = _unique_languages(configured_ocr_languages())
     if not languages:
         return (None,)
-    if len(languages) <= 5:
-        return ("+".join(languages),)
 
     profiles: list[str] = []
 
@@ -107,6 +138,15 @@ def _ocr_language_profiles() -> tuple[str | None, ...]:
         if profile not in profiles:
             profiles.append(profile)
 
+    add_profile(("chi_sim", "eng"))
+    add_profile(("jpn", "eng"))
+    add_profile(("kor", "eng"))
+    add_profile(("ara", "eng"))
+
+    if len(languages) <= 5:
+        add_profile(languages)
+        return tuple(profiles)
+
     add_profile(("eng", "chi_sim", "deu", "fra", "spa"))
     add_profile(("eng", "por", "ita", "nld", "pol"))
     add_profile(("eng", "jpn", "kor", "ara"))
@@ -116,7 +156,7 @@ def _ocr_language_profiles() -> tuple[str | None, ...]:
     for index in range(0, len(remaining), 5):
         profiles.append("+".join(remaining[index:index + 5]))
 
-    return tuple(profiles[:4])
+    return tuple(profiles[:6])
 
 
 def _unique_languages(languages: tuple[str, ...]) -> tuple[str, ...]:
@@ -146,6 +186,49 @@ def _join_ocr_results(results: list[tuple[str, tuple[dict[str, Any], ...]]]) -> 
         regions.extend(_shift_regions(text_regions, offset))
         offset += len(text)
     return "".join(fragments), tuple(regions)
+
+
+def _best_ocr_profile_result(results: list[tuple[str, tuple[dict[str, Any], ...]]]) -> tuple[str, tuple[dict[str, Any], ...]] | None:
+    if not results:
+        return None
+    return max(results, key=lambda result: _ocr_result_score(result[0], result[1]))
+
+
+def _ocr_result_score(text: str, regions: tuple[dict[str, Any], ...]) -> float:
+    normalized = _normalize_ocr_text(text)
+    alnum_count = sum(1 for character in normalized if character.isalnum())
+    score = min(alnum_count / 8, 30)
+    score += _average_ocr_confidence(regions) / 5
+    score += _label_score(normalized)
+    score += 25 if OCR_EMAIL_VALUE_RE.search(text) else 0
+    score += 30 if OCR_PASSPORT_VALUE_RE.search(text) else 0
+    score += 15 if OCR_PHONE_VALUE_RE.search(text) else 0
+    score -= _tsv_dump_penalty(text)
+    return score
+
+
+def _normalize_ocr_text(text: str) -> str:
+    return " ".join(text.casefold().replace("_", " ").replace("-", " ").split())
+
+
+def _average_ocr_confidence(regions: tuple[dict[str, Any], ...]) -> float:
+    values = [
+        float(region["ocrConfidence"])
+        for region in regions
+        if isinstance(region.get("ocrConfidence"), (int, float)) and float(region["ocrConfidence"]) >= 0
+    ]
+    if not values:
+        return 0
+    return sum(values) / len(values)
+
+
+def _label_score(normalized_text: str) -> int:
+    return min(sum(1 for token in OCR_LABEL_TOKENS if _normalize_ocr_text(token) in normalized_text) * 20, 80)
+
+
+def _tsv_dump_penalty(text: str) -> int:
+    tsv_like_lines = sum(1 for line in text.splitlines() if re.match(r"^\s*\d+\t\d+\t\d+\t\d+\t\d+", line))
+    return min(tsv_like_lines * 15, 90)
 
 
 def _shift_regions(regions: tuple[dict[str, Any], ...], offset: int) -> tuple[dict[str, Any], ...]:

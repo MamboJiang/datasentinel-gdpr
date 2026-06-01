@@ -1,4 +1,4 @@
-import type { Finding, PermissionBoundary, ReviewSupport } from '../types'
+import type { Finding, FindingSummary, PermissionBoundary, ReviewSupport } from '../types'
 
 const EVIDENCE_REVIEW_ACTIONS = ['delete_candidate', 'keep_with_reason', 'correct_false_positive', 'reassign_owner', 'escalate']
 const WORKSPACE_REVIEW_ACTION = 'review_findings'
@@ -35,4 +35,35 @@ export function hasRenderableFindingDetail(finding: Finding | undefined): findin
   const hasDetailContext = Boolean(finding.riskExplanation || finding.file || finding.auditTimeline)
 
   return hasExpectedEvidence && hasDetailContext
+}
+
+export function currentFindingRedirectPath(requestedFindingId: string, findings: FindingSummary[]): string | null {
+  if (findings.some((finding) => finding.findingId === requestedFindingId)) {
+    return null
+  }
+
+  const target = [...findings].sort(compareFindingPriority)[0]
+  return target ? `/findings/${target.findingId}` : '/findings'
+}
+
+function compareFindingPriority(left: FindingSummary, right: FindingSummary): number {
+  const riskDelta = riskPriority(right.riskLevel) - riskPriority(left.riskLevel)
+  if (riskDelta !== 0) {
+    return riskDelta
+  }
+
+  return (right.evidenceSignalCount ?? 0) - (left.evidenceSignalCount ?? 0)
+}
+
+function riskPriority(riskLevel: string | undefined): number {
+  if (riskLevel === 'high') {
+    return 3
+  }
+  if (riskLevel === 'medium') {
+    return 2
+  }
+  if (riskLevel === 'low') {
+    return 1
+  }
+  return 0
 }

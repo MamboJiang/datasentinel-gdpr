@@ -1,12 +1,12 @@
 import { ArrowLeft, CalendarClock, FileSearch, FileText, Flag, ShieldAlert, UserRound, X } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useData } from '../data/useData'
 import type { ReviewDecision } from '../types'
 import { formatBytes, formatDate, humanize } from '../components/formatters'
 import { FileReviewEditor } from '../components/FileReviewEditor'
 import { safeFindingSourceLabel } from '../components/findingDisplay'
-import { canOpenEvidenceReview, evidenceReviewDeniedReason, hasRenderableFindingDetail } from './findingDetailAccess'
+import { canOpenEvidenceReview, currentFindingRedirectPath, evidenceReviewDeniedReason, hasRenderableFindingDetail } from './findingDetailAccess'
 import {
   Button,
   EmptyState,
@@ -16,7 +16,8 @@ import {
 
 export function FindingDetailPage() {
   const { findingId = '' } = useParams()
-  const { getFinding, getReviewSupport, loadFinding, workspaceAdmin } = useData()
+  const navigate = useNavigate()
+  const { findings, getFinding, getReviewSupport, loadFinding, workspaceAdmin } = useData()
   const finding = getFinding(findingId)
   const [reviewOpen, setReviewOpen] = useState(false)
   const [fileReviewOpen, setFileReviewOpen] = useState(false)
@@ -41,6 +42,14 @@ export function FindingDetailPage() {
       active = false
     }
   }, [findingId, loadFinding])
+
+  useEffect(() => {
+    if (!findingId || unavailableFindingId !== findingId || finding) {
+      return
+    }
+
+    navigate(currentFindingRedirectPath(findingId, findings) ?? '/findings', { replace: true })
+  }, [finding, findingId, findings, navigate, unavailableFindingId])
 
   if (!findingId) {
     return <EmptyState title="Finding not available" />

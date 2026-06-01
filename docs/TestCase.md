@@ -213,6 +213,7 @@
 | CORE-006B | Scan colored text overlays in image OCR | Local OCR can run bounded color-overlay preprocessing variants, crop/scale foreground text masks, and then run deterministic detection, producing redacted findings without public raw OCR text or page images. |
 | CORE-006C | Handle one timed-out OCR profile | If one OCR language profile or preprocessing candidate times out, later bounded candidates can still run and produce redacted findings; only total OCR failure is counted as OCR-deferred. |
 | CORE-006D | Scan non-PNG image OCR formats | JPG/JPEG, TIFF, BMP, and WEBP image inputs can fall back to a temporary PNG-normalized OCR candidate, produce redacted findings with pixel anchors, and stay included in Drive/direct-link download acceptance. |
+| CORE-006E | Prefer stronger OCR language-profile output | If an early OCR language profile returns low-signal non-empty text, the OCR layer continues to a bounded later profile and keeps the stronger redacted-detection candidate when it preserves multilingual labels and passport-shaped values. |
 | CORE-007 | Open a source evidence anchor | PDF, text, table, and structure-based anchors resolve through the same review open-and-focus interaction or a redacted fallback without exposing raw values. |
 | CORE-008 | Scan preserved raw PDF corpus | All preserved PDF corpus files with text layers extract through `pdf_text_layer`; completed example PDFs produce redacted findings and the serialized signal payloads do not contain raw email, employee ID, or tax ID values. |
 | CORE-009 | Scan preserved image OCR challenge without local OCR tooling | The image challenge is reported as hard/OCR-deferred on hosts without Tesseract and does not create fake findings. |
@@ -330,6 +331,7 @@
 | FINDASM-009 | Verify resource and cost boundary | Finding assembly keeps model calls and estimated paid-service cost at zero. |
 | FINDASM-010 | Open a finding detail from the Findings list | The top title hierarchy reads `Findings / Finding Detail`; `Findings` is hover-underlined and navigates back to `/findings`, while `Finding Detail` is the non-clickable current level. |
 | FINDASM-011 | Open a non-primary finding detail from the Findings list | The frontend loads the requested finding detail by `findingId` and does not render a list summary as an evidence card; non-primary details show redacted evidence, policy, file, owner, and audit context when the backend provides them. |
+| FINDASM-011A | Open a stale finding detail route after a new scan | If the requested `findingId` is absent from current scan/workspace state, the frontend redirects to the highest-priority current finding or the findings list when no findings exist, without rendering seeded or obsolete evidence. |
 | FINDASM-012 | Reject assembly for not-ready source | A not-ready source cannot create scan, inventory, extraction, context/risk, owner-assignment, finding-assembly, finding, evidence-card, or audit state changes. |
 
 ## Review Support and Permission Boundary Checks

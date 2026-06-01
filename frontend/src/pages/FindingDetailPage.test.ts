@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canOpenEvidenceReview, evidenceReviewDeniedReason, hasRenderableFindingDetail } from './findingDetailAccess'
+import { canOpenEvidenceReview, currentFindingRedirectPath, evidenceReviewDeniedReason, hasRenderableFindingDetail } from './findingDetailAccess'
 import type { Finding, ReviewSupport } from '../types'
 
 describe('finding detail evidence review permissions', () => {
@@ -97,6 +97,44 @@ describe('finding detail payload readiness', () => {
       signals: [{ confidence: 0.98, detector: 'regex', snippet: '[REDACTED_EMAIL]', type: 'email' }],
       status: 'assigned',
     } satisfies Finding)).toBe(true)
+  })
+})
+
+describe('stale finding route recovery', () => {
+  it('keeps current finding routes unchanged', () => {
+    expect(currentFindingRedirectPath('finding_current', [{
+      evidenceSignalCount: 3,
+      fileName: 'current.pdf',
+      findingId: 'finding_current',
+      riskLevel: 'high',
+      riskScore: 90,
+      status: 'assigned',
+    }])).toBeNull()
+  })
+
+  it('redirects stale finding ids to the highest-priority current finding', () => {
+    expect(currentFindingRedirectPath('finding_001', [
+      {
+        evidenceSignalCount: 3,
+        fileName: 'image.png',
+        findingId: 'finding_image',
+        riskLevel: 'medium',
+        riskScore: 64,
+        status: 'assigned',
+      },
+      {
+        evidenceSignalCount: 9,
+        fileName: 'travel-plan.pdf',
+        findingId: 'finding_pdf',
+        riskLevel: 'high',
+        riskScore: 86,
+        status: 'assigned',
+      },
+    ])).toBe('/findings/finding_pdf')
+  })
+
+  it('redirects stale finding ids back to the findings list when no current findings exist', () => {
+    expect(currentFindingRedirectPath('finding_001', [])).toBe('/findings')
   })
 })
 

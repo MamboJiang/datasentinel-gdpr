@@ -1,6 +1,6 @@
 {
   "reportId": "engine_hardening_2026-05-31_final_acceptance",
-  "generatedAt": "2026-06-01T06:18:29Z",
+  "generatedAt": "2026-06-01T06:50:39Z",
   "privacyRule": "This report records commands, counts, capabilities, redacted signal types, and release identifiers only. It must not include raw extracted text, raw detected values, provider tokens, refresh tokens, source bodies, or private absolute source paths.",
   "scope": {
     "goal": "Core multilingual GDPR discovery engine hardening for Drive corpus fixtures, supported file formats, OCR-backed PDF/image/video-frame extraction, legacy Office conversion, evidence anchors, local validation, and agent-us deployment proof.",
@@ -50,21 +50,21 @@
   ],
   "localValidation": {
     "backendTests": {
-      "command": "python3 -m unittest discover -s tests",
+      "command": "python3 -m pytest -q",
       "result": "passed",
-      "testCount": 171,
+      "testCount": 170,
       "skippedCount": 2,
       "skipReason": "Local workstation lacks Tesseract and LibreOffice, so video OCR and legacy Office runtime smoke tests are skipped locally and executed on agent-us."
     },
     "frontendTests": {
-      "command": "npm test",
+      "command": "npm test -- --run",
       "workingDirectory": "frontend",
       "result": "passed",
       "testFiles": 22,
-      "testCount": 79
+      "testCount": 82
     },
     "backendCompile": {
-      "command": "python3 -m py_compile backend/lawdit/deterministic_signals.py backend/lawdit/signal_regex_rules.py backend/lawdit/signal_stacked_labels.py",
+      "command": "python3 -m py_compile backend/lawdit/source_image_ocr.py",
       "result": "passed"
     },
     "frontendBuild": {
@@ -91,8 +91,8 @@
     }
   },
   "agentUsDeployment": {
-    "appRelease": "/srv/lawdit/app/releases/20260601061735-risk-taxonomy",
-    "frontendRelease": "/srv/lawdit/frontend/releases/20260601055633-supported-format-alignment",
+    "appRelease": "/srv/lawdit/app/releases/20260601065039-ocr-profile-stale-route",
+    "frontendRelease": "/srv/lawdit/frontend/releases/20260601065039-ocr-profile-stale-route",
     "apiService": "lawdit-api.service",
     "apiServiceState": "active",
     "publicHealthUrl": "https://founder-force.uk/api/health",
@@ -117,13 +117,13 @@
       "containsLegacyOfficeLabel": true,
       "containsLibreOfficeNote": true,
       "containsFrameIndexRuntime": true,
-      "jsAsset": "assets/index-DT-Gb3q6.js",
+      "jsAsset": "assets/index-D56QGUEM.js",
       "cssAsset": "assets/index-qrcyP7Au.css"
     },
     "remoteBackendTests": {
       "command": "cd /srv/lawdit/app/current && python3 -m unittest discover -s tests",
       "result": "passed",
-      "testCount": 171
+      "testCount": 172
     },
     "remoteRiskTaxonomyTests": {
       "command": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_signal_risk tests.test_backend_api_server.BackendApiServerTests.test_public_analysis_routes_suffixless_pdf_mime_to_extractor",
@@ -236,6 +236,27 @@
       ],
       "hasPageRegion": true,
       "rawFixturePersisted": false
+    },
+    "mixedPdfOverlayProfileSelection": {
+      "command": "Run the deployed V4 Drive PDF fixture through extract_document_content, detect_signals, and apply_source_locations on agent-us.",
+      "fileFormat": "pdf_mixed",
+      "extractionMethod": "pdf_text_layer_with_page_ocr",
+      "recognitionDifficulty": "hard",
+      "ocrDeferred": false,
+      "ocrAnchorCount": 4,
+      "signalCount": 9,
+      "signalTypes": [
+        "address",
+        "biometric_data",
+        "email",
+        "location_data",
+        "organization_identifier",
+        "passport_number",
+        "person_name",
+        "phone_number"
+      ],
+      "rawContentExposed": false,
+      "rawValuePrinted": false
     }
   },
   "staticFormatDeepeningValidation": {

@@ -82,6 +82,41 @@ class ImageOcrFormatSupportTests(unittest.TestCase):
                 self.assertNotIn("Paulinestr. 13 Heilbronn 74076", serialized)
                 self.assertNotIn("EN3457864", serialized)
 
+    @unittest.skipUnless(Image is not None, "Pillow is unavailable for OCR format fixture generation.")
+    def test_ocr_profile_selection_continues_past_low_signal_output(self) -> None:
+        body = _image_bytes("PNG")
+        observed_profiles: list[str] = []
+
+        def fake_tesseract(command: list[str], **kwargs: object) -> mock.Mock:
+            profile = command[command.index("-l") + 1]
+            observed_profiles.append(profile)
+            if profile == "chi_sim+eng":
+                return mock.Mock(returncode=0, stdout=_low_signal_tsv())
+            return mock.Mock(returncode=0, stdout=_identity_tsv())
+
+        with mock.patch.dict(
+            "os.environ",
+            {"LAWDIT_OCR_MODE": "local", "LAWDIT_OCR_LANGS": "chi_sim+eng+deu"},
+        ), mock.patch(
+            "backend.lawdit.ocr_capabilities.shutil.which",
+            return_value="/usr/bin/tesseract",
+        ), mock.patch(
+            "backend.lawdit.source_image_ocr.subprocess.run",
+            side_effect=fake_tesseract,
+        ):
+            extracted = extract_document_content(body=body, content_type="image/png", name="profile-score.png")
+
+        signals = apply_source_locations(detect_signals(extracted.text), extracted.text_locations)
+        signal_types = {signal["type"] for signal in signals}
+        serialized = json.dumps(signals)
+
+        self.assertIn("chi_sim+eng", observed_profiles)
+        self.assertTrue(any(profile != "chi_sim+eng" for profile in observed_profiles))
+        self.assertTrue({"person_name", "address", "passport_number"}.issubset(signal_types))
+        self.assertNotIn("Laura Garcia", serialized)
+        self.assertNotIn("Paulinestr. 13 Heilbronn 74076", serialized)
+        self.assertNotIn("EN3457864", serialized)
+
 
 def _image_bytes(image_format: str) -> bytes:
     image = Image.new("RGB", (320, 180), "white")
@@ -107,6 +142,15 @@ def _identity_tsv() -> str:
         "5\t1\t1\t1\t2\t5\t20\t76\t56\t18\t91\t74076",
         "5\t1\t1\t1\t3\t1\t20\t108\t76\t18\t93\tPassport:",
         "5\t1\t1\t1\t3\t2\t102\t108\t92\t18\t93\tEN3457864",
+    ]
+    return "\n".join(rows) + "\n"
+
+
+def _low_signal_tsv() -> str:
+    rows = [
+        "level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext",
+        "1\t1\t0\t0\t0\t0\t0\t0\t320\t180\t-1\t",
+        "5\t1\t1\t1\t1\t1\t20\t20\t54\t18\t19\tlll",
     ]
     return "\n".join(rows) + "\n"
 
