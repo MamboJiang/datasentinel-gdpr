@@ -420,7 +420,7 @@ export function HomePage() {
 
       <header className="landing-nav-shell">
         <Link className="landing-brand" to="/">
-          <img className="landing-brand-logo" src="/brand/lawdit-wordmark-light.svg" alt="lawdit" />
+          <img className="landing-brand-logo" src="/brand/lawdit-wordmark-light.svg?v=20260601-logo" alt="lawdit" />
         </Link>
         <nav className="landing-nav" aria-label="Homepage navigation">
           <a href="#try-analysis" onClick={(event) => handleSectionLink(event, 'try-analysis')}>Analyze file</a>
