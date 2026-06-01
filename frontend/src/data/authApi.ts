@@ -113,6 +113,7 @@ async function authRequest<T>(path: string, init: RequestInit = {}): Promise<Api
 function isSafeAppReturnPath(value: string) {
   return value.startsWith('/')
     && !value.startsWith('//')
+    && value !== '/api'
     && !value.startsWith('/api/')
     && !value.includes('\r')
     && !value.includes('\n')

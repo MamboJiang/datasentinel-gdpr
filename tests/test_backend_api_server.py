@@ -332,6 +332,12 @@ class BackendApiServerTests(unittest.TestCase):
         self.assertEqual(callback["status"], 302)
         self.assertEqual(callback["headers"]["Location"], "http://localhost:5173/dashboard?auth=success")
 
+        api_login = app.handle("GET", "/api/auth/login/github?returnTo=/api", "trace_auth_login")
+        api_cookie = api_login["headers"]["Set-Cookie"][0]
+        api_tx_value = cookie_value(api_cookie, AUTH_TX_COOKIE)
+        api_transaction = unsign(str(api_tx_value or ""), str(app.auth_service.settings["session_secret"]))
+        self.assertNotIn("returnTo", api_transaction)
+
     def test_github_callback_creates_safe_session_and_logout_revokes_it(self) -> None:
         app = auth_app()
         session_cookie = start_github_session(app)

@@ -18,5 +18,12 @@ describe('auth login return path', () => {
       pathname: '/api/findings',
       search: '',
     } as Location)).toBe('/api/auth/login/google')
+
+    expect(authLoginUrlWithReturnTo('/api/auth/login/google', {
+      hash: '',
+      origin: 'https://founder-force.uk',
+      pathname: '/api',
+      search: '',
+    } as Location)).toBe('/api/auth/login/google')
   })
 })

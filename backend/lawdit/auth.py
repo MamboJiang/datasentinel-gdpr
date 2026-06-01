@@ -380,7 +380,7 @@ def _safe_return_to(value: str | None) -> str | None:
         return None
     if not parsed.path.startswith("/"):
         return None
-    if parsed.path.startswith("/api/"):
+    if parsed.path == "/api" or parsed.path.startswith("/api/"):
         return None
     return urlunparse(("", "", parsed.path, "", parsed.query, parsed.fragment))
 
