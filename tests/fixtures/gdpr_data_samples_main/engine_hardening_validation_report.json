@@ -1,6 +1,6 @@
 {
   "reportId": "engine_hardening_2026-05-31_final_acceptance",
-  "generatedAt": "2026-06-01T05:20:46Z",
+  "generatedAt": "2026-06-01T06:18:29Z",
   "privacyRule": "This report records commands, counts, capabilities, redacted signal types, and release identifiers only. It must not include raw extracted text, raw detected values, provider tokens, refresh tokens, source bodies, or private absolute source paths.",
   "scope": {
     "goal": "Core multilingual GDPR discovery engine hardening for Drive corpus fixtures, supported file formats, OCR-backed PDF/image/video-frame extraction, legacy Office conversion, evidence anchors, local validation, and agent-us deployment proof.",
@@ -19,6 +19,7 @@
   "supportedFormatsValidatedInUi": [
     "TXT",
     "UTF-16 text",
+    "Suffixless text/config",
     "CSV",
     "TSV",
     "JSON",
@@ -42,7 +43,7 @@
     "PNG/JPG image OCR",
     "TIFF/BMP/WEBP image OCR",
     "VTT/SRT video transcripts",
-    "MP4/MOV/WEBM video frame OCR",
+    "MP4/MOV/M4V/MKV/WEBM/AVI video frame OCR",
     "Google Docs export",
     "Google Sheets export",
     "Google Slides export"
@@ -51,7 +52,7 @@
     "backendTests": {
       "command": "python3 -m unittest discover -s tests",
       "result": "passed",
-      "testCount": 162,
+      "testCount": 171,
       "skippedCount": 2,
       "skipReason": "Local workstation lacks Tesseract and LibreOffice, so video OCR and legacy Office runtime smoke tests are skipped locally and executed on agent-us."
     },
@@ -59,8 +60,8 @@
       "command": "npm test",
       "workingDirectory": "frontend",
       "result": "passed",
-      "testFiles": 19,
-      "testCount": 71
+      "testFiles": 22,
+      "testCount": 79
     },
     "backendCompile": {
       "command": "python3 -m py_compile backend/lawdit/deterministic_signals.py backend/lawdit/signal_regex_rules.py backend/lawdit/signal_stacked_labels.py",
@@ -79,7 +80,7 @@
     "browserUiCheck": {
       "target": "http://127.0.0.1:5175/sources",
       "result": "passed",
-      "supportedFormatCount": 29,
+      "supportedFormatCount": 30,
       "missingExpectedFormats": [],
       "consoleErrorsOrWarnings": 0,
       "oldBoundaryTextPresent": false,
@@ -90,8 +91,8 @@
     }
   },
   "agentUsDeployment": {
-    "appRelease": "/srv/lawdit/app/releases/20260601051100-stacked-ocr-labels",
-    "frontendRelease": "/srv/lawdit/frontend/releases/20260601041115-lawdit-public-experience-rebased",
+    "appRelease": "/srv/lawdit/app/releases/20260601061735-risk-taxonomy",
+    "frontendRelease": "/srv/lawdit/frontend/releases/20260601055633-supported-format-alignment",
     "apiService": "lawdit-api.service",
     "apiServiceState": "active",
     "publicHealthUrl": "https://founder-force.uk/api/health",
@@ -116,13 +117,19 @@
       "containsLegacyOfficeLabel": true,
       "containsLibreOfficeNote": true,
       "containsFrameIndexRuntime": true,
-      "jsAsset": "assets/index-CHSb4nIV.js",
-      "cssAsset": "assets/index-DjlCto_3.css"
+      "jsAsset": "assets/index-DT-Gb3q6.js",
+      "cssAsset": "assets/index-qrcyP7Au.css"
     },
     "remoteBackendTests": {
       "command": "cd /srv/lawdit/app/current && python3 -m unittest discover -s tests",
       "result": "passed",
-      "testCount": 162
+      "testCount": 171
+    },
+    "remoteRiskTaxonomyTests": {
+      "command": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_signal_risk tests.test_backend_api_server.BackendApiServerTests.test_public_analysis_routes_suffixless_pdf_mime_to_extractor",
+      "result": "passed",
+      "testCount": 3,
+      "smokeResult": "public suffixless text with person, address, and passport evidence returned high risk through the shared signal-risk taxonomy without raw values"
     },
     "remoteStackedLabelTests": {
       "command": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_core_engine_detection.CoreEngineDetectionTests.test_stacked_ocr_form_labels_detect_values_on_following_lines tests.test_ocr_degraded_label_detection.OcrDegradedLabelDetectionTests.test_clean_stacked_product_labels_do_not_trigger_person_names tests.test_core_engine_quality_report tests.test_core_engine_performance_report",
@@ -456,8 +463,8 @@
     "bindingConnected": true,
     "scanStatus": "completed",
     "processedFiles": 18,
-    "successfulFiles": 17,
-    "unsupportedFiles": 1,
+    "successfulFiles": 18,
+    "unsupportedFiles": 0,
     "ocrDeferredFiles": 0,
     "detectedSignals": 74,
     "assembledFindings": 12,

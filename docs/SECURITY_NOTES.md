@@ -48,7 +48,7 @@ Direct HTTPS file links are approved only for public BOM/charset-aware Unicode t
 
 ## Public Upload Trial
 
-The public upload-analysis trial is implemented as the narrow boundary documented in `docs/design/public-upload-analysis-preview.md`. It enforces server-side size validation, a 10 MB maximum file limit, one active file per browser trial session, a 5-active-analysis global cap in the API process, safe filename handling, server-side content validation, transient in-memory raw-file handling, capacity release on every terminal state, and redacted result output. The trial must not expose raw sensitive values, legal advice, full GDPR-compliance claims, automatic deletion, production tenant access, durable queue state, or Microsoft Graph integration.
+The public upload-analysis trial is implemented as the narrow boundary documented in `docs/design/public-upload-analysis-preview.md`. It enforces server-side size validation, a 10 MB maximum file limit, one active file per browser trial session, a 10-active-analysis global cap in the API process, safe filename handling, server-side content validation, transient in-memory raw-file handling, capacity release on every terminal state, and redacted result output. The trial must not expose raw sensitive values, legal advice, full GDPR-compliance claims, automatic deletion, production tenant access, durable queue state, or Microsoft Graph integration.
 
 OpenRouter assistive AI is the only approved external AI boundary. It must follow these controls:
 
