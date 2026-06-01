@@ -180,6 +180,17 @@
       "forbiddenValues": ["王芳", "13800138000", "11010519491231002X"]
     },
     {
+      "caseId": "pdf_ocr_travel_overlay_identity",
+      "fileKind": "pdf_ocr",
+      "fileName": "travel_overlay_identity_scan.pdf",
+      "contentType": "application/pdf",
+      "expectedFormat": "pdf_ocr",
+      "expectedDifficulty": "hard",
+      "text": "姓名：梁思源\n地址：Paulinestr. 13 Heilbronn 74076\nPassport EN3457864",
+      "expectedTypes": ["person_name", "address", "passport_number"],
+      "forbiddenValues": ["梁思源", "Paulinestr. 13 Heilbronn 74076", "EN3457864"]
+    },
+    {
       "caseId": "vtt_portuguese_secret",
       "fileKind": "utf8_text",
       "fileName": "portuguese_secret.vtt",

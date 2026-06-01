@@ -9,6 +9,7 @@ from .signal_multilingual_labels import match_multilingual_label
 
 EMPLOYEE_ID_VALUE_RE = re.compile(r"\b(?:EMP|EE|E)-\d{3,8}\b", re.IGNORECASE)
 AMOUNT_VALUE_RE = re.compile(r"\b(?:EUR|USD|GBP|CHF)\s?\d{1,6}(?:[,.]\d{2})?\b|\b\d{1,6}(?:[,.]\d{2})\s?(?:EUR|USD|GBP|CHF)\b")
+PASSPORT_VALUE_RE = re.compile(r"\b(?=[A-Z0-9]{6,15}\b)(?=[A-Z0-9]*\d)[A-Z]{1,3}[A-Z0-9]{5,12}\b", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -35,6 +36,8 @@ def rule_for_label(label: str, value: str) -> LabelRule | None:
     if "tax" in normalized or "vat" in normalized:
         return LabelRule("tax_id", "tax_id_label", "[REDACTED_TAX_ID]", 0.84)
     if any(token in normalized for token in ("passport", "passport number")):
+        if not PASSPORT_VALUE_RE.search(value):
+            return None
         return LabelRule("passport_number", "passport_label", "[REDACTED_PASSPORT]", 0.87)
     if any(token in normalized for token in ("driver license", "driving licence", "drivers license", "license number", "licence number")):
         return LabelRule("driver_license", "driver_license_label", "[REDACTED_DRIVER_LICENSE]", 0.84)

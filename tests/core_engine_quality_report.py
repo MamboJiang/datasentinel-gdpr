@@ -8,6 +8,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -16,6 +17,8 @@ if str(PROJECT_ROOT) not in sys.path:
 from backend.lawdit.deterministic_signals import detect_signals
 from backend.lawdit.signal_evidence_anchors import apply_source_locations
 from backend.lawdit.source_format_recognition import extract_document_content
+from backend.lawdit.source_image_ocr import ImageOcrResult
+from backend.lawdit.source_pdf_text import PdfExtractionResult
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "gdpr_data_samples_main"
 DEFAULT_OUTPUT = FIXTURE_DIR / "core_engine_quality_report.json"
@@ -101,11 +104,7 @@ def evaluate_core_negative_cases() -> dict[str, Any]:
     payload = json.loads((FIXTURE_DIR / "core_negative_cases.json").read_text(encoding="utf-8"))
     cases = []
     for case in payload["cases"]:
-        extracted = extract_document_content(
-            body=str(case["text"]).encode("utf-8"),
-            content_type=str(case["contentType"]),
-            name=str(case["fileName"]),
-        )
+        extracted = _extract_negative_case(case)
         cases.append(_evaluate_case(
             suite="core_negative_cases",
             case_id=str(case["caseId"]),
@@ -116,6 +115,39 @@ def evaluate_core_negative_cases() -> dict[str, Any]:
             text_locations=extracted.text_locations,
         ))
     return _suite_report("core_negative_cases", cases)
+
+
+def _extract_negative_case(case: dict[str, Any]):
+    file_kind = str(case.get("fileKind") or "utf8_text")
+    text = str(case["text"])
+    name = str(case["fileName"])
+    content_type = str(case["contentType"])
+    if file_kind == "image_ocr":
+        with mock.patch(
+            "backend.lawdit.source_format_recognition.extract_image_content",
+            return_value=ImageOcrResult(
+                text,
+                text_locations=({"format": "image_ocr", "label": "Image OCR text", "start": 0, "end": len(text)},),
+            ),
+        ):
+            return extract_document_content(body=b"synthetic-negative-image", content_type=content_type, name=name)
+    if file_kind == "pdf_ocr":
+        with mock.patch(
+            "backend.lawdit.source_pdf_text._ocr_result",
+            return_value=PdfExtractionResult(
+                text,
+                "pdf_ocr",
+                "pdf_page_image_ocr",
+                "hard",
+                text_locations=({"format": "pdf_ocr", "label": "Page 1", "start": 0, "end": len(text), "page": 1},),
+            ),
+        ):
+            return extract_document_content(body=b"%PDF-1.7 image-only", content_type=content_type, name=name, pdf_reader=_EmptyPdfReader)
+    return extract_document_content(
+        body=text.encode("utf-8"),
+        content_type=content_type,
+        name=name,
+    )
 
 
 def _evaluate_case(
@@ -202,6 +234,11 @@ def safe_command(output: Path) -> str:
     except ValueError:
         display_output = output.name
     return f"python3 tests/core_engine_quality_report.py --output {display_output}"
+
+
+class _EmptyPdfReader:
+    def __init__(self, stream: object, strict: bool = False) -> None:
+        self.pages = [mock.Mock(extract_text=lambda: "")]
 
 
 if __name__ == "__main__":

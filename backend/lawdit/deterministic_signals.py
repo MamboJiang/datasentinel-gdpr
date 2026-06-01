@@ -369,7 +369,6 @@ def _amount_match_has_personal_context(text: str, start: int, end: int) -> bool:
         "wage",
         "expense",
         "reimbursement",
-        "receipt",
         "claim",
         "allowance",
         "employee",

@@ -10,6 +10,10 @@ from .signal_multilingual_labels import multilingual_label_tokens
 
 EXPLICIT_LABEL_SEPARATOR_RE = r"[:：#]|[-–—]"
 VALUE_TRAILING_DELIMITERS = " \t;,|"
+LATIN_WHITESPACE_VALUE_LABELS = {
+    "passport",
+    "passport number",
+}
 
 INLINE_LABEL_ALIASES = tuple(sorted({
     "account id",
@@ -171,7 +175,7 @@ def _clean_label(label: str) -> str:
 
 
 def _label_allows_whitespace_separator(label: str) -> bool:
-    return _contains_cjk_kana_hangul_or_arabic(label)
+    return label.lower() in LATIN_WHITESPACE_VALUE_LABELS or _contains_cjk_kana_hangul_or_arabic(label)
 
 
 def _label_allows_separatorless_value(label: str) -> bool:

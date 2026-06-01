@@ -73,6 +73,35 @@
       "text": "Build 20260601 completed\nBatch 12345678 archived\nShard 42 processed 120000 rows\n",
       "expectedTypes": [],
       "forbiddenValues": ["20260601", "12345678", "120000"]
+    },
+    {
+      "caseId": "image_ocr_store_receipt_clean",
+      "language": "en",
+      "fileKind": "image_ocr",
+      "fileName": "store_receipt_clean.png",
+      "contentType": "image/png",
+      "text": "STORE RECEIPT\nTotal EUR 62000\nSKU AB12345678\nBatch FR1234567890\n",
+      "expectedTypes": [],
+      "forbiddenValues": ["EUR 62000", "AB12345678", "FR1234567890"]
+    },
+    {
+      "caseId": "pdf_ocr_release_notes_clean",
+      "language": "en",
+      "fileKind": "pdf_ocr",
+      "fileName": "release_notes_clean.pdf",
+      "contentType": "application/pdf",
+      "text": "Release notes\nPassport applications are due Friday\nBuild EN3457864 passed QA\nhttps://example.com/docs/release-notes\n",
+      "expectedTypes": [],
+      "forbiddenValues": ["Passport applications", "EN3457864", "https://example.com/docs/release-notes"]
+    },
+    {
+      "caseId": "table_inventory_amounts_clean",
+      "language": "en",
+      "fileName": "table_inventory_amounts_clean.csv",
+      "contentType": "text/csv",
+      "text": "Section,Reference,Amount\nInventory,SKU-74076,EUR 62000\nOperations,BATCH-20260601,USD 120000\n",
+      "expectedTypes": [],
+      "forbiddenValues": ["SKU-74076", "EUR 62000", "USD 120000"]
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "command": "python3 tests/core_engine_quality_report.py --output tests/fixtures/gdpr_data_samples_main/core_engine_quality_report.json",
-  "generatedAt": "2026-06-01T02:25:49Z",
+  "generatedAt": "2026-06-01T02:47:40Z",
   "privacyRule": "This report stores case IDs, language/format labels, expected signal types, actual signal types, negative-case signal counts, and aggregate quality metrics only. It must not include raw source text, raw detected values, source bodies, provider tokens, Drive URLs, page images, or private absolute paths.",
   "reportId": "core_engine_quality_2026-06-01_positive_negative_oracles",
   "safetyChecks": {
@@ -425,14 +425,15 @@
     },
     {
       "actualTypeCounts": {
-        "address": 1,
+        "address": 2,
         "bank_account": 1,
         "credential_secret": 1,
         "date_of_birth": 1,
         "email": 3,
         "health_data": 3,
         "national_identifier": 5,
-        "person_name": 17,
+        "passport_number": 1,
+        "person_name": 18,
         "phone_number": 13,
         "salary_compensation": 2,
         "tax_id": 1
@@ -834,6 +835,31 @@
         },
         {
           "actualTypes": [
+            "address",
+            "passport_number",
+            "person_name"
+          ],
+          "caseId": "pdf_ocr_travel_overlay_identity",
+          "expectedTypes": [
+            "address",
+            "passport_number",
+            "person_name"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "pdf_ocr",
+          "language": "mixed",
+          "matchedTypes": [
+            "address",
+            "passport_number",
+            "person_name"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 3,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
             "credential_secret",
             "person_name"
           ],
@@ -856,14 +882,15 @@
         }
       ],
       "expectedTypeCounts": {
-        "address": 1,
+        "address": 2,
         "bank_account": 1,
         "credential_secret": 1,
         "date_of_birth": 1,
         "email": 3,
         "health_data": 3,
         "national_identifier": 5,
-        "person_name": 17,
+        "passport_number": 1,
+        "person_name": 18,
         "phone_number": 13,
         "salary_compensation": 2,
         "tax_id": 1
@@ -878,7 +905,7 @@
         "odp": 1,
         "ods": 1,
         "odt": 1,
-        "pdf_ocr": 1,
+        "pdf_ocr": 2,
         "pptx": 1,
         "rtf": 1,
         "txt": 1,
@@ -888,16 +915,16 @@
         "zip": 1
       },
       "languageCounts": {
-        "mixed": 17
+        "mixed": 18
       },
       "metrics": {
-        "actualTypeAssertions": 48,
-        "caseCount": 17,
-        "expectedTypeAssertions": 48,
+        "actualTypeAssertions": 51,
+        "caseCount": 18,
+        "expectedTypeAssertions": 51,
         "falseNegativeTypeCount": 0,
         "falsePositiveTypeCount": 0,
-        "matchedTypeAssertions": 48,
-        "perfectCaseCount": 17,
+        "matchedTypeAssertions": 51,
+        "perfectCaseCount": 18,
         "typeF1": 1.0,
         "typePrecision": 1.0,
         "typeRecall": 1.0
@@ -1010,29 +1037,70 @@
           "perfectTypeMatch": true,
           "signalCount": 0,
           "suite": "core_negative_cases"
+        },
+        {
+          "actualTypes": [],
+          "caseId": "image_ocr_store_receipt_clean",
+          "expectedTypes": [],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "image_ocr",
+          "language": "en",
+          "matchedTypes": [],
+          "perfectTypeMatch": true,
+          "signalCount": 0,
+          "suite": "core_negative_cases"
+        },
+        {
+          "actualTypes": [],
+          "caseId": "pdf_ocr_release_notes_clean",
+          "expectedTypes": [],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "pdf_ocr",
+          "language": "en",
+          "matchedTypes": [],
+          "perfectTypeMatch": true,
+          "signalCount": 0,
+          "suite": "core_negative_cases"
+        },
+        {
+          "actualTypes": [],
+          "caseId": "table_inventory_amounts_clean",
+          "expectedTypes": [],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "csv",
+          "language": "en",
+          "matchedTypes": [],
+          "perfectTypeMatch": true,
+          "signalCount": 0,
+          "suite": "core_negative_cases"
         }
       ],
       "expectedTypeCounts": {},
       "formatCounts": {
-        "csv": 1,
+        "csv": 2,
+        "image_ocr": 1,
         "json": 1,
         "log": 1,
         "markdown": 1,
+        "pdf_ocr": 1,
         "txt": 4
       },
       "languageCounts": {
         "de": 1,
-        "en": 6,
+        "en": 9,
         "zh-Hans": 1
       },
       "metrics": {
         "actualTypeAssertions": 0,
-        "caseCount": 8,
+        "caseCount": 11,
         "expectedTypeAssertions": 0,
         "falseNegativeTypeCount": 0,
         "falsePositiveTypeCount": 0,
         "matchedTypeAssertions": 0,
-        "perfectCaseCount": 8,
+        "perfectCaseCount": 11,
         "typeF1": 1.0,
         "typePrecision": 1.0,
         "typeRecall": 1.0
@@ -1041,13 +1109,13 @@
     }
   ],
   "totals": {
-    "actualTypeAssertions": 101,
-    "caseCount": 37,
-    "expectedTypeAssertions": 101,
+    "actualTypeAssertions": 104,
+    "caseCount": 41,
+    "expectedTypeAssertions": 104,
     "falseNegativeTypeCount": 0,
     "falsePositiveTypeCount": 0,
-    "matchedTypeAssertions": 101,
-    "perfectCaseCount": 37,
+    "matchedTypeAssertions": 104,
+    "perfectCaseCount": 41,
     "suiteCount": 3,
     "typeF1": 1.0,
     "typePrecision": 1.0,
