@@ -22,17 +22,21 @@ class EngineHardeningValidationReportTests(unittest.TestCase):
         report = _load(REPORT_PATH)
         deployment = report["agentUsDeployment"]
 
-        self.assertTrue(deployment["appRelease"].endswith("20260601092937-public-plain-summary"))
-        self.assertTrue(deployment["frontendRelease"].endswith("20260601092937-public-plain-summary"))
+        self.assertTrue(deployment["appRelease"].endswith("20260601100400-delta-continuity"))
+        self.assertTrue(deployment["frontendRelease"].endswith("20260601095446-analysis-stack-layout"))
         self.assertTrue(deployment["docsRelease"].endswith("20260601092937-public-plain-summary"))
-        self.assertEqual(deployment["remoteBackendTests"]["testCount"], 173)
+        self.assertEqual(deployment["remoteBackendTests"]["testCount"], 175)
+        self.assertEqual(deployment["remotePrelaunchDeltaTests"]["testCount"], 2)
+        self.assertFalse(deployment["remotePrelaunchDeltaTests"]["deletionExecuted"])
         self.assertEqual(deployment["remotePublicAnalysisLocationSmoke"]["result"], "passed")
         self.assertTrue(deployment["remotePublicAnalysisLocationSmoke"]["plainHeadlineContainsEmailAddress"])
         self.assertTrue(deployment["remotePublicAnalysisLocationSmoke"]["plainHeadlineContainsNationalIdentifier"])
         self.assertTrue(deployment["remotePublicAnalysisLocationSmoke"]["plainGdprRelevanceMentionsIdentifier"])
         self.assertFalse(deployment["remotePublicAnalysisLocationSmoke"]["rawValueExposed"])
         self.assertEqual(deployment["remoteRiskTaxonomyTests"]["result"], "passed")
-        self.assertEqual(report["localValidation"]["backendTests"]["testCount"], 173)
+        self.assertEqual(report["localValidation"]["backendTests"]["testCount"], 175)
+        self.assertEqual(report["localValidation"]["prelaunchBackendDelta"]["testCount"], 2)
+        self.assertFalse(report["localValidation"]["prelaunchBackendDelta"]["rawContentExposed"])
         self.assertEqual(report["localValidation"]["frontendTests"]["testCount"], 82)
 
     def test_validation_report_keeps_supported_formats_and_live_drive_counts_fresh(self) -> None:

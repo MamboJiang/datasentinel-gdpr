@@ -172,6 +172,7 @@ class PersistentPrelaunchState(PrelaunchState):
                 setattr(self, field, copy.deepcopy(snapshot[field]))
 
         self._pending_result = copy.deepcopy(snapshot.get("pendingResult"))
+        self._source_baselines = copy.deepcopy(snapshot.get("sourceBaselines") or {})
         epoch = snapshot.get("runningStartedEpoch")
         if self.scan.get("status") == "running" and isinstance(epoch, (int, float)):
             elapsed = max(0, time.time() - epoch)
@@ -198,6 +199,7 @@ class PersistentPrelaunchState(PrelaunchState):
     def _save_state(self) -> None:
         snapshot = {field: copy.deepcopy(getattr(self, field)) for field in WORKFLOW_FIELDS}
         snapshot["pendingResult"] = copy.deepcopy(self._pending_result)
+        snapshot["sourceBaselines"] = copy.deepcopy(self._source_baselines)
         snapshot["runningStartedEpoch"] = self._running_started_epoch
         snapshot["stateStoreVersion"] = "sqlite-prelaunch-state-v1"
         self.workflow_store.save(snapshot)

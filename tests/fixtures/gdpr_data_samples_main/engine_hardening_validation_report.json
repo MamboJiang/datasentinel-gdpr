@@ -1,6 +1,6 @@
 {
-  "reportId": "engine_hardening_2026-05-31_final_acceptance",
-  "generatedAt": "2026-06-01T07:33:34Z",
+  "reportId": "engine_hardening_2026-06-01_delta_baseline",
+  "generatedAt": "2026-06-01T08:04:00Z",
   "privacyRule": "This report records commands, counts, capabilities, redacted signal types, and release identifiers only. It must not include raw extracted text, raw detected values, provider tokens, refresh tokens, source bodies, or private absolute source paths.",
   "scope": {
     "goal": "Core multilingual GDPR discovery engine hardening for Drive corpus fixtures, supported file formats, OCR-backed PDF/image/video-frame extraction, legacy Office conversion, evidence anchors, local validation, and agent-us deployment proof.",
@@ -52,7 +52,7 @@
     "backendTests": {
       "command": "python3 -m unittest discover -s tests",
       "result": "passed",
-      "testCount": 173,
+      "testCount": 175,
       "skippedCount": 2,
       "skipReason": "Local workstation lacks Tesseract and LibreOffice, so video OCR and legacy Office runtime smoke tests are skipped locally and executed on agent-us."
     },
@@ -64,8 +64,18 @@
       "testCount": 82
     },
     "backendCompile": {
-      "command": "python3 -m py_compile backend/lawdit/public_analysis.py backend/lawdit/public_analysis_result.py backend/lawdit/public_analysis_plain_language.py",
+      "command": "python3 -m py_compile backend/lawdit/prelaunch_delta.py backend/lawdit/prelaunch_payloads.py backend/lawdit/prelaunch_state.py backend/lawdit/persistent_demo_state.py",
       "result": "passed"
+    },
+    "prelaunchBackendDelta": {
+      "command": "python3 -m unittest tests.test_prelaunch_delta_scan",
+      "result": "passed",
+      "testCount": 2,
+      "baselineGuard": "Missing or mismatched delta baselines are rejected before scan, audit, finding, metrics, or evaluation state mutates.",
+      "changedFileBehavior": "New and modified local-source files assemble delta findings; unchanged and missing files remain count-only continuity evidence, including a repeated-delta carried-forward baseline.",
+      "rawContentExposed": false,
+      "deletionExecuted": false,
+      "modelCalls": 0
     },
     "frontendBuild": {
       "command": "npm run build",
@@ -91,8 +101,8 @@
     }
   },
   "agentUsDeployment": {
-    "appRelease": "/srv/lawdit/app/releases/20260601092937-public-plain-summary",
-    "frontendRelease": "/srv/lawdit/frontend/releases/20260601092937-public-plain-summary",
+    "appRelease": "/srv/lawdit/app/releases/20260601100400-delta-continuity",
+    "frontendRelease": "/srv/lawdit/frontend/releases/20260601095446-analysis-stack-layout",
     "docsRelease": "/srv/lawdit/docs/releases/20260601092937-public-plain-summary",
     "apiService": "lawdit-api.service",
     "apiServiceState": "active",
@@ -118,13 +128,23 @@
       "containsLegacyOfficeLabel": true,
       "containsLibreOfficeNote": true,
       "containsFrameIndexRuntime": true,
-      "jsAsset": "assets/index-PEeREgcB.js",
-      "cssAsset": "assets/index-ByG-bFIj.css"
+      "jsAsset": "assets/index-CGafh7On.js",
+      "cssAsset": "assets/index-DPtTYrOz.css"
     },
     "remoteBackendTests": {
       "command": "cd /srv/lawdit/app/current && python3 -m unittest discover -s tests",
       "result": "passed",
-      "testCount": 173
+      "testCount": 175
+    },
+    "remotePrelaunchDeltaTests": {
+      "command": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_prelaunch_delta_scan",
+      "result": "passed",
+      "testCount": 2,
+      "baselineGuard": "Missing or mismatched delta baselines are rejected before mutation.",
+      "changedFileBehavior": "Only new and modified local-source documents are rescanned into findings; unchanged and missing files are reported without deletion, and repeated deltas retain carried-forward finding keys.",
+      "rawContentExposed": false,
+      "deletionExecuted": false,
+      "modelCalls": 0
     },
     "remotePublicAnalysisLocationSmoke": {
       "command": "POST a temporary synthetic text file to https://founder-force.uk/api/public-analysis/analyze and assert generated plain-language summary plus redacted evidence location metadata is returned.",

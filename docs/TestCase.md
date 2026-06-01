@@ -391,6 +391,7 @@
 | DELTA-003 | Start delta scan with mismatched explicit baseline | The command is rejected without state changes. |
 | DELTA-004 | Observe running delta pipeline | The pipeline exposes `comparing_delta_baseline` before changed-file inventory and extraction. |
 | DELTA-005 | Complete delta scan | Only changed files are processed, changed findings use the delta scan ID, unchanged files are carried forward, and missing files are represented as inventory changes. |
+| DELTA-005A | Complete a prelaunch backend delta scan after modifying a local source | The backend compares private per-source baseline fingerprints, assembles findings only for new or modified files, carries unchanged baseline findings forward by count, and exposes no raw source path or raw detected value. |
 | DELTA-006 | Verify no deletion boundary | `missingFilesTreatedAsDeleted` and `deletionExecuted` remain `false`, and no audit event executes real deletion. |
 | DELTA-007 | Verify downstream continuity | Completed delta output updates context/risk, owner routing, finding assembly, review support, audit recording, metrics, and evaluation together. |
 | DELTA-008 | Verify evaluation and cost boundary | Evaluation preserves a delta rules hash, deterministic reproducibility, throughput, zero model calls, and zero estimated paid-service cost. |
