@@ -214,8 +214,10 @@ def _finding(scan_id: str, source: dict[str, Any], document: SourceDocument, sig
         "race_ethnicity",
         "religious_belief",
         "sex_life_orientation",
+        "signature",
         "tax_id",
         "trade_union",
+        "travel_record",
     }
     risk = "high" if any(signal_type in high_risk_types for signal_type in signal_types) else "medium"
     score = 86 if risk == "high" else 64

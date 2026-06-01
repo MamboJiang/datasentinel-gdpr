@@ -15,6 +15,17 @@
       "forbiddenValues": ["Anna Kowalska", "+48 501234567", "44051401359"]
     },
     {
+      "caseId": "csv_travel_review_identity",
+      "fileKind": "utf8_text",
+      "fileName": "travel_review_identity.csv",
+      "contentType": "text/csv",
+      "expectedFormat": "csv",
+      "expectedDifficulty": "easy",
+      "text": "Passenger,Driver License,Username,Signature,Booking Reference\nAlice Example,D1234567,@alice_private,Alice Example,AB12CD",
+      "expectedTypes": ["person_name", "driver_license", "account_handle", "signature", "travel_record"],
+      "forbiddenValues": ["Alice Example", "D1234567", "@alice_private", "AB12CD"]
+    },
+    {
       "caseId": "html_arabic_contact",
       "fileKind": "utf8_text",
       "fileName": "arabic_contact.html",

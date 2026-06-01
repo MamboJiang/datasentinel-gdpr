@@ -39,6 +39,20 @@
       "forbiddenValues": ["1990-10-05", "DE89370400440532013000", "geheim-token-42", "Asthma-Behandlungsplan"]
     },
     {
+      "caseId": "de_travel_license_signature",
+      "language": "de",
+      "text": "Reisender: Anna Becker\nFührerschein: B1234567\nBuchungsnummer: AB12CD\nUnterschrift: Anna Becker",
+      "expectedTypes": ["person_name", "driver_license", "travel_record", "signature"],
+      "forbiddenValues": ["Anna Becker", "B1234567", "AB12CD"]
+    },
+    {
+      "caseId": "zh_travel_license_signature",
+      "language": "zh-Hans",
+      "text": "旅客：陈元昊\n驾驶证号：沪C1234567\n预订编号：CN88TRIP\n签名：陈元昊",
+      "expectedTypes": ["person_name", "driver_license", "travel_record", "signature"],
+      "forbiddenValues": ["陈元昊", "沪C1234567", "CN88TRIP"]
+    },
+    {
       "caseId": "it_tax_passport_health",
       "language": "it",
       "text": "Nome: Giulia Rossi\nTelefono: +39 021234567\nCodice fiscale: RSSGLI80A01H501U\nPassaporto: YA1234567\nDiagnosi: piano allergia",

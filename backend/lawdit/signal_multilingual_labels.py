@@ -28,7 +28,7 @@ MULTILINGUAL_LABEL_RULES = (
         "multilingual_person_label",
         "[REDACTED_PERSON_NAME]",
         0.8,
-        ("姓名", "名字", "联系人", "负责人", "nombre completo", "nombre", "nom", "prenom", "vorname", "nachname", "nome", "naam", "imie", "nazwisko", "氏名", "お名前", "이름", "الاسم"),
+        ("姓名", "名字", "联系人", "负责人", "旅客", "乘客", "nombre completo", "nombre", "nom", "prenom", "vorname", "nachname", "reisender", "passagier", "nome", "naam", "imie", "nazwisko", "氏名", "お名前", "이름", "الاسم"),
     ),
     MultilingualLabelRule(
         "email",
@@ -71,6 +71,27 @@ MULTILINGUAL_LABEL_RULES = (
         "[REDACTED_PASSPORT]",
         0.87,
         ("护照", "护照号", "护照号码", "pasaporte", "passeport", "reisepass", "passaporto", "paspoort", "paszport", "パスポート", "여권", "جواز السفر"),
+    ),
+    MultilingualLabelRule(
+        "driver_license",
+        "multilingual_driver_license_label",
+        "[REDACTED_DRIVER_LICENSE]",
+        0.84,
+        ("驾驶证", "驾照", "驾驶证号", "驾照号码", "führerschein", "fuehrerschein", "licencia de conducir", "permiso de conducir", "permis de conduire", "patente di guida", "carta de condução", "rijbewijs", "운전면허", "運転免許"),
+    ),
+    MultilingualLabelRule(
+        "signature",
+        "multilingual_signature_label",
+        "[REDACTED_SIGNATURE]",
+        0.78,
+        ("签名", "签字", "unterschrift", "assinatura", "署名", "서명", "التوقيع"),
+    ),
+    MultilingualLabelRule(
+        "travel_record",
+        "multilingual_travel_label",
+        "[REDACTED_TRAVEL_RECORD]",
+        0.76,
+        ("预订编号", "订票号", "行程编号", "常旅客号", "buchungsnummer", "reservierungscode", "pnr", "numero de reserva", "numéro de réservation", "codice prenotazione", "旅程番号", "예약 번호"),
     ),
     MultilingualLabelRule(
         "address",

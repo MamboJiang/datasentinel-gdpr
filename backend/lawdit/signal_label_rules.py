@@ -73,6 +73,10 @@ def rule_for_label(label: str, value: str) -> LabelRule | None:
         return LabelRule("license_plate", "license_plate_label", "[REDACTED_LICENSE_PLATE]", 0.78)
     if any(token in normalized for token in ("username", "user name", "handle", "account id", "profile id", "login id")):
         return LabelRule("account_handle", "account_handle_label", "[REDACTED_HANDLE]", 0.76)
+    if any(token in normalized for token in ("booking reference", "reservation code", "pnr", "ticket number", "itinerary id", "travel booking", "frequent flyer")):
+        return LabelRule("travel_record", "travel_record_label", "[REDACTED_TRAVEL_RECORD]", 0.76)
+    if normalized in {"signature", "signed by", "signatory", "customer signature", "applicant signature", "employee signature"}:
+        return LabelRule("signature", "signature_label", "[REDACTED_SIGNATURE]", 0.78)
     if any(token in normalized for token in ("profile url", "personal url", "social link", "account url")):
         return LabelRule("url", "url_label", "[REDACTED_URL]", 0.72)
     if any(token in normalized for token in ("password", "passcode", "api key", "secret", "token", "session id", "cookie")):
@@ -133,7 +137,9 @@ def _looks_like_person_label(normalized: str) -> bool:
         "owner",
         "requester",
         "reported by",
-        "signature",
+        "passenger",
+        "traveler",
+        "traveller",
         "contact person",
         "trainer",
     ))
