@@ -1,6 +1,6 @@
 {
   "reportId": "engine_hardening_2026-05-31_final_acceptance",
-  "generatedAt": "2026-05-31T23:46:42Z",
+  "generatedAt": "2026-06-01T04:05:55Z",
   "privacyRule": "This report records commands, counts, capabilities, redacted signal types, and release identifiers only. It must not include raw extracted text, raw detected values, provider tokens, refresh tokens, source bodies, or private absolute source paths.",
   "scope": {
     "goal": "Core multilingual GDPR discovery engine hardening for Drive corpus fixtures, supported file formats, OCR-backed PDF/image/video-frame extraction, legacy Office conversion, evidence anchors, local validation, and agent-us deployment proof.",
@@ -49,9 +49,9 @@
   ],
   "localValidation": {
     "backendTests": {
-      "command": "python3 -m unittest discover -s tests -p 'test*.py'",
+      "command": "python3 -m pytest -q",
       "result": "passed",
-      "testCount": 129,
+      "testCount": 156,
       "skippedCount": 2,
       "skipReason": "Local workstation lacks Tesseract and LibreOffice, so video OCR and legacy Office runtime smoke tests are skipped locally and executed on agent-us."
     },
@@ -90,8 +90,8 @@
     }
   },
   "agentUsDeployment": {
-    "appRelease": "/srv/lawdit/app/releases/20260601012839-scan-refresh-detail",
-    "frontendRelease": "/srv/lawdit/frontend/releases/20260601012839-scan-refresh-detail",
+    "appRelease": "/srv/lawdit/app/releases/20260601040103-image-ocr-normalization",
+    "frontendRelease": "/srv/lawdit/frontend/releases/20260601041115-lawdit-public-experience-rebased",
     "apiService": "lawdit-api.service",
     "apiServiceState": "active",
     "publicHealthUrl": "https://founder-force.uk/api/health",
@@ -120,9 +120,14 @@
       "cssAsset": "assets/index-DjlCto_3.css"
     },
     "remoteBackendTests": {
-      "command": "cd /srv/lawdit/app/current && python3 -m unittest discover -s tests -p 'test*.py'",
+      "command": "cd /srv/lawdit/app/current && python3 -m unittest discover -s tests",
       "result": "passed",
-      "testCount": 129
+      "testCount": 158
+    },
+    "remoteImageOcrFormatTests": {
+      "command": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_image_ocr_format_support tests.test_ocr_region_anchors tests.test_generated_format_challenges tests.test_core_engine_quality_report tests.test_core_engine_performance_report",
+      "result": "passed",
+      "testCount": 12
     },
     "remoteFormatRuntimeTests": {
       "command": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_legacy_office_runtime tests.test_format_recognition tests.test_video_frame_ocr_runtime tests.test_table_cell_anchors tests.test_markdown_extraction tests.test_pdf_region_anchors tests.test_source_review_preview",
@@ -173,7 +178,7 @@
     ]
   },
   "agentUsRealOcrSmoke": {
-    "command": "Generate temporary synthetic PNG and image-only PDF on agent-us, then run extract_document_content, detect_signals, and apply_source_locations with LAWDIT_OCR_MODE=local.",
+    "command": "Generate temporary synthetic PNG, BMP, WEBP, TIFF, and image-only PDF on agent-us, then run extract_document_content, detect_signals, and apply_source_locations with LAWDIT_OCR_MODE=local.",
     "result": "passed",
     "rawFixturePersisted": false,
     "rawValuePrinted": false,
@@ -198,6 +203,21 @@
       ],
       "hasPageRegion": true,
       "hasSourceOffsets": true
+    },
+    "nonPngImages": {
+      "formats": [
+        "bmp",
+        "webp",
+        "tiff"
+      ],
+      "fileFormat": "image_ocr",
+      "extractionMethod": "tesseract_image_ocr",
+      "signalTypes": [
+        "passport_number",
+        "person_name"
+      ],
+      "hasPageRegion": true,
+      "rawFixturePersisted": false
     }
   },
   "staticFormatDeepeningValidation": {
@@ -358,11 +378,11 @@
     "localReport": "tests/fixtures/gdpr_data_samples_main/core_engine_performance_report.json",
     "agentUsReport": "tests/fixtures/gdpr_data_samples_main/core_engine_performance_report_agent_us.json",
     "agentUsResult": "passed",
-    "agentUsProcessedFiles": 35,
+    "agentUsProcessedFiles": 42,
     "agentUsUnsupportedFiles": 0,
     "agentUsOcrDeferredFiles": 0,
-    "agentUsThroughputFilesPerSecond": 13.268,
-    "agentUsPeakRssMiB": 64.059,
+    "agentUsThroughputFilesPerSecond": 0.569,
+    "agentUsPeakRssMiB": 219.07,
     "agentUsModelCalls": 0,
     "agentUsEstimatedCostUsd": 0.0,
     "rawTextPersisted": false,
