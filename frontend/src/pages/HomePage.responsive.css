@@ -29,7 +29,7 @@
 
   .landing-feature-rail,
   .landing-workflow-layout,
-  .landing-contract-grid,
+  .landing-conversion-layout,
   .landing-sample-layout,
   .landing-console-preview,
   .landing-safety-grid,
@@ -45,8 +45,84 @@
     padding: 84px 22px;
   }
 
+  .landing-scanner-card,
+  .landing-governance-loop-card {
+    min-height: auto;
+  }
+
+  .landing-conversion-connector {
+    min-height: auto;
+  }
+
   .landing-evaluation-board {
     padding: 28px;
+  }
+
+  .landing-evaluation-copy {
+    text-align: left;
+  }
+
+  .landing-evaluation-copy p {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .landing-file-status-gallery {
+    --status-card-width: clamp(280px, 62vw, 360px);
+    margin-top: 42px;
+    min-height: 500px;
+  }
+
+  .landing-file-status-stage {
+    height: 380px;
+  }
+
+  .landing-file-status-card {
+    padding: 22px;
+  }
+
+  .landing-governance-stack {
+    max-width: min(640px, 100%);
+  }
+
+  .landing-governance-showcase {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-card-swap {
+    height: 470px;
+    max-width: min(680px, 100%);
+  }
+
+  .landing-card-swap-card {
+    width: min(560px, calc(100% - 92px));
+  }
+
+  .landing-policy-pack {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 100%;
+  }
+
+  .landing-policy-file-list {
+    left: 260px;
+  }
+
+  .landing-policy-pack-intro .landing-policy-file-list {
+    left: 286px;
+    width: min(340px, calc(100% - 300px));
+  }
+
+  .landing-governance-nav {
+    align-items: center;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .landing-governance-nav-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }
 
@@ -110,9 +186,31 @@
     font-size: 2.15rem;
   }
 
+  .landing-true-focus {
+    gap: .06em .18em;
+    line-height: 1.04;
+  }
+
+  .landing-true-focus-word {
+    border-radius: 6px;
+    padding: .01em .04em .05em;
+  }
+
   .landing-workflow-visual {
     min-height: 320px;
     padding: 24px;
+  }
+
+  .landing-workflow-steps-shell,
+  .landing-workflow-steps {
+    height: auto;
+    min-height: 560px;
+  }
+
+  .landing-workflow-overview-grid,
+  .landing-workflow-detail-step-grid,
+  .landing-workflow-detail-summary dl {
+    grid-template-columns: 1fr;
   }
 
   .landing-workflow-step {
@@ -120,25 +218,230 @@
     grid-template-columns: 38px minmax(0, 1fr);
   }
 
-  .landing-contract-card,
+  .landing-workflow-detail-header {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .landing-workflow-detail-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .landing-workflow-mini-timeline {
+    order: -1;
+  }
+
+  .landing-scanner-card,
+  .landing-governance-loop-card,
   .landing-safety-card {
     min-height: auto;
     padding: 20px;
   }
 
-  .landing-sample-families span,
-  .landing-console-list span {
+  .landing-conversion-connector {
+    gap: 8px;
+  }
+
+  .landing-conversion-connector i svg {
+    transform: rotate(90deg);
+  }
+
+  .landing-governance-loop-row {
+    gap: 12px;
+    grid-template-columns: 34px minmax(0, 1fr);
+    padding: 13px;
+  }
+
+  .landing-sample-families span {
     max-width: 100%;
     overflow-wrap: anywhere;
   }
 
-  .landing-evaluation-board dl {
+  .landing-governance-stack {
+    height: 470px;
+  }
+
+  .landing-card-swap {
+    height: 440px;
+  }
+
+  .landing-card-swap-card {
+    height: 330px;
+    padding: 18px;
+    width: calc(100% - 50px);
+  }
+
+  .landing-governance-stack-card {
+    height: 280px;
+    padding: 18px;
+    top: 120px;
+    width: calc(100% - 42px);
+  }
+
+  .landing-policy-pack {
+    height: 300px;
+  }
+
+  .landing-governance .landing-console-preview {
     grid-template-columns: 1fr;
+  }
+
+  .landing-policy-selector {
+    min-height: auto;
+  }
+
+  .landing-policy-mini-folder {
+    height: 100px;
+    margin: 16px 0;
+  }
+
+  .landing-policy-selector-files {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .landing-policy-selector-files button {
+    border-radius: 12px;
+  }
+
+  .landing-governance-card-stack {
+    min-height: 480px;
+  }
+
+  .landing-governance-stack-shadow {
+    left: 10px;
+    right: 10px;
+  }
+
+  .landing-governance-active-card {
+    height: auto;
+    min-height: 360px;
+    padding: 22px;
+  }
+
+  .landing-policy-pack-intro {
+    height: 360px;
+  }
+
+  .landing-policy-pack-intro::before,
+  .landing-policy-pack-intro::after {
+    left: 12px;
+    width: calc(100% - 42px);
+  }
+
+  .landing-policy-folder {
+    transform: scale(.86);
+    transform-origin: left top;
+  }
+
+  .landing-policy-pack-intro .landing-policy-folder {
+    margin-left: 0;
+    transform: scale(.86);
+    transform-origin: left top;
+  }
+
+  .landing-policy-folder:hover,
+  .landing-policy-pack-open .landing-policy-folder,
+  .landing-policy-pack-intro .landing-policy-folder:hover,
+  .landing-policy-pack-intro.landing-policy-pack-open .landing-policy-folder {
+    transform: scale(.86) translateY(-8px);
+  }
+
+  .landing-policy-file-list {
+    left: 0;
+    top: 168px;
+    width: 100%;
+  }
+
+  .landing-policy-pack-intro .landing-policy-file-list {
+    left: 0;
+    top: 168px;
+    width: 100%;
+  }
+
+  .landing-governance-nav {
+    align-items: stretch;
+    gap: 16px;
+    grid-template-columns: 1fr;
+  }
+
+  .landing-governance-nav-status {
+    text-align: left;
+  }
+
+  .landing-governance-nav-tabs {
+    justify-content: flex-start;
+  }
+
+  .landing-governance-nav-tabs button {
+    height: 38px;
+    padding: 0 11px;
+  }
+
+  .landing-governance-nav-dots {
+    justify-content: flex-start;
+  }
+
+  .landing-governance-boundary,
+  .landing-governance-audit {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-governance-routing div {
+    align-items: start;
+    grid-template-columns: 1fr;
+  }
+
+  .landing-file-status-gallery {
+    --status-card-width: min(82vw, 330px);
+    min-height: 510px;
+  }
+
+  .landing-file-status-stage {
+    height: 390px;
+  }
+
+  .landing-file-status-card {
+    transform:
+      translateX(calc(-50% + (var(--status-position) * 78vw)))
+      translateY(var(--status-arc-y))
+      rotate(var(--status-rotate))
+      scale(var(--status-scale));
+  }
+
+  .landing-file-status-indicator {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .landing-file-status-hint {
+    text-align: left;
   }
 
   .landing-final {
     align-items: flex-start;
     flex-direction: column;
     gap: 24px;
+  }
+}
+
+@media (min-width: 621px) and (max-width: 980px) {
+  .landing-governance .landing-console-preview {
+    gap: 28px;
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  }
+
+  .landing-governance .landing-console-copy {
+    grid-column: 1 / -1;
+    max-width: 420px;
+  }
+
+  .landing-governance-card-stack {
+    min-height: 510px;
+  }
+
+  .landing-governance-active-card {
+    height: 390px;
   }
 }
