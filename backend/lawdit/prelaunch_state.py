@@ -12,6 +12,7 @@ from .demo_state import DemoState, _source_owner
 from .deterministic_signals import detect_signals, safe_public_source_path
 from .envelope import envelope, response, utc_now
 from .signal_evidence_anchors import apply_source_locations
+from .signal_risk import HIGH_RISK_SIGNAL_TYPES
 from .source_documents import SourceDocument, SourceDocumentBatch, SourceReadIssue, read_source_documents
 from .source_review_preview import build_source_review_preview
 from .source_store import SourceStore
@@ -192,34 +193,7 @@ def _scan_source(source: dict[str, Any], governance: dict[str, Any], scan_type: 
 
 def _finding(scan_id: str, source: dict[str, Any], document: SourceDocument, signals: list[dict[str, Any]], policy_version: str) -> dict[str, Any]:
     signal_types = sorted({signal["type"] for signal in signals})
-    high_risk_types = {
-        "bank_account",
-        "biometric_data",
-        "credential_secret",
-        "criminal_record",
-        "date_of_birth",
-        "driver_license",
-        "employee_id",
-        "free_text_personal_context",
-        "genetic_data",
-        "government_identifier",
-        "health_data",
-        "iban_like",
-        "incident_context",
-        "medical_identifier",
-        "national_identifier",
-        "passport_number",
-        "payment_card",
-        "political_opinion",
-        "race_ethnicity",
-        "religious_belief",
-        "sex_life_orientation",
-        "signature",
-        "tax_id",
-        "trade_union",
-        "travel_record",
-    }
-    risk = "high" if any(signal_type in high_risk_types for signal_type in signal_types) else "medium"
+    risk = "high" if any(signal_type in HIGH_RISK_SIGNAL_TYPES for signal_type in signal_types) else "medium"
     score = 86 if risk == "high" else 64
     owner = _source_owner(source)
     finding_id = "finding_" + hashlib.sha256(f"{scan_id}:{document.source_path}".encode("utf-8")).hexdigest()[:12]

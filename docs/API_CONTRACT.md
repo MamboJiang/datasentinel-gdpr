@@ -205,6 +205,8 @@ Failure paths:
 
 Successful results include `analysisId`, `status`, `file`, `summary`, `evidence`, `warnings`, and fresh `capacity`. They may also include optional `summary.nextSteps`, `summary.workflowReadiness`, `summary.boundaryNotes`, `analysisStages`, and `governanceBoundaries` for richer frontend presentation. `summary.rawContentExposed`, `summary.legalConclusionProvided`, and `summary.deletionAvailable` must be `false`. Evidence snippets must remain redacted.
 
+`summary.riskLevel` uses the same high-risk signal taxonomy as Workspace finding assembly for identity documents, credentials, financial identifiers, special-category data, and other high-priority evidence.
+
 ### Account Session
 
 Provider login uses backend authorization-code flows. Provider client secrets and provider tokens must stay server-side. The browser receives only a first-party HttpOnly session cookie and safe profile fields from `/api/auth/session`. The login route may receive `returnTo` for a frontend deep link; the backend accepts only relative app paths, ignores absolute URLs, protocol-relative URLs, and `/api/*` paths, and then appends the `auth` result query to the final frontend redirect.

@@ -54,6 +54,7 @@
 | UPLOAD-008 | Review trial education copy | The trial is labeled as a public preview, states that the full product workflow lives in the Workspace, and links to `/dashboard` for governed source setup, owner routing, review decisions, audit trails, and evaluation. |
 | UPLOAD-009 | Submit a no-extension file with a supported MIME type | The backend routes core-supported MIME types such as `application/pdf` to extraction instead of rejecting them solely because the filename has no extension. |
 | UPLOAD-010 | Submit suffixless octet-stream text and binary samples | Unicode text candidates can complete with redacted findings through bounded sniffing, while binary candidates return a safe unsupported problem response and create no findings. |
+| UPLOAD-011 | Submit a public analysis file with passport or driver-license evidence | The result uses the shared signal-risk taxonomy and returns a high-risk review priority without exposing the raw identifier. |
 
 ## Backend Planning Checks
 

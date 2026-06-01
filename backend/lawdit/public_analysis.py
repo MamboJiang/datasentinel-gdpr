@@ -15,6 +15,7 @@ from .deterministic_signals import detect_signals
 from .envelope import envelope, problem, response
 from .public_analysis_capacity import MAX_UPLOAD_BYTES, PublicAnalysisCapacity
 from .signal_evidence_anchors import apply_source_locations, sanitize_public_signal
+from .signal_risk import public_risk_level
 from .source_archive_text import ARCHIVE_CONTENT_TYPES
 from .source_format_recognition import (
     EMAIL_CONTENT_TYPES,
@@ -58,9 +59,6 @@ _PUBLIC_DOCUMENT_CONTENT_TYPES = (
     | IMAGE_CONTENT_TYPES
     | VIDEO_TRANSCRIPT_CONTENT_TYPES
 )
-_HIGH_RISK_SIGNAL_TYPES = {"health_data", "national_identifier", "payment_card", "iban_like", "tax_id"}
-_MEDIUM_RISK_SIGNAL_TYPES = {"email", "phone_number", "employee_id", "location_data", "device_identifier", "online_identifier"}
-
 
 @dataclass(frozen=True)
 class UploadFile:
@@ -292,14 +290,7 @@ def _detected_types(signals: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _risk_level(detected_types: list[dict[str, Any]]) -> str:
-    signal_types = {str(item["type"]) for item in detected_types}
-    if signal_types & _HIGH_RISK_SIGNAL_TYPES:
-        return "high"
-    if len(signal_types) >= 3 or signal_types & _MEDIUM_RISK_SIGNAL_TYPES:
-        return "medium"
-    if signal_types:
-        return "low"
-    return "none"
+    return public_risk_level({str(item["type"]) for item in detected_types})
 
 
 def _review_recommendation(risk_level: str, signal_count: int) -> str:

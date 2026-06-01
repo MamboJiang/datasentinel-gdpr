@@ -250,7 +250,7 @@ class BackendApiServerTests(unittest.TestCase):
         extract.assert_called_once_with(body=b"%PDF-1.4\n...", content_type="application/pdf", name="travel-plan")
         self.assertEqual(analyzed["body"]["data"]["file"]["fileFormat"], "pdf_mixed")
         self.assertEqual(analyzed["body"]["data"]["file"]["extractionMethod"], "pdf_text_layer_with_page_ocr")
-        self.assertEqual(analyzed["body"]["data"]["summary"]["riskLevel"], "medium")
+        self.assertEqual(analyzed["body"]["data"]["summary"]["riskLevel"], "high")
 
     def test_public_analysis_rejects_suffixless_binary_after_extractor_probe(self) -> None:
         app = build_default_app()

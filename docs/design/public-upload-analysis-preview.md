@@ -49,6 +49,7 @@ Selected direction: capacity guard with transient waiting-at-intake counts. The 
 | File size | 10 MB maximum | Oversized files are rejected before extraction or signal detection starts. |
 | Upload shape | One `multipart/form-data` field named `file` | Missing, malformed, empty, or multi-file uploads are rejected. |
 | Format gate | Core-supported suffix or MIME, plus suffixless text sniff candidates | Supported MIME types such as `application/pdf` can reach extraction even when the filename has no extension; suffixless octet-stream files must pass bounded Unicode text sniffing before producing findings. |
+| Risk priority | Shared deterministic signal-risk taxonomy | Identity documents, credentials, financial identifiers, special-category data, and other Workspace high-risk signal types are high priority in public summaries as well. |
 | Result depth | Short summary plus optional stages | The result returns categories, risk level, redacted evidence snippets, warnings, review guidance, accountable next steps, and optional handoff detail, not a full evidence workspace. |
 | Deletion | Not available | Trial output cannot request, schedule, or imply deletion execution. |
 
@@ -74,6 +75,7 @@ Selected direction: capacity guard with transient waiting-at-intake counts. The 
 - Server must not trust filename, MIME type, or browser metadata alone.
 - The public intake gate must not reject a core-supported MIME type solely because the filename lacks an extension.
 - Suffixless octet-stream files are accepted only as bounded text-sniffing candidates; binary candidates fail before finding creation.
+- Public risk summaries must stay aligned with Workspace finding risk taxonomy for high-risk signal types such as passports and driver licenses.
 - Only one active analysis is permitted for the same public analysis session ID.
 - Capacity is counted by active analysis, not by page view.
 - Slot reservation and release must be protected by a lock inside the API process.
