@@ -84,6 +84,15 @@ export function googleDriveBindingStartUrl(): string {
   return `${apiBase}/integrations/google-drive/bind/start`
 }
 
+export function authLoginUrlWithReturnTo(loginUrl: string, location: Pick<Location, 'hash' | 'origin' | 'pathname' | 'search'>): string {
+  const target = new URL(loginUrl, location.origin)
+  const returnTo = `${location.pathname}${location.search}${location.hash}`
+  if (isSafeAppReturnPath(returnTo)) {
+    target.searchParams.set('returnTo', returnTo)
+  }
+  return `${target.pathname}${target.search}${target.hash}`
+}
+
 async function authRequest<T>(path: string, init: RequestInit = {}): Promise<ApiEnvelope<T>> {
   const response = await fetch(`${apiBase}${path}`, {
     ...init,
@@ -99,4 +108,12 @@ async function authRequest<T>(path: string, init: RequestInit = {}): Promise<Api
   }
 
   return response.json() as Promise<ApiEnvelope<T>>
+}
+
+function isSafeAppReturnPath(value: string) {
+  return value.startsWith('/')
+    && !value.startsWith('//')
+    && !value.startsWith('/api/')
+    && !value.includes('\r')
+    && !value.includes('\n')
 }

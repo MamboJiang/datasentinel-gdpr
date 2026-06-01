@@ -294,6 +294,44 @@ class BackendApiServerTests(unittest.TestCase):
         self.assertIn("auth=failed", callback["headers"]["Location"])
         self.assertFalse(session["body"]["data"]["authenticated"])
 
+    def test_auth_callback_returns_to_safe_deep_link_after_login(self) -> None:
+        app = auth_app()
+        login = app.handle("GET", "/api/auth/login/github?returnTo=/findings/finding_001%3Ftab%3Devidence", "trace_auth_login")
+        auth_cookie = login["headers"]["Set-Cookie"][0]
+        tx_value = cookie_value(auth_cookie, AUTH_TX_COOKIE)
+        transaction = unsign(str(tx_value or ""), str(app.auth_service.settings["session_secret"]))
+        callback = app.handle(
+            "GET",
+            f"/api/auth/callback/github?code=oauth_code&state={transaction['state']}",
+            "trace_auth_callback",
+            None,
+            None,
+            {"Cookie": f"{AUTH_TX_COOKIE}={tx_value}"},
+        )
+
+        self.assertEqual(transaction["returnTo"], "/findings/finding_001?tab=evidence")
+        self.assertEqual(callback["status"], 302)
+        self.assertEqual(callback["headers"]["Location"], "http://localhost:5173/findings/finding_001?tab=evidence&auth=success")
+
+    def test_auth_login_ignores_external_return_targets(self) -> None:
+        app = auth_app()
+        login = app.handle("GET", "/api/auth/login/github?returnTo=https%3A%2F%2Fevil.example%2Ffindings", "trace_auth_login")
+        auth_cookie = login["headers"]["Set-Cookie"][0]
+        tx_value = cookie_value(auth_cookie, AUTH_TX_COOKIE)
+        transaction = unsign(str(tx_value or ""), str(app.auth_service.settings["session_secret"]))
+        callback = app.handle(
+            "GET",
+            f"/api/auth/callback/github?code=oauth_code&state={transaction['state']}",
+            "trace_auth_callback",
+            None,
+            None,
+            {"Cookie": f"{AUTH_TX_COOKIE}={tx_value}"},
+        )
+
+        self.assertNotIn("returnTo", transaction)
+        self.assertEqual(callback["status"], 302)
+        self.assertEqual(callback["headers"]["Location"], "http://localhost:5173/dashboard?auth=success")
+
     def test_github_callback_creates_safe_session_and_logout_revokes_it(self) -> None:
         app = auth_app()
         session_cookie = start_github_session(app)

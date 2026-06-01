@@ -7,7 +7,7 @@ import os
 import secrets
 import time
 from typing import Any, Protocol
-from urllib.parse import urlencode
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 from urllib.request import Request, urlopen
 
 from .envelope import envelope, problem, response
@@ -110,7 +110,7 @@ class AuthService:
         ]
         return response(200, envelope(data, trace_id), trace_id)
 
-    def start_login(self, provider: str, trace_id: str, path: str) -> dict[str, Any]:
+    def start_login(self, provider: str, trace_id: str, path: str, return_to: str | None = None) -> dict[str, Any]:
         if provider not in PROVIDERS:
             return self._auth_problem(404, "Unknown auth provider", path, trace_id)
 
@@ -125,6 +125,9 @@ class AuthService:
             "verifier": verifier,
             "exp": int(time.time()) + TX_TTL_SECONDS,
         }
+        safe_return_to = _safe_return_to(return_to)
+        if safe_return_to:
+            transaction["returnTo"] = safe_return_to
         location = self._authorization_url(provider, state, verifier)
         cookie = self._cookie(AUTH_TX_COOKIE, sign(transaction, self._secret()), max_age=TX_TTL_SECONDS)
         return redirect(location, trace_id, [cookie])
@@ -142,12 +145,12 @@ class AuthService:
         transaction = self._read_transaction(headers.get("Cookie", ""))
 
         if not code or not state or not transaction or transaction.get("provider") != provider or transaction.get("state") != state:
-            return redirect(self._return_url("failed", "state"), trace_id, failure_cookies)
+            return redirect(self._return_url("failed", "state", _transaction_return_to(transaction)), trace_id, failure_cookies)
 
         try:
             profile = self._google_profile(code) if provider == "google" else self._github_profile(code, transaction["verifier"])
         except Exception:
-            return redirect(self._return_url("failed", "provider_exchange"), trace_id, failure_cookies)
+            return redirect(self._return_url("failed", "provider_exchange", _transaction_return_to(transaction)), trace_id, failure_cookies)
 
         user = self.store.upsert_user(profile)
         expires_at = int(time.time()) + SESSION_TTL_SECONDS
@@ -156,7 +159,7 @@ class AuthService:
             self._clear_cookie(AUTH_TX_COOKIE),
             self._cookie(SESSION_COOKIE, session_id, max_age=SESSION_TTL_SECONDS),
         ]
-        return redirect(self._return_url("success", None), trace_id, cookies)
+        return redirect(self._return_url("success", None, _transaction_return_to(transaction)), trace_id, cookies)
 
     def session(self, headers: dict[str, str], trace_id: str) -> dict[str, Any]:
         payload = self.session_payload(headers)
@@ -297,11 +300,34 @@ class AuthService:
     def _callback_url(self, provider: str) -> str:
         return f"{self.settings['redirect_base_url'].rstrip('/')}/api/auth/callback/{provider}"
 
-    def _return_url(self, status: str, reason: str | None) -> str:
-        params = {"auth": status}
+    def _return_url(self, status: str, reason: str | None, return_to: str | None = None) -> str:
+        target = self._frontend_return_url(return_to)
+        parsed = urlparse(target)
+        params = dict(parse_qsl(parsed.query, keep_blank_values=True))
+        params["auth"] = status
         if reason:
             params["reason"] = reason
-        return f"{self.settings['frontend_return_url']}?{urlencode(params)}"
+        return urlunparse((parsed.scheme, parsed.netloc, parsed.path, parsed.params, urlencode(params), parsed.fragment))
+
+    def _frontend_return_url(self, return_to: str | None) -> str:
+        fallback = str(self.settings["frontend_return_url"])
+        safe_return_to = _safe_return_to(return_to)
+        if not safe_return_to:
+            return fallback
+
+        parsed_fallback = urlparse(fallback)
+        if not parsed_fallback.scheme or not parsed_fallback.netloc:
+            return fallback
+
+        parsed_return = urlparse(safe_return_to)
+        return urlunparse((
+            parsed_fallback.scheme,
+            parsed_fallback.netloc,
+            parsed_return.path or "/",
+            "",
+            parsed_return.query,
+            parsed_return.fragment,
+        ))
 
     def _read_transaction(self, cookie_header: str) -> dict[str, Any] | None:
         value = cookie_value(cookie_header, AUTH_TX_COOKIE)
@@ -341,3 +367,23 @@ def settings_from_env() -> dict[str, Any]:
             "github": {"client_id": os.environ.get("GITHUB_CLIENT_ID", ""), "client_secret": os.environ.get("GITHUB_CLIENT_SECRET", "")},
         },
     }
+
+
+def _safe_return_to(value: str | None) -> str | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    candidate = value.strip()
+    if len(candidate) > 512 or any(character in candidate for character in ("\r", "\n")):
+        return None
+    parsed = urlparse(candidate)
+    if parsed.scheme or parsed.netloc or candidate.startswith("//"):
+        return None
+    if not parsed.path.startswith("/"):
+        return None
+    if parsed.path.startswith("/api/"):
+        return None
+    return urlunparse(("", "", parsed.path, "", parsed.query, parsed.fragment))
+
+
+def _transaction_return_to(transaction: dict[str, Any] | None) -> str | None:
+    return str(transaction.get("returnTo")) if isinstance(transaction, dict) and isinstance(transaction.get("returnTo"), str) else None

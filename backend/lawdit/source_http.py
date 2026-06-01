@@ -118,7 +118,7 @@ class SourceHttpApp:
 
         login_provider = _match(route, "/auth/login/")
         if method == "GET" and login_provider:
-            return self.auth_service.start_login(login_provider, trace_id, f"/api{route}")
+            return self.auth_service.start_login(login_provider, trace_id, f"/api{route}", _first_query_value(query, "returnTo"))
 
         callback_provider = _match(route, "/auth/callback/")
         if method == "GET" and callback_provider:
@@ -623,6 +623,11 @@ def build_sqlite_app(db_path: Path | str, allowed_roots: list[Path | str] | None
 def _normalise_path(path: str) -> str:
     route = path[:-1] if len(path) > 1 and path.endswith("/") else path
     return route[4:] if route.startswith("/api") else route
+
+
+def _first_query_value(query: dict[str, list[str]], key: str) -> str | None:
+    values = query.get(key)
+    return values[0] if values else None
 
 
 def _match(route: str, prefix: str, suffix: str = "") -> str | None:

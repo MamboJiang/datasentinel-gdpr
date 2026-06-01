@@ -142,6 +142,7 @@ The Google/GitHub account system is accepted when:
 - When a persistent SQLite host switches to `LAWDIT_ENABLE_DEMO_FIXTURES=false`, historical seeded demo source rows and demo workflow documents are removed while real registered local sources and account/session records remain.
 - `GET /api/auth/providers` lists Google and GitHub setup state without exposing secrets.
 - Google and GitHub login are initiated only from the backend and provider secrets never reach the frontend.
+- Starting login from a same-app deep link such as `/findings/{findingId}` preserves that route through the OAuth callback, while absolute, protocol-relative, and `/api/*` return targets are ignored.
 - GitHub login uses state plus PKCE challenge/verifier; callback state mismatch creates no session.
 - Successful provider callback creates a first-party HttpOnly session cookie and a safe local user profile.
 - `/api/auth/session` returns authenticated state and safe profile fields without provider tokens.

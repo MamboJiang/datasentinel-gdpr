@@ -80,6 +80,8 @@
 | ID | Scenario | Expected Result |
 | --- | --- | --- |
 | AUTH-001 | Call `GET /api/auth/providers` | The response lists Google and GitHub with `configured` flags and no secrets. |
+| AUTH-001A | Start login from `/findings/{findingId}` with `returnTo` | The backend stores only the same-app relative path in the signed auth transaction and redirects back to that path after callback. |
+| AUTH-001B | Start login with an absolute or `/api/*` `returnTo` | The backend ignores the unsafe target and falls back to the configured frontend return URL. |
 | AUTH-002 | Start login for an unconfigured provider | The server returns `application/problem+json` and creates no session. |
 | AUTH-003 | Start GitHub login when configured | The server redirects to GitHub with state and PKCE challenge, and stores the verifier only in a signed HttpOnly transaction cookie. |
 | AUTH-004 | Complete callback with mismatched state | The server rejects the callback before token exchange and creates no user or session. |

@@ -85,6 +85,7 @@ Failure paths:
 - Token exchange failure rejects without creating a local account or session.
 - Missing/expired session returns authenticated `false` on `/api/auth/session`.
 - Cross-account Source or Finding identifiers return not found or the current account's empty state.
+- A signed-out user who starts login from a same-app deep link can return to that path after successful login; unsafe absolute, protocol-relative, or `/api/*` return targets are ignored and fall back to the configured frontend return URL.
 
 Rollback path:
 
@@ -99,6 +100,7 @@ Rollback path:
 - Local SQLite schema for accounts and sessions.
 - Frontend auth gate, account menu, and session page.
 - API contract, security notes, deployment configuration, and acceptance criteria.
+- Finding deep-link review routes that pass through the sign-in gate.
 - Runtime environment variables for provider credentials and session secret.
 
 ## Primitive Acceptance Criteria
@@ -106,6 +108,8 @@ Rollback path:
 - An unauthenticated browser can see the configured provider list without receiving secrets.
 - Starting Google login redirects to Google only when Google credentials and session secret are configured.
 - Starting GitHub login redirects to GitHub with state and PKCE challenge only when GitHub credentials and session secret are configured.
+- Starting login from a same-app Finding URL stores only that relative return path in the signed auth transaction and redirects back to it after successful callback.
+- Starting login with an absolute or API return target ignores that target and redirects to the configured frontend fallback.
 - A callback with mismatched state creates no local session.
 - A successful callback creates one local user identity, one active session, and an HttpOnly session cookie.
 - `/api/auth/session` returns the current user profile when the session cookie is valid and returns authenticated `false` when it is missing or expired.

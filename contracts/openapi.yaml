@@ -21,6 +21,13 @@ paths:
       operationId: startAuthLogin
       parameters:
         - $ref: "#/components/parameters/AuthProvider"
+        - name: returnTo
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 512
+          description: Optional app-local path that receives the post-login redirect. Absolute URLs, protocol-relative URLs, and API paths are ignored.
       responses:
         "302":
           description: Redirect to the selected OAuth provider.

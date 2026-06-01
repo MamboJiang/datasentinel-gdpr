@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
+  authLoginUrlWithReturnTo,
   loadAuthProviders,
   loadAuthSession,
   logoutAuthSession,
@@ -93,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     status,
     login(provider) {
       if (provider.configured) {
-        window.location.assign(provider.loginUrl)
+        window.location.assign(authLoginUrlWithReturnTo(provider.loginUrl, window.location))
       }
     },
     logout,

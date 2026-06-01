@@ -123,7 +123,7 @@ Errors use `application/problem+json`.
 | `GET` | `/api/public-analysis/capacity` | Read public analysis active slots, waiting-at-intake count, per-session active state, and file-size limit. |
 | `POST` | `/api/public-analysis/analyze` | Analyze one public upload and return a concise redacted result. |
 | `GET` | `/api/auth/providers` | List configured Google and GitHub login providers without secrets. |
-| `GET` | `/api/auth/login/{provider}` | Start backend-owned OAuth login for `google` or `github`. |
+| `GET` | `/api/auth/login/{provider}` | Start backend-owned OAuth login for `google` or `github`; optional `returnTo` may carry a same-app frontend path such as `/findings/{findingId}`. |
 | `GET` | `/api/auth/callback/{provider}` | Complete provider callback, create a first-party session, and redirect back to the app. |
 | `GET` | `/api/auth/session` | Read current first-party session and safe user profile. |
 | `POST` | `/api/auth/logout` | Revoke the current first-party session and clear the session cookie. |
@@ -205,7 +205,7 @@ Successful results include `analysisId`, `status`, `file`, `summary`, `evidence`
 
 ### Account Session
 
-Provider login uses backend authorization-code flows. Provider client secrets and provider tokens must stay server-side. The browser receives only a first-party HttpOnly session cookie and safe profile fields from `/api/auth/session`.
+Provider login uses backend authorization-code flows. Provider client secrets and provider tokens must stay server-side. The browser receives only a first-party HttpOnly session cookie and safe profile fields from `/api/auth/session`. The login route may receive `returnTo` for a frontend deep link; the backend accepts only relative app paths, ignores absolute URLs, protocol-relative URLs, and `/api/*` paths, and then appends the `auth` result query to the final frontend redirect.
 
 `signed_out -> auth_starting -> provider_redirected -> callback_validating -> session_active`
 

@@ -100,7 +100,7 @@ The account interaction is documented in `docs/design/prelaunch-account-system.m
 
 - The app reads `/api/auth/session` before rendering the internal console.
 - If no valid session exists, the app renders a sign-in gate backed by `/api/auth/providers`.
-- Google and GitHub buttons navigate to backend login routes; the frontend does not receive provider tokens.
+- Google and GitHub buttons navigate to backend login routes with a sanitized current app path as `returnTo`, so a signed-out reviewer who opens a finding deep link returns to the same review context after login; the frontend does not receive provider tokens.
 - The account menu renders the safe session profile and exposes logout through `/api/auth/logout`.
 - The account menu platform status tile renders the current project-server connection state from the frontend data provider instead of static health copy.
 - Signed-in Sources, findings, audit, metrics, and evaluation views render the current account's API state only; another account's object ids must resolve as empty or not found.
