@@ -7,13 +7,19 @@ from typing import Any
 DIFFICULTY_LEVELS = ("easy", "moderate", "hard", "unsupported")
 
 
-def method_counts(documents: list[Any], unsupported_files: int, ocr_deferred_files: int) -> list[dict[str, Any]]:
+def method_counts(
+    documents: list[Any],
+    unsupported_files: int,
+    ocr_deferred_files: int,
+    failure_difficulties: list[str] | None = None,
+) -> list[dict[str, Any]]:
     counts: dict[str, int] = {}
     for document in documents:
         counts[document.extraction_method] = counts.get(document.extraction_method, 0) + 1
     if ocr_deferred_files:
         counts["ocr_deferred"] = ocr_deferred_files
-    skipped = unsupported_files - ocr_deferred_files
+    failed_ocr_deferred = (failure_difficulties or []).count("ocr_deferred")
+    skipped = unsupported_files - failed_ocr_deferred
     if skipped > 0:
         counts["unsupported"] = skipped
     return [

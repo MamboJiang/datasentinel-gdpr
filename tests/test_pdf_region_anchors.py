@@ -7,9 +7,50 @@ from unittest import mock
 from backend.datasentinel.deterministic_signals import detect_signals
 from backend.datasentinel.signal_evidence_anchors import apply_source_locations
 from backend.datasentinel.source_format_recognition import extract_document_content
+from backend.datasentinel.source_pdf_text import PdfExtractionIssue
 
 
 class PdfRegionAnchorTests(unittest.TestCase):
+    def test_mixed_pdf_ocr_failure_returns_text_layer_with_deferred_warning(self) -> None:
+        text_page = "Contact Email: text.layer@example.org\n"
+
+        class ImageTextPage:
+            def get(self, key: str):
+                if key == "/Resources":
+                    return {"/XObject": {"/Im1": {"/Subtype": "/Image"}}}
+                return None
+
+            def extract_text(self, visitor_text=None):
+                if visitor_text:
+                    visitor_text(text_page, [1, 0, 0, 1, 0, 0], [1, 0, 0, 1, 72, 720], None, 12)
+                return text_page
+
+        class MixedPdfReader:
+            def __init__(self, stream: object, strict: bool = False) -> None:
+                self.pages = [ImageTextPage()]
+
+        with mock.patch(
+            "backend.datasentinel.source_pdf_text._ocr_selected_page_records",
+            side_effect=PdfExtractionIssue("pdftoppm is not installed on this host.", ocr_deferred=True),
+        ):
+            extracted = extract_document_content(
+                body=b"%PDF-1.7 image-text",
+                content_type="application/pdf",
+                name="image-text.pdf",
+                pdf_reader=MixedPdfReader,
+            )
+
+        signals = apply_source_locations(detect_signals(extracted.text), extracted.text_locations)
+        serialized = json.dumps(signals)
+
+        self.assertEqual(extracted.file_format, "pdf_text_layer")
+        self.assertEqual(extracted.extraction_method, "pdf_text_layer")
+        self.assertEqual(extracted.recognition_difficulty, "hard")
+        self.assertTrue(extracted.ocr_deferred)
+        self.assertIn("mixed PDF page OCR deferred", extracted.warnings[0])
+        self.assertEqual(signals[0]["evidenceAnchor"]["format"], "pdf_text_layer")
+        self.assertNotIn("text.layer@example.org", serialized)
+
     def test_mixed_pdf_image_text_page_merges_overlay_ocr_regions(self) -> None:
         text_page = "Travel cover page\n"
         ocr_text = "姓名：王芳\n地址：北京市朝阳区建国路88号\nPassport: EN1234567"

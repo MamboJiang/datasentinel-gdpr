@@ -18,7 +18,7 @@ except Exception:  # pragma: no cover - optional when tests inject a reader
     _pdf_matrix_mult = None
 
 MAX_PDF_OCR_PAGES = 5
-PDF_OCR_DPI = 200
+PDF_OCR_DPI = 300
 
 
 @dataclass(frozen=True)
@@ -28,6 +28,8 @@ class PdfExtractionResult:
     extraction_method: str
     recognition_difficulty: str
     text_locations: tuple[dict[str, Any], ...] = field(default=(), kw_only=True)
+    warnings: tuple[str, ...] = field(default=(), kw_only=True)
+    ocr_deferred: bool = field(default=False, kw_only=True)
 
 
 class PdfExtractionIssue(Exception):
@@ -89,8 +91,8 @@ def _with_targeted_page_ocr(
         return text_result
     try:
         ocr_records = _ocr_selected_page_records(body, name, target_pages[:MAX_PDF_OCR_PAGES])
-    except PdfExtractionIssue:
-        return text_result
+    except PdfExtractionIssue as error:
+        return _mixed_ocr_deferred_result(text_result, name, error.detail)
     if not ocr_records:
         return text_result
 
@@ -101,6 +103,18 @@ def _with_targeted_page_ocr(
             combined[page_number - 1] = _merge_page_ocr_record(existing, page_record)
     text, locations = _join_page_records(tuple(combined), "pdf_text_layer")
     return PdfExtractionResult(text, "pdf_mixed", "pdf_text_layer_with_page_ocr", "hard", text_locations=locations)
+
+
+def _mixed_ocr_deferred_result(text_result: PdfExtractionResult, name: str, detail: str) -> PdfExtractionResult:
+    return PdfExtractionResult(
+        text_result.text,
+        text_result.file_format,
+        text_result.extraction_method,
+        "hard",
+        text_locations=text_result.text_locations,
+        warnings=(f"{name} mixed PDF page OCR deferred: {detail}",),
+        ocr_deferred=True,
+    )
 
 
 def _merge_page_ocr_record(text_record: dict[str, Any], ocr_record: dict[str, Any]) -> dict[str, Any]:

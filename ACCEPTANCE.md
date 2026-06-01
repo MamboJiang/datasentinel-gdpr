@@ -248,12 +248,15 @@ The core business engine hardening slice is accepted when:
 - Deterministic signal detection uses bounded scan windows and per-document signal caps so large or adversarial extracted text streams cannot produce unbounded public signal payloads.
 - A reproducible benchmark script measures generated challenge cases, raw corpus files, and an oversized text stream, and proves that the signal cap is enforced while normal deterministic scans keep `modelCalls = 0` and `estimatedCostUsd = 0`.
 - A live deployed Google Drive scan can use the server-side account binding without a browser-memory Picker token, complete on `agent-us`, and record redacted aggregate scan evidence.
+- Google Drive scans export Google Docs, Google Sheets, and Google Slides through explicit export profiles that preserve distinct format/method counts and redacted anchors; unsupported Google Workspace MIME types are warning-counted rather than mislabeled as generic text.
 - PDF files with text layers still prefer deterministic text-layer extraction.
 - The preserved PDF corpus can be scanned through the real PDF text-layer extraction path, and completed example PDFs produce redacted findings without leaking detected raw values.
 - PDF files without extractable text layers can fall back to bounded host-local PDF OCR when `DATASENTINEL_OCR_MODE=local`, `pdftoppm`, and Tesseract are available.
 - Mixed PDFs that contain extractable text-layer pages plus blank/scanned pages or image text overlays keep the text-layer pages and can OCR the bounded target pages through the host-local PDF OCR path, returning `pdf_mixed`/`pdf_text_layer_with_page_ocr` with redacted page anchors when tooling is available.
+- Mixed PDFs whose target-page OCR cannot run still preserve text-layer findings, mark the document hard, increment OCR-deferred warning metadata, and do not silently claim the visual layer was scanned.
 - PDF and other complex document formats use a bounded document byte budget separate from the 1 MB text-stream budget, so realistic multi-megabyte PDFs can enter extraction and signal detection.
-- Local OCR can select installed Tesseract language packs through `DATASENTINEL_OCR_LANGS` for multilingual image and PDF OCR.
+- Local OCR can select installed Tesseract language packs through `DATASENTINEL_OCR_LANGS` for multilingual image and PDF OCR, and large configured language lists are split into bounded profiles so one slow/noisy all-language OCR invocation cannot suppress later candidates.
+- If one OCR preprocessing candidate or language profile times out, later bounded candidates can still run; only total OCR failure is reported as OCR-deferred.
 - Image OCR normalizes Tesseract TSV word joins for CJK/Kana/Hangul character-level output so labels split into single-character OCR words can still produce redacted findings and pixel `pageRegion` anchors without storing raw OCR text.
 - Missing PDF OCR tooling, empty OCR, OCR timeout, or OCR failure is reported as a recoverable hard/OCR-deferred warning rather than a silent success or fake finding.
 - Image OCR challenge files remain hard/OCR-deferred on hosts without Tesseract and must not be counted as successful scans or fake findings.

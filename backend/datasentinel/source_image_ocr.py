@@ -43,28 +43,35 @@ def extract_image_content(body: bytes, name: str, timeout_seconds: int = 12) -> 
         raise ImageOcrIssue(f"{name} requires image OCR, but Tesseract is not installed on this host.")
 
     suffix = Path(name).suffix.lower() or ".png"
-    try:
-        with tempfile.TemporaryDirectory() as directory:
-            image_path = Path(directory) / f"source{suffix}"
-            image_path.write_bytes(body)
-            ocr_results = []
-            failed = False
-            for candidate in _ocr_candidate_images(image_path, Path(directory)):
-                result = subprocess.run(
-                    _tesseract_command(tesseract, str(candidate)),
-                    capture_output=True,
-                    check=False,
-                    text=True,
-                    timeout=timeout_seconds,
-                )
+    with tempfile.TemporaryDirectory() as directory:
+        image_path = Path(directory) / f"source{suffix}"
+        image_path.write_bytes(body)
+        ocr_results = []
+        failed = False
+        timed_out = False
+        for candidate in _ocr_candidate_images(image_path, Path(directory)):
+            for language_profile in _ocr_language_profiles():
+                try:
+                    result = subprocess.run(
+                        _tesseract_command(tesseract, str(candidate), language_profile),
+                        capture_output=True,
+                        check=False,
+                        text=True,
+                        timeout=timeout_seconds,
+                    )
+                except subprocess.TimeoutExpired:
+                    failed = True
+                    timed_out = True
+                    continue
                 failed = failed or result.returncode != 0
                 if result.returncode == 0:
                     text, regions = _parse_tesseract_tsv(result.stdout)
                     if text:
                         ocr_results.append((text, regions))
-    except subprocess.TimeoutExpired as error:
-        raise ImageOcrIssue(f"{name} image OCR timed out.") from error
+                        break
 
+    if not ocr_results and timed_out:
+        raise ImageOcrIssue(f"{name} image OCR timed out.")
     if not ocr_results and failed:
         raise ImageOcrIssue(f"{name} image OCR failed.")
 
@@ -75,13 +82,55 @@ def extract_image_content(body: bytes, name: str, timeout_seconds: int = 12) -> 
     return ImageOcrResult(text, text_locations=_image_text_locations(text, regions))
 
 
-def _tesseract_command(tesseract: str, image_path: str) -> list[str]:
+def _tesseract_command_for_profile(tesseract: str, image_path: str, languages: str) -> list[str]:
     command = [tesseract, image_path, "stdout", "--psm", "6"]
-    languages = "+".join(configured_ocr_languages())
     if languages:
         command.extend(["-l", languages])
     command.append("tsv")
     return command
+
+
+def _tesseract_command(tesseract: str, image_path: str, languages: str | None = None) -> list[str]:
+    return _tesseract_command_for_profile(tesseract, image_path, languages or "")
+
+
+def _ocr_language_profiles() -> tuple[str | None, ...]:
+    languages = _unique_languages(configured_ocr_languages())
+    if not languages:
+        return (None,)
+    if len(languages) <= 5:
+        return ("+".join(languages),)
+
+    profiles: list[str] = []
+
+    def add_profile(candidates: tuple[str, ...]) -> None:
+        selected = tuple(language for language in candidates if language in languages)
+        if not selected:
+            return
+        profile = "+".join(selected)
+        if profile not in profiles:
+            profiles.append(profile)
+
+    add_profile(("eng", "chi_sim", "deu", "fra", "spa"))
+    add_profile(("eng", "por", "ita", "nld", "pol"))
+    add_profile(("eng", "jpn", "kor", "ara"))
+
+    covered = {language for profile in profiles for language in profile.split("+")}
+    remaining = tuple(language for language in languages if language not in covered)
+    for index in range(0, len(remaining), 5):
+        profiles.append("+".join(remaining[index:index + 5]))
+
+    return tuple(profiles[:4])
+
+
+def _unique_languages(languages: tuple[str, ...]) -> tuple[str, ...]:
+    seen = set()
+    unique = []
+    for language in languages:
+        if language not in seen:
+            unique.append(language)
+            seen.add(language)
+    return tuple(unique)
 
 
 def _ocr_candidate_images(image_path: Path, directory: Path) -> tuple[Path, ...]:

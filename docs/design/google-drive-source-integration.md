@@ -60,7 +60,7 @@ Guards:
 - `google_drive_selection` requires configured Picker public credentials and selected Drive items before registration.
 - Google Drive scan execution requires `authorization.googleDriveAccessToken` or a connected account-level Drive binding for the signed-in user.
 - Folder traversal stops at the prelaunch file limit.
-- Text extraction accepts text-like MIME types and supported text-like file suffixes through BOM/charset-aware Unicode decoding, RFC 5322/MIME email messages, bounded ZIP archives, PDF text layers, bounded local PDF OCR candidates, Office Open XML packages, OpenDocument packages, or exported Google Workspace documents.
+- Text extraction accepts text-like MIME types and supported text-like file suffixes through BOM/charset-aware Unicode decoding, RFC 5322/MIME email messages, bounded ZIP archives, PDF text layers, bounded local PDF OCR candidates, Office Open XML packages, OpenDocument packages, or explicit Google Docs, Sheets, and Slides export profiles. Other Google Workspace MIME types are warning-counted as unsupported instead of being mislabeled as generic text.
 
 Side effects:
 
@@ -100,6 +100,6 @@ Rollback path:
 - A Google Drive source stores selected item metadata but not the access token.
 - A Google Drive full scan requires a short-lived access token in the scan request or a connected account-level Drive binding; missing authorization does not preserve stale scan-derived findings.
 - A user can connect, change, or disconnect the account-level Drive binding from Account settings without deleting source registrations or external Drive files.
-- Google Drive folder scans enumerate descendant files up to the prelaunch limit and export Google Workspace documents to text-like content.
+- Google Drive folder scans enumerate descendant files up to the prelaunch limit and export Google Docs, Google Sheets, and Google Slides through explicit export profiles that preserve distinct format/method counts and redacted anchors.
 - A user can remove a source registration from DataSentinel state without deleting any external source file.
 - Public API responses and UI surfaces show metadata, redacted evidence, findings, metrics, warnings, and audit state without raw file bodies, unredacted personal data, provider tokens, refresh tokens, client secrets, or deletion execution.

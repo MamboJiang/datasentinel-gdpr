@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import time
 import unittest
 from pathlib import Path
@@ -11,7 +12,7 @@ from backend.datasentinel.deterministic_signals import detect_signals, sanitize_
 from backend.datasentinel.ocr_capabilities import ocr_capabilities
 from backend.datasentinel.signal_evidence_anchors import apply_source_locations
 from backend.datasentinel.source_documents import SourceDocument, SourceDocumentBatch
-from backend.datasentinel.source_format_recognition import DocumentExtractionIssue, extract_document_content
+from backend.datasentinel.source_format_recognition import DocumentExtractionIssue, build_document_batch, extract_document_content
 from backend.datasentinel.source_http import build_sqlite_app
 from backend.datasentinel.source_image_ocr import extract_image_text
 from backend.datasentinel.source_pdf_text import PdfExtractionIssue, PdfExtractionResult
@@ -405,6 +406,77 @@ class CoreEngineDetectionTests(unittest.TestCase):
         self.assertIn("-l", command)
         self.assertIn("eng+chi_sim", command)
         self.assertIn("tsv", command)
+
+    def test_local_ocr_splits_large_language_bundle_and_continues_after_timeout(self) -> None:
+        completed = mock.Mock(
+            returncode=0,
+            stdout=(
+                "level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext\n"
+                "1\t1\t0\t0\t0\t0\t0\t0\t640\t480\t-1\t\n"
+                "5\t1\t1\t1\t1\t1\t12\t20\t96\t24\t92.5\t姓名：王芳\n"
+            ),
+        )
+        calls: list[list[str]] = []
+
+        def fake_tesseract(command: list[str], **kwargs: object) -> mock.Mock:
+            calls.append(command)
+            if len(calls) == 1:
+                raise subprocess.TimeoutExpired(command, kwargs["timeout"])
+            return completed
+
+        large_language_bundle = "eng+chi_sim+deu+fra+spa+por+ita+nld+pol+jpn+kor+ara"
+        with mock.patch.dict(
+            "os.environ",
+            {"DATASENTINEL_OCR_MODE": "local", "DATASENTINEL_OCR_LANGS": large_language_bundle},
+        ), mock.patch(
+            "backend.datasentinel.ocr_capabilities.shutil.which",
+            return_value="/usr/bin/tesseract",
+        ), mock.patch(
+            "backend.datasentinel.source_image_ocr.subprocess.run",
+            side_effect=fake_tesseract,
+        ):
+            text = extract_image_text(b"image-bytes", "large-language-bundle.png")
+
+        language_profiles = [command[command.index("-l") + 1] for command in calls if "-l" in command]
+
+        self.assertEqual(text, "姓名：王芳")
+        self.assertIn("eng+chi_sim+deu+fra+spa", language_profiles)
+        self.assertGreaterEqual(len(language_profiles), 2)
+        self.assertNotIn(large_language_bundle, language_profiles)
+
+    def test_document_level_ocr_deferred_warning_is_counted_without_dropping_text_layer(self) -> None:
+        document = SourceDocument(
+            "mixed.pdf",
+            "drive_manifest:mixed",
+            "Contact Email: pdf.layer@example.org",
+            4096,
+            "Google_Drive",
+            file_format="pdf_text_layer",
+            extraction_method="pdf_text_layer",
+            recognition_difficulty="hard",
+            warnings=("mixed.pdf mixed PDF page OCR deferred: pdftoppm is not installed.",),
+            ocr_deferred=True,
+        )
+
+        batch = build_document_batch(
+            documents=[document],
+            total_files=1,
+            total_bytes=document.size_bytes,
+            unsupported_files=0,
+            warnings=[],
+            family="Google_Drive",
+            extraction_method="google_drive_export",
+        )
+
+        methods = {item["method"]: item for item in batch.method_counts or []}
+
+        self.assertEqual(batch.unsupported_files, 0)
+        self.assertEqual(batch.warning_files, 1)
+        self.assertEqual(batch.ocr_deferred_files, 1)
+        self.assertEqual(batch.recognition_difficulty["hard"], 1)
+        self.assertIn("mixed PDF page OCR deferred", batch.warnings[0])
+        self.assertEqual(methods["pdf_text_layer"]["status"], "completed")
+        self.assertEqual(methods["ocr_deferred"]["status"], "warning")
 
     def test_ocr_capability_report_reflects_mode_tools_and_languages(self) -> None:
         def fake_which(tool: str) -> str | None:

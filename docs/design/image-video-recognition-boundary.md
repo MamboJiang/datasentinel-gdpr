@@ -29,12 +29,12 @@ References: [Tesseract User Manual](https://tesseract-ocr.github.io/tessdoc/), [
 
 ## Selected Approach
 
-- Image files (`PNG`, `JPG/JPEG`, `TIFF`, `BMP`, `WEBP`) are scanned through local Tesseract when `DATASENTINEL_OCR_MODE=local` and the host binary is available. `DATASENTINEL_OCR_LANGS` may select installed Tesseract language packs for multilingual OCR.
-- PDF files are scanned through the text layer first. If no text layer is available, the scanner may rasterize a bounded page range through host-local `pdftoppm` and run the same local Tesseract OCR path. If a PDF has both text-layer pages and blank/scanned pages, only the blank/scanned pages are eligible for bounded page OCR and the resulting document is reported as `pdf_mixed`.
+- Image files (`PNG`, `JPG/JPEG`, `TIFF`, `BMP`, `WEBP`) are scanned through local Tesseract when `DATASENTINEL_OCR_MODE=local` and the host binary is available. `DATASENTINEL_OCR_LANGS` may select installed Tesseract language packs for multilingual OCR; large configured language lists are split into bounded profiles so one slow/noisy all-language invocation cannot hide OCR output.
+- PDF files are scanned through the text layer first. If no text layer is available, the scanner may rasterize a bounded page range through host-local `pdftoppm` and run the same local Tesseract OCR path. If a PDF has both text-layer pages and blank/scanned or image-bearing pages, bounded page OCR is attempted and the resulting document is reported as `pdf_mixed` when OCR adds text.
 - OCR capability reporting records mode, configured languages, Tesseract availability, `pdftoppm` availability, image OCR availability, and PDF OCR availability so deferred cases are explainable without reading source content.
 - Image OCR output is treated as extracted text only inside scan execution. Public payloads keep redacted evidence, source-local offsets, and optional pixel word-box metadata, not raw OCR text or raw images.
 - Image OCR normalizes Tesseract TSV word joins for CJK/Kana/Hangul character-level output, so words split as single characters can still feed deterministic multilingual label detection while retaining word-box regions for redacted anchors.
-- Missing PDF rasterization or OCR tooling is a recoverable hard/OCR-deferred warning, not a silent success.
+- OCR timeouts for one candidate or language profile do not stop other bounded OCR candidates from running. Missing PDF rasterization or mixed-page OCR tooling is a recoverable hard/OCR-deferred warning, not a silent success.
 - Subtitle files (`VTT`, `SRT`) are cleaned into deterministic text and scanned as video transcript inputs.
 - Raw video files (`MP4`, `MOV`, `M4V`, `MKV`, `WEBM`, `AVI`) under the bounded video size limit are sampled into temporary PNG frames through host-local FFmpeg and OCR'd through the same local Tesseract path.
 - Video frame OCR output is treated as scan-time extracted text only. Public payloads can include redacted frame-local labels, source offsets, and pixel word-box metadata, not raw frames, raw video, raw OCR text, or audio.
@@ -49,11 +49,12 @@ References: [Tesseract User Manual](https://tesseract-ocr.github.io/tessdoc/), [
 | OCR requested | OCR succeeds with text | Text is non-empty | Text extracted | Scan redacted text candidates; discard temporary file. |
 | OCR requested | OCR succeeds with TSV word boxes | Boxes overlap a redacted signal range | Anchor region available | Attach pixel `pageRegion` metadata to the redacted anchor without storing raw OCR text. |
 | OCR requested | OCR succeeds with CJK/Kana/Hangul character-level TSV words | Known labels can be reconstructed in scan memory | Text extracted | Join compatible OCR tokens without synthetic spaces and scan the normalized text without storing raw OCR text. |
+| OCR requested | One candidate or language profile times out | Another bounded candidate can still run | OCR requested | Record the failed candidate in process memory and continue without exposing raw OCR text. |
 | OCR requested | OCR missing, timeout, failure, or empty text | Failure is recoverable | Completed with warning | Count file as hard/OCR-deferred and do not create fake findings. |
 | Candidate PDF | Text layer missing | Local PDF rasterizer and OCR are available | PDF OCR requested | Render page images in a temporary directory and OCR them locally. |
 | Candidate PDF | Some pages have text and some pages are blank/scanned | Local PDF rasterizer and OCR are available | Mixed PDF page OCR requested | Render only bounded blank/scanned pages in a temporary directory and merge OCR text with text-layer page records. |
 | PDF OCR requested | Rasterization or OCR fails | Failure is recoverable | Completed with warning | Count file as hard/OCR-deferred and discard temporary files. |
-| Mixed PDF page OCR requested | Rasterization or OCR fails | Existing text layer is usable | Text extracted | Return the text-layer pages without fake OCR findings and discard temporary files. |
+| Mixed PDF page OCR requested | Rasterization or OCR fails | Existing text layer is usable | Text extracted with warning | Return the text-layer pages, record hard/OCR-deferred warning metadata, avoid fake OCR findings, and discard temporary files. |
 | Candidate file | Suffix or MIME recognized as VTT/SRT | UTF-8 text can be read | Transcript extracted | Strip timing/cue markers and scan transcript text. |
 | Candidate file | Suffix or MIME recognized as raw video | File is within the bounded video size limit and FFmpeg plus local OCR are available | Video frame OCR requested | Write bytes to a temporary local file and extract up to four temporary frames. |
 | Video frame OCR requested | FFmpeg succeeds and at least one frame OCR produces text | Text is non-empty | Text extracted | Scan redacted text candidates with frame-local labels and pixel regions; discard temporary video and frame files. |
@@ -79,6 +80,7 @@ Remove the media suffixes from `SUPPORTED_SUFFIXES`, remove the Tesseract and FF
 - A mixed PDF with extractable text pages and blank/scanned pages can produce `pdf_mixed` redacted findings from bounded page OCR while preserving per-page text-layer and OCR anchors.
 - Image OCR and PDF OCR findings can include pixel region anchors from Tesseract TSV word boxes without exposing raw OCR text or page images.
 - CJK/Kana/Hangul image OCR labels split into character-level TSV words can still produce redacted findings and pixel region anchors.
+- Large configured OCR language lists are split into bounded Tesseract profiles, and a timed-out profile does not prevent later profiles or preprocessing candidates from producing redacted findings.
 - OCR failures, missing Tesseract, empty OCR, and OCR timeouts are recoverable hard/OCR-deferred warnings.
 - Missing PDF rasterization tooling is a recoverable hard/OCR-deferred warning.
 - A VTT or SRT transcript file can produce redacted findings without treating timing markers as evidence.

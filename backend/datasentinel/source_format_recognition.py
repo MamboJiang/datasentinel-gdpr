@@ -95,6 +95,8 @@ class SourceDocument:
     extraction_method: str = "utf8_text"
     recognition_difficulty: str = "easy"
     text_locations: tuple[dict[str, Any], ...] = field(default=(), kw_only=True)
+    warnings: tuple[str, ...] = field(default=(), kw_only=True)
+    ocr_deferred: bool = field(default=False, kw_only=True)
 
 
 @dataclass(frozen=True)
@@ -110,6 +112,7 @@ class SourceDocumentBatch:
     format_counts: list[dict[str, Any]] | None = None
     recognition_difficulty: dict[str, int] | None = None
     ocr_deferred_files: int = 0
+    warning_files: int = 0
 
 
 @dataclass(frozen=True)
@@ -119,6 +122,8 @@ class ExtractedDocumentContent:
     extraction_method: str
     recognition_difficulty: str
     text_locations: tuple[dict[str, Any], ...] = field(default=(), kw_only=True)
+    warnings: tuple[str, ...] = field(default=(), kw_only=True)
+    ocr_deferred: bool = field(default=False, kw_only=True)
 
 
 class DocumentExtractionIssue(Exception):
@@ -142,18 +147,23 @@ def build_document_batch(
     failure_difficulties: list[str] | None = None,
 ) -> SourceDocumentBatch:
     failures = failure_difficulties or ["unsupported"] * unsupported_files
+    document_warnings = [warning for document in documents for warning in document.warnings]
+    successful_ocr_deferred = sum(1 for document in documents if document.ocr_deferred)
+    total_ocr_deferred = ocr_deferred_files + successful_ocr_deferred
+    warning_files = unsupported_files + sum(1 for document in documents if document.warnings or document.ocr_deferred)
     return SourceDocumentBatch(
         documents=documents,
         total_files=total_files,
         total_bytes=total_bytes,
         unsupported_files=unsupported_files,
-        warnings=warnings,
+        warnings=[*warnings, *document_warnings],
         family=family,
         extraction_method=extraction_method,
-        method_counts=method_counts(documents, unsupported_files, ocr_deferred_files),
+        method_counts=method_counts(documents, unsupported_files, total_ocr_deferred, failures),
         format_counts=format_counts(documents, failures),
         recognition_difficulty=difficulty_counts(documents, failures),
-        ocr_deferred_files=ocr_deferred_files,
+        ocr_deferred_files=total_ocr_deferred,
+        warning_files=warning_files,
     )
 
 
@@ -175,6 +185,8 @@ def extract_document_content(
             extraction_method=extracted.extraction_method,
             recognition_difficulty=extracted.recognition_difficulty,
             text_locations=extracted.text_locations,
+            warnings=extracted.warnings,
+            ocr_deferred=extracted.ocr_deferred,
         )
 
     if suffix == ".docx" or normalized_type.endswith("wordprocessingml.document"):

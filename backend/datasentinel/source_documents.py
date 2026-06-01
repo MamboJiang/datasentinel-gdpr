@@ -17,6 +17,9 @@ from .source_size_limits import MAX_DOCUMENT_BYTES, MAX_SOURCE_FILES, MAX_VIDEO_
 
 PdfReader = DefaultPdfReader
 GOOGLE_DRIVE_SHARE_HOSTS = {"drive.google.com", "docs.google.com"}
+GOOGLE_DOC_MIME = "application/vnd.google-apps.document"
+GOOGLE_SHEET_MIME = "application/vnd.google-apps.spreadsheet"
+GOOGLE_SLIDES_MIME = "application/vnd.google-apps.presentation"
 
 
 class SourceReadIssue(Exception):
@@ -247,8 +250,9 @@ def _document_from_drive_metadata(client: DriveFileClient, metadata: dict[str, A
             ocr_deferred=video_media,
         )
 
-    if mime_type.startswith("application/vnd.google-apps."):
-        content_type = _export_mime_type(mime_type)
+    export_profile = _google_workspace_export_profile(mime_type)
+    if export_profile:
+        content_type = export_profile["contentType"]
         body = client.export(str(metadata["id"]), content_type)
     else:
         content_type = mime_type
@@ -262,13 +266,14 @@ def _document_from_drive_metadata(client: DriveFileClient, metadata: dict[str, A
             ocr_deferred=video_media,
         )
 
-    return _document_from_bytes(
+    document = _document_from_bytes(
         body=body,
         content_type=content_type,
         family="Google_Drive",
         name=name,
         source_path=str(metadata.get("webViewLink") or f"google-drive://{metadata['id']}"),
     )
+    return _with_google_workspace_profile(document, export_profile) if export_profile else document
 
 
 class SafeRedirectHandler(HTTPRedirectHandler):
@@ -325,13 +330,63 @@ def _document_from_bytes(
         extraction_method=extracted.extraction_method,
         recognition_difficulty=extracted.recognition_difficulty,
         text_locations=extracted.text_locations,
+        warnings=extracted.warnings,
+        ocr_deferred=extracted.ocr_deferred,
     )
 
 
-def _export_mime_type(mime_type: str) -> str:
-    if mime_type == "application/vnd.google-apps.spreadsheet":
-        return "text/csv"
-    return "text/plain"
+def _google_workspace_export_profile(mime_type: str) -> dict[str, str] | None:
+    if mime_type == GOOGLE_DOC_MIME:
+        return {
+            "contentType": "text/plain",
+            "fileFormat": "google_docs_export",
+            "extractionMethod": "google_docs_plain_text_export",
+            "label": "Google Docs export text",
+        }
+    if mime_type == GOOGLE_SHEET_MIME:
+        return {
+            "contentType": "text/csv",
+            "fileFormat": "google_sheets_export",
+            "extractionMethod": "google_sheets_csv_export",
+            "label": "Google Sheets CSV export",
+        }
+    if mime_type == GOOGLE_SLIDES_MIME:
+        return {
+            "contentType": "text/plain",
+            "fileFormat": "google_slides_export",
+            "extractionMethod": "google_slides_plain_text_export",
+            "label": "Google Slides export text",
+        }
+    if mime_type.startswith("application/vnd.google-apps."):
+        raise SourceReadIssue("This Google Workspace file type is not supported by the prelaunch scanner.")
+    return None
+
+
+def _with_google_workspace_profile(document: SourceDocument, profile: dict[str, str]) -> SourceDocument:
+    return SourceDocument(
+        name=document.name,
+        source_path=document.source_path,
+        text=document.text,
+        size_bytes=document.size_bytes,
+        family=document.family,
+        file_format=profile["fileFormat"],
+        extraction_method=profile["extractionMethod"],
+        recognition_difficulty=document.recognition_difficulty,
+        text_locations=_workspace_export_locations(document.text_locations, profile),
+        warnings=document.warnings,
+        ocr_deferred=document.ocr_deferred,
+    )
+
+
+def _workspace_export_locations(locations: tuple[dict[str, Any], ...], profile: dict[str, str]) -> tuple[dict[str, Any], ...]:
+    updated = []
+    for location in locations:
+        next_location = dict(location)
+        next_location["format"] = profile["fileFormat"]
+        if not next_location.get("label") or next_location.get("label") == "Text content":
+            next_location["label"] = profile["label"]
+        updated.append(next_location)
+    return tuple(updated)
 
 
 def _unsupported_batch(
