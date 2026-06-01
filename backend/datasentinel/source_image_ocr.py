@@ -12,6 +12,11 @@ from typing import Any
 
 from .ocr_capabilities import configured_ocr_languages, ocr_mode, tesseract_path
 
+try:
+    from PIL import Image
+except Exception:  # pragma: no cover - optional OCR enhancement dependency
+    Image = None  # type: ignore[assignment]
+
 
 @dataclass(frozen=True)
 class ImageOcrResult:
@@ -39,23 +44,31 @@ def extract_image_content(body: bytes, name: str, timeout_seconds: int = 12) -> 
 
     suffix = Path(name).suffix.lower() or ".png"
     try:
-        with tempfile.NamedTemporaryFile(suffix=suffix) as image_file:
-            image_file.write(body)
-            image_file.flush()
-            result = subprocess.run(
-                _tesseract_command(tesseract, image_file.name),
-                capture_output=True,
-                check=False,
-                text=True,
-                timeout=timeout_seconds,
-            )
+        with tempfile.TemporaryDirectory() as directory:
+            image_path = Path(directory) / f"source{suffix}"
+            image_path.write_bytes(body)
+            ocr_results = []
+            failed = False
+            for candidate in _ocr_candidate_images(image_path, Path(directory)):
+                result = subprocess.run(
+                    _tesseract_command(tesseract, str(candidate)),
+                    capture_output=True,
+                    check=False,
+                    text=True,
+                    timeout=timeout_seconds,
+                )
+                failed = failed or result.returncode != 0
+                if result.returncode == 0:
+                    text, regions = _parse_tesseract_tsv(result.stdout)
+                    if text:
+                        ocr_results.append((text, regions))
     except subprocess.TimeoutExpired as error:
         raise ImageOcrIssue(f"{name} image OCR timed out.") from error
 
-    if result.returncode != 0:
+    if not ocr_results and failed:
         raise ImageOcrIssue(f"{name} image OCR failed.")
 
-    text, regions = _parse_tesseract_tsv(result.stdout)
+    text, regions = _join_ocr_results(ocr_results)
     if not text:
         raise ImageOcrIssue(f"{name} has no extractable OCR text.")
 
@@ -69,6 +82,83 @@ def _tesseract_command(tesseract: str, image_path: str) -> list[str]:
         command.extend(["-l", languages])
     command.append("tsv")
     return command
+
+
+def _ocr_candidate_images(image_path: Path, directory: Path) -> tuple[Path, ...]:
+    return (image_path, *_preprocessed_overlay_images(image_path, directory))
+
+
+def _preprocessed_overlay_images(image_path: Path, directory: Path) -> tuple[Path, ...]:
+    if Image is None:
+        return ()
+    try:
+        image = Image.open(image_path).convert("RGB")
+    except Exception:
+        return ()
+    candidates: list[Path] = []
+    red_path = directory / "source_red_overlay.png"
+    if _write_mask_variant(image, red_path, "red"):
+        candidates.append(red_path)
+    saturated_path = directory / "source_saturated_overlay.png"
+    if _write_mask_variant(image, saturated_path, "saturated"):
+        candidates.append(saturated_path)
+    return tuple(candidates)
+
+
+def _write_mask_variant(image: Any, path: Path, mode: str) -> bool:
+    width, height = image.size
+    total = width * height
+    output = []
+    selected = 0
+    if mode == "saturated":
+        pixels = image.convert("HSV").getdata()
+        for _hue, saturation, value in pixels:
+            foreground = saturation > 90 and value > 80
+            selected += 1 if foreground else 0
+            output.append(0 if foreground else 255)
+    else:
+        for red, green, blue in image.getdata():
+            foreground = red > 120 and red > green + 35 and red > blue + 35
+            selected += 1 if foreground else 0
+            output.append(0 if foreground else 255)
+    ratio = selected / total if total else 0
+    if selected < 24 or ratio > 0.35:
+        return False
+    mask = Image.new("L", image.size, 255)
+    mask.putdata(output)
+    mask.save(path)
+    return True
+
+
+def _join_ocr_results(results: list[tuple[str, tuple[dict[str, Any], ...]]]) -> tuple[str, tuple[dict[str, Any], ...]]:
+    fragments: list[str] = []
+    regions: list[dict[str, Any]] = []
+    offset = 0
+    seen_text: set[str] = set()
+    for text, text_regions in results:
+        normalized = " ".join(text.split())
+        if not normalized or normalized in seen_text:
+            continue
+        seen_text.add(normalized)
+        if fragments:
+            fragments.append("\n")
+            offset += 1
+        fragments.append(text)
+        regions.extend(_shift_regions(text_regions, offset))
+        offset += len(text)
+    return "".join(fragments), tuple(regions)
+
+
+def _shift_regions(regions: tuple[dict[str, Any], ...], offset: int) -> tuple[dict[str, Any], ...]:
+    shifted = []
+    for region in regions:
+        item = dict(region)
+        if isinstance(item.get("start"), int):
+            item["start"] += offset
+        if isinstance(item.get("end"), int):
+            item["end"] += offset
+        shifted.append(item)
+    return tuple(shifted)
 
 
 def _parse_tesseract_tsv(tsv_output: str) -> tuple[str, tuple[dict[str, Any], ...]]:

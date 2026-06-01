@@ -1,12 +1,13 @@
 {
   "command": "python3 tests/core_engine_performance_benchmark.py --output tests/fixtures/gdpr_data_samples_main/core_engine_performance_report.json",
-  "generatedAt": "2026-05-31T21:59:56Z",
+  "generatedAt": "2026-06-01T00:34:17Z",
   "host": {
     "machine": "arm64",
     "platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O",
     "python": "3.13.2"
   },
   "limits": {
+    "maxComplexDocumentBytes": 8000000,
     "maxDocumentBytes": 1000000,
     "maxSignalScanChars": 200000,
     "maxSignalsPerDocument": 32,
@@ -31,8 +32,8 @@
   },
   "suites": [
     {
-      "durationMs": 14.56,
-      "extractedCharsPerSecond": 72869.0,
+      "durationMs": 13.972,
+      "extractedCharsPerSecond": 74078.5,
       "formatCounts": {
         "csv": 1,
         "docx": 1,
@@ -85,27 +86,27 @@
         "bank_account": 1,
         "credential_secret": 1,
         "date_of_birth": 1,
-        "email": 6,
+        "email": 4,
         "expense_amount": 2,
         "health_data": 3,
         "iban_like": 1,
         "national_identifier": 5,
         "person_name": 18,
-        "phone_number": 29,
+        "phone_number": 18,
         "salary_compensation": 2,
         "tax_id": 1
       },
       "skippedFiles": 0,
       "successfulFiles": 17,
-      "throughputFilesPerSecond": 1167.552,
-      "totalExtractedChars": 1061,
-      "totalSignals": 71,
+      "throughputFilesPerSecond": 1216.748,
+      "totalExtractedChars": 1035,
+      "totalSignals": 58,
       "totalSourceBytes": 1434,
       "unsupportedFiles": 0
     },
     {
-      "durationMs": 565.116,
-      "extractedCharsPerSecond": 47830.9,
+      "durationMs": 647.857,
+      "extractedCharsPerSecond": 41722.2,
       "formatCounts": {
         "pdf_text_layer": 16
       },
@@ -123,28 +124,30 @@
       },
       "signalTypeCounts": {
         "access_context": 10,
-        "address": 2,
+        "address": 3,
         "email": 2,
-        "employee_id": 4,
-        "expense_amount": 6,
+        "employee_id": 2,
+        "expense_amount": 4,
         "free_text_personal_context": 8,
         "incident_context": 10,
         "location_data": 2,
-        "organization_identifier": 2,
-        "person_name": 20,
-        "tax_id": 4
+        "organization_identifier": 3,
+        "passport_number": 1,
+        "person_name": 21,
+        "phone_number": 1,
+        "tax_id": 2
       },
       "skippedFiles": 2,
       "successfulFiles": 16,
-      "throughputFilesPerSecond": 28.313,
+      "throughputFilesPerSecond": 24.697,
       "totalExtractedChars": 27030,
-      "totalSignals": 70,
+      "totalSignals": 69,
       "totalSourceBytes": 6300801,
       "unsupportedFiles": 1
     },
     {
-      "durationMs": 6.061,
-      "extractedCharsPerSecond": 34309002.4,
+      "durationMs": 10.084,
+      "extractedCharsPerSecond": 20621151.3,
       "formatCounts": {
         "synthetic_text": 1
       },
@@ -165,7 +168,7 @@
       },
       "skippedFiles": 0,
       "successfulFiles": 1,
-      "throughputFilesPerSecond": 164.984,
+      "throughputFilesPerSecond": 99.162,
       "totalExtractedChars": 207954,
       "totalSignals": 32,
       "totalSourceBytes": 207954,
@@ -173,9 +176,9 @@
     }
   ],
   "totals": {
-    "durationMs": 585.737,
+    "durationMs": 671.913,
     "estimatedCostUsd": 0.0,
-    "extractedCharsPerSecond": 402988.0,
+    "extractedCharsPerSecond": 351264.2,
     "formatCounts": {
       "csv": 1,
       "docx": 1,
@@ -199,33 +202,34 @@
     },
     "modelCalls": 0,
     "ocrDeferredFiles": 1,
-    "peakRssMiB": 66.438,
+    "peakRssMiB": 66.984,
     "processedFiles": 34,
     "signalTypeCounts": {
       "access_context": 10,
-      "address": 3,
+      "address": 4,
       "bank_account": 1,
       "credential_secret": 1,
       "date_of_birth": 1,
-      "email": 8,
-      "employee_id": 4,
-      "expense_amount": 8,
+      "email": 6,
+      "employee_id": 2,
+      "expense_amount": 6,
       "free_text_personal_context": 8,
       "health_data": 3,
       "iban_like": 1,
       "incident_context": 10,
       "location_data": 2,
       "national_identifier": 5,
-      "organization_identifier": 2,
-      "person_name": 70,
-      "phone_number": 29,
+      "organization_identifier": 3,
+      "passport_number": 1,
+      "person_name": 71,
+      "phone_number": 19,
       "salary_compensation": 2,
-      "tax_id": 5
+      "tax_id": 3
     },
     "successfulFiles": 34,
-    "throughputFilesPerSecond": 58.047,
-    "totalExtractedChars": 236045,
-    "totalSignals": 173,
+    "throughputFilesPerSecond": 50.602,
+    "totalExtractedChars": 236019,
+    "totalSignals": 159,
     "totalSourceBytes": 6510189,
     "unsupportedFiles": 1
   }

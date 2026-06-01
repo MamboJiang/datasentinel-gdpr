@@ -49,7 +49,7 @@ def extract_pdf_content(body: bytes, name: str, pdf_reader_cls: Any) -> PdfExtra
             text_layer_blocker = f"{name} PDF text extraction failed."
         else:
             if text_result.text.strip():
-                return _with_blank_page_ocr(body, name, page_records, text_result)
+                return _with_targeted_page_ocr(body, name, page_records, text_result)
             text_layer_blocker = f"{name} has no extractable PDF text layer."
     else:
         text_layer_blocker = f"{name} is a PDF, but PDF text extraction is not installed on this host."
@@ -74,21 +74,21 @@ def _text_layer_result(page_records: tuple[dict[str, Any], ...]) -> PdfExtractio
     return PdfExtractionResult(text, "pdf_text_layer", "pdf_text_layer", "moderate", text_locations=locations)
 
 
-def _with_blank_page_ocr(
+def _with_targeted_page_ocr(
     body: bytes,
     name: str,
     page_records: tuple[dict[str, Any], ...],
     text_result: PdfExtractionResult,
 ) -> PdfExtractionResult:
-    blank_pages = [
+    target_pages = [
         page_number
         for page_number, page_record in enumerate(page_records, start=1)
-        if not str(page_record.get("text") or "").strip()
+        if not str(page_record.get("text") or "").strip() or bool(page_record.get("hasImages"))
     ]
-    if not blank_pages:
+    if not target_pages:
         return text_result
     try:
-        ocr_records = _ocr_selected_page_records(body, name, blank_pages[:MAX_PDF_OCR_PAGES])
+        ocr_records = _ocr_selected_page_records(body, name, target_pages[:MAX_PDF_OCR_PAGES])
     except PdfExtractionIssue:
         return text_result
     if not ocr_records:
@@ -97,9 +97,41 @@ def _with_blank_page_ocr(
     combined = list(page_records)
     for page_number, page_record in ocr_records.items():
         if 1 <= page_number <= len(combined):
-            combined[page_number - 1] = page_record
+            existing = combined[page_number - 1]
+            combined[page_number - 1] = _merge_page_ocr_record(existing, page_record)
     text, locations = _join_page_records(tuple(combined), "pdf_text_layer")
     return PdfExtractionResult(text, "pdf_mixed", "pdf_text_layer_with_page_ocr", "hard", text_locations=locations)
+
+
+def _merge_page_ocr_record(text_record: dict[str, Any], ocr_record: dict[str, Any]) -> dict[str, Any]:
+    text = str(text_record.get("text") or "")
+    ocr_text = str(ocr_record.get("text") or "")
+    if not text.strip():
+        return ocr_record
+    if not ocr_text.strip():
+        return text_record
+    separator = "\n"
+    shift = len(text) + len(separator)
+    regions = list(text_record.get("regions") or ())
+    regions.extend(_shift_regions(tuple(ocr_record.get("regions") or ()), shift))
+    return {
+        **text_record,
+        "text": f"{text}{separator}{ocr_text}",
+        "regions": tuple(regions),
+        "format": "pdf_ocr",
+    }
+
+
+def _shift_regions(regions: tuple[dict[str, Any], ...], offset: int) -> tuple[dict[str, Any], ...]:
+    shifted = []
+    for region in regions:
+        item = dict(region)
+        if isinstance(item.get("start"), int):
+            item["start"] += offset
+        if isinstance(item.get("end"), int):
+            item["end"] += offset
+        shifted.append(item)
+    return tuple(shifted)
 
 
 def _ocr_result(body: bytes, name: str, timeout_seconds: int = 30) -> PdfExtractionResult:
@@ -221,6 +253,7 @@ def _page_text_record(page: Any) -> dict[str, Any]:
     parts: list[str] = []
     regions: list[dict[str, Any]] = []
     page_width, page_height = _page_size(page)
+    has_images = _page_has_images(page)
 
     def visitor(text: str, user_matrix: Any, text_matrix: Any, font_dictionary: Any, font_size: float) -> None:
         if not text:
@@ -236,10 +269,27 @@ def _page_text_record(page: Any) -> dict[str, Any]:
     try:
         extracted = page.extract_text(visitor_text=visitor)
     except Exception:
-        return {"text": page.extract_text() or "", "regions": (), "pageWidth": page_width, "pageHeight": page_height, "format": "pdf_text_layer"}
+        return {"text": page.extract_text() or "", "regions": (), "pageWidth": page_width, "pageHeight": page_height, "format": "pdf_text_layer", "hasImages": has_images}
 
     text = "".join(parts) if parts else (extracted or "")
-    return {"text": text, "regions": tuple(regions), "pageWidth": page_width, "pageHeight": page_height, "format": "pdf_text_layer"}
+    return {"text": text, "regions": tuple(regions), "pageWidth": page_width, "pageHeight": page_height, "format": "pdf_text_layer", "hasImages": has_images}
+
+
+def _page_has_images(page: Any) -> bool:
+    try:
+        resources = page.get("/Resources") or {}
+        if hasattr(resources, "get_object"):
+            resources = resources.get_object()
+        xobjects = resources.get("/XObject") if hasattr(resources, "get") else None
+        if hasattr(xobjects, "get_object"):
+            xobjects = xobjects.get_object()
+        for value in (xobjects or {}).values():
+            resolved = value.get_object() if hasattr(value, "get_object") else value
+            if hasattr(resolved, "get") and str(resolved.get("/Subtype")) == "/Image":
+                return True
+    except Exception:
+        return False
+    return False
 
 
 def _text_region(

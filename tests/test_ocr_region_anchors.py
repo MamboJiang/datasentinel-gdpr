@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import unittest
+from io import BytesIO
 from pathlib import Path
 from unittest import mock
 
@@ -9,6 +10,11 @@ from backend.datasentinel.deterministic_signals import detect_signals
 from backend.datasentinel.signal_evidence_anchors import apply_source_locations
 from backend.datasentinel.source_format_recognition import extract_document_content
 from backend.datasentinel.source_image_ocr import ImageOcrResult
+
+try:
+    from PIL import Image
+except Exception:  # pragma: no cover - depends on local test environment
+    Image = None  # type: ignore[assignment]
 
 
 class OcrRegionAnchorTests(unittest.TestCase):
@@ -95,6 +101,59 @@ class OcrRegionAnchorTests(unittest.TestCase):
         self.assertNotIn("王芳", serialized)
         self.assertNotIn("13800138000", serialized)
         self.assertNotIn("北京市朝阳区建国路88号", serialized)
+
+    @unittest.skipUnless(Image is not None, "Pillow is unavailable for OCR preprocessing fixture generation.")
+    def test_image_ocr_preprocesses_colored_overlay_text_without_raw_values(self) -> None:
+        image = Image.new("RGB", (240, 120), "white")
+        for x in range(40, 200):
+            for y in range(30, 70):
+                image.putpixel((x, y), (245, 70, 50))
+        buffer = BytesIO()
+        image.save(buffer, format="PNG")
+
+        overlay_text = "姓名：王芳\n地址：北京市朝阳区建国路88号\nPassport: EN1234567"
+        empty_tsv = "level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext\n"
+        overlay_tsv = (
+            empty_tsv
+            + "1\t1\t0\t0\t0\t0\t0\t0\t240\t120\t-1\t\n"
+            + "5\t1\t1\t1\t1\t1\t20\t20\t48\t18\t92\t姓名\n"
+            + "5\t1\t1\t1\t1\t2\t72\t20\t36\t18\t92\t王芳\n"
+            + "5\t1\t1\t1\t2\t1\t20\t48\t48\t18\t92\t地址\n"
+            + "5\t1\t1\t1\t2\t2\t72\t48\t130\t18\t90\t北京市朝阳区建国路88号\n"
+            + "5\t1\t1\t1\t3\t1\t20\t76\t70\t18\t91\tPassport:\n"
+            + "5\t1\t1\t1\t3\t2\t96\t76\t90\t18\t91\tEN1234567\n"
+        )
+
+        def fake_tesseract(command: list[str], **kwargs: object) -> mock.Mock:
+            image_path = command[1]
+            stdout = overlay_tsv if "red_overlay" in image_path else empty_tsv
+            return mock.Mock(returncode=0, stdout=stdout)
+
+        with mock.patch.dict(
+            "os.environ",
+            {"DATASENTINEL_OCR_MODE": "local", "DATASENTINEL_OCR_LANGS": "eng+chi_sim"},
+        ), mock.patch(
+            "backend.datasentinel.ocr_capabilities.shutil.which",
+            return_value="/usr/bin/tesseract",
+        ), mock.patch(
+            "backend.datasentinel.source_image_ocr.subprocess.run",
+            side_effect=fake_tesseract,
+        ) as run:
+            extracted = extract_document_content(body=buffer.getvalue(), content_type="image/png", name="overlay.png")
+
+        signals = apply_source_locations(detect_signals(extracted.text), extracted.text_locations)
+        signal_types = {signal["type"] for signal in signals}
+        passport_signal = next(signal for signal in signals if signal["type"] == "passport_number")
+        selector = passport_signal["evidenceAnchor"]["selector"]
+        serialized = json.dumps(signals, ensure_ascii=False)
+
+        self.assertTrue({"person_name", "address", "passport_number"}.issubset(signal_types))
+        self.assertGreaterEqual(run.call_count, 2)
+        self.assertEqual(selector["sourceStart"], extracted.text.index("EN1234567"))
+        self.assertEqual(selector["pageRegion"]["origin"], "top_left")
+        self.assertNotIn("王芳", serialized)
+        self.assertNotIn("北京市朝阳区建国路88号", serialized)
+        self.assertNotIn("EN1234567", serialized)
 
     def test_pdf_ocr_page_image_regions_enrich_page_anchors_without_raw_values(self) -> None:
         ocr_text = "Contact privacy.pdfocr@example.org"

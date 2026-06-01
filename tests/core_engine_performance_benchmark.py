@@ -23,7 +23,7 @@ from backend.datasentinel.deterministic_signals import (
 )
 from backend.datasentinel.ocr_capabilities import ocr_capabilities
 from backend.datasentinel.signal_evidence_anchors import apply_source_locations
-from backend.datasentinel.source_documents import MAX_DOCUMENT_BYTES, MAX_SOURCE_FILES
+from backend.datasentinel.source_size_limits import MAX_COMPLEX_DOCUMENT_BYTES, MAX_DOCUMENT_BYTES, MAX_SOURCE_FILES
 from backend.datasentinel.source_format_recognition import DocumentExtractionIssue, extract_document_content
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "gdpr_data_samples_main"
@@ -46,6 +46,7 @@ def build_report(*, command: str) -> dict[str, Any]:
     host = host_report()
     limits = {
         "maxDocumentBytes": MAX_DOCUMENT_BYTES,
+        "maxComplexDocumentBytes": MAX_COMPLEX_DOCUMENT_BYTES,
         "maxSourceFiles": MAX_SOURCE_FILES,
         "maxSignalScanChars": MAX_SIGNAL_SCAN_CHARS,
         "maxSignalsPerDocument": MAX_SIGNALS_PER_DOCUMENT,

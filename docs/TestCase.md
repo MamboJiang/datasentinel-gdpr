@@ -40,6 +40,16 @@
 | USERDOC-011 | Compare homepage and nested docs layouts | `/docs` renders as a standalone homepage without the Fumadocs sidebar, while `/docs/quick-start` keeps sidebar navigation. |
 | USERDOC-012 | Review screenshot and data aids | Quick Start, Sources, Dashboard and Scans, Findings and Review, and Audit and Evaluation include cropped non-sensitive screenshots plus tables that explain fields, metrics, and next actions; screenshot URLs are served under `/docs/media/`. |
 
+## Public Upload Analysis Planning Checks
+
+| ID | Scenario | Expected Result |
+| --- | --- | --- |
+| UPLOADPLAN-001 | Review the public upload-analysis design note | `docs/design/public-upload-analysis-preview.md` defines the problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria. |
+| UPLOADPLAN-002 | Review planned capacity limits | The planning docs state one active file per user/session, a 10 MB maximum file size, and at most 10 active user analyses globally. |
+| UPLOADPLAN-003 | Review non-implementation scope | The planning docs state that no upload UI, endpoint, worker, queue, storage, parser, scanner, or deployment behavior is approved in the current task. |
+| UPLOADPLAN-004 | Review safety boundaries | The planning docs keep raw sensitive values out of public output and prohibit legal advice, full GDPR-compliance claims, automatic deletion, and production tenant integration. |
+| UPLOADPLAN-005 | Review future contract dependency | The planning docs require future updates to the OpenAPI contract, API docs, mock payloads, tests, security notes, deployment controls, and acceptance criteria before implementation. |
+
 ## Backend Planning Checks
 
 | ID | Scenario | Expected Result |
@@ -178,9 +188,12 @@
 | CORE-003 | Review multilingual scan payloads | Public scan, finding, and detail payloads include redaction markers and signal counts but do not include the raw multilingual values. |
 | CORE-004 | Scan a PDF without an extractable text layer when local PDF OCR tooling is available | The scanner uses bounded local PDF OCR, reports `pdf_ocr`/`pdf_page_image_ocr`, marks hard difficulty, and produces redacted findings only. |
 | CORE-004A | Scan a mixed PDF with text-layer pages and blank/scanned pages | The scanner keeps extractable text-layer pages, OCRs bounded blank/scanned pages when host tooling is available, reports `pdf_mixed`/`pdf_text_layer_with_page_ocr`, and returns redacted page-region anchors for OCR-derived findings without exposing raw OCR text or page images. |
+| CORE-004B | Scan a mixed PDF with text-layer pages and image text overlays | The scanner keeps text-layer content, OCRs bounded image-bearing pages when host tooling is available, merges OCR-derived signals into `pdf_mixed` findings, and exposes only redacted page-region anchors. |
+| CORE-004C | Scan a bounded PDF larger than the text-stream limit | PDF and other complex document formats use the bounded document byte budget rather than the 1 MB text-stream budget, so a 6 MB PDF can enter extraction and signal detection. |
 | CORE-005 | Scan a PDF without an extractable text layer when local PDF OCR tooling is missing | The scanner reports a recoverable hard/OCR-deferred warning and does not create fake findings. |
 | CORE-006 | Configure local OCR languages | When `DATASENTINEL_OCR_LANGS` is set, the local Tesseract invocation uses that installed language-pack list. |
 | CORE-006A | Review OCR capability reporting | OCR capability output reports mode, configured language list, Tesseract availability, `pdftoppm` availability, image OCR availability, and PDF OCR availability without probing or storing source content. |
+| CORE-006B | Scan colored text overlays in image OCR | Local OCR can run bounded color-overlay preprocessing variants before deterministic detection, producing redacted findings without public raw OCR text or page images. |
 | CORE-007 | Open a source evidence anchor | PDF, text, table, and structure-based anchors resolve through the same review open-and-focus interaction or a redacted fallback without exposing raw values. |
 | CORE-008 | Scan preserved raw PDF corpus | All preserved PDF corpus files with text layers extract through `pdf_text_layer`; completed example PDFs produce redacted findings and the serialized signal payloads do not contain raw email, employee ID, or tax ID values. |
 | CORE-009 | Scan preserved image OCR challenge without local OCR tooling | The image challenge is reported as hard/OCR-deferred on hosts without Tesseract and does not create fake findings. |

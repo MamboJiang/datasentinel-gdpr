@@ -13,11 +13,9 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 from .google_drive_file_client import DriveAccessIssue, DriveFileClient, GOOGLE_FOLDER_MIME
 from .source_format_recognition import DOWNLOAD_ACCEPT_HEADER, SUPPORTED_PDF_SUFFIXES, SUPPORTED_SUFFIXES, DocumentExtractionIssue, PdfReader as DefaultPdfReader, SourceDocument, SourceDocumentBatch, build_document_batch, extract_document_content
 from .source_media_recognition import is_video_media
+from .source_size_limits import MAX_DOCUMENT_BYTES, MAX_SOURCE_FILES, MAX_VIDEO_BYTES, extraction_limit_warning, max_bytes_for_file
 
 PdfReader = DefaultPdfReader
-MAX_DOCUMENT_BYTES = 1_000_000
-MAX_VIDEO_BYTES = 8_000_000
-MAX_SOURCE_FILES = 500
 GOOGLE_DRIVE_SHARE_HOSTS = {"drive.google.com", "docs.google.com"}
 
 
@@ -133,7 +131,7 @@ def _read_remote_link_source(source: dict[str, Any]) -> SourceDocumentBatch:
         return _unsupported_batch(
             "Remote_File",
             len(body),
-            "Remote video media requires an approved video processor before scanning." if video_media else "Remote file exceeds the prelaunch 1 MB text extraction limit.",
+            "Remote video media requires an approved video processor before scanning." if video_media else extraction_limit_warning(name, content_type),
             recognition_difficulty="hard" if video_media else "unsupported",
             ocr_deferred=video_media,
         )
@@ -174,7 +172,7 @@ def _read_google_drive_source(source: dict[str, Any], access_token: str) -> Sour
     if not isinstance(items, list) or not items:
         raise SourceReadIssue("Google Drive source requires selected files or folders.", "#/config/items")
 
-    client = DriveFileClient(access_token, MAX_SOURCE_FILES, MAX_VIDEO_BYTES)
+    client = DriveFileClient(access_token, MAX_SOURCE_FILES, max(MAX_DOCUMENT_BYTES, MAX_VIDEO_BYTES))
     documents: list[SourceDocument] = []
     warnings: list[str] = []
     failure_difficulties: list[str] = []
@@ -244,7 +242,7 @@ def _document_from_drive_metadata(client: DriveFileClient, metadata: dict[str, A
     if declared_size and declared_size > _max_bytes_for_file(mime_type, name):
         video_media = is_video_media(mime_type, Path(name).suffix.lower())
         raise SourceReadIssue(
-            f"{name} requires a smaller bounded video sample before scanning." if video_media else f"{name} exceeds the prelaunch 1 MB text extraction limit.",
+            f"{name} requires a smaller bounded video sample before scanning." if video_media else extraction_limit_warning(name, mime_type),
             recognition_difficulty="hard" if video_media else "unsupported",
             ocr_deferred=video_media,
         )
@@ -259,7 +257,7 @@ def _document_from_drive_metadata(client: DriveFileClient, metadata: dict[str, A
     if len(body) > _max_bytes_for_file(content_type, name):
         video_media = is_video_media(content_type, Path(name).suffix.lower())
         raise SourceReadIssue(
-            f"{name} requires an approved video processor before scanning." if video_media else f"{name} exceeds the prelaunch 1 MB text extraction limit.",
+            f"{name} requires an approved video processor before scanning." if video_media else extraction_limit_warning(name, content_type),
             recognition_difficulty="hard" if video_media else "unsupported",
             ocr_deferred=video_media,
         )
@@ -362,7 +360,7 @@ def _unsupported_warnings(count: int) -> list[str]:
 
 
 def _max_bytes_for_file(content_type: str, name: str) -> int:
-    return MAX_VIDEO_BYTES if is_video_media(content_type, Path(name).suffix.lower()) else MAX_DOCUMENT_BYTES
+    return max_bytes_for_file(content_type, name)
 
 
 def _declared_size(metadata: dict[str, Any]) -> int | None:

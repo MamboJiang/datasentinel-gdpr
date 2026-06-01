@@ -57,7 +57,7 @@ python3 -m backend.datasentinel.db_tool init --db-path /srv/datasentinel/data/da
 python3 -m backend.datasentinel.source_server --host 127.0.0.1 --port 8000 --db-path /srv/datasentinel/data/datasentinel.sqlite3
 ```
 
-`requirements.txt` includes the PDF text-layer extraction dependency used by prelaunch source scans. DOCX, XLSX, PPTX, ODT, ODS, ODP, ZIP, and EML text extraction uses Python stdlib ZIP/XML/email modules and does not add another runtime dependency. Legacy DOC/XLS/PPT extraction depends on host-local LibreOffice (`soffice` or `libreoffice`) for headless conversion. Install the requirements on the same Python environment that runs the API service. Text-layer-missing PDF OCR is optional and depends on host `pdftoppm` plus Tesseract, not on another Python package.
+`requirements.txt` includes the PDF text-layer extraction dependency used by prelaunch source scans. DOCX, XLSX, PPTX, ODT, ODS, ODP, ZIP, and EML text extraction uses Python stdlib ZIP/XML/email modules and does not add another runtime dependency. Legacy DOC/XLS/PPT extraction depends on host-local LibreOffice (`soffice` or `libreoffice`) for headless conversion. Install the requirements on the same Python environment that runs the API service. Text-layer-missing and mixed-layer PDF OCR is optional and depends on host `pdftoppm` plus Tesseract. Pillow enables local color-overlay preprocessing for difficult image OCR.
 
 `agent-us` final-hardening runtime includes `libreoffice-writer`, `libreoffice-calc`, and `libreoffice-impress` so bounded legacy Office conversion can run without sending source files to an external service.
 On Ubuntu/Debian hosts where Python reports an externally managed environment, either install into a virtual environment and point the service at that Python, or use the host-approved user-site override:
@@ -142,7 +142,7 @@ DATASENTINEL_OCR_LANGS=eng
 
 The server loads `.env.local` on startup without overriding existing process environment variables. The app reports AI readiness through `/api/health` and optional `aiProcessing` metadata in scan, metrics, and evaluation responses. Existing scans remain deterministic and show zero model calls unless a redacted assistive AI classification path is explicitly invoked.
 
-Install the host `tesseract` binary when `DATASENTINEL_OCR_MODE=local`; otherwise supported image files are counted as hard/OCR-deferred warnings. Set `DATASENTINEL_OCR_LANGS` to installed Tesseract language packs such as `eng+chi_sim+deu+fra+spa` for multilingual OCR. Text-layer-missing PDF OCR also requires host `pdftoppm`. Raw video frame OCR requires host `ffmpeg`; when it is missing, bounded raw video media is counted as hard/OCR-deferred.
+Install the host `tesseract` binary when `DATASENTINEL_OCR_MODE=local`; otherwise supported image files are counted as hard/OCR-deferred warnings. Set `DATASENTINEL_OCR_LANGS` to installed Tesseract language packs such as `eng+chi_sim+deu+fra+spa` for multilingual OCR. Text-layer-missing PDF OCR and mixed-layer PDF page OCR also require host `pdftoppm`. Raw video frame OCR requires host `ffmpeg`; when it is missing, bounded raw video media is counted as hard/OCR-deferred.
 
 OpenRouter bills in USD credits, so the runtime uses a conservative 25 USD application cap for the requested 25 EUR budget. Set the OpenRouter dashboard key credit limit as well when available; the application guard is not a replacement for provider-side spend limits.
 

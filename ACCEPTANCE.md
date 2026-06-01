@@ -42,6 +42,18 @@ Frontend surface work is ready for final implementation and QA planning when:
 - Both frontend surface contracts remain compatible with `docs/API_CONTRACT.md`, `contracts/openapi.yaml`, `contracts/mocks/`, `docs/DesignSpec.md`, and the current P0 acceptance criteria.
 - Both frontend surface contracts keep developer-facing documentation and engineering instructions English-only, allow user-facing interface copy to be localized through reviewed frontend dictionaries, keep deletion simulated, avoid legal-advice or full-compliance claims, and avoid production Microsoft Graph, OAuth, tenant, AI, parser, OCR, database, queue, or deletion commitments.
 
+## Public Upload Analysis Planning Readiness
+
+The future website upload-analysis trial is ready for a later scoped implementation task only when:
+
+- `docs/design/public-upload-analysis-preview.md` defines the problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
+- `docs/WEBSITE_HOMEPAGE_CONTRACT.md`, `docs/PRD.md`, `docs/TRD.md`, `docs/DesignSpec.md`, and `docs/TestCase.md` describe the planned trial as future work rather than implemented behavior.
+- The planned trial states one active uploaded file per user/session, a 10 MB maximum file size, and at most 10 active user analyses globally.
+- Oversized, duplicate-active, capacity-full, unsupported, failed, completed, and start-over states are documented before implementation.
+- The trial result is defined as a concise redacted analysis summary, separate from the full Workspace console.
+- The planning keeps raw sensitive values out of public output and prohibits legal advice, full GDPR-compliance claims, automatic deletion, production tenant access, and production Microsoft Graph integration.
+- A future implementation must update `contracts/openapi.yaml`, `docs/API_CONTRACT.md`, mock payloads, validation tests, security notes, deployment controls, and this acceptance section before code is added.
+
 ## Fumadocs User Documentation Acceptance
 
 The user-facing documentation surface is accepted when:
@@ -189,7 +201,7 @@ Google Drive and direct-link source input are accepted when:
 - The Sources page can select or clear a direct Source owner from active Workspace members during Source registration.
 - The Sources page exposes an edit action for admins to change a Source owner after registration.
 - The Sources page shows the current core scanner supported file types below the source inventory surface, including PDF image OCR, OCR-backed image formats, modern Office, OpenDocument, EML, ZIP, UTF-16 text, JSONL/NDJSON, transcripts, and Google export inputs.
-- Remote file-link scans require HTTPS, no embedded credentials, a public-resolving host, supported BOM/charset-aware Unicode text-like content, bounded XML/JSON-like structure extraction, bounded RTF text extraction, RFC 5322/MIME email text extraction, bounded ZIP archive member extraction, a PDF text layer or bounded local PDF OCR candidate, Office Open XML or OpenDocument content, supported image files, supported transcript files, or bounded raw video media; extractable text-like files must stay within the prelaunch size limit, and raw video media must stay within the bounded video size limit.
+- Remote file-link scans require HTTPS, no embedded credentials, a public-resolving host, supported BOM/charset-aware Unicode text-like content, bounded XML/JSON-like structure extraction, bounded RTF text extraction, RFC 5322/MIME email text extraction, bounded ZIP archive member extraction, a PDF text layer or bounded local PDF OCR candidate, Office Open XML or OpenDocument content, supported image files, supported transcript files, or bounded raw video media; extractable text-like files must stay within the prelaunch text-stream size limit, PDF/image/Office-like complex documents must stay within the bounded document size limit, and raw video media must stay within the bounded video size limit.
 - Local and Google Drive source enumeration is bounded by the prelaunch file-count limit and reports a warning when scanning stops at that limit.
 - Google Drive and Google Docs share-page URLs are rejected as direct links and must be added through Google Drive Picker.
 - The Sources page can select Google Drive files or a folder through Google Picker when host credentials are configured.
@@ -207,7 +219,8 @@ Google Drive and direct-link source input are accepted when:
 - VTT and SRT transcript files can be scanned as video transcript text, while bounded MP4, MOV, M4V, MKV, WEBM, and AVI media can be scanned through host-local FFmpeg frame extraction plus local Tesseract OCR. Missing FFmpeg, missing Tesseract, disabled local OCR, extraction failure, over-limit video, or empty frame OCR are counted as hard/OCR-deferred.
 - Missing LibreOffice, conversion timeout, failed conversion, missing conversion output, empty converted text, or over-limit legacy Office files are counted as hard unsupported warnings rather than silent successes.
 - Scan payloads expose recognition difficulty counts and per-format extraction counts while normal deterministic scans keep `aiAssistanceUsed = false` and `modelCalls = 0`.
-- Image-only PDFs use bounded local PDF OCR when `DATASENTINEL_OCR_MODE=local`, Tesseract, `pdftoppm`, and required language packs are available; missing tooling, empty OCR, OCR timeout, OCR failure, or unreadable PDFs are recoverable hard/OCR-deferred warnings rather than silent successes or fake findings.
+- Image-only and mixed-layer PDFs use bounded local PDF OCR when `DATASENTINEL_OCR_MODE=local`, Tesseract, `pdftoppm`, and required language packs are available; missing tooling, empty OCR, OCR timeout, OCR failure, or unreadable PDFs are recoverable hard/OCR-deferred warnings rather than silent successes or fake findings.
+- Local OCR can run bounded color-overlay preprocessing variants for difficult image/PDF pages with high-contrast text over images; public payloads still expose only redacted evidence, not raw OCR text or page images.
 - The Sources page can delete a DataSentinel source registration, clears DataSentinel scan/finding state derived from that deleted registration, and the backend `DELETE /api/sources/{sourceId}` route does not delete external source files.
 - Findings produced from an assigned Source are visible to the assigned owner or explicit fallback route, not every Workspace member.
 - Finding review transfer options for an assigned Workspace finding come from active Workspace members exposed by current review support and must not fall back to static demo delegation targets.
@@ -238,7 +251,8 @@ The core business engine hardening slice is accepted when:
 - PDF files with text layers still prefer deterministic text-layer extraction.
 - The preserved PDF corpus can be scanned through the real PDF text-layer extraction path, and completed example PDFs produce redacted findings without leaking detected raw values.
 - PDF files without extractable text layers can fall back to bounded host-local PDF OCR when `DATASENTINEL_OCR_MODE=local`, `pdftoppm`, and Tesseract are available.
-- Mixed PDFs that contain both extractable text-layer pages and blank/scanned pages keep the text-layer pages and can OCR the blank/scanned pages through the bounded host-local PDF OCR path, returning `pdf_mixed`/`pdf_text_layer_with_page_ocr` with redacted page anchors when tooling is available.
+- Mixed PDFs that contain extractable text-layer pages plus blank/scanned pages or image text overlays keep the text-layer pages and can OCR the bounded target pages through the host-local PDF OCR path, returning `pdf_mixed`/`pdf_text_layer_with_page_ocr` with redacted page anchors when tooling is available.
+- PDF and other complex document formats use a bounded document byte budget separate from the 1 MB text-stream budget, so realistic multi-megabyte PDFs can enter extraction and signal detection.
 - Local OCR can select installed Tesseract language packs through `DATASENTINEL_OCR_LANGS` for multilingual image and PDF OCR.
 - Image OCR normalizes Tesseract TSV word joins for CJK/Kana/Hangul character-level output so labels split into single-character OCR words can still produce redacted findings and pixel `pageRegion` anchors without storing raw OCR text.
 - Missing PDF OCR tooling, empty OCR, OCR timeout, or OCR failure is reported as a recoverable hard/OCR-deferred warning rather than a silent success or fake finding.

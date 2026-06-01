@@ -9,6 +9,7 @@ from unittest import mock
 from zipfile import ZipFile
 
 from backend.datasentinel.source_http import build_sqlite_app
+from backend.datasentinel.source_format_recognition import ExtractedDocumentContent
 from backend.datasentinel.source_image_ocr import ImageOcrResult
 from backend.datasentinel.source_legacy_office import LegacyOfficeExtractionResult
 from backend.datasentinel.source_video_ocr import VideoFrameOcrResult
@@ -47,8 +48,7 @@ class FormatRecognitionTests(unittest.TestCase):
                     json.dumps({"sourceId": "source_ooxml"}),
                     "application/json",
                 )
-                time.sleep(1.1)
-                scan = app.handle("GET", f"/api/scans/{started['body']['data']['scanId']}", "trace_ooxml_scan_done")
+                scan = _wait_for_scan(app, started["body"]["data"]["scanId"], "trace_ooxml_scan_done")
                 findings = app.handle("GET", "/api/findings", "trace_ooxml_findings")
                 first_detail = app.handle("GET", f"/api/findings/{findings['body']['data'][0]['findingId']}", "trace_ooxml_detail")
                 evaluation = app.handle("GET", "/api/evaluation/runs/latest", "trace_ooxml_eval")
@@ -122,8 +122,7 @@ class FormatRecognitionTests(unittest.TestCase):
                     json.dumps({"sourceId": "source_legacy_office"}),
                     "application/json",
                 )
-                time.sleep(1.1)
-                scan = app.handle("GET", f"/api/scans/{started['body']['data']['scanId']}", "trace_legacy_office_done")
+                scan = _wait_for_scan(app, started["body"]["data"]["scanId"], "trace_legacy_office_done")
                 findings = app.handle("GET", "/api/findings", "trace_legacy_office_findings")
                 details = [
                     app.handle("GET", f"/api/findings/{finding['findingId']}", f"trace_legacy_office_detail_{index}")
@@ -185,8 +184,7 @@ class FormatRecognitionTests(unittest.TestCase):
                     json.dumps({"sourceId": "source_structured_text"}),
                     "application/json",
                 )
-                time.sleep(1.1)
-                scan = app.handle("GET", f"/api/scans/{started['body']['data']['scanId']}", "trace_structured_text_done")
+                scan = _wait_for_scan(app, started["body"]["data"]["scanId"], "trace_structured_text_done")
                 findings = app.handle("GET", "/api/findings", "trace_structured_text_findings")
                 details = [
                     app.handle("GET", f"/api/findings/{finding['findingId']}", f"trace_structured_text_detail_{index}")
@@ -257,8 +255,7 @@ class FormatRecognitionTests(unittest.TestCase):
                     json.dumps({"sourceId": "source_image"}),
                     "application/json",
                 )
-                time.sleep(1.1)
-                scan = app.handle("GET", f"/api/scans/{started['body']['data']['scanId']}", "trace_image_scan_done")
+                scan = _wait_for_scan(app, started["body"]["data"]["scanId"], "trace_image_scan_done")
                 findings = app.handle("GET", "/api/findings", "trace_image_findings")
                 detail = app.handle("GET", f"/api/findings/{findings['body']['data'][0]['findingId']}", "trace_image_detail")
                 serialized = json.dumps({"scan": scan["body"], "detail": detail["body"]})
@@ -275,6 +272,58 @@ class FormatRecognitionTests(unittest.TestCase):
         self.assertIn("image_ocr", formats)
         self.assertIn("[REDACTED_", serialized)
         self.assertNotIn("privacy.image@example.org", serialized)
+
+    def test_bounded_large_pdf_is_not_rejected_by_text_stream_limit(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory) / "source"
+            root.mkdir()
+            (root / "visual-report.pdf").write_bytes(b"%PDF-1.7\n" + (b"0" * 1_200_000))
+            db_path = Path(directory) / "datasentinel.sqlite3"
+            extracted_text = "Passport: EN1234567"
+
+            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}), mock.patch(
+                "backend.datasentinel.source_documents.extract_document_content",
+                return_value=ExtractedDocumentContent(
+                    extracted_text,
+                    "pdf_text_layer",
+                    "pdf_text_layer",
+                    "moderate",
+                    text_locations=({"format": "pdf_text_layer", "label": "Page 1", "start": 0, "end": len(extracted_text), "page": 1},),
+                ),
+            ):
+                app = build_sqlite_app(db_path, [root])
+                app.handle(
+                    "POST",
+                    "/api/sources",
+                    "trace_large_pdf_create",
+                    json.dumps({
+                        "sourceId": "source_large_pdf",
+                        "name": "Large PDF source",
+                        "sourceType": "local_repo",
+                        "rootLabel": str(root),
+                        "config": {"rootPath": str(root)},
+                    }),
+                    "application/json",
+                )
+                app.handle("POST", "/api/sources/source_large_pdf/connect-test", "trace_large_pdf_connect")
+                started = app.handle(
+                    "POST",
+                    "/api/scans/full",
+                    "trace_large_pdf_scan",
+                    json.dumps({"sourceId": "source_large_pdf"}),
+                    "application/json",
+                )
+                scan = _wait_for_scan(app, started["body"]["data"]["scanId"], "trace_large_pdf_done")
+                findings = app.handle("GET", "/api/findings", "trace_large_pdf_findings")
+
+        extraction = scan["body"]["data"]["contentExtraction"]
+        serialized = json.dumps({"scan": scan["body"], "findings": findings["body"]})
+
+        self.assertEqual(extraction["successfulFiles"], 1)
+        self.assertEqual(extraction["unsupportedFiles"], 0)
+        self.assertEqual(len(findings["body"]["data"]), 1)
+        self.assertNotIn("1 MB text extraction limit", serialized)
+        self.assertNotIn("EN1234567", serialized)
 
     def test_video_transcript_scans_and_video_media_is_deferred(self) -> None:
         with TemporaryDirectory() as directory:
@@ -310,8 +359,7 @@ class FormatRecognitionTests(unittest.TestCase):
                     json.dumps({"sourceId": "source_video"}),
                     "application/json",
                 )
-                time.sleep(1.1)
-                scan = app.handle("GET", f"/api/scans/{started['body']['data']['scanId']}", "trace_video_scan_done")
+                scan = _wait_for_scan(app, started["body"]["data"]["scanId"], "trace_video_scan_done")
                 findings = app.handle("GET", "/api/findings", "trace_video_findings")
                 detail = app.handle("GET", f"/api/findings/{findings['body']['data'][0]['findingId']}", "trace_video_detail")
                 serialized = json.dumps({"scan": scan["body"], "detail": detail["body"]})
@@ -388,8 +436,7 @@ class FormatRecognitionTests(unittest.TestCase):
                     json.dumps({"sourceId": "source_video_frame"}),
                     "application/json",
                 )
-                time.sleep(1.1)
-                scan = app.handle("GET", f"/api/scans/{started['body']['data']['scanId']}", "trace_video_frame_done")
+                scan = _wait_for_scan(app, started["body"]["data"]["scanId"], "trace_video_frame_done")
                 findings = app.handle("GET", "/api/findings", "trace_video_frame_findings")
                 detail = app.handle("GET", f"/api/findings/{findings['body']['data'][0]['findingId']}", "trace_video_frame_detail")
                 serialized = json.dumps({"scan": scan["body"], "detail": detail["body"]})
@@ -409,6 +456,16 @@ class FormatRecognitionTests(unittest.TestCase):
         self.assertFalse(preview["pageImagesExposed"])
         self.assertIn("[REDACTED_", serialized)
         self.assertNotIn("privacy.video-frame@example.org", serialized)
+
+
+def _wait_for_scan(app: object, scan_id: str, trace_id: str) -> dict:
+    scan = {}
+    for attempt in range(40):
+        scan = app.handle("GET", f"/api/scans/{scan_id}", f"{trace_id}_{attempt}")
+        if scan["body"]["data"].get("status") != "running":
+            return scan
+        time.sleep(0.25)
+    return scan
 
 
 def _write_docx(path: Path, text: str) -> None:

@@ -10,6 +10,75 @@ from backend.datasentinel.source_format_recognition import extract_document_cont
 
 
 class PdfRegionAnchorTests(unittest.TestCase):
+    def test_mixed_pdf_image_text_page_merges_overlay_ocr_regions(self) -> None:
+        text_page = "Travel cover page\n"
+        ocr_text = "姓名：王芳\n地址：北京市朝阳区建国路88号\nPassport: EN1234567"
+        passport_start = ocr_text.index("EN1234567")
+
+        class ImageTextPage:
+            def get(self, key: str):
+                if key == "/Resources":
+                    return {"/XObject": {"/Im1": {"/Subtype": "/Image"}}}
+                return None
+
+            def extract_text(self, visitor_text=None):
+                if visitor_text:
+                    visitor_text(text_page, [1, 0, 0, 1, 0, 0], [1, 0, 0, 1, 72, 720], None, 12)
+                return text_page
+
+        class MixedPdfReader:
+            def __init__(self, stream: object, strict: bool = False) -> None:
+                self.pages = [ImageTextPage()]
+
+        ocr_records = {
+            1: {
+                "text": ocr_text,
+                "format": "pdf_ocr",
+                "regions": ({
+                    "start": passport_start,
+                    "end": len(ocr_text),
+                    "x": 160,
+                    "y": 120,
+                    "width": 260,
+                    "height": 30,
+                    "pageWidth": 1654,
+                    "pageHeight": 2339,
+                    "unit": "px",
+                    "origin": "top_left",
+                    "confidence": "ocr",
+                },),
+            }
+        }
+
+        with mock.patch(
+            "backend.datasentinel.source_pdf_text._ocr_selected_page_records",
+            return_value=ocr_records,
+        ) as ocr:
+            extracted = extract_document_content(
+                body=b"%PDF-1.7 image-text",
+                content_type="application/pdf",
+                name="image-text.pdf",
+                pdf_reader=MixedPdfReader,
+            )
+
+        signals = apply_source_locations(detect_signals(extracted.text), extracted.text_locations)
+        signal_types = {signal["type"] for signal in signals}
+        passport_signal = next(signal for signal in signals if signal["type"] == "passport_number")
+        selector = passport_signal["evidenceAnchor"]["selector"]
+        serialized = json.dumps(signals, ensure_ascii=False)
+
+        self.assertEqual(extracted.file_format, "pdf_mixed")
+        self.assertEqual(extracted.extraction_method, "pdf_text_layer_with_page_ocr")
+        self.assertTrue({"person_name", "address", "passport_number"}.issubset(signal_types))
+        self.assertEqual(passport_signal["evidenceAnchor"]["format"], "pdf_ocr")
+        self.assertEqual(selector["page"], 1)
+        self.assertEqual(selector["sourceStart"], len(text_page) + 1 + passport_start)
+        self.assertEqual(selector["pageRegion"]["origin"], "top_left")
+        self.assertNotIn("王芳", serialized)
+        self.assertNotIn("北京市朝阳区建国路88号", serialized)
+        self.assertNotIn("EN1234567", serialized)
+        ocr.assert_called_once_with(b"%PDF-1.7 image-text", "image-text.pdf", [1])
+
     def test_mixed_pdf_blank_page_uses_page_ocr_regions_without_raw_values(self) -> None:
         text_page = "Cover page without personal data\n"
         ocr_text = "Contact privacy.mixed@example.org"

@@ -77,9 +77,9 @@ class GdprDataSamplesCorpusTests(unittest.TestCase):
                 signals = apply_source_locations(detect_signals(extracted.text), extracted.text_locations)
                 serialized = json.dumps(signals, ensure_ascii=False)
 
-                self.assertEqual(extracted.file_format, "pdf_text_layer")
-                self.assertEqual(extracted.extraction_method, "pdf_text_layer")
-                self.assertEqual(extracted.recognition_difficulty, "moderate")
+                self.assertIn(extracted.file_format, {"pdf_text_layer", "pdf_mixed"})
+                self.assertIn(extracted.extraction_method, {"pdf_text_layer", "pdf_text_layer_with_page_ocr"})
+                self.assertIn(extracted.recognition_difficulty, {"moderate", "hard"})
                 self.assertTrue(extracted.text.strip())
                 self.assertTrue(extracted.text_locations)
 

@@ -20,12 +20,13 @@ Prelaunch source scans must handle real user documents that arrive as PDF ticket
 | OCR all PDFs | Render pages and run OCR before deterministic scanning. | Rejected because text-layer PDFs should not pay the OCR cost or expand failure surface. |
 | Bounded PDF OCR fallback | Render a bounded page range only when no text layer is available, then use local Tesseract OCR. | Accepted as a recoverable fallback because it stays local, temporary, and warning-counted when tooling is missing. |
 | Bounded OCR for blank pages inside text-layer PDFs | Keep extracted text-layer pages and OCR only blank/scanned pages within the existing OCR page budget. | Accepted because real PDFs can mix generated text pages with scanned appendices, and returning after the first text-layer match can hide sensitive image-page evidence. |
+| Bounded OCR for image-bearing text-layer pages | OCR a bounded number of pages that have extractable text plus embedded images, then merge OCR text with the text layer. | Accepted because real PDFs can place sensitive labels in image overlays while keeping unrelated text in the text layer. |
 | Delete source files | Use provider APIs or filesystem deletion when a user deletes a Source. | Rejected because automatic deletion is outside the approved prototype boundary. |
 | Delete source registration only | Remove the DataSentinel source metadata row, clear DataSentinel workflow state derived from that registration, and leave external files untouched. | Accepted because it corrects wrong setup state without mutating user files. |
 
 ## Selected Approach
 
-The prelaunch document reader treats `application/pdf` and `.pdf` as supported when the PDF has an extractable text layer or can use bounded host-local PDF OCR fallback. The reader loads bytes in memory, extracts page text with pypdf when possible, and then reuses the existing deterministic signal detection, redaction, finding, metric, and audit flow. Text-layer extraction can attach estimated PDF user-space page regions from scan-time text matrices so authorized review surfaces can later focus a redacted finding on the page. When a PDF has some extractable pages and some blank/scanned pages, the scanner keeps the text-layer page records and OCRs only the blank/scanned pages within the existing bounded OCR page budget, returning `pdf_mixed` and `pdf_text_layer_with_page_ocr` when OCR adds text. Text-layer-missing PDFs may be rasterized in a temporary directory and OCRed locally with Tesseract TSV output when `DATASENTINEL_OCR_MODE=local`, `pdftoppm`, and Tesseract are available; OCR word boxes can attach pixel page regions to redacted anchors. Raw source bytes, page images, raw OCR text, and raw extracted text remain transient.
+The prelaunch document reader treats `application/pdf` and `.pdf` as supported when the PDF has an extractable text layer or can use bounded host-local PDF OCR fallback. The reader loads bytes in memory, extracts page text with pypdf when possible, and then reuses the existing deterministic signal detection, redaction, finding, metric, and audit flow. Text-layer extraction can attach estimated PDF user-space page regions from scan-time text matrices so authorized review surfaces can later focus a redacted finding on the page. When a PDF has blank/scanned pages or text-layer pages that also contain embedded images, the scanner keeps the text-layer page records and OCRs the bounded target pages within the existing OCR page budget, returning `pdf_mixed` and `pdf_text_layer_with_page_ocr` when OCR adds text. Text-layer-missing PDFs may be rasterized in a temporary directory and OCRed locally with Tesseract TSV output when `DATASENTINEL_OCR_MODE=local`, `pdftoppm`, and Tesseract are available; OCR word boxes can attach pixel page regions to redacted anchors. Local image OCR may run bounded color-overlay preprocessing variants to improve recall for high-contrast text over busy images. Raw source bytes, page images, raw OCR text, and raw extracted text remain transient.
 
 The source API exposes `DELETE /api/sources/{sourceId}`. The route deletes the DataSentinel source registration from the active store, clears scan/finding state derived from that source registration, and returns the deleted source envelope. Missing source ids return `application/problem+json` with `404`.
 
@@ -53,8 +54,8 @@ delete_requested -> delete_rejected_not_found
 
 Guards:
 
-- PDF extraction is allowed only for files under the prelaunch byte limit.
-- PDFs prefer extractable text; blank/scanned pages inside an otherwise text-layer PDF may use bounded local page OCR when host tooling is available. If mixed-page OCR is unavailable, the scanner still returns the extractable text-layer result rather than failing the whole PDF.
+- PDF extraction is allowed only for files under the prelaunch bounded document byte limit.
+- PDFs prefer extractable text; blank/scanned pages and image-bearing pages inside an otherwise text-layer PDF may use bounded local page OCR when host tooling is available. If mixed-page OCR is unavailable, the scanner still returns the extractable text-layer result rather than failing the whole PDF.
 - Image-only PDFs may use bounded local OCR when host tooling is available, otherwise they stay OCR-deferred.
 - Source deletion targets a single source id and does not call provider delete APIs or remove filesystem paths.
 
@@ -90,7 +91,8 @@ Rollback path:
 
 - A PDF with an extractable text layer can be scanned from an approved source and produce redacted findings when deterministic rules match.
 - PDF text-layer findings can include estimated page-region coordinates without exposing raw PDF text or page images.
-- A mixed PDF can combine text-layer pages with OCR-derived blank/scanned pages and produce `pdf_mixed` redacted findings with per-page anchors when host tooling is available.
+- A mixed PDF can combine text-layer pages with OCR-derived blank/scanned or image-bearing pages and produce `pdf_mixed` redacted findings with per-page anchors when host tooling is available.
+- A PDF or image with colored text overlays can use local OCR preprocessing variants and still expose only redacted evidence, not raw OCR text or page images.
 - A PDF without an extractable text layer can produce redacted findings through bounded local OCR when host tooling is available.
 - PDF OCR findings can include OCR pixel page-region coordinates from Tesseract TSV word boxes without exposing raw OCR text or page images.
 - Public API and UI payloads do not expose raw PDF text, raw PDF bytes, provider tokens, or source credentials.
