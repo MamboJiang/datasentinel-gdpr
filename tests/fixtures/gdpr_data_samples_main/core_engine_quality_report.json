@@ -1,0 +1,921 @@
+{
+  "command": "python3 tests/core_engine_quality_report.py --output tests/fixtures/gdpr_data_samples_main/core_engine_quality_report.json",
+  "generatedAt": "2026-06-01T01:47:22Z",
+  "privacyRule": "This report stores case IDs, language/format labels, expected signal types, actual signal types, and aggregate quality metrics only. It must not include raw source text, raw detected values, source bodies, provider tokens, Drive URLs, page images, or private absolute paths.",
+  "reportId": "core_engine_quality_2026-06-01_multilingual_format_oracles",
+  "safetyChecks": {
+    "privateAbsolutePathsPersisted": false,
+    "providerTokensPersisted": false,
+    "rawDetectedValuesPersisted": false,
+    "rawTextPersisted": false,
+    "sourceBodiesPersisted": false
+  },
+  "suites": [
+    {
+      "actualTypeCounts": {
+        "address": 6,
+        "bank_account": 3,
+        "credential_secret": 3,
+        "date_of_birth": 2,
+        "email": 1,
+        "health_data": 4,
+        "national_identifier": 8,
+        "passport_number": 1,
+        "person_name": 11,
+        "phone_number": 10,
+        "salary_compensation": 3,
+        "tax_id": 1
+      },
+      "cases": [
+        {
+          "actualTypes": [
+            "address",
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "zh_contact_identity",
+          "expectedTypes": [
+            "address",
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "zh-Hans",
+          "matchedTypes": [
+            "address",
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 4,
+          "suite": "core_multilingual_cases"
+        },
+        {
+          "actualTypes": [
+            "address",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "zh_ocr_inline_contact",
+          "expectedTypes": [
+            "address",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "zh-Hans",
+          "matchedTypes": [
+            "address",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 3,
+          "suite": "core_multilingual_cases"
+        },
+        {
+          "actualTypes": [
+            "address",
+            "date_of_birth",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "fr_contact_birth",
+          "expectedTypes": [
+            "address",
+            "date_of_birth",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "fr",
+          "matchedTypes": [
+            "address",
+            "date_of_birth",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 4,
+          "suite": "core_multilingual_cases"
+        },
+        {
+          "actualTypes": [
+            "email",
+            "national_identifier",
+            "person_name",
+            "salary_compensation"
+          ],
+          "caseId": "es_identity_email",
+          "expectedTypes": [
+            "email",
+            "national_identifier",
+            "person_name",
+            "salary_compensation"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "es",
+          "matchedTypes": [
+            "email",
+            "national_identifier",
+            "person_name",
+            "salary_compensation"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 4,
+          "suite": "core_multilingual_cases"
+        },
+        {
+          "actualTypes": [
+            "bank_account",
+            "credential_secret",
+            "date_of_birth",
+            "health_data"
+          ],
+          "caseId": "de_health_finance_secret",
+          "expectedTypes": [
+            "bank_account",
+            "credential_secret",
+            "date_of_birth",
+            "health_data"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "de",
+          "matchedTypes": [
+            "bank_account",
+            "credential_secret",
+            "date_of_birth",
+            "health_data"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 5,
+          "suite": "core_multilingual_cases"
+        },
+        {
+          "actualTypes": [
+            "health_data",
+            "passport_number",
+            "person_name",
+            "phone_number",
+            "tax_id"
+          ],
+          "caseId": "it_tax_passport_health",
+          "expectedTypes": [
+            "health_data",
+            "passport_number",
+            "person_name",
+            "phone_number",
+            "tax_id"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "it",
+          "matchedTypes": [
+            "health_data",
+            "passport_number",
+            "person_name",
+            "phone_number",
+            "tax_id"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 5,
+          "suite": "core_multilingual_cases"
+        },
+        {
+          "actualTypes": [
+            "bank_account",
+            "credential_secret",
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "pt_identity_bank_secret",
+          "expectedTypes": [
+            "bank_account",
+            "credential_secret",
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "pt-BR",
+          "matchedTypes": [
+            "bank_account",
+            "credential_secret",
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 5,
+          "suite": "core_multilingual_cases"
+        },
+        {
+          "actualTypes": [
+            "address",
+            "national_identifier",
+            "person_name",
+            "phone_number",
+            "salary_compensation"
+          ],
+          "caseId": "nl_contact_address_compensation",
+          "expectedTypes": [
+            "address",
+            "national_identifier",
+            "person_name",
+            "phone_number",
+            "salary_compensation"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "nl",
+          "matchedTypes": [
+            "address",
+            "national_identifier",
+            "person_name",
+            "phone_number",
+            "salary_compensation"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 5,
+          "suite": "core_multilingual_cases"
+        },
+        {
+          "actualTypes": [
+            "address",
+            "health_data",
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "pl_identity_medical",
+          "expectedTypes": [
+            "address",
+            "health_data",
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "pl",
+          "matchedTypes": [
+            "address",
+            "health_data",
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 5,
+          "suite": "core_multilingual_cases"
+        },
+        {
+          "actualTypes": [
+            "bank_account",
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "ja_identity_bank",
+          "expectedTypes": [
+            "bank_account",
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "ja",
+          "matchedTypes": [
+            "bank_account",
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 4,
+          "suite": "core_multilingual_cases"
+        },
+        {
+          "actualTypes": [
+            "credential_secret",
+            "health_data",
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "ko_contact_health_secret",
+          "expectedTypes": [
+            "credential_secret",
+            "health_data",
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "ko",
+          "matchedTypes": [
+            "credential_secret",
+            "health_data",
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 6,
+          "suite": "core_multilingual_cases"
+        },
+        {
+          "actualTypes": [
+            "address",
+            "national_identifier",
+            "person_name",
+            "phone_number",
+            "salary_compensation"
+          ],
+          "caseId": "ar_contact_identity",
+          "expectedTypes": [
+            "address",
+            "national_identifier",
+            "person_name",
+            "phone_number",
+            "salary_compensation"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "ar",
+          "matchedTypes": [
+            "address",
+            "national_identifier",
+            "person_name",
+            "phone_number",
+            "salary_compensation"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 5,
+          "suite": "core_multilingual_cases"
+        }
+      ],
+      "expectedTypeCounts": {
+        "address": 6,
+        "bank_account": 3,
+        "credential_secret": 3,
+        "date_of_birth": 2,
+        "email": 1,
+        "health_data": 4,
+        "national_identifier": 8,
+        "passport_number": 1,
+        "person_name": 11,
+        "phone_number": 10,
+        "salary_compensation": 3,
+        "tax_id": 1
+      },
+      "formatCounts": {
+        "txt": 12
+      },
+      "languageCounts": {
+        "ar": 1,
+        "de": 1,
+        "es": 1,
+        "fr": 1,
+        "it": 1,
+        "ja": 1,
+        "ko": 1,
+        "nl": 1,
+        "pl": 1,
+        "pt-BR": 1,
+        "zh-Hans": 2
+      },
+      "metrics": {
+        "actualTypeAssertions": 53,
+        "caseCount": 12,
+        "expectedTypeAssertions": 53,
+        "falseNegativeTypeCount": 0,
+        "falsePositiveTypeCount": 0,
+        "matchedTypeAssertions": 53,
+        "perfectCaseCount": 12,
+        "typeF1": 1.0,
+        "typePrecision": 1.0,
+        "typeRecall": 1.0
+      },
+      "name": "core_multilingual_cases"
+    },
+    {
+      "actualTypeCounts": {
+        "address": 1,
+        "bank_account": 1,
+        "credential_secret": 1,
+        "date_of_birth": 1,
+        "email": 3,
+        "health_data": 3,
+        "national_identifier": 5,
+        "person_name": 17,
+        "phone_number": 13,
+        "salary_compensation": 2,
+        "tax_id": 1
+      },
+      "cases": [
+        {
+          "actualTypes": [
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "csv_polish_identity",
+          "expectedTypes": [
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "csv",
+          "language": "mixed",
+          "matchedTypes": [
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 3,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "address",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "html_arabic_contact",
+          "expectedTypes": [
+            "address",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "html",
+          "language": "mixed",
+          "matchedTypes": [
+            "address",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 3,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "email",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "jsonl_chinese_contact",
+          "expectedTypes": [
+            "email",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "jsonl",
+          "language": "mixed",
+          "matchedTypes": [
+            "email",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 3,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "date_of_birth",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "xml_german_contact",
+          "expectedTypes": [
+            "date_of_birth",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "xml",
+          "language": "mixed",
+          "matchedTypes": [
+            "date_of_birth",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 3,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "rtf_chinese_french_contact",
+          "expectedTypes": [
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "rtf",
+          "language": "mixed",
+          "matchedTypes": [
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 2,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "health_data",
+            "person_name",
+            "tax_id"
+          ],
+          "caseId": "docx_italian_tax_health",
+          "expectedTypes": [
+            "health_data",
+            "person_name",
+            "tax_id"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "docx",
+          "language": "mixed",
+          "matchedTypes": [
+            "health_data",
+            "person_name",
+            "tax_id"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 3,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "national_identifier",
+            "person_name",
+            "salary_compensation"
+          ],
+          "caseId": "xlsx_dutch_compensation",
+          "expectedTypes": [
+            "national_identifier",
+            "person_name",
+            "salary_compensation"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "xlsx",
+          "language": "mixed",
+          "matchedTypes": [
+            "national_identifier",
+            "person_name",
+            "salary_compensation"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 3,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "bank_account",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "pptx_japanese_bank",
+          "expectedTypes": [
+            "bank_account",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "pptx",
+          "language": "mixed",
+          "matchedTypes": [
+            "bank_account",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 3,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "health_data",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "odt_spanish_health",
+          "expectedTypes": [
+            "health_data",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "odt",
+          "language": "mixed",
+          "matchedTypes": [
+            "health_data",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 3,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "national_identifier",
+            "person_name",
+            "salary_compensation"
+          ],
+          "caseId": "ods_dutch_compensation",
+          "expectedTypes": [
+            "national_identifier",
+            "person_name",
+            "salary_compensation"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "ods",
+          "language": "mixed",
+          "matchedTypes": [
+            "national_identifier",
+            "person_name",
+            "salary_compensation"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 3,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "odp_polish_identity",
+          "expectedTypes": [
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "odp",
+          "language": "mixed",
+          "matchedTypes": [
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 3,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "email",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "eml_chinese_contact",
+          "expectedTypes": [
+            "email",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "eml",
+          "language": "mixed",
+          "matchedTypes": [
+            "email",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 4,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "zip_mixed_multilingual_bundle",
+          "expectedTypes": [
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "zip",
+          "language": "mixed",
+          "matchedTypes": [
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 4,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "email",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "utf16le_chinese_contact",
+          "expectedTypes": [
+            "email",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "txt",
+          "language": "mixed",
+          "matchedTypes": [
+            "email",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 3,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "health_data",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "image_ocr_korean_health",
+          "expectedTypes": [
+            "health_data",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "image_ocr",
+          "language": "mixed",
+          "matchedTypes": [
+            "health_data",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 3,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "caseId": "pdf_ocr_chinese_identity",
+          "expectedTypes": [
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "pdf_ocr",
+          "language": "mixed",
+          "matchedTypes": [
+            "national_identifier",
+            "person_name",
+            "phone_number"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 3,
+          "suite": "generated_format_challenges"
+        },
+        {
+          "actualTypes": [
+            "credential_secret",
+            "person_name"
+          ],
+          "caseId": "vtt_portuguese_secret",
+          "expectedTypes": [
+            "credential_secret",
+            "person_name"
+          ],
+          "falseNegativeTypes": [],
+          "falsePositiveTypes": [],
+          "format": "video_transcript",
+          "language": "mixed",
+          "matchedTypes": [
+            "credential_secret",
+            "person_name"
+          ],
+          "perfectTypeMatch": true,
+          "signalCount": 2,
+          "suite": "generated_format_challenges"
+        }
+      ],
+      "expectedTypeCounts": {
+        "address": 1,
+        "bank_account": 1,
+        "credential_secret": 1,
+        "date_of_birth": 1,
+        "email": 3,
+        "health_data": 3,
+        "national_identifier": 5,
+        "person_name": 17,
+        "phone_number": 13,
+        "salary_compensation": 2,
+        "tax_id": 1
+      },
+      "formatCounts": {
+        "csv": 1,
+        "docx": 1,
+        "eml": 1,
+        "html": 1,
+        "image_ocr": 1,
+        "jsonl": 1,
+        "odp": 1,
+        "ods": 1,
+        "odt": 1,
+        "pdf_ocr": 1,
+        "pptx": 1,
+        "rtf": 1,
+        "txt": 1,
+        "video_transcript": 1,
+        "xlsx": 1,
+        "xml": 1,
+        "zip": 1
+      },
+      "languageCounts": {
+        "mixed": 17
+      },
+      "metrics": {
+        "actualTypeAssertions": 48,
+        "caseCount": 17,
+        "expectedTypeAssertions": 48,
+        "falseNegativeTypeCount": 0,
+        "falsePositiveTypeCount": 0,
+        "matchedTypeAssertions": 48,
+        "perfectCaseCount": 17,
+        "typeF1": 1.0,
+        "typePrecision": 1.0,
+        "typeRecall": 1.0
+      },
+      "name": "generated_format_challenges"
+    }
+  ],
+  "totals": {
+    "actualTypeAssertions": 101,
+    "caseCount": 29,
+    "expectedTypeAssertions": 101,
+    "falseNegativeTypeCount": 0,
+    "falsePositiveTypeCount": 0,
+    "matchedTypeAssertions": 101,
+    "perfectCaseCount": 29,
+    "suiteCount": 2,
+    "typeF1": 1.0,
+    "typePrecision": 1.0,
+    "typeRecall": 1.0
+  }
+}

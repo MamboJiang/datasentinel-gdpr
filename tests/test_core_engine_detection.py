@@ -111,6 +111,22 @@ class CoreEngineDetectionTests(unittest.TestCase):
         self.assertNotIn("+1 415 555 0134", serialized)
         self.assertNotIn("1 Market St", serialized)
 
+    def test_contextual_labels_suppress_weaker_overlapping_regex_types(self) -> None:
+        text = (
+            "Bankkonto: DE89370400440532013000\n"
+            "Salaris: EUR 62000\n"
+            "BSN: 123456782\n"
+        )
+
+        signals = detect_signals(text)
+        signal_types = {signal["type"] for signal in signals}
+
+        self.assertIn("bank_account", signal_types)
+        self.assertIn("salary_compensation", signal_types)
+        self.assertIn("national_identifier", signal_types)
+        self.assertNotIn("iban_like", signal_types)
+        self.assertNotIn("expense_amount", signal_types)
+
     def test_signal_sanitizer_redacts_persisted_anchor_text(self) -> None:
         signal = {
             "type": "email",

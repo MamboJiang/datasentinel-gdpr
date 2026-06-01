@@ -70,6 +70,20 @@ REGEX_RULES = (
     RegexRule("account_handle", "account_handle_pattern", "[REDACTED_HANDLE]", USERNAME_RE, 0.7),
 )
 
+WEAKER_OVERLAP_SUPPRESSIONS = {
+    "expense_amount": {"salary_compensation"},
+    "iban_like": {"bank_account"},
+    "phone_number": {
+        "bank_account",
+        "date_of_birth",
+        "employee_id",
+        "national_identifier",
+        "passport_number",
+        "payment_card",
+        "tax_id",
+    },
+}
+
 def detect_signals(text: str) -> list[dict[str, Any]]:
     """Return public-safe signal records without raw adjacent source context."""
     scanned_text = text[:MAX_SIGNAL_SCAN_CHARS]
@@ -237,8 +251,26 @@ def _append_signal(signals: list[dict[str, Any]], seen: set[tuple[str, str]], si
         return
     if _overlaps_existing_signal(signal, signals):
         return
+    if _suppressed_by_contextual_overlap(signal, signals):
+        return
     seen.add(key)
     signals.append(signal)
+
+
+def _suppressed_by_contextual_overlap(signal: dict[str, Any], signals: list[dict[str, Any]]) -> bool:
+    blockers = WEAKER_OVERLAP_SUPPRESSIONS.get(str(signal.get("type")))
+    if not blockers:
+        return False
+    span = _signal_text_span(signal)
+    if not span:
+        return False
+    for existing in signals:
+        if existing.get("type") not in blockers:
+            continue
+        existing_span = _signal_text_span(existing)
+        if existing_span and existing_span[0] < span[1] and span[0] < existing_span[1]:
+            return True
+    return False
 
 
 def _signal(signal_type: str, detector: str, confidence: float, snippet: str, *, evidence_anchor: dict[str, Any] | None = None) -> dict[str, Any]:
