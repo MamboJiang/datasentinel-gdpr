@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from backend.datasentinel.source_http import build_sqlite_app
+from backend.lawdit.source_http import build_sqlite_app
 
 
 class SourceAssignmentPermissionTests(unittest.TestCase):
@@ -14,9 +14,9 @@ class SourceAssignmentPermissionTests(unittest.TestCase):
             root = Path(directory) / "source"
             root.mkdir()
             (root / "contacts.txt").write_text("Contact privacy.reviewer@example.org for the retention review.", encoding="utf-8")
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path, [root])
                 created = app.handle(
                     "POST",

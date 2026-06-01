@@ -69,7 +69,7 @@ import type {
   WorkspaceInvitation,
 } from '../types'
 
-const localMocksEnabled = import.meta.env.VITE_DATASENTINEL_ENABLE_LOCAL_MOCKS === 'true'
+const localMocksEnabled = import.meta.env.VITE_LAWDIT_ENABLE_LOCAL_MOCKS === 'true'
 const BACKGROUND_REFRESH_MS = 5000
 const RUNNING_SCAN_REFRESH_MS = 1000
 

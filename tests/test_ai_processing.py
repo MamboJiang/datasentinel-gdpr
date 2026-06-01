@@ -4,17 +4,17 @@ import json
 import unittest
 from decimal import Decimal
 
-from backend.datasentinel.ai_config import settings_from_env
-from backend.datasentinel.ai_gateway import AiBudgetGuard, AiRequestRejected, KeySnapshot, ModelPrice
-from backend.datasentinel.demo_state import DemoState
-from backend.datasentinel.processing_pipeline import (
+from backend.lawdit.ai_config import settings_from_env
+from backend.lawdit.ai_gateway import AiBudgetGuard, AiRequestRejected, KeySnapshot, ModelPrice
+from backend.lawdit.demo_state import DemoState
+from backend.lawdit.processing_pipeline import (
     AiRuntime,
     CandidateSafety,
     EvidenceSignal,
     ProcessingCandidate,
     build_tier_plan,
 )
-from backend.datasentinel.source_http import SourceHttpApp
+from backend.lawdit.source_http import SourceHttpApp
 
 
 class FakeProvider:
@@ -54,7 +54,7 @@ class AiProcessingTests(unittest.TestCase):
 
     def test_tier_plan_escalates_ambiguous_redacted_evidence(self) -> None:
         settings = settings_from_env({
-            "DATASENTINEL_AI_MODE": "assistive",
+            "LAWDIT_AI_MODE": "assistive",
             "OPENROUTER_API_KEY": "sk-test",
         })
         candidate = ProcessingCandidate(EvidenceSignal(
@@ -72,7 +72,7 @@ class AiProcessingTests(unittest.TestCase):
 
     def test_tier_plan_blocks_unredacted_ai_input(self) -> None:
         settings = settings_from_env({
-            "DATASENTINEL_AI_MODE": "assistive",
+            "LAWDIT_AI_MODE": "assistive",
             "OPENROUTER_API_KEY": "sk-test",
         })
         candidate = ProcessingCandidate(
@@ -92,9 +92,9 @@ class AiProcessingTests(unittest.TestCase):
 
     def test_budget_guard_blocks_after_project_cap(self) -> None:
         settings = settings_from_env({
-            "DATASENTINEL_AI_MODE": "assistive",
+            "LAWDIT_AI_MODE": "assistive",
             "OPENROUTER_API_KEY": "sk-test",
-            "DATASENTINEL_AI_BUDGET_USD": "25",
+            "LAWDIT_AI_BUDGET_USD": "25",
             "OPENROUTER_USAGE_BASELINE_USD": "10",
         })
         provider = FakeProvider(usage_usd=Decimal("34.99"))
@@ -107,9 +107,9 @@ class AiProcessingTests(unittest.TestCase):
 
     def test_budget_guard_fails_closed_when_usage_check_fails(self) -> None:
         settings = settings_from_env({
-            "DATASENTINEL_AI_MODE": "assistive",
+            "LAWDIT_AI_MODE": "assistive",
             "OPENROUTER_API_KEY": "sk-test",
-            "DATASENTINEL_AI_FAIL_CLOSED": "true",
+            "LAWDIT_AI_FAIL_CLOSED": "true",
         })
         guard = AiBudgetGuard(settings, FailingUsageProvider())
 
@@ -120,7 +120,7 @@ class AiProcessingTests(unittest.TestCase):
 
     def test_runtime_rejects_missing_deterministic_anchor(self) -> None:
         settings = settings_from_env({
-            "DATASENTINEL_AI_MODE": "assistive",
+            "LAWDIT_AI_MODE": "assistive",
             "OPENROUTER_API_KEY": "sk-test",
         })
         provider = FakeProvider()
@@ -133,7 +133,7 @@ class AiProcessingTests(unittest.TestCase):
 
     def test_runtime_rejects_missing_policy_context(self) -> None:
         settings = settings_from_env({
-            "DATASENTINEL_AI_MODE": "assistive",
+            "LAWDIT_AI_MODE": "assistive",
             "OPENROUTER_API_KEY": "sk-test",
         })
         provider = FakeProvider()
@@ -146,7 +146,7 @@ class AiProcessingTests(unittest.TestCase):
 
     def test_runtime_rejects_unredacted_evidence_before_provider_call(self) -> None:
         settings = settings_from_env({
-            "DATASENTINEL_AI_MODE": "assistive",
+            "LAWDIT_AI_MODE": "assistive",
             "OPENROUTER_API_KEY": "sk-test",
         })
         provider = FakeProvider()
@@ -159,7 +159,7 @@ class AiProcessingTests(unittest.TestCase):
 
     def test_runtime_counts_accepted_ai_calls(self) -> None:
         settings = settings_from_env({
-            "DATASENTINEL_AI_MODE": "assistive",
+            "LAWDIT_AI_MODE": "assistive",
             "OPENROUTER_API_KEY": "sk-test",
             "OPENROUTER_USAGE_BASELINE_USD": "0",
         })
@@ -182,9 +182,9 @@ class AiProcessingTests(unittest.TestCase):
 
     def test_health_exposes_ai_summary_without_secret(self) -> None:
         settings = settings_from_env({
-            "DATASENTINEL_AI_MODE": "assistive",
+            "LAWDIT_AI_MODE": "assistive",
             "OPENROUTER_API_KEY": "sk-test-secret",
-            "DATASENTINEL_AI_BUDGET_EUR": "25",
+            "LAWDIT_AI_BUDGET_EUR": "25",
         })
         runtime = AiRuntime(settings, FakeProvider())
         app = SourceHttpApp(demo_state=DemoState(ai_runtime=runtime))

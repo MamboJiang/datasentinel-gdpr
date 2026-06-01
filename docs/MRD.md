@@ -20,7 +20,7 @@
 
 ## Value Proposition
 
-DataSentinel GDPR should provide an evidence-backed workflow that connects data discovery, risk explanation, owner routing, human review, and audit reporting.
+lawdit GDPR should provide an evidence-backed workflow that connects data discovery, risk explanation, owner routing, human review, and audit reporting.
 
 The product should also provide an admin-operable governance layer: policy packs, organization model, permission boundaries, review support, and change previews.
 

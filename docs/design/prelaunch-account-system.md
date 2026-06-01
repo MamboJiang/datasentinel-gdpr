@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-DataSentinel needs real user sign-in before prelaunch so reviewers are not operating as a seeded demo actor. The system must support Google and GitHub login while keeping provider secrets and provider access tokens out of the browser.
+lawdit needs real user sign-in before prelaunch so reviewers are not operating as a seeded demo actor. The system must support Google and GitHub login while keeping provider secrets and provider access tokens out of the browser.
 
 ## Research Basis
 
@@ -52,7 +52,7 @@ Guards:
 
 - Provider must be one of `google` or `github`.
 - Provider client ID and secret must be configured.
-- `DATASENTINEL_SESSION_SECRET` must be configured before login can start.
+- `LAWDIT_SESSION_SECRET` must be configured before login can start.
 - Callback state must match the signed auth transaction cookie.
 - GitHub callback must supply the original PKCE verifier.
 - Google identity must include a stable `sub` claim and matching client ID audience.
@@ -88,7 +88,7 @@ Failure paths:
 
 Rollback path:
 
-1. Set `DATASENTINEL_AUTH_REQUIRED=false`.
+1. Set `LAWDIT_AUTH_REQUIRED=false`.
 2. Remove Google/GitHub client credentials from the runtime environment.
 3. Keep existing `/api` workflow endpoints available for local development.
 4. Delete local account/session rows from the SQLite file if needed; workflow state remains separate.

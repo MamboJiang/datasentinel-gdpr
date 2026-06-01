@@ -2,9 +2,9 @@
 
 ## Current Technical Scope
 
-This repository is initialized for documentation, collaboration, contract-first parallel delivery, and a controlled remote frontend plus P0 API preview. The approved technical baseline is the tolerant REST contract in `contracts/openapi.yaml`, its split schemas in `contracts/schemas/`, mock fixtures in `contracts/mocks/`, the local Python API server, optional local SQLite persistence for demo API state, the prelaunch Google/GitHub account boundary, the Workspace admin permission boundary, the optional OpenRouter AI assistive boundary, and the deployment path documented in `docs/DEPLOYMENT.md`.
+This repository is initialized for documentation, collaboration, contract-first parallel delivery, and a controlled remote frontend plus P0 API preview. The approved technical baseline is the tolerant REST contract in `contracts/openapi.yaml`, its split schemas in `contracts/schemas/`, mock fixtures in `contracts/mocks/`, the local Python API server, optional local SQLite persistence for demo API state, the public single-file upload-analysis entry, the prelaunch Google/GitHub account boundary, the Workspace admin permission boundary, the optional OpenRouter AI assistive boundary, and the deployment path documented in `docs/DEPLOYMENT.md`.
 
-No production database, queue, enterprise SSO, production RBAC, broad production file-source connector, or source-file deletion-capable deployment path is approved yet. The approved local storage boundary is the stdlib `sqlite3` file store documented in `docs/design/local-sqlite-persistence.md`; it is optional, local to the API process, and limited to restart-safe P0, prelaunch state, and local Workspace membership/invitation state. The approved external API boundaries are Google/GitHub OAuth for sign-in, Google Drive Picker and Drive API reads for user-selected files/folders, direct HTTPS text-like/PDF/email/Office/archive file reads, bounded host-local OCR for supported images and text-layer-missing PDFs, and the optional OpenRouter assistive AI path documented in `docs/design/openrouter-ai-processing.md`; OpenRouter is disabled unless explicitly configured and must not receive raw personal data.
+No production database, durable queue, enterprise SSO, production RBAC, broad production file-source connector, or source-file deletion-capable deployment path is approved yet. The approved local storage boundary is the stdlib `sqlite3` file store documented in `docs/design/local-sqlite-persistence.md`; it is optional, local to the API process, and limited to restart-safe P0, prelaunch state, and local Workspace membership/invitation state. The approved external API boundaries are Google/GitHub OAuth for sign-in, Google Drive Picker and Drive API reads for user-selected files/folders, direct HTTPS text-like/PDF/email/Office/archive file reads, bounded host-local OCR for supported images and text-layer-missing PDFs, and the optional OpenRouter assistive AI path documented in `docs/design/openrouter-ai-processing.md`; OpenRouter is disabled unless explicitly configured and must not receive raw personal data.
 
 ## Technical Principles
 
@@ -33,6 +33,22 @@ These are not approved implementation modules yet. They are candidate boundaries
 - Governance configuration boundary.
 - Permission boundary boundary.
 - Review support boundary.
+
+## Public Upload Analysis Entry Technical Boundary
+
+The public upload-analysis entry is an approved narrow boundary documented in `docs/design/public-upload-analysis-preview.md`.
+
+Technical constraints:
+
+- The intake boundary must enforce server-side file-size validation with a 10 MB maximum.
+- The capacity guard must allow no more than 10 active public analyses globally in the API process.
+- A browser analysis session may have only one active file analysis at a time.
+- Slot reservation and release must be explicit so rejected, failed, timed-out, and completed analyses do not leak capacity.
+- Client-side file checks may improve UX, but server-side validation is authoritative.
+- Raw uploaded file content must not appear in public payloads, logs, audit events, or long-lived result summaries.
+- The public routes are `/api/public-analysis/capacity` and `/api/public-analysis/analyze`.
+- The entry uses transient in-memory capacity state and synchronous request processing; it does not add a durable worker queue or public result store.
+- Results must use deterministic extraction and signal detection primitives and return only concise redacted summaries.
 
 ## Backend Post-Source Planning
 
@@ -89,10 +105,10 @@ The approved AI implementation is a backend boundary for optional assistive clas
 Technical constraints:
 
 - Normal P0 full-scan, delta-scan, review, audit, metrics, and evaluation flows remain deterministic and report zero model calls unless a redacted AI classification path is explicitly invoked.
-- AI calls require `DATASENTINEL_AI_MODE=assistive`, `OPENROUTER_API_KEY`, a configured model, and a passing budget preflight.
+- AI calls require `LAWDIT_AI_MODE=assistive`, `OPENROUTER_API_KEY`, a configured model, and a passing budget preflight.
 - The default model is `google/gemini-3.1-flash-lite` because current OpenRouter metadata shows no expiration, long context, and low-latency high-volume extraction positioning.
-- The budget guard uses `DATASENTINEL_AI_BUDGET_EUR=25.00`, a conservative `DATASENTINEL_AI_BUDGET_USD=25.00`, and optional `OPENROUTER_USAGE_BASELINE_USD` from OpenRouter key usage.
-- The AI path fails closed when OpenRouter usage cannot be checked and `DATASENTINEL_AI_FAIL_CLOSED=true`.
+- The budget guard uses `LAWDIT_AI_BUDGET_EUR=25.00`, a conservative `LAWDIT_AI_BUDGET_USD=25.00`, and optional `OPENROUTER_USAGE_BASELINE_USD` from OpenRouter key usage.
+- The AI path fails closed when OpenRouter usage cannot be checked and `LAWDIT_AI_FAIL_CLOSED=true`.
 - Source/policy context, OCR, grep-style deterministic stages, and policy-pack context must run before AI escalation. OCR is local or deferred; it must not trigger paid AI by itself.
 - External AI input must be redacted, anchored to deterministic evidence, and tied to active policy-pack context. Raw extracted text, file bodies, page images, credentials, tenant tokens, or unredacted personal data must not leave the process.
 - AI output is Atlas stage-4 operational context support only. It must not provide legal advice, claim full GDPR compliance, assign owners, decide permissions, invent audit facts, or issue deletion instructions.
@@ -109,7 +125,7 @@ Technical constraints:
 - The backend stores only local account profile and first-party session metadata.
 - The browser session is represented by an HttpOnly first-party cookie.
 - `/api/auth/providers`, `/api/auth/session`, and `/api/auth/logout` use the normal envelope shape; login and callback routes are redirects.
-- `DATASENTINEL_AUTH_REQUIRED=true` protects workflow endpoints in prelaunch deployments. Development can keep it false for local contract testing.
+- `LAWDIT_AUTH_REQUIRED=true` protects workflow endpoints in prelaunch deployments. Development can keep it false for local contract testing.
 - SQLite-backed prelaunch state uses the first-party session `userId` as the owner scope for Sources, scans, findings, audit events, metrics, and evaluation. Payload fields and compatibility headers must not override this owner scope.
 - Legacy global SQLite source and workflow rows are quarantined outside authenticated account scopes during schema migration.
 - Authentication does not change review permission boundaries, source connector permissions, deletion boundaries, or GDPR legal-advice constraints.
@@ -152,9 +168,9 @@ Technical constraints:
 - Workspace Admin permission can edit Source ownership metadata, but business review visibility is still based on finding assignment rather than admin membership.
 - The scanner reads source content into memory during scan execution and persists redacted evidence, finding, metric, and audit state only.
 - Google Workspace documents may be exported to text-like content; folder traversal is bounded by the prelaunch file limit.
-- PDF extraction prefers existing text layers through the prelaunch document-reader boundary; text-layer-missing PDFs may fall back to bounded host-local OCR when `DATASENTINEL_OCR_MODE=local`, `pdftoppm`, and Tesseract are available, otherwise OCR remains deferred. Image OCR and bounded PDF OCR can use Tesseract TSV word boxes to attach pixel `pageRegion` metadata to redacted evidence anchors without persisting raw OCR text or page images.
+- PDF extraction prefers existing text layers through the prelaunch document-reader boundary; text-layer-missing PDFs may fall back to bounded host-local OCR when `LAWDIT_OCR_MODE=local`, `pdftoppm`, and Tesseract are available, otherwise OCR remains deferred. Image OCR and bounded PDF OCR can use Tesseract TSV word boxes to attach pixel `pageRegion` metadata to redacted evidence anchors without persisting raw OCR text or page images.
 - Text-like extraction uses BOM/charset-aware stdlib Unicode decoding. XML extraction uses bounded stdlib XML parsing with public-safe ordinal structure paths; JSON/JSONL/NDJSON extraction uses bounded stdlib JSON parsing with public-safe ordinal structure paths; RTF extraction uses bounded local rich-text decoding for Unicode, hex escapes, and paragraph breaks; EML extraction uses bounded stdlib email parsing for selected headers and text/plain or text/html body parts while skipping attachments; ZIP extraction uses bounded stdlib archive parsing for supported non-archive members and wraps child anchors with ordinal member metadata; DOCX, XLSX, PPTX, ODT, ODS, and ODP extraction uses bounded stdlib ZIP/XML parsing; legacy DOC, XLS, and PPT extraction uses host-local LibreOffice headless conversion inside a temporary directory; all paths record recognition difficulty and do not call OpenRouter by default.
-- Source-registration deletion removes only DataSentinel metadata and must not mutate or delete source files in Google Drive, direct-link locations, or host-mounted roots.
+- Source-registration deletion removes only lawdit metadata and must not mutate or delete source files in Google Drive, direct-link locations, or host-mounted roots.
 - Production credential vaulting, background Drive crawling, Microsoft Graph, tenant-wide source discovery, file upload storage, broad parser/OCR expansion beyond bounded local image/PDF OCR, and source-file deletion integrations are not added in this slice.
 
 ## Context and Risk Judgment Technical Slice
@@ -311,7 +327,7 @@ Technical constraints:
 
 ## Remote Preview Deployment Technical Slice
 
-The approved deployment implementation is a frontend preview plus loopback P0 API server on `agent-us`. Caddy serves the Vite build from `/srv/datasentinel/frontend/current` and reverse-proxies `/api/*` to the Python API server. It is documented in `docs/design/remote-preview-deployment.md`, `docs/design/agent-us-api-server-integration.md`, and `docs/DEPLOYMENT.md`.
+The approved deployment implementation is a frontend preview plus loopback P0 API server on `agent-us`. Caddy serves the Vite build from `/srv/lawdit/frontend/current` and reverse-proxies `/api/*` to the Python API server. It is documented in `docs/design/remote-preview-deployment.md`, `docs/design/agent-us-api-server-integration.md`, and `docs/DEPLOYMENT.md`.
 
 Technical constraints:
 
@@ -331,7 +347,7 @@ Technical constraints:
 - The frontend calls `/api` first and falls back to local mock workflow only when the server is unavailable; `application/problem+json` command rejections remain server responses and must not trigger mock scanning.
 - Vite proxies `/api` to `127.0.0.1:8000` in development.
 - Caddy proxies `/api/*` to the loopback API process on `agent-us`.
-- `--db-path` or `DATASENTINEL_DB_PATH` may point the API server to a local SQLite file for restart-safe P0 state.
+- `--db-path` or `LAWDIT_DB_PATH` may point the API server to a local SQLite file for restart-safe P0 state.
 - Source connection checks may validate controlled mock and local demo sources but must not call production Microsoft Graph or external tenant APIs.
 - Scan and review commands must preserve no-raw-content, no-legal-conclusion, and no-real-deletion boundaries.
 - Python `http.server` is accepted only for this controlled P0 preview because official docs identify it as a basic server not recommended for production.

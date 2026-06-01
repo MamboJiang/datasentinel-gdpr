@@ -29,7 +29,7 @@ References: [Tesseract User Manual](https://tesseract-ocr.github.io/tessdoc/), [
 
 ## Selected Approach
 
-- Image files (`PNG`, `JPG/JPEG`, `TIFF`, `BMP`, `WEBP`) are scanned through local Tesseract when `DATASENTINEL_OCR_MODE=local` and the host binary is available. `DATASENTINEL_OCR_LANGS` may select installed Tesseract language packs for multilingual OCR; large configured language lists are split into bounded profiles so one slow/noisy all-language invocation cannot hide OCR output.
+- Image files (`PNG`, `JPG/JPEG`, `TIFF`, `BMP`, `WEBP`) are scanned through local Tesseract when `LAWDIT_OCR_MODE=local` and the host binary is available. `LAWDIT_OCR_LANGS` may select installed Tesseract language packs for multilingual OCR; large configured language lists are split into bounded profiles so one slow/noisy all-language invocation cannot hide OCR output.
 - PDF files are scanned through the text layer first. If no text layer is available, the scanner may rasterize a bounded page range through host-local `pdftoppm` and run the same local Tesseract OCR path. If a PDF has both text-layer pages and blank/scanned or image-bearing pages, bounded page OCR is attempted and the resulting document is reported as `pdf_mixed` when OCR adds text.
 - OCR capability reporting records mode, configured languages, Tesseract availability, `pdftoppm` availability, image OCR availability, and PDF OCR availability so deferred cases are explainable without reading source content.
 - Image OCR output is treated as extracted text only inside scan execution. Public payloads keep redacted evidence, source-local offsets, and optional pixel word-box metadata, not raw OCR text or raw images.
@@ -67,7 +67,7 @@ References: [Tesseract User Manual](https://tesseract-ocr.github.io/tessdoc/), [
 - Test corpus: scan reports may record OCR capability state, but must not include raw images, page images, OCR text, or detected raw values.
 - Frontend: Sources supported-file list and user-facing limitation text.
 - Contracts and docs: prelaunch source input acceptance, difficulty definitions, security notes, and test cases.
-- Deployment: hosts that should scan images need the `tesseract` binary installed. Hosts that should scan image-only PDFs need both `pdftoppm` and Tesseract installed with appropriate language data. Hosts that should scan raw video media need FFmpeg plus Tesseract. `DATASENTINEL_OCR_LANGS` should match installed Tesseract language packs.
+- Deployment: hosts that should scan images need the `tesseract` binary installed. Hosts that should scan image-only PDFs need both `pdftoppm` and Tesseract installed with appropriate language data. Hosts that should scan raw video media need FFmpeg plus Tesseract. `LAWDIT_OCR_LANGS` should match installed Tesseract language packs.
 
 ## Rollback Path
 

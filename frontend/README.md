@@ -1,6 +1,6 @@
-# DataSentinel Frontend
+# lawdit Frontend
 
-Contract-backed React frontend for the DataSentinel GDPR discovery prototype.
+Contract-backed React frontend for the lawdit GDPR discovery prototype.
 
 ## Run Locally
 

@@ -1,4 +1,4 @@
-"""Executable stdlib HTTP server for the DataSentinel demo API."""
+"""Executable stdlib HTTP server for the lawdit demo API."""
 
 from __future__ import annotations
 
@@ -15,8 +15,8 @@ from .source_http import SourceHttpApp, build_sqlite_app
 def make_handler(app: SourceHttpApp | None = None) -> type[BaseHTTPRequestHandler]:
     api = app or build_default_app()
 
-    class DataSentinelHandler(BaseHTTPRequestHandler):
-        server_version = "DataSentinelDemo/0.1"
+    class LawditHandler(BaseHTTPRequestHandler):
+        server_version = "LawditDemo/0.1"
 
         def do_OPTIONS(self) -> None:
             self._handle()
@@ -59,22 +59,22 @@ def make_handler(app: SourceHttpApp | None = None) -> type[BaseHTTPRequestHandle
         def log_message(self, format: str, *args: Any) -> None:
             return
 
-    return DataSentinelHandler
+    return LawditHandler
 
 
 def main() -> None:
     load_local_env()
-    parser = ArgumentParser(description="Run the DataSentinel local demo API server.")
+    parser = ArgumentParser(description="Run the lawdit local demo API server.")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", default=8000, type=int)
-    parser.add_argument("--db-path", default=os.environ.get("DATASENTINEL_DB_PATH"))
+    parser.add_argument("--db-path", default=os.environ.get("LAWDIT_DB_PATH"))
     parser.add_argument("--allowed-root", action="append", default=[], help="Absolute local source root allowed for prelaunch local scans.")
     args = parser.parse_args()
 
     app = build_sqlite_app(args.db_path, args.allowed_root) if args.db_path else SourceHttpApp.with_roots(args.allowed_root)
     server = ThreadingHTTPServer((args.host, args.port), make_handler(app))
     mode = f"SQLite state at {args.db_path}" if args.db_path else "in-memory state"
-    print(f"DataSentinel API listening on http://{args.host}:{args.port}/api/health ({mode})")
+    print(f"lawdit API listening on http://{args.host}:{args.port}/api/health ({mode})")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

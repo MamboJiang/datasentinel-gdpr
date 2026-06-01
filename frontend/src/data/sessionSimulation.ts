@@ -14,8 +14,8 @@ import {
 
 export const workspaceSimulation = {
   description: 'Privacy operations workspace',
-  id: 'datasentinel-gdpr',
-  name: 'DataSentinel GDPR',
+  id: 'lawdit-gdpr',
+  name: 'lawdit GDPR',
   plan: 'Prelaunch',
 }
 
@@ -43,7 +43,7 @@ export const utilityRoutes: UtilityRoute[] = [
     title: 'Feedback',
   },
   {
-    description: 'Return to the public DataSentinel homepage.',
+    description: 'Return to the public lawdit homepage.',
     icon: Home,
     label: 'Home Page',
     path: '/',
@@ -85,7 +85,7 @@ export const utilityRoutes: UtilityRoute[] = [
     title: 'Prototype Plan',
   },
   {
-    description: 'Review and clear the current DataSentinel session.',
+    description: 'Review and clear the current lawdit session.',
     icon: LogOut,
     label: 'Log Out',
     path: '/session',
@@ -160,7 +160,7 @@ export const changelogItems = [
 ]
 
 export const sessionBoundaries = [
-  'Log out clears the DataSentinel first-party session cookie.',
+  'Log out clears the lawdit first-party session cookie.',
   'Provider access tokens are not exposed to the browser.',
   'Log out does not revoke Google or GitHub consent; users manage provider access in the provider account settings.',
   'Authentication does not grant real deletion, tenant, source connector, or production authorization powers.',
@@ -179,5 +179,5 @@ export const fallbackUtilityRoute = {
   icon: FileQuestion,
   label: 'Utility',
   path: '/help',
-  title: 'DataSentinel',
+  title: 'lawdit',
 }

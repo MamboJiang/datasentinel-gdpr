@@ -77,7 +77,7 @@ type ProblemDetails = {
   traceId?: string
 }
 
-const apiBase = (import.meta.env.VITE_DATASENTINEL_API_BASE ?? '/api').replace(/\/$/, '')
+const apiBase = (import.meta.env.VITE_LAWDIT_API_BASE ?? '/api').replace(/\/$/, '')
 const actorId = 'user_demo_admin'
 
 export class ApiRequestError extends Error {

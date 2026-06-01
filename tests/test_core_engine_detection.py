@@ -8,14 +8,14 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from backend.datasentinel.deterministic_signals import detect_signals, sanitize_public_signal
-from backend.datasentinel.ocr_capabilities import ocr_capabilities
-from backend.datasentinel.signal_evidence_anchors import apply_source_locations
-from backend.datasentinel.source_documents import SourceDocument, SourceDocumentBatch
-from backend.datasentinel.source_format_recognition import DocumentExtractionIssue, build_document_batch, extract_document_content
-from backend.datasentinel.source_http import build_sqlite_app
-from backend.datasentinel.source_image_ocr import extract_image_text
-from backend.datasentinel.source_pdf_text import PdfExtractionIssue, PdfExtractionResult
+from backend.lawdit.deterministic_signals import detect_signals, sanitize_public_signal
+from backend.lawdit.ocr_capabilities import ocr_capabilities
+from backend.lawdit.signal_evidence_anchors import apply_source_locations
+from backend.lawdit.source_documents import SourceDocument, SourceDocumentBatch
+from backend.lawdit.source_format_recognition import DocumentExtractionIssue, build_document_batch, extract_document_content
+from backend.lawdit.source_http import build_sqlite_app
+from backend.lawdit.source_image_ocr import extract_image_text
+from backend.lawdit.source_pdf_text import PdfExtractionIssue, PdfExtractionResult
 
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "gdpr_data_samples_main"
@@ -195,7 +195,7 @@ class CoreEngineDetectionTests(unittest.TestCase):
             root = Path(directory) / "source"
             root.mkdir()
             (root / "placeholder.txt").write_text("placeholder", encoding="utf-8")
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
 
             def fake_reader(source: dict[str, object], payload: dict[str, object]) -> SourceDocumentBatch:
                 documents = [
@@ -218,7 +218,7 @@ class CoreEngineDetectionTests(unittest.TestCase):
                     extraction_method="fixture_multilingual_text",
                 )
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path, [root])
                 app.handle(
                     "POST",
@@ -234,7 +234,7 @@ class CoreEngineDetectionTests(unittest.TestCase):
                     "application/json",
                 )
                 app.handle("POST", "/api/sources/source_multilingual_cases/connect-test", "trace_multilingual_connect")
-                with mock.patch("backend.datasentinel.prelaunch_state.read_source_documents", fake_reader):
+                with mock.patch("backend.lawdit.prelaunch_state.read_source_documents", fake_reader):
                     started = app.handle(
                         "POST",
                         "/api/scans/full",
@@ -275,7 +275,7 @@ class CoreEngineDetectionTests(unittest.TestCase):
             root = Path(directory) / "source"
             root.mkdir()
             (root / "placeholder.pdf").write_bytes(b"%PDF-1.7")
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
 
             def fake_reader(source: dict[str, object], payload: dict[str, object]) -> SourceDocumentBatch:
                 document = SourceDocument(
@@ -299,7 +299,7 @@ class CoreEngineDetectionTests(unittest.TestCase):
                     extraction_method="fixture_pdf_text_layer",
                 )
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path, [root])
                 app.handle(
                     "POST",
@@ -315,7 +315,7 @@ class CoreEngineDetectionTests(unittest.TestCase):
                     "application/json",
                 )
                 app.handle("POST", "/api/sources/source_pdf_anchor/connect-test", "trace_pdf_anchor_connect")
-                with mock.patch("backend.datasentinel.prelaunch_state.read_source_documents", fake_reader):
+                with mock.patch("backend.lawdit.prelaunch_state.read_source_documents", fake_reader):
                     started = app.handle(
                         "POST",
                         "/api/scans/full",
@@ -349,7 +349,7 @@ class CoreEngineDetectionTests(unittest.TestCase):
                 self.pages = [mock.Mock(extract_text=lambda: "")]
 
         with mock.patch(
-            "backend.datasentinel.source_pdf_text._ocr_result",
+            "backend.lawdit.source_pdf_text._ocr_result",
             return_value=PdfExtractionResult(
                 ocr_text,
                 "pdf_ocr",
@@ -380,7 +380,7 @@ class CoreEngineDetectionTests(unittest.TestCase):
                 self.pages = [mock.Mock(extract_text=lambda: "")]
 
         with mock.patch(
-            "backend.datasentinel.source_pdf_text._ocr_result",
+            "backend.lawdit.source_pdf_text._ocr_result",
             side_effect=PdfExtractionIssue("scan.pdf requires PDF OCR, but pdftoppm is not installed on this host.", ocr_deferred=True),
         ):
             with self.assertRaises(DocumentExtractionIssue) as raised:
@@ -407,12 +407,12 @@ class CoreEngineDetectionTests(unittest.TestCase):
 
         with mock.patch.dict(
             "os.environ",
-            {"DATASENTINEL_OCR_MODE": "local", "DATASENTINEL_OCR_LANGS": "eng+chi_sim"},
+            {"LAWDIT_OCR_MODE": "local", "LAWDIT_OCR_LANGS": "eng+chi_sim"},
         ), mock.patch(
-            "backend.datasentinel.ocr_capabilities.shutil.which",
+            "backend.lawdit.ocr_capabilities.shutil.which",
             return_value="/usr/bin/tesseract",
         ), mock.patch(
-            "backend.datasentinel.source_image_ocr.subprocess.run",
+            "backend.lawdit.source_image_ocr.subprocess.run",
             return_value=completed,
         ) as run:
             text = extract_image_text(b"image-bytes", "badge.png")
@@ -443,12 +443,12 @@ class CoreEngineDetectionTests(unittest.TestCase):
         large_language_bundle = "eng+chi_sim+deu+fra+spa+por+ita+nld+pol+jpn+kor+ara"
         with mock.patch.dict(
             "os.environ",
-            {"DATASENTINEL_OCR_MODE": "local", "DATASENTINEL_OCR_LANGS": large_language_bundle},
+            {"LAWDIT_OCR_MODE": "local", "LAWDIT_OCR_LANGS": large_language_bundle},
         ), mock.patch(
-            "backend.datasentinel.ocr_capabilities.shutil.which",
+            "backend.lawdit.ocr_capabilities.shutil.which",
             return_value="/usr/bin/tesseract",
         ), mock.patch(
-            "backend.datasentinel.source_image_ocr.subprocess.run",
+            "backend.lawdit.source_image_ocr.subprocess.run",
             side_effect=fake_tesseract,
         ):
             text = extract_image_text(b"image-bytes", "large-language-bundle.png")
@@ -500,14 +500,14 @@ class CoreEngineDetectionTests(unittest.TestCase):
 
         with mock.patch.dict(
             "os.environ",
-            {"DATASENTINEL_OCR_MODE": "local", "DATASENTINEL_OCR_LANGS": "eng+chi_sim,deu"},
-        ), mock.patch("backend.datasentinel.ocr_capabilities.shutil.which", side_effect=fake_which):
+            {"LAWDIT_OCR_MODE": "local", "LAWDIT_OCR_LANGS": "eng+chi_sim,deu"},
+        ), mock.patch("backend.lawdit.ocr_capabilities.shutil.which", side_effect=fake_which):
             available = ocr_capabilities()
 
         with mock.patch.dict(
             "os.environ",
-            {"DATASENTINEL_OCR_MODE": "deferred", "DATASENTINEL_OCR_LANGS": "eng"},
-        ), mock.patch("backend.datasentinel.ocr_capabilities.shutil.which", side_effect=fake_which):
+            {"LAWDIT_OCR_MODE": "deferred", "LAWDIT_OCR_LANGS": "eng"},
+        ), mock.patch("backend.lawdit.ocr_capabilities.shutil.which", side_effect=fake_which):
             deferred = ocr_capabilities()
 
         self.assertEqual(available["ocrMode"], "local")

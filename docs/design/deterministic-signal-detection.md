@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-After inventory and extraction, DataSentinel needs an explicit deterministic signal-detection stage before context/risk judgment. The Atlas requires evidence-first discovery: rules should detect concrete evidence such as email addresses, employee IDs, government identifiers, online identifiers, location data, financial data, special-category indicators, signatures, access roles, reimbursement data, and feedback comments before risk, owner routing, or review guidance is shown.
+After inventory and extraction, lawdit needs an explicit deterministic signal-detection stage before context/risk judgment. The Atlas requires evidence-first discovery: rules should detect concrete evidence such as email addresses, employee IDs, government identifiers, online identifiers, location data, financial data, special-category indicators, signatures, access roles, reimbursement data, and feedback comments before risk, owner routing, or review guidance is shown.
 
 This P0 slice stays fixture-backed and deterministic. It does not add runtime parsers, OCR, NER, LLMs, production storage, Microsoft Graph, OAuth, tenant access, deletion, or a new public endpoint.
 

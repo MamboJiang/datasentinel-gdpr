@@ -65,7 +65,7 @@ class DemoState:
         self._refresh_ai_runtime_metadata()
 
     def health(self, trace_id: str) -> dict[str, Any]:
-        return response(200, envelope({"ok": True, "server": "datasentinel-agent-us", "ai": self.ai_runtime.summary()}, trace_id), trace_id)
+        return response(200, envelope({"ok": True, "server": "lawdit-agent-us", "ai": self.ai_runtime.summary()}, trace_id), trace_id)
 
     def get_scan(self, scan_id: str, trace_id: str, path: str) -> dict[str, Any]:
         self._finish_scan_if_ready()
@@ -285,10 +285,14 @@ class DemoState:
         )
 
     def _finding_detail(self, finding_id: str) -> dict[str, Any] | None:
-        if finding_id not in self.finding_details:
-            summary = next((item for item in self.findings if item["findingId"] == finding_id), None)
-            if summary:
-                self.finding_details[finding_id] = _fallback_finding_detail(summary)
+        summary = next((item for item in self.findings if item["findingId"] == finding_id), None)
+        detail = self.finding_details.get(finding_id)
+
+        if summary and (not detail or _detail_needs_redacted_context(detail)):
+            repaired_detail = _fallback_finding_detail(summary)
+            if detail:
+                _preserve_detail_runtime_state(repaired_detail, detail)
+            self.finding_details[finding_id] = repaired_detail
 
         finding = self.finding_details.get(finding_id)
         if finding:
@@ -497,6 +501,33 @@ def _fallback_finding_detail(summary: dict[str, Any]) -> dict[str, Any]:
         "auditTimeline": [_fallback_finding_audit(detail, policy_version)],
     })
     return detail
+
+
+def _detail_needs_redacted_context(detail: dict[str, Any]) -> bool:
+    expected_signal_count = int(detail.get("evidenceSignalCount") or 0)
+    signals = detail.get("signals")
+    return (
+        expected_signal_count > 0
+        and not (isinstance(signals, list) and len(signals) > 0)
+        or not detail.get("riskExplanation")
+        or not isinstance(detail.get("file"), dict)
+        or not isinstance(detail.get("policyContext"), dict)
+        or not isinstance(detail.get("auditTimeline"), list)
+    )
+
+
+def _preserve_detail_runtime_state(repaired_detail: dict[str, Any], existing_detail: dict[str, Any]) -> None:
+    for field in ("status", "retentionStatus", "owner", "availableActions", "deniedActions"):
+        if field in existing_detail:
+            repaired_detail[field] = copy.deepcopy(existing_detail[field])
+
+    signals = existing_detail.get("signals")
+    if isinstance(signals, list) and signals:
+        repaired_detail["signals"] = copy.deepcopy(signals)
+
+    audit_timeline = existing_detail.get("auditTimeline")
+    if isinstance(audit_timeline, list) and audit_timeline:
+        repaired_detail["auditTimeline"] = copy.deepcopy(audit_timeline)
 
 
 def _redacted_mock_signal(finding_id: str, signal_type: str, index: int) -> dict[str, Any]:

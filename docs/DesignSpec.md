@@ -33,14 +33,15 @@ The future product experience should make GDPR data cleanup feel like an account
 - Give users a clear sense of their permission boundary before they act.
 - Make reviewer guidance operational through checklists, available decisions, transfer options, and escalation options.
 - Separate authentication from authorization: Google/GitHub sign-in identifies the browser user, while permission boundaries still decide available workflow actions.
-- Let users point DataSentinel at real files without implying that raw source files are uploaded into long-term product storage.
+- Let users point lawdit at real files without implying that raw source files are uploaded into long-term product storage.
+- Keep the public upload analysis entry bounded by visible file-size, one-active-file, and global active-analysis limits before analysis begins.
 
 ## P0 Information Architecture
 
 | Surface | Purpose |
 | --- | --- |
-| Public Project Homepage | Introduce DataSentinel, explain the workflow, and link into the internal dashboard without showing the app shell. |
-| Sign-In Gate | Present a minimal centered login surface with DataSentinel branding, only Google and GitHub branded provider buttons, and short setup status when providers are unavailable. |
+| Public Project Homepage | Introduce lawdit, explain the workflow, and link into the internal dashboard without showing the app shell. |
+| Sign-In Gate | Present a minimal centered login surface with lawdit branding, only Google and GitHub branded provider buttons, and short setup status when providers are unavailable. |
 | App Shell, Workspace, and Account Menus | Show a page-title-focused top bar that can render route hierarchy with clickable non-current levels, keep an interactive session notification center and auto-dismissing latest-message preview, keep workspace context and current membership groups in the top-left sidebar control, keep authenticated account controls in the bottom-left sidebar menu, and support sidebar collapse. |
 | Workspace Admin | Show compact member and group summaries, compact invite-link rows, permission boundaries, management charts, Workspace profile settings for name/introduction, and the Danger Zone as the final page section with concise operational copy; member and group panels link to dedicated admin subpages. |
 | Workspace Members | Let admins browse all Workspace members with search, filters, grouping, and sorting by group, status, join date, and last activity. |
@@ -56,6 +57,22 @@ The future product experience should make GDPR data cleanup feel like an account
 | Governance Settings | Show active policy pack, organization model, source adapters, and change controls. |
 | Permission Boundary | Show allowed actions, denied actions, visible scopes, and denial reasons. |
 | AI Processing Boundary | Show whether optional OpenRouter review support is disabled, missing a key, configured, or budget-blocked without exposing secrets or raw content. |
+| Public Upload Analysis Entry | Website surface for one uploaded file, a short redacted result, one active file per browser analysis session, 10 MB file limit, live capacity data, optional processing-stage detail, and 10 global active analyses in the API process. |
+
+## Public Upload Analysis Entry
+
+The public analysis entry is documented in `docs/design/public-upload-analysis-preview.md` and is implemented as a narrow website entrypoint, not a full Workspace review console.
+
+Design constraints:
+
+- The upload entry must state the one-file, 10 MB, and capacity boundaries before submission.
+- Capacity indicators must come from `/api/public-analysis/capacity`, not static homepage copy.
+- The upload entry must explain its website analysis boundary in production-quality copy and explain that the full governed workflow lives in the Workspace.
+- A nearby Workspace link must point users to `/dashboard` for governed source setup, owner routing, review decisions, audit trails, and evaluation.
+- Oversized, duplicate-active, capacity-full, unsupported, failed, completed, and start-over states must be visible without implying data loss or deletion.
+- A short result may summarize detected categories, redacted evidence indicators, and suggested next steps; it must not become a full review console.
+- The public analysis entry must remain visually and behaviorally separate from the signed-in Workspace console.
+- The UI must not show raw sensitive values, legal conclusions, full-compliance claims, automatic deletion, production tenant access, or hidden permission powers.
 
 ## Reviewer-Friendly Requirements
 
@@ -115,8 +132,8 @@ The source-input interaction is documented in `docs/design/google-drive-source-i
 - Direct HTTPS links are treated as one-file sources and must show connection or scan errors when the URL fails policy checks.
 - PDF files prefer an extractable text layer and may fall back to bounded local PDF OCR when host tooling is available; XML, JSON/JSONL/NDJSON, and HTML/HTM are accepted through bounded structure extraction; RTF is accepted through bounded rich-text extraction; EML is accepted through bounded RFC 5322/MIME text extraction; ZIP archives are accepted through bounded non-recursive member extraction; DOCX, XLSX, and PPTX are accepted through deterministic Office Open XML extraction; legacy DOC, XLS, and PPT are accepted through bounded host-local LibreOffice conversion; ODT, ODS, and ODP are accepted through bounded OpenDocument extraction; image files are scanned through local OCR when available; VTT/SRT transcripts are scanned as video transcript text; bounded raw video media is sampled into temporary frames through host-local FFmpeg and scanned through local OCR when available; unreadable PDFs, missing OCR tooling, missing FFmpeg, missing LibreOffice, nested archives, and over-limit media remain OCR-deferred or unsupported in prelaunch.
 - The Sources page shows the current prelaunch supported file-type list below the source table or empty state.
-- The UI states that DataSentinel reads source content during scan execution and stores metadata, redacted evidence, findings, and audit events.
-- Source deletion removes the registration from DataSentinel state and must not claim to delete external files.
+- The UI states that lawdit reads source content during scan execution and stores metadata, redacted evidence, findings, and audit events.
+- Source deletion removes the registration from lawdit state and must not claim to delete external files.
 - Source setup and empty states must avoid fake prefilled source rows or seeded findings in prelaunch mode.
 - The UI must avoid raw source content, provider tokens, client secrets, legal conclusions, deletion execution, and broad tenant-access claims.
 
@@ -232,7 +249,7 @@ The incremental delta-scan interaction connects a completed baseline to changed-
 - Running delta state shows `comparing_delta_baseline` before changed-file inventory and extraction.
 - Delta summary shows baseline scan ID, changed, new, modified, unchanged, and missing file counts when available.
 - Completed delta state shows changed-file findings with the delta scan ID while unchanged baseline files are carried forward.
-- Missing files are presented as source inventory changes, not DataSentinel deletion or proof of erasure.
+- Missing files are presented as source inventory changes, not lawdit deletion or proof of erasure.
 - The UI must avoid legal conclusions, raw source content, unredacted personal data, hidden permission decisions, production connector assumptions, and deletion execution.
 
 ## Admin Metrics Aggregation Interaction

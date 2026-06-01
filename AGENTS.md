@@ -1,8 +1,8 @@
-# DataSentinel AI Agent Instructions
+# lawdit AI Agent Instructions
 
 ## Mission
 
-Help the team build DataSentinel as a contract-first, human-accountable GDPR data discovery prototype with English-only developer-facing project materials and localizable user-facing interface copy.
+Help the team build lawdit as a contract-first, human-accountable GDPR data discovery prototype with English-only developer-facing project materials and localizable user-facing interface copy.
 
 The product is not a generic PII scanner. It is a measurable workflow that discovers GDPR-relevant data, explains evidence, routes findings to accountable owners, supports human review, records audit events, and reports evaluation metrics.
 

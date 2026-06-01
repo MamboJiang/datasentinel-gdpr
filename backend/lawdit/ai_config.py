@@ -1,4 +1,4 @@
-"""AI runtime configuration for the local DataSentinel server."""
+"""AI runtime configuration for the local lawdit server."""
 
 from __future__ import annotations
 
@@ -131,24 +131,24 @@ class AiSettings:
 def settings_from_env(env: Mapping[str, str] | None = None) -> AiSettings:
     values = env or os.environ
     return AiSettings(
-        mode=_text(values, "DATASENTINEL_AI_MODE", "off").lower(),
+        mode=_text(values, "LAWDIT_AI_MODE", "off").lower(),
         openrouter=OpenRouterSettings(
             api_key=_secret(values, "OPENROUTER_API_KEY"),
             model=_text(values, "OPENROUTER_MODEL", DEFAULT_MODEL),
             site_url=_text(values, "OPENROUTER_SITE_URL", "https://founder-force.uk/"),
-            app_title=_text(values, "OPENROUTER_APP_TITLE", "DataSentinel GDPR"),
+            app_title=_text(values, "OPENROUTER_APP_TITLE", "lawdit GDPR"),
         ),
         budget=AiBudgetSettings(
-            budget_eur=_decimal(values, "DATASENTINEL_AI_BUDGET_EUR", "25.00"),
-            budget_usd=_decimal(values, "DATASENTINEL_AI_BUDGET_USD", "25.00"),
+            budget_eur=_decimal(values, "LAWDIT_AI_BUDGET_EUR", "25.00"),
+            budget_usd=_decimal(values, "LAWDIT_AI_BUDGET_USD", "25.00"),
             baseline_usage_usd=_optional_decimal(values, "OPENROUTER_USAGE_BASELINE_USD"),
-            fail_closed=_boolean(values, "DATASENTINEL_AI_FAIL_CLOSED", True),
+            fail_closed=_boolean(values, "LAWDIT_AI_FAIL_CLOSED", True),
         ),
         runtime=AiRuntimeSettings(
-            max_prompt_tokens=_integer(values, "DATASENTINEL_AI_MAX_PROMPT_TOKENS", 6000),
-            max_completion_tokens=_integer(values, "DATASENTINEL_AI_MAX_COMPLETION_TOKENS", 350),
-            request_timeout_seconds=float(_decimal(values, "DATASENTINEL_AI_TIMEOUT_SECONDS", "20")),
-            ocr_mode=_text(values, "DATASENTINEL_OCR_MODE", "local").lower(),
+            max_prompt_tokens=_integer(values, "LAWDIT_AI_MAX_PROMPT_TOKENS", 6000),
+            max_completion_tokens=_integer(values, "LAWDIT_AI_MAX_COMPLETION_TOKENS", 350),
+            request_timeout_seconds=float(_decimal(values, "LAWDIT_AI_TIMEOUT_SECONDS", "20")),
+            ocr_mode=_text(values, "LAWDIT_OCR_MODE", "local").lower(),
         ),
     )
 

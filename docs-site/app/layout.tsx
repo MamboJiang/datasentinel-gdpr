@@ -5,10 +5,10 @@ import './global.css'
 
 export const metadata: Metadata = {
   title: {
-    default: 'DataSentinel User Guide',
-    template: '%s | DataSentinel User Guide',
+    default: 'lawdit User Guide',
+    template: '%s | lawdit User Guide',
   },
-  description: 'Task-oriented user documentation for the DataSentinel GDPR discovery prototype.',
+  description: 'Task-oriented user documentation for the lawdit GDPR discovery prototype.',
 }
 
 export default function Layout({ children }: { children: ReactNode }) {

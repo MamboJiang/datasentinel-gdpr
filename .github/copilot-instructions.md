@@ -1,4 +1,4 @@
-# DataSentinel Coding Instructions
+# lawdit Coding Instructions
 
 Read these files before generating project code:
 

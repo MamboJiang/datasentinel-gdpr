@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-DataSentinel needs an explicit evaluation stage after admin metrics aggregation. The current workflow exposes evaluation values, but the quality metrics must be generated from an auditable basis rather than treated as disconnected constants. The stage must show whether the scanner is measurable, reproducible, operationally affordable, and connected to accountable human review.
+lawdit needs an explicit evaluation stage after admin metrics aggregation. The current workflow exposes evaluation values, but the quality metrics must be generated from an auditable basis rather than treated as disconnected constants. The stage must show whether the scanner is measurable, reproducible, operationally affordable, and connected to accountable human review.
 
 The repository Atlas reference in `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md` frames evaluation as proof that the system understands precision, recall, file-type and scenario variation, reproducibility, scan speed, resource intensity, review throughput, and risk reduction. This slice implements that requirement for the deterministic P0 mock workflow.
 

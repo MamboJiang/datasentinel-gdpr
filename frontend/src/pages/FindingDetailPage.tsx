@@ -6,7 +6,7 @@ import type { ReviewDecision } from '../types'
 import { formatBytes, formatDate, humanize } from '../components/formatters'
 import { FileReviewEditor } from '../components/FileReviewEditor'
 import { safeFindingSourceLabel } from '../components/findingDisplay'
-import { canOpenEvidenceReview, evidenceReviewDeniedReason } from './findingDetailAccess'
+import { canOpenEvidenceReview, evidenceReviewDeniedReason, hasRenderableFindingDetail } from './findingDetailAccess'
 import {
   Button,
   EmptyState,
@@ -21,15 +21,41 @@ export function FindingDetailPage() {
   const [reviewOpen, setReviewOpen] = useState(false)
   const [fileReviewOpen, setFileReviewOpen] = useState(false)
   const [initialSignalIndex, setInitialSignalIndex] = useState(0)
+  const [unavailableFindingId, setUnavailableFindingId] = useState<string | null>(null)
+  const detailReady = hasRenderableFindingDetail(finding)
 
   useEffect(() => {
+    let active = true
+
     if (findingId) {
-      void loadFinding(findingId)
+      void loadFinding(findingId).then((loadedFinding) => {
+        if (!active) {
+          return
+        }
+
+        setUnavailableFindingId(hasRenderableFindingDetail(loadedFinding) ? null : findingId)
+      })
+    }
+
+    return () => {
+      active = false
     }
   }, [findingId, loadFinding])
 
+  if (!findingId) {
+    return <EmptyState title="Finding not available" />
+  }
+
+  if (!detailReady && unavailableFindingId !== findingId) {
+    return <EmptyState title="Loading finding detail" description="Redacted evidence and audit context are being loaded for this finding." />
+  }
+
   if (!finding) {
     return <EmptyState title="Finding not available" />
+  }
+
+  if (!detailReady) {
+    return <EmptyState title="Finding detail unavailable" description="The list row loaded, but the evidence card for this finding is not available inside the current data boundary." />
   }
 
   const reviewSupport = getReviewSupport(finding.findingId)

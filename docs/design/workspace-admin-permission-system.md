@@ -2,16 +2,16 @@
 
 ## Problem Definition
 
-DataSentinel has prelaunch account sign-in, but an account is not the same thing as a workspace identity. The product needs a workspace-scoped administration surface so accountable administrators can invite people, assign user groups, inspect permission boundaries, and review operational charts for the workspace.
+lawdit has prelaunch account sign-in, but an account is not the same thing as a workspace identity. The product needs a workspace-scoped administration surface so accountable administrators can invite people, assign user groups, inspect permission boundaries, and review operational charts for the workspace.
 
 The P0 implementation must prove the workflow without adding production tenant provisioning, enterprise SSO, Microsoft Graph directory sync, billing, or deletion powers.
 
 ## Research Basis
 
-- NIST RBAC defines access control through users, roles, permissions, operations, objects, and role activation in a session. DataSentinel uses that basis by assigning workspace members to groups that carry explicit workspace permissions instead of assigning broad rights directly to every account. Reference: https://csrc.nist.gov/Projects/role-based-access-control/faqs
-- NIST's RBAC project summary describes the RBAC reference model as user assignment, permission assignment, roles, permissions, operations, and objects. DataSentinel maps users to workspace memberships, roles to workspace groups, permissions to allowed workspace actions, and objects to workspace-scoped sources, findings, admin screens, invitations, and governance records. Reference: https://csrc.nist.gov/Projects/Role-Based-Access-Control
-- OWASP access-control guidance recommends deny-by-default and least privilege. DataSentinel keeps unaffiliated accounts workspace-less by default, exposes denied actions with reasons, and requires explicit invitation acceptance before workspace access. Reference: https://devguide.owasp.org/en/04-design/02-web-app-checklist/07-access-controls/
-- OWASP's least-privilege principle says access should be limited to the minimum required. DataSentinel therefore separates workspace administrators, privacy reviewers, data stewards, and auditors instead of granting every signed-in account admin access. Reference: https://owasp.org/www-community/controls/Least_Privilege_Principle
+- NIST RBAC defines access control through users, roles, permissions, operations, objects, and role activation in a session. lawdit uses that basis by assigning workspace members to groups that carry explicit workspace permissions instead of assigning broad rights directly to every account. Reference: https://csrc.nist.gov/Projects/role-based-access-control/faqs
+- NIST's RBAC project summary describes the RBAC reference model as user assignment, permission assignment, roles, permissions, operations, and objects. lawdit maps users to workspace memberships, roles to workspace groups, permissions to allowed workspace actions, and objects to workspace-scoped sources, findings, admin screens, invitations, and governance records. Reference: https://csrc.nist.gov/Projects/Role-Based-Access-Control
+- OWASP access-control guidance recommends deny-by-default and least privilege. lawdit keeps unaffiliated accounts workspace-less by default, exposes denied actions with reasons, and requires explicit invitation acceptance before workspace access. Reference: https://devguide.owasp.org/en/04-design/02-web-app-checklist/07-access-controls/
+- OWASP's least-privilege principle says access should be limited to the minimum required. lawdit therefore separates workspace administrators, privacy reviewers, data stewards, and auditors instead of granting every signed-in account admin access. Reference: https://owasp.org/www-community/controls/Least_Privilege_Principle
 
 ## Detailed Plan
 

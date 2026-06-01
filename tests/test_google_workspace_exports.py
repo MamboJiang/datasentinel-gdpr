@@ -7,7 +7,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from backend.datasentinel.source_http import build_sqlite_app
+from backend.lawdit.source_http import build_sqlite_app
 
 
 GOOGLE_DOC_MIME = "application/vnd.google-apps.document"
@@ -18,15 +18,15 @@ GOOGLE_SLIDES_MIME = "application/vnd.google-apps.presentation"
 class GoogleWorkspaceExportTests(unittest.TestCase):
     def test_drive_workspace_exports_report_real_formats_and_redacted_anchors(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             fake_client = _FakeDriveClientFactory()
 
             with mock.patch.dict("os.environ", {
-                "DATASENTINEL_ENABLE_DEMO_FIXTURES": "false",
+                "LAWDIT_ENABLE_DEMO_FIXTURES": "false",
                 "GOOGLE_CLIENT_ID": "google-client-id",
                 "GOOGLE_PICKER_API_KEY": "picker-public-key",
                 "GOOGLE_CLOUD_PROJECT_NUMBER": "1234567890",
-            }), mock.patch("backend.datasentinel.source_documents.DriveFileClient", fake_client):
+            }), mock.patch("backend.lawdit.source_documents.DriveFileClient", fake_client):
                 app = build_sqlite_app(db_path)
                 created = app.handle(
                     "POST",

@@ -4,10 +4,10 @@ import json
 import unittest
 from unittest import mock
 
-from backend.datasentinel.deterministic_signals import detect_signals
-from backend.datasentinel.signal_evidence_anchors import apply_source_locations
-from backend.datasentinel.source_format_recognition import extract_document_content
-from backend.datasentinel.source_pdf_text import PdfExtractionIssue
+from backend.lawdit.deterministic_signals import detect_signals
+from backend.lawdit.signal_evidence_anchors import apply_source_locations
+from backend.lawdit.source_format_recognition import extract_document_content
+from backend.lawdit.source_pdf_text import PdfExtractionIssue
 
 
 class PdfRegionAnchorTests(unittest.TestCase):
@@ -30,7 +30,7 @@ class PdfRegionAnchorTests(unittest.TestCase):
                 self.pages = [ImageTextPage()]
 
         with mock.patch(
-            "backend.datasentinel.source_pdf_text._ocr_selected_page_records",
+            "backend.lawdit.source_pdf_text._ocr_selected_page_records",
             side_effect=PdfExtractionIssue("pdftoppm is not installed on this host.", ocr_deferred=True),
         ):
             extracted = extract_document_content(
@@ -92,7 +92,7 @@ class PdfRegionAnchorTests(unittest.TestCase):
         }
 
         with mock.patch(
-            "backend.datasentinel.source_pdf_text._ocr_selected_page_records",
+            "backend.lawdit.source_pdf_text._ocr_selected_page_records",
             return_value=ocr_records,
         ) as ocr:
             extracted = extract_document_content(
@@ -161,7 +161,7 @@ class PdfRegionAnchorTests(unittest.TestCase):
         }
 
         with mock.patch(
-            "backend.datasentinel.source_pdf_text._ocr_selected_page_records",
+            "backend.lawdit.source_pdf_text._ocr_selected_page_records",
             return_value=ocr_records,
         ) as ocr:
             extracted = extract_document_content(

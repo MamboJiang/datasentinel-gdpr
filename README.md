@@ -1,6 +1,6 @@
-# DataSentinel GDPR
+# lawdit GDPR
 
-DataSentinel GDPR is a hackathon project concept for GDPR-relevant data discovery and accountable cleanup workflows.
+lawdit GDPR is a hackathon project concept for GDPR-relevant data discovery and accountable cleanup workflows.
 
 The project goal is to help an organization identify, classify, route, review, and audit personal-data findings across distributed file sources such as OneDrive, SharePoint, shared drives, and local sample repositories.
 

@@ -16,15 +16,15 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from backend.datasentinel.deterministic_signals import (
+from backend.lawdit.deterministic_signals import (
     MAX_SIGNAL_SCAN_CHARS,
     MAX_SIGNALS_PER_DOCUMENT,
     detect_signals,
 )
-from backend.datasentinel.ocr_capabilities import ocr_capabilities
-from backend.datasentinel.signal_evidence_anchors import apply_source_locations
-from backend.datasentinel.source_size_limits import MAX_COMPLEX_DOCUMENT_BYTES, MAX_DOCUMENT_BYTES, MAX_SOURCE_FILES
-from backend.datasentinel.source_format_recognition import DocumentExtractionIssue, extract_document_content
+from backend.lawdit.ocr_capabilities import ocr_capabilities
+from backend.lawdit.signal_evidence_anchors import apply_source_locations
+from backend.lawdit.source_size_limits import MAX_COMPLEX_DOCUMENT_BYTES, MAX_DOCUMENT_BYTES, MAX_SOURCE_FILES
+from backend.lawdit.source_format_recognition import DocumentExtractionIssue, extract_document_content
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "gdpr_data_samples_main"
 DEFAULT_OUTPUT = FIXTURE_DIR / "core_engine_performance_report.json"

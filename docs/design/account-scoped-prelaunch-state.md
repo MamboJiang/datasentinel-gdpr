@@ -35,7 +35,7 @@ session_expired -> request_rejected
 
 Guards:
 
-- Protected prelaunch routes require a valid first-party session when `DATASENTINEL_AUTH_REQUIRED=true`.
+- Protected prelaunch routes require a valid first-party session when `LAWDIT_AUTH_REQUIRED=true`.
 - The session `userId` is the only owner scope for SQLite-backed prelaunch state.
 - A request cannot supply or override `owner_id` through payload fields or headers.
 

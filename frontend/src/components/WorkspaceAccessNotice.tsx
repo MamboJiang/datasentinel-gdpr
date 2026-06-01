@@ -14,7 +14,7 @@ export function WorkspaceAccessNotice() {
       <p className="eyebrow">Workspace required</p>
       <h2>No Workspace membership yet</h2>
       <p>
-        This account is signed in, but DataSentinel operations require Workspace membership. Create a Workspace to become its admin, or open an invite link from an existing Workspace admin.
+        This account is signed in, but lawdit operations require Workspace membership. Create a Workspace to become its admin, or open an invite link from an existing Workspace admin.
       </p>
       <button className="workspace-access-create" onClick={() => setCreateOpen(true)} type="button">
         Create Workspace

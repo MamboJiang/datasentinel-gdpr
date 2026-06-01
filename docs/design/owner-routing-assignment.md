@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-After context and risk judgment, DataSentinel must route each review-required finding to an accountable owner or escalation path. The stage must preserve continuity from evidence, context, risk, and policy guidance while making accountability visible before human review begins.
+After context and risk judgment, lawdit must route each review-required finding to an accountable owner or escalation path. The stage must preserve continuity from evidence, context, risk, and policy guidance while making accountability visible before human review begins.
 
 This P0 slice is deterministic and fixture-backed. It extends the existing scan workflow after `judging_context_risk` and before scan completion. It does not add production identity, Microsoft Graph, OAuth, notification, deletion, or tenant integrations.
 
@@ -31,7 +31,7 @@ Out of scope:
 - GDPR Article 5(2) establishes accountability, so review work must have an attributable owner rather than an anonymous system queue.
 - GDPR Article 24 requires controller responsibility measures that account for nature, scope, context, purpose, risk, and implementation cost, which supports a configurable organization model instead of hard-coded owners.
 - GDPR Article 32 frames controls around state of the art, implementation cost, and risk, which supports a deterministic, low-cost P0 stage before any production identity integration.
-- GDPR Article 35 and EDPB DPIA guidance treat high-risk processing as a structured assessment topic; DataSentinel routes high-risk findings for human review instead of issuing legal conclusions.
+- GDPR Article 35 and EDPB DPIA guidance treat high-risk processing as a structured assessment topic; lawdit routes high-risk findings for human review instead of issuing legal conclusions.
 
 References:
 

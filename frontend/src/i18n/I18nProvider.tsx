@@ -3,7 +3,7 @@ import { I18nContext, type I18nValue } from './context'
 import { defaultLanguagePreferenceCode, isLanguagePreferenceCode, type LanguagePreferenceCode } from './languages'
 import { selectedTemplates, supplementalTranslations, translations } from './translations'
 
-const storageKey = 'datasentinel-language-preference'
+const storageKey = 'lawdit-language-preference'
 
 function getStoredLanguagePreference(): LanguagePreferenceCode {
   if (typeof window === 'undefined') {

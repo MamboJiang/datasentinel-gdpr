@@ -1,0 +1,747 @@
+.landing-section {
+  padding: 112px 6vw;
+}
+
+.landing-section-copy {
+  max-width: 760px;
+}
+
+.landing-section h2,
+.landing-final h2 {
+  font-size: 3.1rem;
+  font-weight: 740;
+  line-height: 1.05;
+}
+
+.landing-section-copy p,
+.landing-governance-copy p,
+.landing-evaluation-board p {
+  color: var(--landing-muted);
+  font-size: 1.04rem;
+  line-height: 1.7;
+  margin-top: 18px;
+}
+
+.landing-workflow-layout {
+  align-items: stretch;
+  display: grid;
+  gap: 64px;
+  grid-template-columns: minmax(300px, .7fr) minmax(0, 1fr);
+  isolation: isolate;
+  margin-top: 54px;
+  position: relative;
+  z-index: 1;
+}
+
+.landing-workflow {
+  isolation: isolate;
+  overflow: hidden;
+  position: relative;
+}
+
+.landing-workflow .landing-section-copy {
+  color: var(--landing-ink);
+  opacity: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.landing-workflow .landing-section-copy p {
+  color: var(--landing-muted);
+  opacity: 1;
+}
+
+.landing-workflow-depth-grid {
+  background-image:
+    linear-gradient(to right, rgba(11, 87, 208, .045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(43, 66, 92, .04) 1px, transparent 1px);
+  background-size: 92px 92px;
+  inset: -120px 0 -80px;
+  mask-image: linear-gradient(to bottom, transparent, black 18%, black 72%, transparent);
+  opacity: .56;
+  pointer-events: none;
+  position: absolute;
+  will-change: transform;
+  z-index: 0;
+}
+
+.landing-workflow-visual {
+  background:
+    linear-gradient(to right, rgba(255, 255, 255, .062) 1.25px, transparent 1.25px),
+    linear-gradient(to bottom, rgba(255, 255, 255, .052) 1.25px, transparent 1.25px),
+    radial-gradient(circle at 46% 18%, rgba(110, 123, 255, .18), transparent 34%),
+    radial-gradient(circle at 52% 76%, rgba(11, 87, 208, .16), transparent 38%),
+    linear-gradient(145deg, #07090f, #111723 54%, #080a10);
+  background-size: 44px 44px, 44px 44px, auto, auto, auto;
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(138, 180, 255, .22);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(24, 24, 28, .08);
+  color: var(--landing-ink);
+  display: flex;
+  flex-direction: column;
+  height: 620px;
+  justify-content: space-between;
+  min-height: 620px;
+  overflow: hidden;
+  padding: 34px 40px;
+  position: relative;
+}
+
+.landing-workflow-visual-hint {
+  color: #edf4ff;
+  display: block;
+  font-size: .72rem;
+  font-weight: 760;
+  letter-spacing: .08em;
+  margin-bottom: 0;
+  padding: 0;
+  position: relative;
+  text-align: left;
+  text-transform: uppercase;
+  z-index: 12;
+}
+
+.landing-workflow-phase-stack {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  height: calc(100% - 42px);
+  justify-content: space-between;
+  margin-top: 24px;
+  position: relative;
+  z-index: 10;
+}
+
+.landing-workflow-flow-item {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 10;
+}
+
+.landing-workflow-flow-item:last-child {
+  margin-bottom: 0;
+}
+
+.landing-workflow-flow-item:nth-of-type(odd) {
+  justify-items: start;
+}
+
+.landing-workflow-flow-item:nth-of-type(even) {
+  justify-items: end;
+}
+
+.landing-workflow-node {
+  --workflow-node-glow-angle: 0deg;
+  align-items: center;
+  appearance: none;
+  background: rgba(255, 255, 255, .94);
+  border: 1px solid rgba(214, 224, 238, .88);
+  border-radius: 8px;
+  color: #1f2f42;
+  cursor: pointer;
+  display: flex;
+  font-size: .86rem;
+  font-weight: 730;
+  height: 54px;
+  isolation: isolate;
+  justify-content: center;
+  overflow: visible;
+  position: relative;
+  transition: background .45s ease, border-color .45s ease, box-shadow .45s ease, color .45s ease, transform .45s ease;
+  width: min(86%, 348px);
+  z-index: 10;
+}
+
+.landing-workflow-node span {
+  position: relative;
+  z-index: 2;
+}
+
+.landing-workflow-node:hover:not(.landing-workflow-node-active) {
+  background: #f8fafc;
+  border-color: rgba(43, 66, 92, .34);
+  box-shadow: 0 12px 28px rgba(43, 66, 92, .13);
+  color: #1f2f42;
+  animation: landing-workflow-node-hover-breathe 1.8s ease-in-out infinite;
+  transform: translateY(-2px) scale(1.018);
+}
+
+.landing-workflow-node-active {
+  background: #111827;
+  border-color: rgba(255, 255, 255, .08);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, .18);
+  color: #ffffff;
+  text-shadow: none;
+  transform: scale(1.02);
+}
+
+.landing-workflow-node-active::before,
+.landing-workflow-node-active::after {
+  animation: landing-workflow-node-glow-spin 3.4s linear infinite;
+  border-radius: inherit;
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  transition: opacity .3s ease;
+}
+
+.landing-workflow-node-active::before {
+  background:
+    conic-gradient(
+      from var(--workflow-node-glow-angle) at 50% 50%,
+      transparent 0deg,
+      transparent 204deg,
+      rgba(148, 163, 184, .28) 226deg,
+      rgba(255, 255, 255, .94) 250deg,
+      rgba(96, 165, 250, .82) 274deg,
+      rgba(168, 85, 247, .46) 298deg,
+      transparent 326deg,
+      transparent 360deg
+    );
+  inset: -2px;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  padding: 2px;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  z-index: 1;
+  opacity: .76;
+}
+
+.landing-workflow-node-active::after {
+  background:
+    conic-gradient(
+      from var(--workflow-node-glow-angle) at 50% 50%,
+      transparent 0deg,
+      transparent 210deg,
+      rgba(255, 255, 255, .34) 238deg,
+      rgba(96, 165, 250, .5) 266deg,
+      rgba(168, 85, 247, .3) 296deg,
+      transparent 330deg,
+      transparent 360deg
+    );
+  filter: blur(8px);
+  inset: -12px;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  mix-blend-mode: screen;
+  padding: 10px;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  z-index: 0;
+  opacity: .3;
+}
+
+.landing-workflow-node-active:hover {
+  animation: landing-workflow-node-active-breathe 1.8s ease-in-out infinite;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, .22);
+}
+
+.landing-workflow-node-active:hover::before {
+  opacity: .86;
+}
+
+.landing-workflow-node-active:hover::after {
+  opacity: .42;
+}
+
+@keyframes landing-workflow-node-glow-spin {
+  to {
+    --workflow-node-glow-angle: 360deg;
+  }
+}
+
+@keyframes landing-workflow-node-hover-breathe {
+  0%, 100% {
+    transform: translateY(-2px) scale(1.018);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.034);
+  }
+}
+
+@keyframes landing-workflow-node-active-breathe {
+  0%, 100% {
+    transform: translateY(0) scale(1.02);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.038);
+  }
+}
+
+.landing-workflow-steps-shell {
+  height: 620px;
+  min-height: 620px;
+  position: relative;
+}
+
+.landing-workflow-switch {
+  align-items: center;
+  animation-duration: 2.4s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+  background: transparent;
+  border: 0;
+  color: #2f4a67;
+  cursor: pointer;
+  display: inline-flex;
+  height: 52px;
+  justify-content: center;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  transition: color .3s ease, opacity .3s ease, transform .3s ease;
+  width: 52px;
+  z-index: 3;
+}
+
+.landing-workflow-switch:hover {
+  color: var(--landing-ink);
+}
+
+.landing-workflow-switch svg {
+  transform: rotate(-90deg);
+  width: 34px;
+  height: 34px;
+}
+
+.landing-workflow-switch-bottom svg {
+  transform: rotate(90deg);
+}
+
+.landing-workflow-switch-top {
+  animation-name: landing-workflow-arrow-float-up;
+  top: 10px;
+}
+
+.landing-workflow-switch-bottom {
+  animation-name: landing-workflow-arrow-float-down;
+  bottom: 10px;
+}
+
+.landing-workflow-steps {
+  animation: landing-workflow-panel-in .5s ease both;
+  background: rgba(255, 255, 255, .98);
+  border: 1px solid rgba(222, 222, 222, .74);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(24, 24, 28, .06);
+  display: grid;
+  gap: 18px;
+  height: 100%;
+  min-height: 620px;
+  overflow: hidden;
+  padding: 30px 26px;
+}
+
+.landing-workflow-steps-shell-overview .landing-workflow-steps {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.landing-workflow-steps-shell-detail .landing-workflow-steps {
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  padding: 28px 26px 24px;
+}
+
+.landing-workflow-panel-top {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.landing-workflow-phase-label {
+  color: #2f4a67;
+  font-size: .72rem;
+  font-weight: 760;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.landing-workflow-back {
+  background: transparent;
+  border: 0;
+  color: #4e5965;
+  cursor: pointer;
+  font-size: .78rem;
+  font-weight: 730;
+  padding: 0;
+  transition: color .3s ease;
+}
+
+.landing-workflow-back:hover {
+  color: var(--landing-ink);
+}
+
+.landing-workflow-overview-grid {
+  display: grid;
+  gap: 12px 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-height: 0;
+  overflow: auto;
+  padding: 2px 4px 4px 0;
+  scrollbar-width: thin;
+}
+
+.landing-workflow-step {
+  align-items: center;
+  animation: landing-workflow-step-in .5s ease both;
+  animation-delay: var(--workflow-step-delay, 0ms);
+  appearance: none;
+  background: rgba(255, 255, 255, .54);
+  border-radius: 8px;
+  border: 1px solid rgba(222, 222, 222, .68);
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 22px;
+  grid-template-columns: 50px minmax(0, 1fr);
+  min-height: 94px;
+  padding: 18px 20px;
+  text-align: left;
+  transition: background .45s ease, box-shadow .45s ease, border-color .45s ease, transform .45s ease;
+  width: 100%;
+  will-change: transform, opacity;
+}
+
+.landing-workflow-overview-step {
+  gap: 14px;
+  grid-template-columns: 40px minmax(0, 1fr);
+  min-height: 84px;
+  padding: 14px 16px;
+}
+
+.landing-workflow-overview-step:first-of-type {
+  background: rgba(255, 255, 255, .76);
+}
+
+.landing-workflow-overview-step strong {
+  font-size: .9rem;
+  line-height: 1.24;
+}
+
+.landing-workflow-step:hover {
+  background: linear-gradient(135deg, rgba(43, 66, 92, .12), rgba(79, 111, 111, .08));
+  border-color: rgba(43, 66, 92, .26);
+  box-shadow: 0 16px 38px rgba(43, 66, 92, .13);
+  transform: translateX(4px);
+}
+
+.landing-workflow-step span {
+  color: #2f4a67;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: .82rem;
+  font-weight: 760;
+  transition: color .3s ease, transform .3s ease;
+}
+
+.landing-workflow-step:hover span {
+  color: #4f6f6f;
+  transform: scale(1.08);
+}
+
+.landing-workflow-overview-step small {
+  color: #64748b;
+  display: block;
+  font-size: .66rem;
+  font-weight: 760;
+  letter-spacing: .06em;
+  margin-top: 8px;
+  text-transform: uppercase;
+}
+
+.landing-workflow-step p {
+  color: #363a3f;
+  font-size: .92rem;
+  line-height: 1.58;
+  margin-top: 6px;
+}
+
+.landing-workflow-step strong {
+  color: var(--landing-ink);
+  display: block;
+  font-size: .96rem;
+}
+
+.landing-workflow-detail-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.landing-workflow-detail-header div {
+  align-items: baseline;
+  display: flex;
+  gap: 12px;
+}
+
+.landing-workflow-detail-header strong {
+  color: var(--landing-ink);
+  font-family: var(--landing-mono);
+  font-size: .9rem;
+  letter-spacing: .06em;
+}
+
+.landing-workflow-detail-summary {
+  animation: landing-workflow-step-in .5s ease both;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .78);
+  padding: 20px;
+}
+
+.landing-workflow-detail-summary > span {
+  color: #64748b;
+  display: block;
+  font-size: .68rem;
+  font-weight: 780;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.landing-workflow-detail-summary h3 {
+  color: var(--landing-ink);
+  font-size: 1.22rem;
+  line-height: 1.28;
+  margin-top: 8px;
+  max-width: 660px;
+}
+
+.landing-workflow-detail-summary dl {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 18px 0 0;
+}
+
+.landing-workflow-detail-summary div {
+  background: rgba(255, 255, 255, .9);
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.landing-workflow-detail-summary dt {
+  color: #64748b;
+  font-size: .66rem;
+  font-weight: 780;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.landing-workflow-detail-summary dd {
+  color: #334155;
+  font-size: .88rem;
+  line-height: 1.5;
+  margin: 6px 0 0;
+}
+
+.landing-workflow-detail-step-grid {
+  align-content: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  min-height: 0;
+  overflow: auto;
+  padding: 2px 4px 4px 0;
+  scrollbar-width: thin;
+}
+
+.landing-workflow-detail-step {
+  animation: landing-workflow-step-in .5s ease both;
+  animation-delay: var(--workflow-step-delay, 0ms);
+  background: rgba(255, 255, 255, .99);
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .06);
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 44px minmax(0, 1fr);
+  min-height: 150px;
+  padding: 18px;
+}
+
+.landing-workflow-detail-step > span {
+  color: #2f4a67;
+  font-family: var(--landing-mono);
+  font-size: .82rem;
+  font-weight: 760;
+  padding-top: 4px;
+}
+
+.landing-workflow-detail-step strong {
+  color: var(--landing-ink);
+  display: block;
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+.landing-workflow-detail-step p {
+  color: #334155;
+  font-size: .92rem;
+  line-height: 1.55;
+  margin-top: 8px;
+}
+
+.landing-workflow-detail-step small {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  color: #475569;
+  display: inline-flex;
+  font-size: .66rem;
+  font-weight: 760;
+  letter-spacing: .06em;
+  margin-top: 14px;
+  padding: 6px 10px;
+  text-transform: uppercase;
+}
+
+.landing-workflow-detail-footer {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding-top: 16px;
+}
+
+.landing-workflow-phase-control {
+  background: #111827;
+  border: 1px solid #111827;
+  border-radius: 999px;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: .72rem;
+  font-weight: 760;
+  letter-spacing: .04em;
+  min-height: 36px;
+  padding: 0 14px;
+  transition: background .3s ease, border-color .3s ease, color .3s ease, opacity .3s ease, transform .3s ease;
+}
+
+.landing-workflow-phase-control:hover:not(:disabled) {
+  background: #1f2937;
+  border-color: #1f2937;
+  transform: translateY(-1px);
+}
+
+.landing-workflow-phase-control:disabled {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+  cursor: default;
+  opacity: .82;
+}
+
+.landing-workflow-mini-timeline {
+  align-items: center;
+  display: inline-flex;
+  gap: 7px;
+  justify-content: center;
+}
+
+.landing-workflow-mini-timeline button {
+  appearance: none;
+  background: #cbd5e1;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  height: 7px;
+  padding: 0;
+  transition: background .3s ease, transform .3s ease, width .3s ease;
+  width: 7px;
+}
+
+.landing-workflow-mini-timeline button:hover,
+.landing-workflow-mini-timeline .landing-workflow-mini-dot-active {
+  background: #111827;
+  transform: scale(1.08);
+  width: 22px;
+}
+
+@keyframes landing-workflow-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landing-workflow-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes landing-workflow-arrow-float-up {
+  0%, 100% {
+    opacity: .72;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-6px);
+  }
+}
+
+@keyframes landing-workflow-arrow-float-down {
+  0%, 100% {
+    opacity: .72;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-workflow-node,
+  .landing-workflow-switch,
+  .landing-workflow-step,
+  .landing-workflow-step span,
+  .landing-workflow-detail-step,
+  .landing-workflow-phase-control,
+  .landing-workflow-mini-timeline button {
+    transition: none;
+  }
+
+  .landing-workflow-node-active,
+  .landing-workflow-step:hover,
+  .landing-workflow-step:hover span,
+  .landing-workflow-phase-control:hover:not(:disabled),
+  .landing-workflow-mini-timeline button:hover {
+    transform: none;
+  }
+
+.landing-workflow-steps,
+  .landing-workflow-switch,
+  .landing-workflow-step,
+  .landing-workflow-detail-summary,
+  .landing-workflow-detail-step {
+    animation: none;
+  }
+
+  .landing-true-focus-word,
+  .landing-true-focus-word::before {
+    animation: none;
+    filter: none;
+    opacity: 1;
+    transition: none;
+  }
+}

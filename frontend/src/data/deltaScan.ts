@@ -110,7 +110,7 @@ function buildDeltaWarnings(state: DeltaScanState, unchangedFiles: number): stri
     warnings.push(`${unchangedFiles} unchanged baseline files are carried forward without being rescanned.`)
   }
 
-  warnings.push('Missing baseline files are represented as source inventory changes, not DataSentinel deletion.')
+  warnings.push('Missing baseline files are represented as source inventory changes, not lawdit deletion.')
 
   return warnings
 }

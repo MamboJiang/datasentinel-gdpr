@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-DataSentinel has detailed engineering, contract, and acceptance documents, but users need a task-oriented guide that explains how to operate the prototype without reading API contracts or implementation notes.
+lawdit has detailed engineering, contract, and acceptance documents, but users need a task-oriented guide that explains how to operate the prototype without reading API contracts or implementation notes.
 
 The new documentation surface must help users understand the workflow from sign-in and Workspace selection through source registration, scanning, findings review, audit inspection, evaluation, governance, and safety boundaries.
 
@@ -76,7 +76,7 @@ The rollback does not require database migration, contract version changes, or s
 - The docs homepage renders without the docs sidebar, and nested docs pages retain sidebar navigation.
 - The quick-start page presents the first review loop as a short checklist rather than long prose.
 - Quick Start, Sources, Dashboard and Scans, Findings and Review, and Audit and Evaluation include screenshots and tables that make visible fields, metrics, and next actions easier to scan.
-- User-facing documentation states that DataSentinel does not provide legal advice or full GDPR compliance claims.
+- User-facing documentation states that lawdit does not provide legal advice or full GDPR compliance claims.
 - User-facing documentation states that deletion is simulated in P0 and external files are not deleted.
 - User-facing documentation explains redacted evidence, visible permission boundaries, audit events, evaluation metrics, and Workspace scoping.
 - The docs content does not invent API fields, endpoints, production integrations, real deletion, production Microsoft Graph access, or hidden permission powers.

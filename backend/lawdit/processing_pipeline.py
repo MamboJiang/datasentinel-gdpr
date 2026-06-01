@@ -147,7 +147,7 @@ class AiRuntime:
             {
                 "role": "system",
                 "content": (
-                    "Support DataSentinel's GDPR Enterprise Expert Atlas workflow using only redacted "
+                    "Support lawdit's GDPR Enterprise Expert Atlas workflow using only redacted "
                     "deterministic evidence and policy-pack context. Return concise JSON with "
                     "contextCategory, riskHint, reviewRationale, uncertainty, and humanReviewRequired. "
                     "Do not provide legal advice, compliance claims, owner assignment, permission "

@@ -5,10 +5,10 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from backend.datasentinel.deterministic_signals import detect_signals
-from backend.datasentinel.signal_evidence_anchors import apply_source_locations
-from backend.datasentinel.source_documents import read_source_documents
-from backend.datasentinel.source_format_recognition import extract_document_content
+from backend.lawdit.deterministic_signals import detect_signals
+from backend.lawdit.signal_evidence_anchors import apply_source_locations
+from backend.lawdit.source_documents import read_source_documents
+from backend.lawdit.source_format_recognition import extract_document_content
 
 
 class JsonStructureAnchorTests(unittest.TestCase):

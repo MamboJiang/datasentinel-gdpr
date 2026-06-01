@@ -1,4 +1,4 @@
-"""DataSentinel demo backend API."""
+"""lawdit demo backend API."""
 
 from .ai_config import (
     AiBudgetSettings,

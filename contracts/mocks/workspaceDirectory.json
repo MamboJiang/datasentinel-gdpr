@@ -5,12 +5,12 @@
       "displayName": "Demo Workspace Admin",
       "email": "demo.admin@example.invalid"
     },
-    "currentWorkspaceId": "ws_datasentinel_gdpr",
+    "currentWorkspaceId": "ws_lawdit_gdpr",
     "workspaces": [
       {
-        "workspaceId": "ws_datasentinel_gdpr",
-        "name": "DataSentinel GDPR",
-        "slug": "datasentinel-gdpr",
+        "workspaceId": "ws_lawdit_gdpr",
+        "name": "lawdit GDPR",
+        "slug": "lawdit-gdpr",
         "status": "active",
         "plan": "Prelaunch",
         "headerLabel": "Prelaunch",

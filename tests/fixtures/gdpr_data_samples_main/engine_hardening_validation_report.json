@@ -90,9 +90,9 @@
     }
   },
   "agentUsDeployment": {
-    "appRelease": "/srv/datasentinel/app/releases/20260601012839-scan-refresh-detail",
-    "frontendRelease": "/srv/datasentinel/frontend/releases/20260601012839-scan-refresh-detail",
-    "apiService": "datasentinel-api.service",
+    "appRelease": "/srv/lawdit/app/releases/20260601012839-scan-refresh-detail",
+    "frontendRelease": "/srv/lawdit/frontend/releases/20260601012839-scan-refresh-detail",
+    "apiService": "lawdit-api.service",
     "apiServiceState": "active",
     "publicHealthUrl": "https://founder-force.uk/api/health",
     "publicSourcesUrl": "https://founder-force.uk/sources",
@@ -120,12 +120,12 @@
       "cssAsset": "assets/index-DjlCto_3.css"
     },
     "remoteBackendTests": {
-      "command": "cd /srv/datasentinel/app/current && python3 -m unittest discover -s tests -p 'test*.py'",
+      "command": "cd /srv/lawdit/app/current && python3 -m unittest discover -s tests -p 'test*.py'",
       "result": "passed",
       "testCount": 129
     },
     "remoteFormatRuntimeTests": {
-      "command": "cd /srv/datasentinel/app/current && python3 -m unittest tests.test_legacy_office_runtime tests.test_format_recognition tests.test_video_frame_ocr_runtime tests.test_table_cell_anchors tests.test_markdown_extraction tests.test_pdf_region_anchors tests.test_source_review_preview",
+      "command": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_legacy_office_runtime tests.test_format_recognition tests.test_video_frame_ocr_runtime tests.test_table_cell_anchors tests.test_markdown_extraction tests.test_pdf_region_anchors tests.test_source_review_preview",
       "result": "passed",
       "testCount": 18,
       "skippedCount": 0
@@ -173,7 +173,7 @@
     ]
   },
   "agentUsRealOcrSmoke": {
-    "command": "Generate temporary synthetic PNG and image-only PDF on agent-us, then run extract_document_content, detect_signals, and apply_source_locations with DATASENTINEL_OCR_MODE=local.",
+    "command": "Generate temporary synthetic PNG and image-only PDF on agent-us, then run extract_document_content, detect_signals, and apply_source_locations with LAWDIT_OCR_MODE=local.",
     "result": "passed",
     "rawFixturePersisted": false,
     "rawValuePrinted": false,
@@ -209,7 +209,7 @@
       "testCount": 34
     },
     "agentUsTargetedTests": {
-      "command": "cd /srv/datasentinel/app/current && python3 -m unittest tests.test_core_engine_detection tests.test_ocr_region_anchors tests.test_signal_detection_bounds tests.test_markdown_extraction tests.test_table_cell_anchors tests.test_pdf_region_anchors tests.test_text_decoding tests.test_source_review_preview",
+      "command": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_core_engine_detection tests.test_ocr_region_anchors tests.test_signal_detection_bounds tests.test_markdown_extraction tests.test_table_cell_anchors tests.test_pdf_region_anchors tests.test_text_decoding tests.test_source_review_preview",
       "result": "passed",
       "testCount": 34
     },
@@ -305,7 +305,7 @@
       "result": "skipped",
       "reason": "Local workstation lacks Tesseract."
     },
-    "agentUsRuntimeTest": "cd /srv/datasentinel/app/current && python3 -m unittest tests.test_video_frame_ocr_runtime tests.test_format_recognition",
+    "agentUsRuntimeTest": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_video_frame_ocr_runtime tests.test_format_recognition",
     "fixturePolicy": "The MP4 fixture is generated in a temporary directory from synthetic text during the runtime test and is not persisted.",
     "fileFormat": "video_ocr",
     "extractionMethod": "ffmpeg_frame_tesseract_ocr",
@@ -332,7 +332,7 @@
       "result": "skipped",
       "reason": "Local workstation lacks LibreOffice."
     },
-    "agentUsRuntimeTest": "cd /srv/datasentinel/app/current && python3 -m unittest tests.test_legacy_office_runtime tests.test_format_recognition",
+    "agentUsRuntimeTest": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_legacy_office_runtime tests.test_format_recognition",
     "fixturePolicy": "The legacy DOC fixture is generated in a temporary directory during the runtime test and is not persisted.",
     "fileFormats": [
       "doc",
@@ -391,7 +391,7 @@
       "screenshotArtifact": "tests/fixtures/gdpr_data_samples_main/artifacts/source_review_context_window_local.jpg",
       "screenshotSha256": "76a1fe8cca13984fdb8ffd285918e0fd0d7875f1e3ab4ec06d0bf1d255ef8887"
     },
-    "agentUsBackendTest": "cd /srv/datasentinel/app/current && python3 -m unittest tests.test_source_review_preview tests.test_backend_api_server",
+    "agentUsBackendTest": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_source_review_preview tests.test_backend_api_server",
     "frontendAssetCheck": {
       "publicFindingUrl": "https://founder-force.uk/findings/finding_001",
       "publicFindingUiAuthGated": true,

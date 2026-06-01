@@ -7,8 +7,8 @@ import unittest
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from backend.datasentinel.source_documents import SourceDocument, SourceDocumentBatch
-from backend.datasentinel.source_http import build_sqlite_app
+from backend.lawdit.source_documents import SourceDocument, SourceDocumentBatch
+from backend.lawdit.source_http import build_sqlite_app
 
 
 class PrelaunchScanAcceptanceTests(unittest.TestCase):
@@ -17,7 +17,7 @@ class PrelaunchScanAcceptanceTests(unittest.TestCase):
             root = Path(directory) / "source"
             root.mkdir()
             (root / "contacts.txt").write_text("placeholder", encoding="utf-8")
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
 
             def slow_reader(source: dict[str, object], payload: dict[str, object]) -> SourceDocumentBatch:
                 time.sleep(0.35)
@@ -31,7 +31,7 @@ class PrelaunchScanAcceptanceTests(unittest.TestCase):
                     extraction_method="plain_text",
                 )
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path, [root])
                 app.handle(
                     "POST",
@@ -48,7 +48,7 @@ class PrelaunchScanAcceptanceTests(unittest.TestCase):
                 )
                 app.handle("POST", "/api/sources/source_slow_acceptance/connect-test", "trace_acceptance_connect")
 
-                with mock.patch("backend.datasentinel.prelaunch_state.read_source_documents", slow_reader):
+                with mock.patch("backend.lawdit.prelaunch_state.read_source_documents", slow_reader):
                     started_at = time.monotonic()
                     started = app.handle(
                         "POST",

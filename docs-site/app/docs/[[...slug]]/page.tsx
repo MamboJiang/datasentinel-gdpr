@@ -32,7 +32,7 @@ export default async function Page({ params }: PageProps) {
 
   if (isHome) {
     return (
-      <main className="ds-home-shell">
+      <main className="ld-home-shell">
         <MDX components={mdxComponents} />
       </main>
     )

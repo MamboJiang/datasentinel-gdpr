@@ -27,7 +27,7 @@ export function AccountPage() {
   const driveConnected = Boolean(googleDriveBinding?.connected)
 
   async function disconnectDriveBinding() {
-    if (!window.confirm('Disconnect Google Drive from this DataSentinel account? Existing source registrations will stay, but scans will need a new binding or Picker authorization.')) {
+    if (!window.confirm('Disconnect Google Drive from this lawdit account? Existing source registrations will stay, but scans will need a new binding or Picker authorization.')) {
       return
     }
 
@@ -364,7 +364,7 @@ export function SessionBoundaryPage() {
       <PageHeader
         eyebrow="Session"
         title="Session boundary"
-        description="Sign out clears the DataSentinel session cookie. Provider revocation remains managed by Google or GitHub."
+        description="Sign out clears the lawdit session cookie. Provider revocation remains managed by Google or GitHub."
       />
       <section className="panel">
         <div className="support-list">

@@ -2,13 +2,13 @@
 
 ## Problem Definition
 
-The root route currently behaves like an internal operations dashboard. The project also needs a public-facing homepage that explains DataSentinel as a GDPR data discovery and review workflow before a user enters the product workspace.
+The root route currently behaves like an internal operations dashboard. The project also needs a public-facing homepage that explains lawdit as a GDPR data discovery and review workflow before a user enters the product workspace.
 
 ## Research Basis
 
 - `greensock/gsap-skills` documents GSAP as the recommended animation engine for scroll-driven React animations and points to ScrollTrigger for parallax, scrubbed motion, and pinned sections.
 - GSAP ScrollTrigger documentation defines `trigger`, `start`, `end`, `scrub`, `pin`, and cleanup-sensitive scroll animation patterns.
-- The Tailscale reference uses a minimal announcement bar, simple navigation, large product headline, and product-category strip. DataSentinel should borrow the structural clarity, not the exact visual execution.
+- The Tailscale reference uses a minimal announcement bar, simple navigation, large product headline, and product-category strip. lawdit should borrow the structural clarity, not the exact visual execution.
 
 ## Options
 
@@ -43,7 +43,7 @@ Restore the root route to `DashboardPage`, point sidebar navigation back to `/`,
 
 ## Primitive Acceptance Criteria
 
-- Visiting `/` shows a public DataSentinel project homepage, not the internal dashboard shell.
+- Visiting `/` shows a public lawdit project homepage, not the internal dashboard shell.
 - The homepage introduces GDPR data discovery, evidence, owner routing, human review, audit trails, and evaluation without claiming full legal compliance.
 - A user can navigate from the homepage to the internal dashboard at `/dashboard`.
 - Scroll movement animates product-scene layers when reduced motion is not requested.

@@ -1,6 +1,6 @@
-# DataSentinel User Docs
+# lawdit User Docs
 
-This directory contains the Fumadocs-powered user documentation site for DataSentinel.
+This directory contains the Fumadocs-powered user documentation site for lawdit.
 
 ## Local Commands
 

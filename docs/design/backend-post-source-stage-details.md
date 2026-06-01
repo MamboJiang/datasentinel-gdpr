@@ -266,7 +266,7 @@ Exit criteria:
 
 - A delta scan can represent changed-file-only processing.
 - Unchanged files are not treated as newly scanned findings unless their policy context changes.
-- Missing files do not imply deletion by DataSentinel; they are represented as source inventory changes.
+- Missing files do not imply deletion by lawdit; they are represented as source inventory changes.
 
 ## Step 11: Admin Metrics Aggregation
 

@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 import unittest
 
-from backend.datasentinel.auth import AUTH_TX_COOKIE, SESSION_COOKIE, AuthService, InMemoryAuthStore
-from backend.datasentinel.auth_support import cookie_value, unsign
-from backend.datasentinel.google_drive_binding import GoogleDriveBindingService
-from backend.datasentinel.source_http import SourceHttpApp
+from backend.lawdit.auth import AUTH_TX_COOKIE, SESSION_COOKIE, AuthService, InMemoryAuthStore
+from backend.lawdit.auth_support import cookie_value, unsign
+from backend.lawdit.google_drive_binding import GoogleDriveBindingService
+from backend.lawdit.source_http import SourceHttpApp
 
 
 class FakeOAuthTransport:

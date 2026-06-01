@@ -6,12 +6,12 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from backend.datasentinel.deterministic_signals import (
+from backend.lawdit.deterministic_signals import (
     MAX_SIGNAL_SCAN_CHARS,
     MAX_SIGNALS_PER_DOCUMENT,
     detect_signals,
 )
-from backend.datasentinel.source_documents import read_source_documents
+from backend.lawdit.source_documents import read_source_documents
 
 
 class SignalDetectionBoundsTests(unittest.TestCase):
@@ -44,7 +44,7 @@ class SignalDetectionBoundsTests(unittest.TestCase):
             for index in range(5):
                 (root / f"case_{index}.txt").write_text(f"Name: Person {index}\n", encoding="utf-8")
 
-            with mock.patch("backend.datasentinel.source_documents.MAX_SOURCE_FILES", 3):
+            with mock.patch("backend.lawdit.source_documents.MAX_SOURCE_FILES", 3):
                 batch = read_source_documents({
                     "sourceId": "source_limit",
                     "sourceType": "local_repo",

@@ -1,0 +1,19 @@
+{
+  "data": {
+    "maxActive": 10,
+    "activeAnalyses": 1,
+    "availableSlots": 9,
+    "waitingUsers": 0,
+    "queueMode": "capacity_guard",
+    "userHasActiveAnalysis": false,
+    "userQueuePosition": null,
+    "fileSizeLimitBytes": 10485760
+  },
+  "meta": {
+    "contractVersion": "0.1.0",
+    "generatedAt": "2026-06-01T00:00:00Z",
+    "traceId": "trace_public_analysis_capacity_mock",
+    "partial": false,
+    "warnings": []
+  }
+}

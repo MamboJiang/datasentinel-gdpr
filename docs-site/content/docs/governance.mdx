@@ -3,19 +3,19 @@ title: Governance
 description: Understand policy packs, organization context, permissions, review support, and change boundaries.
 ---
 
-Governance is the layer that tells DataSentinel how to interpret evidence and route accountability. It should remain configurable and visible rather than hidden inside scanner code.
+Governance is the layer that tells lawdit how to interpret evidence and route accountability. It should remain configurable and visible rather than hidden inside scanner code.
 
 ## Policy packs
 
 Policy packs represent versioned review guidance. They can define evidence requirements, risk guidance, retention context, escalation paths, and reason requirements.
 
-DataSentinel should preserve the active policy-pack version in scan, review, audit, and evaluation context when the contract provides it.
+lawdit should preserve the active policy-pack version in scan, review, audit, and evaluation context when the contract provides it.
 
 ## Organization model
 
 The organization model supports accountable routing. It can include direct owners, Master of Data fallbacks, privacy review queues, and escalation paths.
 
-When a direct owner cannot be resolved, DataSentinel should route to a fallback or escalation path instead of leaving review-required findings silently unowned.
+When a direct owner cannot be resolved, lawdit should route to a fallback or escalation path instead of leaving review-required findings silently unowned.
 
 ## Permission model
 

@@ -5,9 +5,9 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from backend.datasentinel.deterministic_signals import detect_signals
-from backend.datasentinel.source_format_recognition import extract_document_content
-from backend.datasentinel.source_legacy_office import office_converter_path
+from backend.lawdit.deterministic_signals import detect_signals
+from backend.lawdit.source_format_recognition import extract_document_content
+from backend.lawdit.source_legacy_office import office_converter_path
 
 
 @unittest.skipUnless(office_converter_path(), "LibreOffice is unavailable for runtime legacy Office conversion.")

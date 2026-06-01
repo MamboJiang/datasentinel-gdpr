@@ -7,9 +7,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from backend.datasentinel.source_documents import SourceDocument, SourceDocumentBatch
-from backend.datasentinel.source_http import build_sqlite_app
-from backend.datasentinel.source_review_preview import build_source_review_preview
+from backend.lawdit.source_documents import SourceDocument, SourceDocumentBatch
+from backend.lawdit.source_http import build_sqlite_app
+from backend.lawdit.source_review_preview import build_source_review_preview
 
 
 class SourceReviewPreviewTests(unittest.TestCase):
@@ -72,7 +72,7 @@ class SourceReviewPreviewTests(unittest.TestCase):
             root = Path(directory) / "source"
             root.mkdir()
             (root / "placeholder.txt").write_text("placeholder", encoding="utf-8")
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             source_path = root / "image-only-review.pdf"
             text = "Contact Email: preview.ocr@example.org\n"
             email_start = text.index("preview.ocr@example.org")
@@ -118,7 +118,7 @@ class SourceReviewPreviewTests(unittest.TestCase):
                     extraction_method="fixture_pdf_ocr",
                 )
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path, [root])
                 app.handle(
                     "POST",
@@ -134,7 +134,7 @@ class SourceReviewPreviewTests(unittest.TestCase):
                     "application/json",
                 )
                 app.handle("POST", "/api/sources/source_review_preview/connect-test", "trace_review_preview_connect")
-                with mock.patch("backend.datasentinel.prelaunch_state.read_source_documents", fake_reader):
+                with mock.patch("backend.lawdit.prelaunch_state.read_source_documents", fake_reader):
                     started = app.handle(
                         "POST",
                         "/api/scans/full",

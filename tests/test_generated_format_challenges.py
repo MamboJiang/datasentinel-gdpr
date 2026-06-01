@@ -8,11 +8,11 @@ from unittest import mock
 from xml.sax.saxutils import escape
 from zipfile import ZipFile
 
-from backend.datasentinel.deterministic_signals import detect_signals
-from backend.datasentinel.signal_evidence_anchors import apply_source_locations
-from backend.datasentinel.source_format_recognition import extract_document_content
-from backend.datasentinel.source_image_ocr import ImageOcrResult
-from backend.datasentinel.source_pdf_text import PdfExtractionResult
+from backend.lawdit.deterministic_signals import detect_signals
+from backend.lawdit.signal_evidence_anchors import apply_source_locations
+from backend.lawdit.source_format_recognition import extract_document_content
+from backend.lawdit.source_image_ocr import ImageOcrResult
+from backend.lawdit.source_pdf_text import PdfExtractionResult
 
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "gdpr_data_samples_main"
@@ -80,7 +80,7 @@ def _extract_case(case: dict[str, object]):
         return extract_document_content(body=body, content_type=content_type, name=name)
     if file_kind == "image_ocr":
         with mock.patch(
-            "backend.datasentinel.source_format_recognition.extract_image_content",
+            "backend.lawdit.source_format_recognition.extract_image_content",
             return_value=ImageOcrResult(
                 text,
                 text_locations=({"format": "image_ocr", "label": "Image OCR text", "start": 0, "end": len(text)},),
@@ -89,7 +89,7 @@ def _extract_case(case: dict[str, object]):
             return extract_document_content(body=b"synthetic-image", content_type=content_type, name=name)
     if file_kind == "pdf_ocr":
         with mock.patch(
-            "backend.datasentinel.source_pdf_text._ocr_result",
+            "backend.lawdit.source_pdf_text._ocr_result",
             return_value=PdfExtractionResult(
                 text,
                 "pdf_ocr",

@@ -33,7 +33,7 @@ The frontend can render the P0 workflow from local mocks, but `agent-us` needs t
 
 ## Impact Surface
 
-- Backend source package under `backend/datasentinel/`.
+- Backend source package under `backend/lawdit/`.
 - Frontend data provider and API client under `frontend/src/data/`.
 - Vite dev-server proxy configuration.
 - `agent-us` Caddy routing for `/api/*` to the loopback API server.

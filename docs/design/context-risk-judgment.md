@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-After content extraction and deterministic signal detection, DataSentinel needs a visible stage that turns redacted evidence candidates into context, risk, retention-review signals, and human-review guidance. The stage must help reviewers prioritize accountable work without becoming a legal-advice engine or an automatic deletion mechanism.
+After content extraction and deterministic signal detection, lawdit needs a visible stage that turns redacted evidence candidates into context, risk, retention-review signals, and human-review guidance. The stage must help reviewers prioritize accountable work without becoming a legal-advice engine or an automatic deletion mechanism.
 
 This P0 slice is a deterministic, fixture-backed workflow connected to the existing scan lifecycle. It follows source inventory, content extraction, deterministic signal detection, and the repository Atlas reference in `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md`.
 

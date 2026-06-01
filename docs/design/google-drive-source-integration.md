@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-Prelaunch users need to scan real working files without uploading and storing raw files inside DataSentinel. The source setup flow must support two low-friction inputs:
+Prelaunch users need to scan real working files without uploading and storing raw files inside lawdit. The source setup flow must support two low-friction inputs:
 
 - A user-selected Google Drive file or folder scope.
 - A direct HTTPS link to one supported text-like file, RFC 5322/MIME email file, bounded ZIP archive, PDF text layer or bounded local PDF OCR candidate, Office Open XML file, or OpenDocument file.
@@ -21,7 +21,7 @@ The implementation must read source content only during scan execution, produce 
 
 | Option | Summary | Decision |
 | --- | --- | --- |
-| Upload files into DataSentinel | User uploads files, backend stores them, scanner reads local copies. | Rejected for prelaunch because raw file storage increases privacy, retention, and deletion obligations. |
+| Upload files into lawdit | User uploads files, backend stores them, scanner reads local copies. | Rejected for prelaunch because raw file storage increases privacy, retention, and deletion obligations. |
 | Direct HTTPS file link | User registers one public HTTPS text-like, email, ZIP archive, PDF, Office Open XML, or OpenDocument file URL; backend fetches it only while scanning. | Accepted for single-file and export-link workflows with SSRF-style host checks, size/type limits, bounded archive parsing, and local OCR fallback when approved tooling exists. |
 | Google Drive Picker plus per-scan token | Browser lets the user select files or a folder; backend receives selected metadata and a short-lived access token only when scan starts. | Still accepted as the lowest-persistence path for one-off scans. |
 | Account-scoped server-side Drive binding | Backend stores a user-approved Drive refresh token in the local account store and refreshes short-lived access tokens only for selected-source scans. | Accepted for the requested Account settings binding; documented separately in `docs/design/google-drive-account-binding.md`. |
@@ -96,10 +96,10 @@ Rollback path:
 - Direct-link scans reject non-HTTPS, credential-bearing, private-address, unreachable, over-limit, or unsupported files without storing raw content.
 - PDF text-layer and bounded local PDF OCR scans can produce redacted findings without storing raw PDF bodies, page images, or raw extracted text.
 - DOCX, XLSX, PPTX, ODT, ODS, ODP, EML, and ZIP scans can produce redacted findings through the local deterministic extraction path documented in `docs/design/local-format-recognition-difficulty.md` and `docs/design/archive-container-extraction.md`.
-- A user can select Google Drive files or one folder through Google Picker when host public credentials are configured; if their DataSentinel account has a connected Drive binding, Picker opens with that bound account token instead of starting browser-side Google authorization.
+- A user can select Google Drive files or one folder through Google Picker when host public credentials are configured; if their lawdit account has a connected Drive binding, Picker opens with that bound account token instead of starting browser-side Google authorization.
 - A Google Drive source stores selected item metadata but not the access token.
 - A Google Drive full scan requires a short-lived access token in the scan request or a connected account-level Drive binding; missing authorization does not preserve stale scan-derived findings.
 - A user can connect, change, or disconnect the account-level Drive binding from Account settings without deleting source registrations or external Drive files.
 - Google Drive folder scans enumerate descendant files up to the prelaunch limit and export Google Docs, Google Sheets, and Google Slides through explicit export profiles that preserve distinct format/method counts and redacted anchors.
-- A user can remove a source registration from DataSentinel state without deleting any external source file.
+- A user can remove a source registration from lawdit state without deleting any external source file.
 - Public API responses and UI surfaces show metadata, redacted evidence, findings, metrics, warnings, and audit state without raw file bodies, unredacted personal data, provider tokens, refresh tokens, client secrets, or deletion execution.

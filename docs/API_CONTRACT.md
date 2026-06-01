@@ -84,6 +84,7 @@ Requests should send:
 - `Accept: application/json, application/problem+json`
 - `X-Contract-Version: 0.1.0`
 - `X-Actor-Id: user_demo_admin` or a seeded demo user.
+- Public upload-analysis requests may send `X-Lawdit-Trial-Session` as a browser-generated transient session ID for capacity accounting. It is not authentication.
 - `Idempotency-Key` for review actions and scan start requests when available.
 - Authenticated prelaunch requests should rely on the first-party HttpOnly session cookie created by the auth callback. SQLite-backed prelaunch Sources, scans, findings, audit events, metrics, and evaluation state are scoped to that session user. `X-Actor-Id` remains a development compatibility header and is not authentication.
 - Workspace requests use the first-party account identity plus explicit Workspace membership. Authentication alone does not grant Workspace access.
@@ -99,7 +100,7 @@ Errors use `application/problem+json`.
 
 ```json
 {
-  "type": "https://datasentinel.local/problems/validation-error",
+  "type": "https://lawdit.local/problems/validation-error",
   "title": "Request validation failed",
   "status": 422,
   "detail": "The request body is invalid.",
@@ -119,6 +120,8 @@ Errors use `application/problem+json`.
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/api/health` | Check backend readiness. |
+| `GET` | `/api/public-analysis/capacity` | Read public analysis active slots, waiting-at-intake count, per-session active state, and file-size limit. |
+| `POST` | `/api/public-analysis/analyze` | Analyze one public upload and return a concise redacted result. |
 | `GET` | `/api/auth/providers` | List configured Google and GitHub login providers without secrets. |
 | `GET` | `/api/auth/login/{provider}` | Start backend-owned OAuth login for `google` or `github`. |
 | `GET` | `/api/auth/callback/{provider}` | Complete provider callback, create a first-party session, and redirect back to the app. |
@@ -147,7 +150,7 @@ Errors use `application/problem+json`.
 | `GET` | `/api/sources` | List configured sources. |
 | `POST` | `/api/sources` | Create a mock, local, direct-link, or Google Drive selected source. |
 | `PATCH` | `/api/sources/{sourceId}` | Update Source metadata such as the direct Source owner. |
-| `DELETE` | `/api/sources/{sourceId}` | Delete a DataSentinel source registration without deleting external source files. |
+| `DELETE` | `/api/sources/{sourceId}` | Delete a lawdit source registration without deleting external source files. |
 | `POST` | `/api/sources/{sourceId}/connect-test` | Validate source reachability. |
 | `POST` | `/api/scans/full` | Start a full scan for a connected or mock-ready source. |
 | `POST` | `/api/scans/delta` | Start a delta scan. |
@@ -166,6 +169,39 @@ Errors use `application/problem+json`.
 | `GET` | `/api/findings/{findingId}/review-support` | Read reviewer guidance and allowed actions. |
 
 ## State Machines
+
+### Public Upload Analysis Entry
+
+The public analysis entry is unauthenticated and uses `X-Lawdit-Trial-Session` only as a transient browser-session capacity key. It does not create Workspace sources, findings, audit events, deletion actions, durable jobs, or legal conclusions.
+
+Capacity response:
+
+```json
+{
+  "maxActive": 10,
+  "activeAnalyses": 0,
+  "availableSlots": 10,
+  "waitingUsers": 0,
+  "queueMode": "capacity_guard",
+  "userHasActiveAnalysis": false,
+  "userQueuePosition": null,
+  "fileSizeLimitBytes": 10485760
+}
+```
+
+Upload state:
+
+`idle -> file_selected -> uploading -> analyzing -> completed`
+
+Failure paths:
+
+- `file_selected -> rejected_file_too_large` when the selected or uploaded file exceeds 10 MB.
+- `uploading -> rejected_malformed` when the request is not one `multipart/form-data` field named `file`.
+- `uploading -> rejected_duplicate_active` when the same browser analysis session already has an active analysis.
+- `uploading -> rejected_capacity_full` when 10 active analyses are already running in the API process.
+- `analyzing -> failed_unsupported` when extraction cannot safely read the file.
+
+Successful results include `analysisId`, `status`, `file`, `summary`, `evidence`, `warnings`, and fresh `capacity`. They may also include optional `summary.nextSteps`, `summary.workflowReadiness`, `summary.boundaryNotes`, `analysisStages`, and `governanceBoundaries` for richer frontend presentation. `summary.rawContentExposed`, `summary.legalConclusionProvided`, and `summary.deletionAvailable` must be `false`. Evidence snippets must remain redacted.
 
 ### Account Session
 
@@ -210,7 +246,7 @@ Binding payloads:
 
 Account and Workspace-scoped state:
 
-- When `DATASENTINEL_AUTH_REQUIRED=true`, protected SQLite-backed routes without an active Workspace resolve the owner scope from the first-party session `userId`.
+- When `LAWDIT_AUTH_REQUIRED=true`, protected SQLite-backed routes without an active Workspace resolve the owner scope from the first-party session `userId`.
 - When the account has an active current Workspace, Source list/mutation routes, scan routes, finding routes, audit, metrics, and evaluation resolve the owner scope from `workspace:{workspaceId}` instead of the account.
 - Switching Workspace context changes the operational owner scope for subsequent Source, scan, finding, audit, metric, and evaluation reads and writes.
 - Source list/mutation routes, scan routes, finding routes, audit, metrics, and evaluation return only the current account or current Workspace state.
@@ -354,7 +390,7 @@ Representative shape:
 
 AI processing state:
 
-- `disabled`: `DATASENTINEL_AI_MODE` is off.
+- `disabled`: `LAWDIT_AI_MODE` is off.
 - `missing_api_key`: assistive mode is requested without `OPENROUTER_API_KEY`.
 - `configured`: OpenRouter key and model are configured, but no call has necessarily occurred.
 - `usage_check_failed`: fail-closed budget preflight prevented a call because usage could not be checked.
@@ -410,7 +446,7 @@ Internal P0 stage visibility:
 - Review support must not expose raw source content, unredacted personal data, hidden permission data, legal conclusions, or deletion execution.
 - Audit recording output must include policy-pack version, audit rules fingerprint, event counts, scan-linked count, finding-linked count, review-decision count, human/system counts, `rawContentExposed = false`, `legalConclusionProvided = false`, and `deletionExecuted = false` when visible.
 - Delta scan output may include `deltaScan` with baseline scan ID, source snapshot, inventory fingerprint, baseline totals, delta fingerprint, changed/new/modified/unchanged/missing counts, carried-forward counts, reopened finding counts, warnings, `missingFilesTreatedAsDeleted = false`, `rawContentExposed = false`, `legalConclusionProvided = false`, and `deletionExecuted = false`.
-- Missing files in a delta scan are source inventory changes only; public payloads must not imply DataSentinel deletion or proof of erasure.
+- Missing files in a delta scan are source inventory changes only; public payloads must not imply lawdit deletion or proof of erasure.
 - Admin metrics may include optional `aggregation` with status, input-stage basis, scan coverage, risk queue, owner backlog, review outcomes, audit evidence, delta counts, evaluation linkage, cost fields, and safety-boundary booleans. Aggregation is derived from prior workflow summaries and must not expose raw source content, legal conclusions, hidden permission data, or deletion execution.
 - Evaluation may include optional `signalDetectionRulesHash`, `evaluationRulesHash`, and `qualityBasis` fields with golden dataset identity, input-stage basis, confusion matrix, scenario metrics, review-throughput context, risk-progress context, warnings, and safety-boundary booleans. Evaluation is generated from prior workflow summaries and must not expose raw source content, legal conclusions, hidden permission data, or deletion execution.
 
@@ -503,11 +539,11 @@ Source records may also include owner-routing metadata:
 - `assignedOwner`: copied display/email snapshot for the direct Source owner.
 - `fallbackOwner`: copied display/email snapshot for fallback Data Steward routing when no direct owner is selected.
 
-`PATCH /api/sources/{sourceId}` accepts `name` and `assignedOwnerUserId`. It updates DataSentinel metadata only and must not mutate, delete, or revoke external source files.
+`PATCH /api/sources/{sourceId}` accepts `name` and `assignedOwnerUserId`. It updates lawdit metadata only and must not mutate, delete, or revoke external source files.
 
-`DELETE /api/sources/{sourceId}` removes only the DataSentinel source registration row. It must not delete, mutate, or revoke any file in Google Drive, a remote HTTPS location, or a host-mounted source directory.
+`DELETE /api/sources/{sourceId}` removes only the lawdit source registration row. It must not delete, mutate, or revoke any file in Google Drive, a remote HTTPS location, or a host-mounted source directory.
 
-`GET /api/integrations/google-drive/picker-config` requires the first-party session cookie when `DATASENTINEL_AUTH_REQUIRED=true` and returns browser-safe Picker setup state:
+`GET /api/integrations/google-drive/picker-config` requires the first-party session cookie when `LAWDIT_AUTH_REQUIRED=true` and returns browser-safe Picker setup state:
 
 ```json
 {
@@ -546,7 +582,7 @@ The endpoint may return `configured = false` with `null` browser setup fields an
 }
 ```
 
-`DELETE /api/integrations/google-drive/binding` returns the same envelope shape with `connected = false`; it may include `revocationAttempted` and `revoked`. Disconnecting a binding does not delete DataSentinel source registrations and never deletes or mutates Google Drive files.
+`DELETE /api/integrations/google-drive/binding` returns the same envelope shape with `connected = false`; it may include `revocationAttempted` and `revoked`. Disconnecting a binding does not delete lawdit source registrations and never deletes or mutates Google Drive files.
 
 `POST /api/integrations/google-drive/picker-token` requires a first-party session and a connected account Drive binding. It returns a browser-use-only short-lived token so Add Source can pass it to Google Picker:
 
@@ -586,6 +622,8 @@ Frontend agents should begin with:
 - `contracts/mocks/governanceConfig.json`
 - `contracts/mocks/myFindings.json`
 - `contracts/mocks/permissionBoundary.json`
+- `contracts/mocks/publicAnalysisCapacity.json`
+- `contracts/mocks/publicAnalysisResult.json`
 - `contracts/mocks/reviewDecision.json`
 - `contracts/mocks/reviewSupport.json`
 - `contracts/mocks/scanStatus.json`
@@ -593,7 +631,7 @@ Frontend agents should begin with:
 
 Mocks are contract fixtures. They are not production seed data.
 
-Prelaunch hosts should set `DATASENTINEL_ENABLE_DEMO_FIXTURES=false` so `/api/sources`, `/api/findings`, `/api/audit/events`, metrics, and evaluation begin empty and populate only from configured local sources and user actions.
+Prelaunch hosts should set `LAWDIT_ENABLE_DEMO_FIXTURES=false` so `/api/sources`, `/api/findings`, `/api/audit/events`, metrics, and evaluation begin empty and populate only from configured local sources and user actions.
 
 Scan mocks may include optional `fileInventory`, `contentExtraction`, `signalDetection`, `contextRisk`, `ownerAssignment`, `findingAssembly`, `reviewSupport`, and `pipelineStages` fields. These fields summarize internal processing and are safe for public UI because they expose counts, hashes, methods, policy-pack version, organization-model version, warnings, and redaction boundaries rather than raw source content.
 

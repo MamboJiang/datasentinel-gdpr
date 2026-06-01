@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: DataSentinel API
+  title: lawdit API
   version: 0.1.0
   summary: Contract-first API for the GDPR discovery prototype.
 servers:
@@ -318,6 +318,55 @@ paths:
             application/json:
               schema:
                 $ref: "./schemas/common.yaml#/HealthEnvelope"
+  /public-analysis/capacity:
+    get:
+      operationId: getPublicAnalysisCapacity
+      parameters:
+        - $ref: "#/components/parameters/TrialSession"
+      responses:
+        "200":
+          description: Current public analysis capacity, waiting count, per-session active state, and file-size limit.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/public-analysis.yaml#/PublicAnalysisCapacityEnvelope"
+  /public-analysis/analyze:
+    post:
+      operationId: analyzePublicUpload
+      parameters:
+        - $ref: "#/components/parameters/TrialSession"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              additionalProperties: false
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: One public analysis file, maximum 10 MB.
+      responses:
+        "200":
+          description: Short redacted analysis result for the uploaded file.
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/public-analysis.yaml#/PublicAnalysisResultEnvelope"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "415":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        default:
+          $ref: "#/components/responses/Problem"
   /integrations/google-drive/picker-config:
     get:
       operationId: getGoogleDrivePickerConfig
@@ -698,6 +747,12 @@ components:
       in: header
       required: false
       schema: { type: string }
+    TrialSession:
+      name: X-Lawdit-Trial-Session
+      in: header
+      required: false
+      schema: { type: string }
+      description: Browser-generated public analysis session identifier used only for transient capacity accounting.
     WorkspaceId:
       name: workspaceId
       in: path

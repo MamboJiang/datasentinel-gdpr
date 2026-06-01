@@ -104,7 +104,7 @@ function getPageTitleSegments(pathname: string): PageTitleSegment[] {
   }
 
   return [
-    { label: navigation.find(({ to, end }) => (end ? pathname === to : pathname.startsWith(to)))?.label ?? utilityPageTitles[pathname] ?? 'DataSentinel' },
+    { label: navigation.find(({ to, end }) => (end ? pathname === to : pathname.startsWith(to)))?.label ?? utilityPageTitles[pathname] ?? 'lawdit' },
   ]
 }
 

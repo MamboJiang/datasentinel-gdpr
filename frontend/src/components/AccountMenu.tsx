@@ -27,7 +27,7 @@ function getStoredThemeMode(): ThemeMode {
     return 'system'
   }
 
-  const storedTheme = window.localStorage.getItem('datasentinel-theme-mode')
+  const storedTheme = window.localStorage.getItem('lawdit-theme-mode')
   return storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system' ? storedTheme : 'system'
 }
 
@@ -68,7 +68,7 @@ export function AccountMenu({
       const resolvedTheme = themeMode === 'system' ? (systemMatcher.matches ? 'dark' : 'light') : themeMode
       root.dataset.theme = resolvedTheme
       root.dataset.themeMode = themeMode
-      window.localStorage.setItem('datasentinel-theme-mode', themeMode)
+      window.localStorage.setItem('lawdit-theme-mode', themeMode)
     }
 
     applyTheme()

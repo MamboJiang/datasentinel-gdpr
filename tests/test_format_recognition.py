@@ -8,11 +8,11 @@ from tempfile import TemporaryDirectory
 from unittest import mock
 from zipfile import ZipFile
 
-from backend.datasentinel.source_http import build_sqlite_app
-from backend.datasentinel.source_format_recognition import ExtractedDocumentContent
-from backend.datasentinel.source_image_ocr import ImageOcrResult
-from backend.datasentinel.source_legacy_office import LegacyOfficeExtractionResult
-from backend.datasentinel.source_video_ocr import VideoFrameOcrResult
+from backend.lawdit.source_http import build_sqlite_app
+from backend.lawdit.source_format_recognition import ExtractedDocumentContent
+from backend.lawdit.source_image_ocr import ImageOcrResult
+from backend.lawdit.source_legacy_office import LegacyOfficeExtractionResult
+from backend.lawdit.source_video_ocr import VideoFrameOcrResult
 
 
 class FormatRecognitionTests(unittest.TestCase):
@@ -23,9 +23,9 @@ class FormatRecognitionTests(unittest.TestCase):
             _write_docx(root / "contact.docx", "Contact privacy.reviewer@example.org before export.")
             _write_xlsx(root / "finance.xlsx", "Finance IBAN DE89370400440532013000 must be reviewed.")
             _write_pptx(root / "support.pptx", "Support phone +491711234567 needs owner review.")
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path, [root])
                 created = app.handle(
                     "POST",
@@ -82,7 +82,7 @@ class FormatRecognitionTests(unittest.TestCase):
             (root / "legacy.doc").write_bytes(b"fake-doc")
             (root / "legacy.xls").write_bytes(b"fake-xls")
             (root / "legacy.ppt").write_bytes(b"fake-ppt")
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
 
             def fake_legacy_extract(_body: bytes, name: str, file_format: str) -> LegacyOfficeExtractionResult:
                 text_by_format = {
@@ -96,8 +96,8 @@ class FormatRecognitionTests(unittest.TestCase):
                     locations=({"format": file_format, "label": f"Legacy {file_format.upper()} text", "start": 0, "end": len(text)},),
                 )
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}), mock.patch(
-                "backend.datasentinel.source_format_recognition.extract_legacy_office_text",
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}), mock.patch(
+                "backend.lawdit.source_format_recognition.extract_legacy_office_text",
                 side_effect=fake_legacy_extract,
             ):
                 app = build_sqlite_app(db_path, [root])
@@ -159,9 +159,9 @@ class FormatRecognitionTests(unittest.TestCase):
                 "<section><p>Téléphone: +33123456789</p><p>Adresse: 18 Rue Example</p></section>",
                 encoding="utf-8",
             )
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path, [root])
                 app.handle(
                     "POST",
@@ -223,11 +223,11 @@ class FormatRecognitionTests(unittest.TestCase):
             root = Path(directory) / "source"
             root.mkdir()
             (root / "badge.png").write_bytes(b"not-a-real-image")
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
 
             image_text = "Scanned visitor badge privacy.image@example.org"
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}), mock.patch(
-                "backend.datasentinel.source_format_recognition.extract_image_content",
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}), mock.patch(
+                "backend.lawdit.source_format_recognition.extract_image_content",
                 return_value=ImageOcrResult(
                     image_text,
                     text_locations=({"format": "image_ocr", "label": "Image OCR text", "start": 0, "end": len(image_text)},),
@@ -278,11 +278,11 @@ class FormatRecognitionTests(unittest.TestCase):
             root = Path(directory) / "source"
             root.mkdir()
             (root / "visual-report.pdf").write_bytes(b"%PDF-1.7\n" + (b"0" * 1_200_000))
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             extracted_text = "Passport: EN1234567"
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}), mock.patch(
-                "backend.datasentinel.source_documents.extract_document_content",
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}), mock.patch(
+                "backend.lawdit.source_documents.extract_document_content",
                 return_value=ExtractedDocumentContent(
                     extracted_text,
                     "pdf_text_layer",
@@ -334,9 +334,9 @@ class FormatRecognitionTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (root / "meeting.mp4").write_bytes(b"0" * 1_000_001)
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path, [root])
                 app.handle(
                     "POST",
@@ -384,11 +384,11 @@ class FormatRecognitionTests(unittest.TestCase):
             root = Path(directory) / "source"
             root.mkdir()
             (root / "walkthrough.mp4").write_bytes(b"fake-video")
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             video_text = "Walkthrough screen email privacy.video-frame@example.org"
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}), mock.patch(
-                "backend.datasentinel.source_format_recognition.extract_video_frame_content",
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}), mock.patch(
+                "backend.lawdit.source_format_recognition.extract_video_frame_content",
                 return_value=VideoFrameOcrResult(
                     video_text,
                     text_locations=({

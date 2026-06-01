@@ -216,7 +216,7 @@ export function SourceDialog({
           </label>
           <div className="dialog-notice">
             <CheckCircle2 aria-hidden="true" size={17} />
-            <span>DataSentinel reads source content only during scan and stores metadata, redacted evidence, findings, and audit events.</span>
+            <span>lawdit reads source content only during scan and stores metadata, redacted evidence, findings, and audit events.</span>
           </div>
           <div className="dialog-actions">
             <Button variant="ghost" onClick={onClose}>Cancel</Button>

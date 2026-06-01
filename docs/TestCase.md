@@ -40,15 +40,18 @@
 | USERDOC-011 | Compare homepage and nested docs layouts | `/docs` renders as a standalone homepage without the Fumadocs sidebar, while `/docs/quick-start` keeps sidebar navigation. |
 | USERDOC-012 | Review screenshot and data aids | Quick Start, Sources, Dashboard and Scans, Findings and Review, and Audit and Evaluation include cropped non-sensitive screenshots plus tables that explain fields, metrics, and next actions; screenshot URLs are served under `/docs/media/`. |
 
-## Public Upload Analysis Planning Checks
+## Public Upload Analysis Trial Checks
 
 | ID | Scenario | Expected Result |
 | --- | --- | --- |
-| UPLOADPLAN-001 | Review the public upload-analysis design note | `docs/design/public-upload-analysis-preview.md` defines the problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria. |
-| UPLOADPLAN-002 | Review planned capacity limits | The planning docs state one active file per user/session, a 10 MB maximum file size, and at most 10 active user analyses globally. |
-| UPLOADPLAN-003 | Review non-implementation scope | The planning docs state that no upload UI, endpoint, worker, queue, storage, parser, scanner, or deployment behavior is approved in the current task. |
-| UPLOADPLAN-004 | Review safety boundaries | The planning docs keep raw sensitive values out of public output and prohibit legal advice, full GDPR-compliance claims, automatic deletion, and production tenant integration. |
-| UPLOADPLAN-005 | Review future contract dependency | The planning docs require future updates to the OpenAPI contract, API docs, mock payloads, tests, security notes, deployment controls, and acceptance criteria before implementation. |
+| UPLOAD-001 | Request public trial capacity | `/api/public-analysis/capacity` returns max active analyses, active analyses, available slots, waiting users, queue mode, per-session active state, and the 10 MB file-size limit. |
+| UPLOAD-002 | Submit a supported single file | `/api/public-analysis/analyze` returns a completed redacted result with detected categories, risk level, evidence snippets, warnings, and fresh capacity data. |
+| UPLOAD-003 | Submit a file larger than 10 MB | The backend returns `413 application/problem+json`, does not start extraction or signal detection, and leaves active capacity unchanged. |
+| UPLOAD-004 | Submit a second file for the same active trial session | The backend returns `409 application/problem+json` with `userHasActiveAnalysis = true`. |
+| UPLOAD-005 | Submit when all 5 active slots are occupied | The backend returns `429 application/problem+json`, reports live waiting-at-intake data, and does not reserve an analysis slot. |
+| UPLOAD-006 | Review safety boundaries | Trial output keeps raw sensitive values out of public output and prohibits legal advice, full GDPR-compliance claims, automatic deletion, and production tenant integration. |
+| UPLOAD-007 | Use the homepage trial UI | The root homepage shows a prominent upload entry, live capacity data, one-file/10 MB limits, start-over behavior, and redacted results separate from the full Workspace console. |
+| UPLOAD-008 | Review trial education copy | The trial is labeled as a public preview, states that the full product workflow lives in the Workspace, and links to `/dashboard` for governed source setup, owner routing, review decisions, audit trails, and evaluation. |
 
 ## Backend Planning Checks
 
@@ -83,9 +86,9 @@
 | AUTH-005 | Complete callback with validated provider identity | The server stores a local user profile, creates a first-party session, and redirects to the app. |
 | AUTH-006 | Call `GET /api/auth/session` with a valid cookie | The response returns `authenticated = true`, safe user profile fields, and no provider tokens. |
 | AUTH-007 | Call `POST /api/auth/logout` | The server revokes the local session, clears the cookie, and `/api/auth/session` returns unauthenticated. |
-| AUTH-008 | Render unauthenticated console | The frontend shows a minimal centered sign-in page with DataSentinel branding, only Google and GitHub branded provider buttons, and no fixture findings. |
+| AUTH-008 | Render unauthenticated console | The frontend shows a minimal centered sign-in page with lawdit branding, only Google and GitHub branded provider buttons, and no fixture findings. |
 | AUTH-009 | Render authenticated console with no findings | The frontend shows operational empty states and source setup actions instead of fake examples. |
-| AUTH-010 | Start server with `DATASENTINEL_ENABLE_DEMO_FIXTURES=false` | Sources, findings, audit, metrics, and evaluation start empty until a configured local source is scanned. |
+| AUTH-010 | Start server with `LAWDIT_ENABLE_DEMO_FIXTURES=false` | Sources, findings, audit, metrics, and evaluation start empty until a configured local source is scanned. |
 | AUTH-011 | Restart a SQLite-backed preview after disabling demo fixtures | Historical seeded demo sources and workflow documents are removed while real registered local sources and account/session records remain. |
 | AUTH-012 | Sign in as Account A and Account B against the same SQLite preview | Account B cannot list, delete, scan, connect-test, review, or open Account A's Sources or Findings. |
 | AUTH-013 | Start a SQLite preview after legacy global rows exist | Legacy global source and workflow rows are hidden from authenticated account scopes. |
@@ -135,8 +138,8 @@
 
 | ID | Scenario | Expected Result |
 | --- | --- | --- |
-| DB-001 | Run `python3 -m backend.datasentinel.db_tool init --db-path <file>` | A local SQLite file is created with schema version, source rows, and one workflow document. |
-| DB-002 | Run `python3 -m backend.datasentinel.db_tool status --db-path <file>` | The command reports the database path, schema version, source count, and workflow-document count without exposing secrets. |
+| DB-001 | Run `python3 -m backend.lawdit.db_tool init --db-path <file>` | A local SQLite file is created with schema version, source rows, and one workflow document. |
+| DB-002 | Run `python3 -m backend.lawdit.db_tool status --db-path <file>` | The command reports the database path, schema version, source count, and workflow-document count without exposing secrets. |
 | DB-003 | Register a source through a SQLite-backed API app and restart with the same file | The source remains listed after restart. |
 | DB-004 | Record a review through a SQLite-backed API app and restart with the same file | Finding status and the review audit event remain visible after restart. |
 | DB-005 | Start the API without `--db-path` | The server keeps the existing in-memory fixture-backed behavior. |
@@ -166,7 +169,7 @@
 | SRCIN-010 | Review public payloads after remote-link or Drive scans | Payloads expose metadata, warnings, redacted snippets, findings, metrics, and audit events only; raw file bodies, raw source URLs, absolute host paths, provider tokens, refresh tokens, client secrets, legal conclusions, and deletion execution are absent. |
 | SRCIN-011 | Scan a PDF that has an extractable text layer and detectable personal-data patterns | The scan produces findings with redacted evidence and does not expose raw extracted PDF text in public payloads. |
 | SRCIN-012 | Review source references after local, direct-link, or Google Drive scans | Public findings and console views show a safe source reference or source name, not a raw external URL or absolute host file path. |
-| SRCIN-012A | Delete a source from the Sources page or `DELETE /api/sources/{sourceId}` | The source registration is removed from DataSentinel state, derived scan/finding state for that deleted source is cleared, external source files are not deleted, and a repeated delete returns not found. |
+| SRCIN-012A | Delete a source from the Sources page or `DELETE /api/sources/{sourceId}` | The source registration is removed from lawdit state, derived scan/finding state for that deleted source is cleared, external source files are not deleted, and a repeated delete returns not found. |
 | SRCIN-012B | Scan a Source assigned to one Workspace member, then list findings as another member | Only the assigned owner or fallback route sees the finding; unrelated Workspace members receive an empty list or not found. |
 | SRCIN-013 | Scan DOCX, XLSX, PPTX, DOC, XLS, PPT, ODT, ODS, ODP, EML, and ZIP files with detectable personal-data patterns | The scan produces redacted findings from deterministic Office Open XML, host-local legacy Office conversion, OpenDocument, RFC 5322/MIME email, or bounded ZIP member extraction and reports the expected moderate or hard recognition difficulty. |
 | SRCIN-014 | Inspect `contentExtraction` after a deterministic scan | The payload includes difficulty and format counts, `aiAssistanceUsed = false`, `modelCalls = 0`, and no raw source text. |
@@ -194,7 +197,7 @@
 | CORE-004C | Scan a mixed PDF when page OCR tooling is unavailable | The scanner preserves text-layer findings, marks the document hard, increments OCR-deferred warning metadata, and does not pretend the visual layer was scanned. |
 | CORE-004D | Scan a bounded PDF larger than the text-stream limit | PDF and other complex document formats use the bounded document byte budget rather than the 1 MB text-stream budget, so a 6 MB PDF can enter extraction and signal detection. |
 | CORE-005 | Scan a PDF without an extractable text layer when local PDF OCR tooling is missing | The scanner reports a recoverable hard/OCR-deferred warning and does not create fake findings. |
-| CORE-006 | Configure local OCR languages | When `DATASENTINEL_OCR_LANGS` is set, the local Tesseract invocation uses the installed language-pack list directly when bounded and splits large lists into bounded multilingual profiles. |
+| CORE-006 | Configure local OCR languages | When `LAWDIT_OCR_LANGS` is set, the local Tesseract invocation uses the installed language-pack list directly when bounded and splits large lists into bounded multilingual profiles. |
 | CORE-006A | Review OCR capability reporting | OCR capability output reports mode, configured language list, Tesseract availability, `pdftoppm` availability, image OCR availability, and PDF OCR availability without probing or storing source content. |
 | CORE-006B | Scan colored text overlays in image OCR | Local OCR can run bounded color-overlay preprocessing variants before deterministic detection, producing redacted findings without public raw OCR text or page images. |
 | CORE-006C | Handle one timed-out OCR profile | If one OCR language profile or preprocessing candidate times out, later bounded candidates can still run and produce redacted findings; only total OCR failure is counted as OCR-deferred. |
@@ -314,7 +317,8 @@
 | FINDASM-008 | Verify audit and evaluation traceability | Finding assembly creates an audit-visible event and evaluation stores a finding-assembly rules hash. |
 | FINDASM-009 | Verify resource and cost boundary | Finding assembly keeps model calls and estimated paid-service cost at zero. |
 | FINDASM-010 | Open a finding detail from the Findings list | The top title hierarchy reads `Findings / Finding Detail`; `Findings` is hover-underlined and navigates back to `/findings`, while `Finding Detail` is the non-clickable current level. |
-| FINDASM-010 | Reject assembly for not-ready source | A not-ready source cannot create scan, inventory, extraction, context/risk, owner-assignment, finding-assembly, finding, evidence-card, or audit state changes. |
+| FINDASM-011 | Open a non-primary finding detail from the Findings list | The frontend loads the requested finding detail by `findingId` and does not render a list summary as an evidence card; non-primary details show redacted evidence, policy, file, owner, and audit context when the backend provides them. |
+| FINDASM-012 | Reject assembly for not-ready source | A not-ready source cannot create scan, inventory, extraction, context/risk, owner-assignment, finding-assembly, finding, evidence-card, or audit state changes. |
 
 ## Review Support and Permission Boundary Checks
 
@@ -432,7 +436,7 @@
 | ID | Scenario | Expected Result |
 | --- | --- | --- |
 | DEPLOY-001 | Build frontend for remote preview | `npm run build` completes successfully before upload. |
-| DEPLOY-002 | Visit `https://founder-force.uk/` | Caddy returns the DataSentinel frontend HTML from the active release after DNS points to `agent-us`. |
+| DEPLOY-002 | Visit `https://founder-force.uk/` | Caddy returns the lawdit frontend HTML from the active release after DNS points to `agent-us`. |
 | DEPLOY-003 | Visit `https://founder-force.uk/dashboard` directly | Caddy falls back to `index.html`, and the frontend can render the dashboard route after DNS points to `agent-us`. |
 | DEPLOY-004 | Call `https://founder-force.uk/api/health` | Caddy proxies to the loopback P0 API server and returns a contract health envelope. |
 | DEPLOY-005 | Review remote service boundary | The preview exposes only static frontend assets plus the P0 API, may use the approved local SQLite state file, and does not start OAuth, Microsoft Graph, tenant, production database, queue, production connector, or deletion services. |

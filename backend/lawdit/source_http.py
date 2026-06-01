@@ -1,4 +1,4 @@
-"""HTTP routing for the DataSentinel local API server."""
+"""HTTP routing for the lawdit local API server."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from .google_drive_binding import GoogleDriveBindingService
 from .google_drive_config import picker_config_response
 from .persistent_demo_state import PersistentDemoState, PersistentPrelaunchState
 from .prelaunch_state import PrelaunchState
+from .public_analysis import PublicAnalysisService
 from .source_api import SourceApi
 from .source_connection import ConnectionPolicy, SourceConnectionService
 from .source_store import SourceStore, demo_fixtures_enabled
@@ -26,6 +27,7 @@ from .workspace import WorkspaceService, actor_from_headers
 class SourceHttpOptions:
     sqlite_documents: SQLiteDocumentStore | None = None
     allowed_roots: list[Path | str] | None = None
+    public_analysis: PublicAnalysisService | None = None
 
 
 class SourceHttpApp:
@@ -45,6 +47,7 @@ class SourceHttpApp:
         self.sqlite_documents = runtime_options.sqlite_documents
         self.allowed_roots = runtime_options.allowed_roots or []
         self.workspace_service = WorkspaceService.with_sqlite(self.sqlite_documents) if self.sqlite_documents else WorkspaceService()
+        self.public_analysis = runtime_options.public_analysis or PublicAnalysisService()
 
     @classmethod
     def with_roots(cls, allowed_roots: list[Path | str]) -> "SourceHttpApp":
@@ -149,6 +152,18 @@ class SourceHttpApp:
 
         if method == "GET" and route == "/health":
             return self.demo_state.health(trace_id)
+
+        if method == "GET" and route == "/public-analysis/capacity":
+            return self.public_analysis.capacity_response(headers, trace_id)
+
+        if method == "POST" and route == "/public-analysis/analyze":
+            return self.public_analysis.analyze_response(
+                body=body,
+                content_type=content_type,
+                headers=headers,
+                trace_id=trace_id,
+                path=f"/api{route}",
+            )
 
         auth_required = self.auth_service.require_session(headers, trace_id, f"/api{route}")
         if auth_required:

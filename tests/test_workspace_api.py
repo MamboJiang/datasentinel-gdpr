@@ -7,12 +7,12 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from backend.datasentinel.source_http import build_sqlite_app
-from backend.datasentinel.source_server import make_handler
-from backend.datasentinel.sqlite_store import SQLiteAuthStore, SQLiteDocumentStore
+from backend.lawdit.source_http import build_sqlite_app
+from backend.lawdit.source_server import make_handler
+from backend.lawdit.sqlite_store import SQLiteAuthStore, SQLiteDocumentStore
 
 
-SESSION_COOKIE = "datasentinel_session"
+SESSION_COOKIE = "lawdit_session"
 
 
 def create_session(db_path: Path, user_id: str, email: str) -> str:
@@ -32,9 +32,9 @@ def create_session(db_path: Path, user_id: str, email: str) -> str:
 class WorkspaceApiTests(unittest.TestCase):
     def test_new_sqlite_account_has_no_workspace_membership(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             cookie = create_session(db_path, "user_new_account", "new.account@example.invalid")
-            with mock.patch.dict("os.environ", {"DATASENTINEL_AUTH_REQUIRED": "true"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_AUTH_REQUIRED": "true"}):
                 app = build_sqlite_app(db_path)
                 directory_response = app.handle("GET", "/api/workspaces", "trace_workspace_empty", None, None, {"Cookie": cookie})
                 admin_response = app.handle("GET", "/api/workspaces/current/admin", "trace_workspace_empty_admin", None, None, {"Cookie": cookie})
@@ -48,9 +48,9 @@ class WorkspaceApiTests(unittest.TestCase):
 
     def test_signed_in_account_can_create_workspace_as_admin(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             cookie = create_session(db_path, "user_creator", "creator@example.invalid")
-            with mock.patch.dict("os.environ", {"DATASENTINEL_AUTH_REQUIRED": "true"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_AUTH_REQUIRED": "true"}):
                 app = build_sqlite_app(db_path)
                 created = app.handle(
                     "POST",
@@ -73,10 +73,10 @@ class WorkspaceApiTests(unittest.TestCase):
 
     def test_workspace_switching_scopes_operational_state(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             creator_cookie = create_session(db_path, "user_workspace_owner", "owner@example.invalid")
             outsider_cookie = create_session(db_path, "user_workspace_outsider", "outsider@example.invalid")
-            with mock.patch.dict("os.environ", {"DATASENTINEL_AUTH_REQUIRED": "true", "DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_AUTH_REQUIRED": "true", "LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path)
                 workspace_a = app.handle(
                     "POST",
@@ -137,14 +137,14 @@ class WorkspaceApiTests(unittest.TestCase):
 
     def test_workspace_admin_can_create_invite_link_and_signed_in_account_accepts_once(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             admin_cookie = create_session(db_path, "user_demo_admin", "demo.admin@example.invalid")
             target_cookie = create_session(db_path, "user_candidate", "candidate@example.invalid")
-            with mock.patch.dict("os.environ", {"DATASENTINEL_AUTH_REQUIRED": "true"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_AUTH_REQUIRED": "true"}):
                 app = build_sqlite_app(db_path)
                 created = app.handle(
                     "POST",
-                    "/api/workspaces/ws_datasentinel_gdpr/invitations",
+                    "/api/workspaces/ws_lawdit_gdpr/invitations",
                     "trace_workspace_invite",
                     json.dumps({"groupIds": ["privacy_reviewer"]}),
                     "application/json",
@@ -171,7 +171,7 @@ class WorkspaceApiTests(unittest.TestCase):
                 directory_after = app.handle("GET", "/api/workspaces", "trace_workspace_joined", None, None, {"Cookie": target_cookie})
                 denied_invite = app.handle(
                     "POST",
-                    "/api/workspaces/ws_datasentinel_gdpr/invitations",
+                    "/api/workspaces/ws_lawdit_gdpr/invitations",
                     "trace_workspace_denied_invite",
                     json.dumps({"groupIds": ["auditor"]}),
                     "application/json",
@@ -184,20 +184,20 @@ class WorkspaceApiTests(unittest.TestCase):
         self.assertEqual(accepted["status"], 200)
         self.assertFalse(accepted["body"]["data"]["workspaceRequired"])
         self.assertEqual(repeated["status"], 409)
-        self.assertEqual(directory_after["body"]["data"]["currentWorkspaceId"], "ws_datasentinel_gdpr")
+        self.assertEqual(directory_after["body"]["data"]["currentWorkspaceId"], "ws_lawdit_gdpr")
         self.assertEqual(denied_invite["status"], 403)
 
     def test_workspace_admin_summary_exposes_groups_members_and_charts(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             admin_cookie = create_session(db_path, "user_demo_admin", "demo.admin@example.invalid")
-            with mock.patch.dict("os.environ", {"DATASENTINEL_AUTH_REQUIRED": "true"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_AUTH_REQUIRED": "true"}):
                 app = build_sqlite_app(db_path)
                 summary = app.handle("GET", "/api/workspaces/current/admin", "trace_workspace_admin", None, None, {"Cookie": admin_cookie})
 
         data = summary["body"]["data"]
         self.assertEqual(summary["status"], 200)
-        self.assertEqual(data["workspace"]["workspaceId"], "ws_datasentinel_gdpr")
+        self.assertEqual(data["workspace"]["workspaceId"], "ws_lawdit_gdpr")
         self.assertIn("invite_workspace_members", data["permissionBoundary"]["allowedActions"])
         self.assertGreaterEqual(len(data["members"]), 1)
         self.assertGreaterEqual(len(data["groups"]), 4)
@@ -206,14 +206,14 @@ class WorkspaceApiTests(unittest.TestCase):
 
     def test_workspace_admin_can_customize_workspace_profile(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             admin_cookie = create_session(db_path, "user_demo_admin", "demo.admin@example.invalid")
             reviewer_cookie = create_session(db_path, "user_anna", "anna.reviewer@example.invalid")
-            with mock.patch.dict("os.environ", {"DATASENTINEL_AUTH_REQUIRED": "true"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_AUTH_REQUIRED": "true"}):
                 app = build_sqlite_app(db_path)
                 updated = app.handle(
                     "PATCH",
-                    "/api/workspaces/ws_datasentinel_gdpr",
+                    "/api/workspaces/ws_lawdit_gdpr",
                     "trace_workspace_profile_update",
                     json.dumps({
                         "description": "Production privacy operations",
@@ -226,7 +226,7 @@ class WorkspaceApiTests(unittest.TestCase):
                 directory_response = app.handle("GET", "/api/workspaces", "trace_workspace_profile_directory", None, None, {"Cookie": admin_cookie})
                 hidden = app.handle(
                     "PATCH",
-                    "/api/workspaces/ws_datasentinel_gdpr",
+                    "/api/workspaces/ws_lawdit_gdpr",
                     "trace_workspace_header_hide",
                     json.dumps({"headerLabel": "   "}),
                     "application/json",
@@ -234,7 +234,7 @@ class WorkspaceApiTests(unittest.TestCase):
                 )
                 denied = app.handle(
                     "PATCH",
-                    "/api/workspaces/ws_datasentinel_gdpr",
+                    "/api/workspaces/ws_lawdit_gdpr",
                     "trace_workspace_header_denied",
                     json.dumps({"headerLabel": "Reviewer"}),
                     "application/json",
@@ -242,7 +242,7 @@ class WorkspaceApiTests(unittest.TestCase):
                 )
                 too_long = app.handle(
                     "PATCH",
-                    "/api/workspaces/ws_datasentinel_gdpr",
+                    "/api/workspaces/ws_lawdit_gdpr",
                     "trace_workspace_header_long",
                     json.dumps({"headerLabel": "This label is definitely too long"}),
                     "application/json",
@@ -264,14 +264,14 @@ class WorkspaceApiTests(unittest.TestCase):
 
     def test_workspace_admin_can_customize_groups_names_and_permissions(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             admin_cookie = create_session(db_path, "user_demo_admin", "demo.admin@example.invalid")
             target_cookie = create_session(db_path, "user_legal", "legal@example.invalid")
-            with mock.patch.dict("os.environ", {"DATASENTINEL_AUTH_REQUIRED": "true"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_AUTH_REQUIRED": "true"}):
                 app = build_sqlite_app(db_path)
                 created = app.handle(
                     "POST",
-                    "/api/workspaces/ws_datasentinel_gdpr/groups",
+                    "/api/workspaces/ws_lawdit_gdpr/groups",
                     "trace_workspace_group_create",
                     json.dumps({
                         "name": "Legal reviewers",
@@ -284,7 +284,7 @@ class WorkspaceApiTests(unittest.TestCase):
                 group_id = created["body"]["data"]["groupId"]
                 updated = app.handle(
                     "PATCH",
-                    f"/api/workspaces/ws_datasentinel_gdpr/groups/{group_id}",
+                    f"/api/workspaces/ws_lawdit_gdpr/groups/{group_id}",
                     "trace_workspace_group_update",
                     json.dumps({
                         "name": "Legal triage",
@@ -296,7 +296,7 @@ class WorkspaceApiTests(unittest.TestCase):
                 )
                 admin_guard = app.handle(
                     "PATCH",
-                    "/api/workspaces/ws_datasentinel_gdpr/groups/workspace_admin",
+                    "/api/workspaces/ws_lawdit_gdpr/groups/workspace_admin",
                     "trace_workspace_group_guard",
                     json.dumps({
                         "name": "Workspace admins",
@@ -308,7 +308,7 @@ class WorkspaceApiTests(unittest.TestCase):
                 )
                 invitation = app.handle(
                     "POST",
-                    "/api/workspaces/ws_datasentinel_gdpr/invitations",
+                    "/api/workspaces/ws_lawdit_gdpr/invitations",
                     "trace_workspace_group_invite",
                     json.dumps({"groupIds": [group_id]}),
                     "application/json",
@@ -326,7 +326,7 @@ class WorkspaceApiTests(unittest.TestCase):
                 target_summary = app.handle("GET", "/api/workspaces/current/admin", "trace_workspace_group_target", None, None, {"Cookie": target_cookie})
                 deleted = app.handle(
                     "DELETE",
-                    f"/api/workspaces/ws_datasentinel_gdpr/groups/{group_id}",
+                    f"/api/workspaces/ws_lawdit_gdpr/groups/{group_id}",
                     "trace_workspace_group_delete",
                     None,
                     None,
@@ -350,14 +350,14 @@ class WorkspaceApiTests(unittest.TestCase):
 
     def test_workspace_admin_can_update_and_remove_members(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             admin_cookie = create_session(db_path, "user_demo_admin", "demo.admin@example.invalid")
             target_cookie = create_session(db_path, "user_managed", "managed@example.invalid")
-            with mock.patch.dict("os.environ", {"DATASENTINEL_AUTH_REQUIRED": "true"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_AUTH_REQUIRED": "true"}):
                 app = build_sqlite_app(db_path)
                 invitation = app.handle(
                     "POST",
-                    "/api/workspaces/ws_datasentinel_gdpr/invitations",
+                    "/api/workspaces/ws_lawdit_gdpr/invitations",
                     "trace_workspace_member_invite",
                     json.dumps({"groupIds": ["privacy_reviewer"]}),
                     "application/json",
@@ -372,10 +372,10 @@ class WorkspaceApiTests(unittest.TestCase):
                     "application/json",
                     {"Cookie": target_cookie},
                 )
-                membership_id = "mem_user_managed_ws_datasentinel_gdpr"
+                membership_id = "mem_user_managed_ws_lawdit_gdpr"
                 updated = app.handle(
                     "PATCH",
-                    f"/api/workspaces/ws_datasentinel_gdpr/members/{membership_id}",
+                    f"/api/workspaces/ws_lawdit_gdpr/members/{membership_id}",
                     "trace_workspace_member_update",
                     json.dumps({"groupIds": ["auditor", "auditor"]}),
                     "application/json",
@@ -384,7 +384,7 @@ class WorkspaceApiTests(unittest.TestCase):
                 target_summary = app.handle("GET", "/api/workspaces/current/admin", "trace_workspace_member_target_summary", None, None, {"Cookie": target_cookie})
                 denied_update = app.handle(
                     "PATCH",
-                    "/api/workspaces/ws_datasentinel_gdpr/members/mem_demo_admin",
+                    "/api/workspaces/ws_lawdit_gdpr/members/mem_demo_admin",
                     "trace_workspace_member_denied_update",
                     json.dumps({"groupIds": ["auditor"]}),
                     "application/json",
@@ -392,7 +392,7 @@ class WorkspaceApiTests(unittest.TestCase):
                 )
                 last_admin_guard = app.handle(
                     "PATCH",
-                    "/api/workspaces/ws_datasentinel_gdpr/members/mem_demo_admin",
+                    "/api/workspaces/ws_lawdit_gdpr/members/mem_demo_admin",
                     "trace_workspace_member_last_admin_guard",
                     json.dumps({"groupIds": ["auditor"]}),
                     "application/json",
@@ -400,7 +400,7 @@ class WorkspaceApiTests(unittest.TestCase):
                 )
                 removed = app.handle(
                     "DELETE",
-                    f"/api/workspaces/ws_datasentinel_gdpr/members/{membership_id}",
+                    f"/api/workspaces/ws_lawdit_gdpr/members/{membership_id}",
                     "trace_workspace_member_remove",
                     None,
                     None,
@@ -409,7 +409,7 @@ class WorkspaceApiTests(unittest.TestCase):
                 summary_after_remove = app.handle("GET", "/api/workspaces/current/admin", "trace_workspace_member_after_remove", None, None, {"Cookie": admin_cookie})
                 self_remove = app.handle(
                     "DELETE",
-                    "/api/workspaces/ws_datasentinel_gdpr/members/mem_demo_admin",
+                    "/api/workspaces/ws_lawdit_gdpr/members/mem_demo_admin",
                     "trace_workspace_member_self_remove",
                     None,
                     None,
@@ -428,14 +428,14 @@ class WorkspaceApiTests(unittest.TestCase):
 
     def test_workspace_owner_can_transfer_owner_and_delete_workspace_with_name_confirmation(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             owner_cookie = create_session(db_path, "user_demo_admin", "demo.admin@example.invalid")
             target_cookie = create_session(db_path, "user_owner_target", "owner.target@example.invalid")
-            with mock.patch.dict("os.environ", {"DATASENTINEL_AUTH_REQUIRED": "true"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_AUTH_REQUIRED": "true"}):
                 app = build_sqlite_app(db_path)
                 invitation = app.handle(
                     "POST",
-                    "/api/workspaces/ws_datasentinel_gdpr/invitations",
+                    "/api/workspaces/ws_lawdit_gdpr/invitations",
                     "trace_workspace_owner_invite",
                     json.dumps({"groupIds": ["privacy_reviewer"]}),
                     "application/json",
@@ -450,10 +450,10 @@ class WorkspaceApiTests(unittest.TestCase):
                     "application/json",
                     {"Cookie": target_cookie},
                 )
-                target_membership_id = "mem_user_owner_target_ws_datasentinel_gdpr"
+                target_membership_id = "mem_user_owner_target_ws_lawdit_gdpr"
                 transferred = app.handle(
                     "POST",
-                    "/api/workspaces/ws_datasentinel_gdpr/owner-transfer",
+                    "/api/workspaces/ws_lawdit_gdpr/owner-transfer",
                     "trace_workspace_owner_transfer",
                     json.dumps({"membershipId": target_membership_id}),
                     "application/json",
@@ -462,25 +462,25 @@ class WorkspaceApiTests(unittest.TestCase):
                 prior_owner_summary = app.handle("GET", "/api/workspaces/current/admin", "trace_workspace_prior_owner", None, None, {"Cookie": owner_cookie})
                 prior_owner_delete = app.handle(
                     "DELETE",
-                    "/api/workspaces/ws_datasentinel_gdpr",
+                    "/api/workspaces/ws_lawdit_gdpr",
                     "trace_workspace_prior_owner_delete",
-                    json.dumps({"workspaceName": "DataSentinel GDPR"}),
+                    json.dumps({"workspaceName": "lawdit GDPR"}),
                     "application/json",
                     {"Cookie": owner_cookie},
                 )
                 wrong_name_delete = app.handle(
                     "DELETE",
-                    "/api/workspaces/ws_datasentinel_gdpr",
+                    "/api/workspaces/ws_lawdit_gdpr",
                     "trace_workspace_wrong_name_delete",
-                    json.dumps({"workspaceName": "datasentinel gdpr"}),
+                    json.dumps({"workspaceName": "lawdit gdpr"}),
                     "application/json",
                     {"Cookie": target_cookie},
                 )
                 deleted = app.handle(
                     "DELETE",
-                    "/api/workspaces/ws_datasentinel_gdpr",
+                    "/api/workspaces/ws_lawdit_gdpr",
                     "trace_workspace_delete",
-                    json.dumps({"workspaceName": "DataSentinel GDPR"}),
+                    json.dumps({"workspaceName": "lawdit GDPR"}),
                     "application/json",
                     {"Cookie": target_cookie},
                 )
@@ -498,9 +498,9 @@ class WorkspaceApiTests(unittest.TestCase):
 
     def test_http_handler_and_cors_allow_workspace_group_patch(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             app = build_sqlite_app(db_path)
-            options = app.handle("OPTIONS", "/api/workspaces/ws_datasentinel_gdpr/groups/custom_group", "trace_options", None, None, {})
+            options = app.handle("OPTIONS", "/api/workspaces/ws_lawdit_gdpr/groups/custom_group", "trace_options", None, None, {})
 
         self.assertTrue(callable(getattr(make_handler(app), "do_PATCH", None)))
         self.assertIn("PATCH", options["headers"]["Access-Control-Allow-Methods"])

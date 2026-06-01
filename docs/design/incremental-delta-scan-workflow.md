@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-After a full scan creates a source snapshot, file fingerprints, findings, review support, audit context, and evaluation traceability, DataSentinel needs an ongoing governance step that can represent changed-file-only processing. The step must connect to the completed full-scan baseline instead of behaving like an isolated static mock.
+After a full scan creates a source snapshot, file fingerprints, findings, review support, audit context, and evaluation traceability, lawdit needs an ongoing governance step that can represent changed-file-only processing. The step must connect to the completed full-scan baseline instead of behaving like an isolated static mock.
 
 This P0 slice implements deterministic delta-scan execution and representation in the existing frontend mock workflow. It applies the repository Atlas reference in `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md` and the continuity requirements recorded in the inventory/extraction, deterministic signal-detection, context/risk, owner-routing, finding-assembly, review-support, human-review, and audit-event design notes.
 
@@ -21,7 +21,7 @@ Excluded:
 
 - Production Microsoft Graph, OAuth, tenant, webhook, delta-token, or SharePoint/OneDrive integration.
 - Runtime parser, OCR, AI, queue, database, workflow engine, ticketing, notification, retention-label, or deletion service.
-- Automatic deletion or treating missing source files as DataSentinel deletion.
+- Automatic deletion or treating missing source files as lawdit deletion.
 - Legal conclusions, legal advice, or claims of full GDPR compliance.
 - New public endpoints or required contract fields.
 
@@ -47,7 +47,7 @@ References:
 | DELTA-REQ-002 | The baseline must preserve scan ID, source snapshot identity, inventory fingerprint, baseline file count, and baseline finding count for audit and evaluation continuity. |
 | DELTA-REQ-003 | Delta processing must represent changed, new, modified, unchanged, and missing source files separately. |
 | DELTA-REQ-004 | Unchanged files must be carried forward and must not be counted as newly scanned findings unless policy context later requires reopening. |
-| DELTA-REQ-005 | Missing source files are source inventory changes, not DataSentinel deletion or proof of erasure. |
+| DELTA-REQ-005 | Missing source files are source inventory changes, not lawdit deletion or proof of erasure. |
 | DELTA-REQ-006 | Delta findings must still pass through deterministic signal detection, context/risk, owner routing, finding assembly, review support, audit, and evaluation boundaries. |
 | DELTA-REQ-007 | Public payloads and UI must not expose raw source content, unredacted personal data, credentials, hidden permissions, legal conclusions, or deletion execution. |
 | DELTA-REQ-008 | The P0 implementation must stay deterministic, zero-model-call, zero-estimated-paid-service-cost, and economically affordable. |
@@ -73,7 +73,7 @@ References:
 | Comparing delta baseline | Changed files identified | Raw content remains internal | Inventorying changed files | Inventory only changed files and carry forward unchanged counts |
 | Inventorying changed files | Extraction and deterministic signal detection complete | Redacted evidence signals exist | Downstream stages run | Context/risk, owner routing, finding assembly, review support, and audit use delta scan ID |
 | Delta scan completed | Changed findings assembled | Metrics inputs exist | Delta scan completed | Publish changed-file findings, carried-forward counts, audit summary, and evaluation hashes |
-| Delta scan completed | Missing files observed | No DataSentinel deletion occurred | Delta scan completed | Represent missing files as inventory changes with `deletionExecuted = false` |
+| Delta scan completed | Missing files observed | No lawdit deletion occurred | Delta scan completed | Represent missing files as inventory changes with `deletionExecuted = false` |
 
 ## Public Contract Strategy
 

@@ -48,7 +48,7 @@ type ApiEnvelope<T> = {
   data: T
 }
 
-const apiBase = (import.meta.env.VITE_DATASENTINEL_API_BASE ?? '/api').replace(/\/$/, '')
+const apiBase = (import.meta.env.VITE_LAWDIT_API_BASE ?? '/api').replace(/\/$/, '')
 
 export async function loadAuthProviders(): Promise<AuthProviderOption[]> {
   const envelope = await authRequest<AuthProviderOption[]>('/auth/providers')

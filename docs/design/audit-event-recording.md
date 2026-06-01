@@ -2,9 +2,9 @@
 
 ## Problem Definition
 
-After human review command handling, DataSentinel needs audit events to become a first-class lifecycle record rather than a few static rows. The audit trail must connect scan start, scan completion, owner assignment, finding assembly, finding-level timeline events, and human review decisions into one structured trace that can be shown in the audit view, finding detail timeline, metrics, and evaluation output.
+After human review command handling, lawdit needs audit events to become a first-class lifecycle record rather than a few static rows. The audit trail must connect scan start, scan completion, owner assignment, finding assembly, finding-level timeline events, and human review decisions into one structured trace that can be shown in the audit view, finding detail timeline, metrics, and evaluation output.
 
-The repository Atlas reference in `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md` frames DataSentinel as a responsible deletion control tower. It explicitly treats `AuditEvent` as a first-class object and defines the minimum audit shape as actor, action, object, timestamp, before/after context, and evidence. This slice implements that requirement for the P0 fixture-backed workflow without adding durable backend storage or production integrations.
+The repository Atlas reference in `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md` frames lawdit as a responsible deletion control tower. It explicitly treats `AuditEvent` as a first-class object and defines the minimum audit shape as actor, action, object, timestamp, before/after context, and evidence. This slice implements that requirement for the P0 fixture-backed workflow without adding durable backend storage or production integrations.
 
 ## Scope
 

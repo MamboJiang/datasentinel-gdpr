@@ -4,261 +4,31 @@ import { Link } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import {
+  governanceCards,
+  governanceLayerLabels,
+  governanceLoopSteps,
+  heroTitle,
+  scannerHits,
+  scannerMissingControls,
+  fileStatusCards,
   proofPoints,
   safetyBoundaries,
   sampleFamilies,
+  workflowNodeLabels,
+  workflowPhases,
+  workflowStepPhaseIndexes,
   workflowSteps,
+  workflowThreadPath,
+  type GovernanceCardConfig,
 } from './homePageContent'
+import { prefersReducedMotion, useDotGridCanvas } from './homePageMotion'
+import { PublicAnalysisTrial } from './PublicAnalysisTrial'
+import { TrueFocus } from './TrueFocus'
 import './HomePage.css'
 import './HomePage.sections.css'
 import './HomePage.responsive.css'
 
 gsap.registerPlugin(ScrollTrigger)
-
-const heroTitle = 'DataSentinel'
-const workflowNodeLabels = ['Source', 'Signals', 'Risk', 'Owner', 'Review', 'Audit']
-const workflowThreadPath = 'M50 -4 C74 8 74 22 50 31 C26 40 26 52 50 60 C74 68 74 82 50 90 C36 95 38 104 50 110'
-const workflowPhaseStepIndexes = [
-  [0, 1],
-  [2, 3],
-  [4],
-  [5],
-  [6, 7],
-  [8, 9, 10],
-]
-const workflowPhaseSummaries = [
-  {
-    summary: 'Controlled sources and scan readiness are established before findings exist.',
-    objective: 'Start from an explicit source and a reliable full-scan baseline.',
-    output: 'Configured source evidence and scan readiness.',
-  },
-  {
-    summary: 'Inventory, extraction, and detector signals become safe evidence candidates.',
-    objective: 'Turn raw files into masked, explainable review signals.',
-    output: 'File inventory, warnings, and redacted evidence snippets.',
-  },
-  {
-    summary: 'Policy-pack context turns findings into review priorities without legal conclusions.',
-    objective: 'Separate signal severity from human legal decisions.',
-    output: 'Risk context for accountable review.',
-  },
-  {
-    summary: 'Findings route to accountable humans instead of remaining silently unowned.',
-    objective: 'Assign direct owners or escalate when ownership is unknown.',
-    output: 'Owner queue with fallback routing.',
-  },
-  {
-    summary: 'Reviewers see allowed actions, denied actions, and required reasons before acting.',
-    objective: 'Require a human decision before cleanup action.',
-    output: 'Decision support with visible permission boundaries.',
-  },
-  {
-    summary: 'Accepted changes become attributable, measurable, and audit-ready.',
-    objective: 'Preserve traceability and keep later scans focused.',
-    output: 'Audit events, delta baseline, and evaluation visibility.',
-  },
-]
-const fallbackWorkflowPhaseSummary = workflowPhaseSummaries[0] ?? {
-  summary: 'Workflow activity is grouped into accountable review phases.',
-  objective: 'Keep each phase visible before a decision is made.',
-  output: 'Review-ready workflow context.',
-}
-const workflowPhases = workflowNodeLabels.map((title, index) => {
-  const stepIndexes = workflowPhaseStepIndexes[index] ?? []
-  const firstStep = stepIndexes[0] ?? 0
-  const lastStep = stepIndexes[stepIndexes.length - 1] ?? firstStep
-  const detail = workflowPhaseSummaries[index] ?? fallbackWorkflowPhaseSummary
-
-  return {
-    id: title.toLowerCase(),
-    title,
-    range: `${String(firstStep + 1).padStart(2, '0')}-${String(lastStep + 1).padStart(2, '0')}`,
-    stepIndexes,
-    ...detail,
-  }
-})
-const workflowStepPhaseIndexes = workflowSteps.map((_, stepIndex) => {
-  const phaseIndex = workflowPhaseStepIndexes.findIndex((stepIndexes) => stepIndexes.includes(stepIndex))
-
-  return phaseIndex >= 0 ? phaseIndex : 0
-})
-
-const scannerHits = ['Email address', 'Personal name', 'IBAN-like number']
-const scannerMissingControls = [
-  'No owner',
-  'No review decision',
-  'No deletion justification',
-  'No audit trail',
-  'No delta proof',
-]
-const governanceLoopSteps = [
-  ['Explain evidence', 'Masked snippet + context + confidence'],
-  ['Route owner', 'File owner / site owner / Master of Data / DPO'],
-  ['Require review', 'Delete / retain / redact / escalate with justification'],
-  ['Record audit', 'Actor + reason + timestamp + outcome'],
-  ['Keep alive', 'Delta scan checks only changed files'],
-] as const
-const fileStatusCards = [
-  {
-    id: 'detected',
-    eyebrow: '01 / Detection',
-    title: 'Detected',
-    description: 'GDPR-relevant content found. Masked evidence and entity types are extracted before any review starts.',
-    meta: ['Evidence: Masked', 'Risk: Scored', 'Source: Controlled'],
-    tone: 'blue-gray',
-  },
-  {
-    id: 'ownership',
-    eyebrow: '02 / Ownership',
-    title: 'Owner assigned',
-    description:
-      'The case is routed to a file owner, site owner, Master of Data, or DPO fallback when ownership is unclear.',
-    meta: ['Route: Accountable', 'Fallback: Master of Data', 'Escalation: Available'],
-    tone: 'neutral',
-  },
-  {
-    id: 'review',
-    eyebrow: '03 / Review',
-    title: 'Review required',
-    description: 'A human reviewer sees masked snippets, context, confidence, and guidance before making a decision.',
-    meta: ['Evidence: Redacted', 'Reviewer: Required', 'Guidance: Visible'],
-    tone: 'amber-gray',
-  },
-  {
-    id: 'decision',
-    eyebrow: '04 / Decision',
-    title: 'Decision recorded',
-    description: 'Delete, retain, redact, or escalate actions must include a human justification before being closed.',
-    meta: ['Delete: Approval required', 'Retain: Exception reason', 'Blind delete: Disabled'],
-    tone: 'charcoal',
-  },
-  {
-    id: 'audit',
-    eyebrow: '05 / Audit',
-    title: 'Audit-ready',
-    description: 'Actor, timestamp, evidence, decision, reason, and outcome are preserved as an audit trail.',
-    meta: ['Actor: Tracked', 'Reason: Stored', 'Outcome: Traceable'],
-    tone: 'green-gray',
-  },
-  {
-    id: 'delta',
-    eyebrow: '06 / Delta scan',
-    title: 'Delta monitored',
-    description: 'Future scans process only changed files, keeping the compliance baseline alive without full rescans.',
-    meta: ['Changed files: Scanned', 'Baseline: Updated', 'Governance: Continuous'],
-    tone: 'violet-gray',
-  },
-]
-
-type GovernanceCardType =
-  | 'toggles'
-  | 'codeRule'
-  | 'permissionBoundary'
-  | 'ownerRouting'
-  | 'reviewerGuidance'
-  | 'auditRequirement'
-
-type GovernanceCardConfig = {
-  title: string
-  type: GovernanceCardType
-  summary: string
-}
-
-const governanceCards: GovernanceCardConfig[] = [
-  {
-    title: 'Global Governance Settings',
-    type: 'toggles',
-    summary: 'Human justification, masked review, and no automatic deletion.',
-  },
-  {
-    title: 'Active Escalation Rule',
-    type: 'codeRule',
-    summary: 'High-risk special-category data routes to Legal DPO.',
-  },
-  {
-    title: 'Permission Boundary',
-    type: 'permissionBoundary',
-    summary: 'Scanner actions are allowed and denied explicitly.',
-  },
-  {
-    title: 'Owner Routing Model',
-    type: 'ownerRouting',
-    summary: 'Risk cases route to accountable human owners.',
-  },
-  {
-    title: 'Reviewer Guidance',
-    type: 'reviewerGuidance',
-    summary: 'Reviewers see evidence, suggested action, and required justification.',
-  },
-  {
-    title: 'Audit Requirement',
-    type: 'auditRequirement',
-    summary: 'Every decision records actor, evidence, decision, reason, and time.',
-  },
-]
-
-const governanceLayerLabels = ['Settings', 'Escalation', 'Boundary', 'Owner', 'Review', 'Audit']
-const prefersReducedMotion = () =>
-  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-type TrueFocusProps = {
-  animationDuration?: number
-  blurAmount?: number
-  borderColor?: string
-  className?: string
-  glowColor?: string
-  manualMode?: boolean
-  pauseBetweenAnimations?: number
-  sentence: string
-}
-
-function TrueFocus({
-  animationDuration = 0.45,
-  blurAmount = 2.4,
-  borderColor = 'rgba(11, 87, 208, .52)',
-  className = '',
-  glowColor = 'rgba(11, 87, 208, .14)',
-  manualMode = false,
-  pauseBetweenAnimations = 1.1,
-  sentence,
-}: TrueFocusProps) {
-  const words = sentence.split(' ')
-  const [activeIndex, setActiveIndex] = useState(0)
-
-  useEffect(() => {
-    if (manualMode || words.length <= 1 || prefersReducedMotion()) return undefined
-
-    const interval = window.setInterval(() => {
-      setActiveIndex((index) => (index + 1) % words.length)
-    }, (animationDuration + pauseBetweenAnimations) * 1000)
-
-    return () => window.clearInterval(interval)
-  }, [animationDuration, manualMode, pauseBetweenAnimations, words.length])
-
-  return (
-    <span
-      aria-label={sentence}
-      className={`landing-true-focus ${className}`.trim()}
-      role="text"
-      style={{
-        '--true-focus-blur': `${blurAmount}px`,
-        '--true-focus-border': borderColor,
-        '--true-focus-duration': `${animationDuration}s`,
-        '--true-focus-glow': glowColor,
-      } as CSSProperties}
-    >
-      {words.map((word, index) => (
-        <span
-          aria-hidden="true"
-          className={`landing-true-focus-word${index === activeIndex ? ' landing-true-focus-word-active' : ''}`}
-          key={`${word}-${index}`}
-        >
-          <span>{word}</span>
-        </span>
-      ))}
-    </span>
-  )
-}
 
 export function HomePage() {
   const rootRef = useRef<HTMLDivElement>(null)
@@ -283,6 +53,8 @@ export function HomePage() {
   const visibleWorkflowPhase = workflowPhases[visibleWorkflowNodeIndex]
   const activeGovernanceCard = governanceCards[activeGovernanceIndex] ?? governanceCards[0]
   const activeFileStatus = fileStatusCards[activeFileStatusIndex] ?? fileStatusCards[0]
+
+  useDotGridCanvas(dotGridCanvasRef)
 
   function handleSectionLink(event: MouseEvent<HTMLAnchorElement>, sectionId: string) {
     const section = document.getElementById(sectionId)
@@ -415,9 +187,9 @@ export function HomePage() {
         return (
           <div className="landing-governance-toggle-list">
             {[
-              ['Require human justification', true],
-              ['Mask PII in review mode', true],
-              ['Auto-delete without review', false],
+              ['Require review justification', true],
+              ['Mask evidence by default', true],
+              ['Delete external files automatically', false],
             ].map(([label, isOn]) => (
               <div className="landing-governance-toggle-row" key={String(label)}>
                 <span>{label}</span>
@@ -429,9 +201,9 @@ export function HomePage() {
       case 'codeRule':
         return (
           <div className="landing-governance-code">
-            <div>IF Risk_Score &gt;= <mark>High</mark></div>
-            <div>AND Category == <mark>Special_PII</mark></div>
-            <div>THEN Route_To = <mark>Legal_DPO</mark></div>
+            <div>IF risk == <mark>high</mark></div>
+            <div>AND category == <mark>special_category</mark></div>
+            <div>THEN route_to = <mark>DPO escalation</mark></div>
           </div>
         )
       case 'permissionBoundary':
@@ -439,13 +211,13 @@ export function HomePage() {
           <div className="landing-governance-boundary">
             <div>
               <strong>Scanner can</strong>
-              {['Detect sensitive data', 'Recommend review action'].map((item) => (
+              {['Detect GDPR-relevant signals', 'Suggest review context'].map((item) => (
                 <span key={item}><Check aria-hidden="true" size={15} />{item}</span>
               ))}
             </div>
             <div>
               <strong>Scanner cannot</strong>
-              {['Delete without approval', 'Reveal masked PII'].map((item) => (
+              {['Delete external files', 'Reveal masked values'].map((item) => (
                 <span className="landing-governance-denied" key={item}><X aria-hidden="true" size={15} />{item}</span>
               ))}
             </div>
@@ -455,10 +227,10 @@ export function HomePage() {
         return (
           <div className="landing-governance-routing">
             {[
-              ['OneDrive Owner', 'Direct Owner'],
-              ['SharePoint Site', 'Site Owner'],
-              ['Shared Drive', 'Master of Data'],
-              ['High Risk + Unknown Owner', 'DPO'],
+              ['Assigned Source', 'Direct Owner'],
+              ['Workspace Source', 'Source Owner'],
+              ['Unknown Owner', 'Master of Data'],
+              ['High Risk + Unknown Owner', 'DPO Escalation'],
             ].map(([source, owner]) => (
               <div key={source}>
                 <span>{source}</span>
@@ -474,7 +246,7 @@ export function HomePage() {
             <span>Detected</span>
             <strong>Health Data + Personal Identifier</strong>
             <span>Suggested Action</span>
-            <b>Mask before external sharing</b>
+            <b>Escalate before cleanup</b>
             <em>Justification before decision</em>
           </div>
         )
@@ -491,154 +263,6 @@ export function HomePage() {
         return null
     }
   }
-
-  useEffect(() => {
-    const canvas = dotGridCanvasRef.current
-    const context = canvas?.getContext('2d')
-    if (!canvas || !context) {
-      return
-    }
-
-    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const dotSize = 1.35
-    const gap = 24
-    const proximity = 170
-    const hoverStrength = 8
-    const shockRadius = 230
-    const shockStrength = 12
-    const resistance = 0.88
-    const returnSpeed = 0.055
-    const baseColor = { r: 148, g: 163, b: 184 }
-    const activeColor = { r: 11, g: 87, b: 208 }
-    const pointer = { active: false, x: -9999, y: -9999 }
-    type Dot = {
-      originX: number
-      originY: number
-      xOffset: number
-      yOffset: number
-      velocityX: number
-      velocityY: number
-    }
-    let dots: Dot[] = []
-    let frameId = 0
-    let width = 0
-    let height = 0
-
-    const setCanvasSize = () => {
-      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2)
-      width = window.innerWidth
-      height = window.innerHeight
-      canvas.width = Math.ceil(width * pixelRatio)
-      canvas.height = Math.ceil(height * pixelRatio)
-      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
-
-      const columns = Math.ceil(width / gap) + 2
-      const rows = Math.ceil(height / gap) + 2
-      dots = []
-
-      for (let row = 0; row < rows; row += 1) {
-        for (let column = 0; column < columns; column += 1) {
-          dots.push({
-            originX: column * gap - gap / 2,
-            originY: row * gap - gap / 2,
-            velocityX: 0,
-            velocityY: 0,
-            xOffset: 0,
-            yOffset: 0,
-          })
-        }
-      }
-    }
-
-    const handlePointerMove = (event: WindowEventMap['pointermove']) => {
-      if (motionQuery.matches) {
-        return
-      }
-
-      const rect = canvas.getBoundingClientRect()
-      pointer.active = true
-      pointer.x = event.clientX - rect.left
-      pointer.y = event.clientY - rect.top
-    }
-
-    const handlePointerLeave = () => {
-      pointer.active = false
-      pointer.x = -9999
-      pointer.y = -9999
-    }
-
-    const handlePointerDown = (event: WindowEventMap['pointerdown']) => {
-      if (motionQuery.matches) {
-        return
-      }
-
-      dots.forEach((dot) => {
-        const deltaX = dot.originX - event.clientX
-        const deltaY = dot.originY - event.clientY
-        const distance = Math.hypot(deltaX, deltaY)
-
-        if (distance > shockRadius || distance === 0) {
-          return
-        }
-
-        const falloff = 1 - distance / shockRadius
-        dot.velocityX += (deltaX / distance) * shockStrength * falloff
-        dot.velocityY += (deltaY / distance) * shockStrength * falloff
-      })
-    }
-
-    const renderDotGrid = () => {
-      context.clearRect(0, 0, width, height)
-
-      dots.forEach((dot) => {
-        dot.velocityX *= resistance
-        dot.velocityY *= resistance
-        dot.xOffset += dot.velocityX
-        dot.yOffset += dot.velocityY
-        dot.xOffset += (0 - dot.xOffset) * returnSpeed
-        dot.yOffset += (0 - dot.yOffset) * returnSpeed
-
-        const deltaX = pointer.active ? dot.originX - pointer.x : 0
-        const deltaY = pointer.active ? dot.originY - pointer.y : 0
-        const distance = pointer.active ? Math.hypot(deltaX, deltaY) : Infinity
-        const influence = Math.max(0, 1 - distance / proximity)
-        const easedInfluence = influence * influence * (3 - 2 * influence)
-        const hoverX = distance > 0 && distance < proximity ? (deltaX / distance) * easedInfluence * hoverStrength : 0
-        const hoverY = distance > 0 && distance < proximity ? (deltaY / distance) * easedInfluence * hoverStrength : 0
-        const x = dot.originX + dot.xOffset + hoverX
-        const y = dot.originY + dot.yOffset + hoverY
-        const radius = dotSize + easedInfluence * 2.2
-        const opacity = 0.18 + easedInfluence * 0.56
-        const red = Math.round(baseColor.r + (activeColor.r - baseColor.r) * easedInfluence)
-        const green = Math.round(baseColor.g + (activeColor.g - baseColor.g) * easedInfluence)
-        const blue = Math.round(baseColor.b + (activeColor.b - baseColor.b) * easedInfluence)
-
-        context.beginPath()
-        context.fillStyle = `rgba(${red}, ${green}, ${blue}, ${opacity})`
-        context.arc(x, y, radius, 0, Math.PI * 2)
-        context.fill()
-      })
-
-      frameId = window.requestAnimationFrame(renderDotGrid)
-    }
-
-    setCanvasSize()
-    frameId = window.requestAnimationFrame(renderDotGrid)
-    window.addEventListener('pointermove', handlePointerMove)
-    window.addEventListener('pointerdown', handlePointerDown)
-    window.addEventListener('resize', setCanvasSize)
-    window.addEventListener('blur', handlePointerLeave)
-    document.addEventListener('pointerleave', handlePointerLeave)
-
-    return () => {
-      window.cancelAnimationFrame(frameId)
-      window.removeEventListener('pointermove', handlePointerMove)
-      window.removeEventListener('pointerdown', handlePointerDown)
-      window.removeEventListener('resize', setCanvasSize)
-      window.removeEventListener('blur', handlePointerLeave)
-      document.removeEventListener('pointerleave', handlePointerLeave)
-    }
-  }, [])
 
   useEffect(() => {
     if (prefersReducedMotion() || isFileStatusDragging || isFileStatusHovered) {
@@ -788,7 +412,7 @@ export function HomePage() {
     <div className="landing-page" ref={rootRef}>
       <canvas className="landing-dot-grid-background" ref={dotGridCanvasRef} aria-hidden="true" />
       <div className="landing-announcement">
-        <span>DataSentinel prelaunch uses signed-in access, redacted evidence, and human review.</span>
+        <span>lawdit keeps sensitive-data discovery tied to redacted evidence, accountable owners, and recorded decisions.</span>
         <a href="#safety" onClick={(event) => handleSectionLink(event, 'safety')}>
           Review boundaries <ArrowRight aria-hidden="true" size={14} />
         </a>
@@ -796,12 +420,10 @@ export function HomePage() {
 
       <header className="landing-nav-shell">
         <Link className="landing-brand" to="/">
-          <span className="landing-mark" aria-hidden="true">
-            <i /><i /><i /><i /><i /><i /><i /><i /><i />
-          </span>
-          <span>DataSentinel</span>
+          <img className="landing-brand-logo" src="/brand/lawdit-wordmark-light.svg" alt="lawdit" />
         </Link>
         <nav className="landing-nav" aria-label="Homepage navigation">
+          <a href="#try-analysis" onClick={(event) => handleSectionLink(event, 'try-analysis')}>Analyze file</a>
           <a href="#problem" onClick={(event) => handleSectionLink(event, 'problem')}>Problem</a>
           <a href="#workflow" onClick={(event) => handleSectionLink(event, 'workflow')}>Workflow</a>
           <a href="#sample" onClick={(event) => handleSectionLink(event, 'sample')}>Sources</a>
@@ -870,22 +492,24 @@ export function HomePage() {
               <span aria-hidden="true" className="landing-hero-title-measure">{heroTitle}</span>
             </h1>
             <p>
-              Evidence-backed GDPR-relevant data discovery that routes findings to accountable owners, requires human review,
-              and records audit-ready workflow evidence.
+              Upload or connect controlled sources, inspect redacted evidence, route findings to accountable owners, record
+              human decisions, and keep audit and evaluation signals visible.
             </p>
             <div className="landing-hero-actions">
-              <Link className="landing-primary landing-hero-primary" to="/dashboard">
+              <a className="landing-primary landing-hero-primary" href="#try-analysis" onClick={(event) => handleSectionLink(event, 'try-analysis')}>
                 <span className="landing-primary-content">
-                  Open dashboard <ArrowRight aria-hidden="true" size={17} />
+                  Analyze one file <ArrowRight aria-hidden="true" size={17} />
                 </span>
-              </Link>
-              <a className="landing-secondary" href="#workflow" onClick={(event) => handleSectionLink(event, 'workflow')}>Review workflow</a>
+              </a>
+              <Link className="landing-secondary" to="/dashboard">Open dashboard</Link>
             </div>
           </div>
 
         </section>
 
-        <section className="landing-feature-rail" aria-label="DataSentinel capabilities">
+        <PublicAnalysisTrial />
+
+        <section className="landing-feature-rail" aria-label="lawdit capabilities">
           {proofPoints.map(({ title, description, icon: Icon, tone }) => (
             <article className={`landing-proof landing-proof-${tone}`} key={title}>
               <Icon aria-hidden="true" size={20} strokeWidth={1.9} />
@@ -908,8 +532,8 @@ export function HomePage() {
               />
             </h2>
             <p>
-              A scanner only finds sensitive data. DataSentinel explains why it matters, who owns the decision, what
-              action is required, and how the outcome is proven.
+              A detector-only scan can find sensitive values but still leave ownership, permission boundaries, and proof
+              unresolved. lawdit turns each signal into a review case with evidence, routing, action scope, and audit.
             </p>
           </div>
           <div className="landing-conversion-layout" aria-label="Scanner to governance comparison">
@@ -918,8 +542,8 @@ export function HomePage() {
                 <span>Detection only</span>
                 <span>Incomplete</span>
               </div>
-              <h3>Plain scanner</h3>
-              <p>Stops at detection</p>
+              <h3>Detector-only scan</h3>
+              <p>Stops before accountability</p>
               <div className="landing-scanner-output">
                 <strong>PII hits found:</strong>
                 <ul>
@@ -949,8 +573,8 @@ export function HomePage() {
                 <span>Control plane</span>
                 <span>Review case</span>
               </div>
-              <h3>DataSentinel control tower</h3>
-              <p>Turns findings into accountable decisions</p>
+              <h3>lawdit review workflow</h3>
+              <p>Turns signals into accountable review records</p>
               <div className="landing-governance-loop">
                 {governanceLoopSteps.map(([title, description], index) => (
                   <div className="landing-governance-loop-row" key={title}>
@@ -965,7 +589,7 @@ export function HomePage() {
             </article>
           </div>
           <p className="landing-accountability-callout landing-reveal">
-            We do not delete blindly. We make deletion decisions accountable.
+            Cleanup decisions stay gated. Human review remains explicit, justified, and auditable.
           </p>
         </section>
 
@@ -974,8 +598,8 @@ export function HomePage() {
           <div className="landing-section-copy landing-reveal">
             <h2>From source files to accountable review.</h2>
             <p>
-              DataSentinel is not a generic PII scanner or an automatic deletion tool. Detection starts a governed loop that
-              keeps redaction, ownership, review support, permission boundaries, audit, delta scans, and evaluation visible.
+              lawdit is not a generic PII scanner or automatic deletion tool. The workflow keeps source readiness,
+              redaction, ownership, review support, permission boundaries, audit events, delta scans, and evaluation visible.
             </p>
           </div>
           <div className="landing-workflow-layout">
@@ -1252,10 +876,10 @@ export function HomePage() {
 
         <section className="landing-section landing-sample" id="sample" tabIndex={-1}>
           <div className="landing-section-copy landing-reveal">
-            <h2>Connect a source before findings appear.</h2>
+            <h2>Start with an explicit source.</h2>
             <p>
-              Prelaunch deployments should show configured sources and real empty states. The public organizer repository
-              remains available as a reference dataset for local validation without vendoring the files.
+              The console treats source registration as the boundary before scanning. The organizer sample repository remains
+              the default validation reference without copying its files into this repository.
             </p>
           </div>
           <div className="landing-sample-layout">
@@ -1274,10 +898,10 @@ export function HomePage() {
 
         <section className="landing-section landing-governance" id="governance" tabIndex={-1}>
           <div className="landing-governance-copy landing-reveal">
-            <h2>Governance stays explicit.</h2>
+            <h2>Governance stays configurable.</h2>
             <p>
-              Policy packs, organization models, permission boundaries, reviewer guidance, and escalation choices stay visible
-              instead of being hidden inside scanner logic.
+              Versioned policy packs, organization models, permission boundaries, reviewer guidance, and escalation choices
+              stay visible instead of being hard-coded into detector logic.
             </p>
           </div>
           <div className="landing-console-preview">
@@ -1351,9 +975,9 @@ export function HomePage() {
               </div>
             </div>
             <div className="landing-console-copy landing-reveal">
-              <strong>Enter the internal workspace.</strong>
+              <strong>Open the governed console.</strong>
               <p>
-                The console starts at /dashboard after sign-in and keeps homepage navigation separate from the internal shell.
+                The console starts at /dashboard and keeps public one-file analysis separate from the governed review Workspace.
               </p>
               <Link className="landing-primary" to="/dashboard">
                 Open dashboard <ArrowRight aria-hidden="true" size={17} />
@@ -1460,9 +1084,9 @@ export function HomePage() {
 
         <section className="landing-section landing-safety" id="safety" tabIndex={-1}>
           <div className="landing-section-copy landing-reveal">
-            <h2>Safe prototype boundaries stay visible.</h2>
+            <h2>Safe operating boundaries stay visible.</h2>
             <p>
-              The public homepage and internal console avoid raw sensitive content, legal advice, full-compliance claims,
+              The public homepage and Workspace avoid raw sensitive content, legal advice, full-compliance claims,
               automatic deletion, and production integration promises.
             </p>
           </div>
@@ -1478,7 +1102,7 @@ export function HomePage() {
         </section>
 
         <section className="landing-final">
-          <h2>Enter the privacy operations workspace.</h2>
+          <h2>Open the lawdit console.</h2>
           <Link className="landing-primary" to="/dashboard">
             Open dashboard <ArrowRight aria-hidden="true" size={17} />
           </Link>

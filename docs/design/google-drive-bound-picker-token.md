@@ -2,7 +2,7 @@
 
 ## Problem
 
-After a user connects a personal Google Drive binding, Add Source still starts the browser-side Google authorization flow before opening Picker. That sends the user to a Google login or consent surface even though the same DataSentinel account already has a server-side Drive binding.
+After a user connects a personal Google Drive binding, Add Source still starts the browser-side Google authorization flow before opening Picker. That sends the user to a Google login or consent surface even though the same lawdit account already has a server-side Drive binding.
 
 ## Research Basis
 

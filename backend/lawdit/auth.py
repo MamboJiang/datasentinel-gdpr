@@ -26,8 +26,8 @@ from .auth_support import (
     validate_google_claims,
 )
 
-AUTH_TX_COOKIE = "datasentinel_auth_tx"
-SESSION_COOKIE = "datasentinel_session"
+AUTH_TX_COOKIE = "lawdit_auth_tx"
+SESSION_COOKIE = "lawdit_session"
 PROVIDERS = ("google", "github")
 SESSION_TTL_SECONDS = 7 * 24 * 60 * 60
 TX_TTL_SECONDS = 10 * 60
@@ -331,11 +331,11 @@ class AuthService:
 
 def settings_from_env() -> dict[str, Any]:
     return {
-        "auth_required": env_bool("DATASENTINEL_AUTH_REQUIRED", False),
-        "cookie_secure": env_bool("DATASENTINEL_COOKIE_SECURE", False),
-        "frontend_return_url": os.environ.get("DATASENTINEL_FRONTEND_RETURN_URL", "http://localhost:5173/dashboard"),
-        "redirect_base_url": os.environ.get("DATASENTINEL_AUTH_REDIRECT_BASE_URL", "http://localhost:8000"),
-        "session_secret": os.environ.get("DATASENTINEL_SESSION_SECRET", ""),
+        "auth_required": env_bool("LAWDIT_AUTH_REQUIRED", False),
+        "cookie_secure": env_bool("LAWDIT_COOKIE_SECURE", False),
+        "frontend_return_url": os.environ.get("LAWDIT_FRONTEND_RETURN_URL", "http://localhost:5173/dashboard"),
+        "redirect_base_url": os.environ.get("LAWDIT_AUTH_REDIRECT_BASE_URL", "http://localhost:8000"),
+        "session_secret": os.environ.get("LAWDIT_SESSION_SECRET", ""),
         "providers": {
             "google": {"client_id": os.environ.get("GOOGLE_CLIENT_ID", ""), "client_secret": os.environ.get("GOOGLE_CLIENT_SECRET", "")},
             "github": {"client_id": os.environ.get("GITHUB_CLIENT_ID", ""), "client_secret": os.environ.get("GITHUB_CLIENT_SECRET", "")},

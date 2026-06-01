@@ -6,13 +6,13 @@ The approved deployment path is a controlled frontend plus P0 API server on `age
 
 Current remote layout:
 
-- Static releases: `/srv/datasentinel/frontend/releases/<timestamp>`
-- Active release symlink: `/srv/datasentinel/frontend/current`
-- User docs releases: `/srv/datasentinel/docs/releases/<timestamp>`
-- Active user docs symlink: `/srv/datasentinel/docs/current`
-- User docs service: `datasentinel-docs.service`, running `npm run start -- --hostname 127.0.0.1 --port 3300`
-- API command: `python3 -m backend.datasentinel.source_server --host 127.0.0.1 --port 8000 --db-path /srv/datasentinel/data/datasentinel.sqlite3`
-- Local SQLite state: `/srv/datasentinel/data/datasentinel.sqlite3`
+- Static releases: `/srv/lawdit/frontend/releases/<timestamp>`
+- Active release symlink: `/srv/lawdit/frontend/current`
+- User docs releases: `/srv/lawdit/docs/releases/<timestamp>`
+- Active user docs symlink: `/srv/lawdit/docs/current`
+- User docs service: `lawdit-docs.service`, running `npm run start -- --hostname 127.0.0.1 --port 3300`
+- API command: `python3 -m backend.lawdit.source_server --host 127.0.0.1 --port 8000 --db-path /srv/lawdit/data/lawdit.sqlite3`
+- Local SQLite state: `/srv/lawdit/data/lawdit.sqlite3`
 - API route: Caddy proxies `/api/*` to `127.0.0.1:8000`
 - User docs route: Caddy proxies `/docs*` and `/_next/*` to `127.0.0.1:3300`
 - Caddy config: `/etc/caddy/Caddyfile`
@@ -29,7 +29,7 @@ npm run test
 npm run build
 ```
 
-Upload `frontend/dist/` to a new timestamped release directory under `/srv/datasentinel/frontend/releases/`, then point `/srv/datasentinel/frontend/current` to that release.
+Upload `frontend/dist/` to a new timestamped release directory under `/srv/lawdit/frontend/releases/`, then point `/srv/lawdit/frontend/current` to that release.
 
 ## Build and Deploy User Docs
 
@@ -42,7 +42,7 @@ npm run build
 npm audit --omit=dev
 ```
 
-Upload the docs-site source, lockfile, `.next/`, and production dependencies to a new timestamped release directory under `/srv/datasentinel/docs/releases/`, then point `/srv/datasentinel/docs/current` to that release. The docs app runs as a local Next service on `127.0.0.1:3300`; Caddy exposes it at `https://founder-force.uk/docs`.
+Upload the docs-site source, lockfile, `.next/`, and production dependencies to a new timestamped release directory under `/srv/lawdit/docs/releases/`, then point `/srv/lawdit/docs/current` to that release. The docs app runs as a local Next service on `127.0.0.1:3300`; Caddy exposes it at `https://founder-force.uk/docs`.
 
 The docs search endpoint is scoped to `/docs/api/search` so it does not conflict with the product API under `/api/*`.
 
@@ -51,10 +51,10 @@ The docs search endpoint is scoped to `/docs/api/search` so it does not conflict
 Run from the repository root on `agent-us`:
 
 ```bash
-mkdir -p /srv/datasentinel/data
+mkdir -p /srv/lawdit/data
 python3 -m pip install --user -r requirements.txt
-python3 -m backend.datasentinel.db_tool init --db-path /srv/datasentinel/data/datasentinel.sqlite3
-python3 -m backend.datasentinel.source_server --host 127.0.0.1 --port 8000 --db-path /srv/datasentinel/data/datasentinel.sqlite3
+python3 -m backend.lawdit.db_tool init --db-path /srv/lawdit/data/lawdit.sqlite3
+python3 -m backend.lawdit.source_server --host 127.0.0.1 --port 8000 --db-path /srv/lawdit/data/lawdit.sqlite3
 ```
 
 `requirements.txt` includes the PDF text-layer extraction dependency used by prelaunch source scans. DOCX, XLSX, PPTX, ODT, ODS, ODP, ZIP, and EML text extraction uses Python stdlib ZIP/XML/email modules and does not add another runtime dependency. Legacy DOC/XLS/PPT extraction depends on host-local LibreOffice (`soffice` or `libreoffice`) for headless conversion. Install the requirements on the same Python environment that runs the API service. Text-layer-missing and mixed-layer PDF OCR is optional and depends on host `pdftoppm` plus Tesseract. Pillow enables local color-overlay preprocessing for difficult image OCR.
@@ -68,23 +68,23 @@ python3 -m pip install --user --break-system-packages -r requirements.txt
 
 For a persistent preview, run the server command under the host's service manager and keep it bound to `127.0.0.1`. The P0 API is contract-backed and may use the local SQLite file for restart-safe demo state. It must not be exposed as a production source connector, production database, or source-file deletion-capable service.
 
-The server can still run in memory for local debugging by omitting `--db-path`. `DATASENTINEL_DB_PATH` may also provide the database path when service-manager configuration is cleaner than command-line arguments.
+The server can still run in memory for local debugging by omitting `--db-path`. `LAWDIT_DB_PATH` may also provide the database path when service-manager configuration is cleaner than command-line arguments.
 
 When account-scoped schema migration runs, historical global source and workflow rows are moved to a `legacy_shared` owner scope. Signed-in users start from their own account scope and do not see those legacy rows unless an operator performs a manual migration.
 
 ## Prelaunch Account Configuration
 
-Google and GitHub sign-in are optional locally and required only when `DATASENTINEL_AUTH_REQUIRED=true`.
+Google and GitHub sign-in are optional locally and required only when `LAWDIT_AUTH_REQUIRED=true`.
 
 Local/server `.env.local` values:
 
 ```bash
-DATASENTINEL_AUTH_REQUIRED=true
-DATASENTINEL_AUTH_REDIRECT_BASE_URL=https://founder-force.uk
-DATASENTINEL_FRONTEND_RETURN_URL=https://founder-force.uk/dashboard
-DATASENTINEL_SESSION_SECRET=<host secret>
-DATASENTINEL_COOKIE_SECURE=true
-DATASENTINEL_ENABLE_DEMO_FIXTURES=false
+LAWDIT_AUTH_REQUIRED=true
+LAWDIT_AUTH_REDIRECT_BASE_URL=https://founder-force.uk
+LAWDIT_FRONTEND_RETURN_URL=https://founder-force.uk/dashboard
+LAWDIT_SESSION_SECRET=<host secret>
+LAWDIT_COOKIE_SECURE=true
+LAWDIT_ENABLE_DEMO_FIXTURES=false
 GOOGLE_CLIENT_ID=<google oauth client id>
 GOOGLE_CLIENT_SECRET=<google oauth client secret>
 GOOGLE_PICKER_API_KEY=<google picker api key>
@@ -110,12 +110,12 @@ Google Drive source selection also requires Google Picker public setup. Account-
 - Add `https://founder-force.uk/api/integrations/google-drive/bind/callback` as an authorized redirect URI on the Google OAuth web client.
 - Add Drive scopes to the OAuth consent screen: `https://www.googleapis.com/auth/drive.file` for selected files and `https://www.googleapis.com/auth/drive.readonly` when folder traversal is enabled.
 
-The Picker API key and project number are browser setup configuration, but they still belong in ignored host environment files so deployments can rotate or disable them. The Google OAuth client secret remains server-only and must never be returned by `/api/integrations/google-drive/picker-config` or `/api/integrations/google-drive/binding`. In prelaunch, Picker config is protected by the first-party session cookie when `DATASENTINEL_AUTH_REQUIRED=true`; Drive binding routes always require a first-party session.
+The Picker API key and project number are browser setup configuration, but they still belong in ignored host environment files so deployments can rotate or disable them. The Google OAuth client secret remains server-only and must never be returned by `/api/integrations/google-drive/picker-config` or `/api/integrations/google-drive/binding`. In prelaunch, Picker config is protected by the first-party session cookie when `LAWDIT_AUTH_REQUIRED=true`; Drive binding routes always require a first-party session.
 
 Start the API with one or more local roots that users may register as sources:
 
 ```bash
-python3 -m backend.datasentinel.source_server --host 127.0.0.1 --port 8000 --db-path /srv/datasentinel/data/datasentinel.sqlite3 --allowed-root /srv/datasentinel/sources
+python3 -m backend.lawdit.source_server --host 127.0.0.1 --port 8000 --db-path /srv/lawdit/data/lawdit.sqlite3 --allowed-root /srv/lawdit/sources
 ```
 
 ## OpenRouter AI Configuration
@@ -125,24 +125,24 @@ OpenRouter assistive AI is optional and must be configured only through ignored 
 Local/server `.env.local` values:
 
 ```bash
-DATASENTINEL_AI_MODE=assistive
+LAWDIT_AI_MODE=assistive
 OPENROUTER_API_KEY=<host secret>
 OPENROUTER_MODEL=google/gemini-3.1-flash-lite
 OPENROUTER_SITE_URL=https://founder-force.uk/
-OPENROUTER_APP_TITLE="DataSentinel GDPR"
-DATASENTINEL_AI_BUDGET_EUR=25.00
-DATASENTINEL_AI_BUDGET_USD=25.00
+OPENROUTER_APP_TITLE="lawdit GDPR"
+LAWDIT_AI_BUDGET_EUR=25.00
+LAWDIT_AI_BUDGET_USD=25.00
 OPENROUTER_USAGE_BASELINE_USD=<usage from GET https://openrouter.ai/api/v1/key>
-DATASENTINEL_AI_FAIL_CLOSED=true
-DATASENTINEL_AI_MAX_PROMPT_TOKENS=6000
-DATASENTINEL_AI_MAX_COMPLETION_TOKENS=350
-DATASENTINEL_OCR_MODE=local
-DATASENTINEL_OCR_LANGS=eng
+LAWDIT_AI_FAIL_CLOSED=true
+LAWDIT_AI_MAX_PROMPT_TOKENS=6000
+LAWDIT_AI_MAX_COMPLETION_TOKENS=350
+LAWDIT_OCR_MODE=local
+LAWDIT_OCR_LANGS=eng
 ```
 
 The server loads `.env.local` on startup without overriding existing process environment variables. The app reports AI readiness through `/api/health` and optional `aiProcessing` metadata in scan, metrics, and evaluation responses. Existing scans remain deterministic and show zero model calls unless a redacted assistive AI classification path is explicitly invoked.
 
-Install the host `tesseract` binary when `DATASENTINEL_OCR_MODE=local`; otherwise supported image files are counted as hard/OCR-deferred warnings. Set `DATASENTINEL_OCR_LANGS` to installed Tesseract language packs such as `eng+chi_sim+deu+fra+spa` for multilingual OCR. Text-layer-missing PDF OCR and mixed-layer PDF page OCR also require host `pdftoppm`. Raw video frame OCR requires host `ffmpeg`; when it is missing, bounded raw video media is counted as hard/OCR-deferred.
+Install the host `tesseract` binary when `LAWDIT_OCR_MODE=local`; otherwise supported image files are counted as hard/OCR-deferred warnings. Set `LAWDIT_OCR_LANGS` to installed Tesseract language packs such as `eng+chi_sim+deu+fra+spa` for multilingual OCR. Text-layer-missing PDF OCR and mixed-layer PDF page OCR also require host `pdftoppm`. Raw video frame OCR requires host `ffmpeg`; when it is missing, bounded raw video media is counted as hard/OCR-deferred.
 
 OpenRouter bills in USD credits, so the runtime uses a conservative 25 USD application cap for the requested 25 EUR budget. Set the OpenRouter dashboard key credit limit as well when available; the application guard is not a replacement for provider-side spend limits.
 
@@ -168,7 +168,7 @@ founder-force.uk {
 		}
 
 		handle {
-			root * /srv/datasentinel/frontend/current
+			root * /srv/lawdit/frontend/current
 			try_files {path} /index.html
 			file_server
 		}
@@ -196,7 +196,7 @@ founder-force.uk {
 		}
 
 		handle {
-			root * /srv/datasentinel/frontend/current
+			root * /srv/lawdit/frontend/current
 			try_files {path} /index.html
 			file_server
 		}
@@ -219,36 +219,37 @@ For shared preview work, validate the deployed server route directly. Local Vite
 curl -I http://127.0.0.1/
 curl -I http://127.0.0.1/dashboard
 curl -I http://127.0.0.1/docs
-curl -s http://127.0.0.1/docs | grep "DataSentinel User Guide"
+curl -s http://127.0.0.1/docs | grep "lawdit User Guide"
 curl -s http://127.0.0.1/api/health
 curl -s http://127.0.0.1/api/health | grep openrouter
-curl -s --cookie "datasentinel_session=<session id>" http://127.0.0.1/api/integrations/google-drive/picker-config
+curl -s --cookie "lawdit_session=<session id>" http://127.0.0.1/api/integrations/google-drive/picker-config
 curl -s http://127.0.0.1/api/sources | grep source_001
-python3 -m backend.datasentinel.db_tool status --db-path /srv/datasentinel/data/datasentinel.sqlite3
+python3 -m backend.lawdit.db_tool status --db-path /srv/lawdit/data/lawdit.sqlite3
 curl -I https://founder-force.uk/
 curl -I https://founder-force.uk/dashboard
 curl -I https://founder-force.uk/docs
-curl -s https://founder-force.uk/docs | grep "DataSentinel User Guide"
+curl -s https://founder-force.uk/docs | grep "lawdit User Guide"
 curl -s https://founder-force.uk/api/health
-curl -s --cookie "datasentinel_session=<session id>" https://founder-force.uk/api/integrations/google-drive/picker-config
-curl -s http://127.0.0.1/ | grep DataSentinel
-curl -s http://127.0.0.1/dashboard | grep DataSentinel
-curl -s https://founder-force.uk/ | grep DataSentinel
-curl -s https://founder-force.uk/dashboard | grep DataSentinel
+curl -s https://founder-force.uk/api/public-analysis/capacity
+curl -s --cookie "lawdit_session=<session id>" https://founder-force.uk/api/integrations/google-drive/picker-config
+curl -s http://127.0.0.1/ | grep lawdit
+curl -s http://127.0.0.1/dashboard | grep lawdit
+curl -s https://founder-force.uk/ | grep lawdit
+curl -s https://founder-force.uk/dashboard | grep lawdit
 ```
 
 If `founder-force.uk` is Cloudflare-proxied, its DNS origin record must point to `52.159.109.133` before the domain can reach the `agent-us` Caddy site.
 
-The remote API is a P0 contract server. It may serve mock-compatible envelopes, in-memory scan/review state, or the approved local SQLite state file only. It must not connect to production file sources, call Microsoft Graph, mutate source files, use OAuth or tenant credentials, add a production database or queue, or perform source-file deletion. Source-registration deletion is allowed because it removes DataSentinel metadata only. If OpenRouter AI assistive mode is enabled, it must remain redacted-evidence-only, fail-closed, and capped by the configured project budget.
+The remote API is a P0 contract server. It may serve mock-compatible envelopes, in-memory scan/review state, the public upload-analysis trial's transient in-memory capacity state, or the approved local SQLite state file only. It must not connect to production file sources, call Microsoft Graph, mutate source files, use OAuth or tenant credentials, add a production database or durable queue, or perform source-file deletion. Source-registration deletion is allowed because it removes lawdit metadata only. If OpenRouter AI assistive mode is enabled, it must remain redacted-evidence-only, fail-closed, and capped by the configured project budget.
 
 ## Rollback
 
 Restore the saved Caddyfile backup and reload Caddy:
 
 ```bash
-sudo cp /etc/caddy/Caddyfile.datasentinel-backup-<timestamp> /etc/caddy/Caddyfile
+sudo cp /etc/caddy/Caddyfile.lawdit-backup-<timestamp> /etc/caddy/Caddyfile
 sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 ```
 
-To roll back only the frontend assets, repoint `/srv/datasentinel/frontend/current` to a previous release directory and reload or recheck the site. To roll back API persistence, stop the Python API service and restart it without `--db-path`; keep, archive, or remove `/srv/datasentinel/data/datasentinel.sqlite3` according to the demo-state retention decision. To roll back the API route, stop the Python API service, remove the `/api/*` reverse proxy block, validate Caddy, and reload.
+To roll back only the frontend assets, repoint `/srv/lawdit/frontend/current` to a previous release directory and reload or recheck the site. To roll back API persistence, stop the Python API service and restart it without `--db-path`; keep, archive, or remove `/srv/lawdit/data/lawdit.sqlite3` according to the demo-state retention decision. To roll back the API route, stop the Python API service, remove the `/api/*` reverse proxy block, validate Caddy, and reload.

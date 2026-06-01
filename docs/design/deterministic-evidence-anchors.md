@@ -8,10 +8,10 @@ The first P0 anchor primitive is a redacted `textPosition` selector over the nor
 
 ## Research Basis
 
-- The W3C Web Annotation Data Model defines text position selectors as zero-based character ranges with start included and end excluded, and warns that position selectors are brittle if the source representation changes. DataSentinel follows the same range semantics for `textPosition` but keeps a smaller internal JSON shape rather than adopting the full JSON-LD annotation model.
-- Because position selectors can drift after source changes, DataSentinel anchors are tied to the scan-time extracted representation and include a redacted fallback label for unsupported or stale renderers.
-- pypdf text extraction supports visitor callbacks that receive the text fragment, user matrix, text matrix, font dictionary, and font size. Its documentation recommends using transformation matrices for positions but warns that coordinates can be wrong in complicated PDFs, so DataSentinel marks scan-time PDF regions as estimated.
-- Tesseract command-line OCR supports TSV output with page, block, paragraph, line, word, pixel bounding box, confidence, and text columns. DataSentinel uses the TSV geometry to derive redacted OCR word-box regions while keeping raw OCR text internal to scan-time detection.
+- The W3C Web Annotation Data Model defines text position selectors as zero-based character ranges with start included and end excluded, and warns that position selectors are brittle if the source representation changes. lawdit follows the same range semantics for `textPosition` but keeps a smaller internal JSON shape rather than adopting the full JSON-LD annotation model.
+- Because position selectors can drift after source changes, lawdit anchors are tied to the scan-time extracted representation and include a redacted fallback label for unsupported or stale renderers.
+- pypdf text extraction supports visitor callbacks that receive the text fragment, user matrix, text matrix, font dictionary, and font size. Its documentation recommends using transformation matrices for positions but warns that coordinates can be wrong in complicated PDFs, so lawdit marks scan-time PDF regions as estimated.
+- Tesseract command-line OCR supports TSV output with page, block, paragraph, line, word, pixel bounding box, confidence, and text columns. lawdit uses the TSV geometry to derive redacted OCR word-box regions while keeping raw OCR text internal to scan-time detection.
 
 References: <https://www.w3.org/TR/annotation-model/>, <https://pypdf.readthedocs.io/en/4.2.0/user/extract-text.html#using-a-visitor>, <https://tesseract-ocr.github.io/tessdoc/Command-Line-Usage.html#tsv-output>
 

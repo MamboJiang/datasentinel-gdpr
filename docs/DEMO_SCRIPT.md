@@ -2,7 +2,7 @@
 
 ## Demo Promise
 
-DataSentinel does not just detect personal data. It makes every GDPR finding measurable, explainable, owner-routed, human-reviewed, and audit-ready.
+lawdit does not just detect personal data. It makes every GDPR finding measurable, explainable, owner-routed, human-reviewed, and audit-ready.
 
 ## Three-Minute Flow
 

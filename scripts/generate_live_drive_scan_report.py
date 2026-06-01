@@ -15,8 +15,8 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 
-from datasentinel.ai_config import load_local_env  # noqa: E402
-from datasentinel.source_http import build_sqlite_app  # noqa: E402
+from lawdit.ai_config import load_local_env  # noqa: E402
+from lawdit.source_http import build_sqlite_app  # noqa: E402
 
 
 DEFAULT_FOLDER_ID = "1AmTxh7RhEyvgo400SAZHI8s_CawvAdQn"
@@ -26,7 +26,7 @@ RAW_VALUE_PATTERNS = (
     re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
     re.compile(r"https?://"),
     re.compile(r"/Users/[^\"\\s]+"),
-    re.compile(r"/srv/datasentinel/(?:sources|data)/[^\"\\s]+"),
+    re.compile(r"/srv/lawdit/(?:sources|data)/[^\"\\s]+"),
     re.compile(r"\b(?:access_token|refresh_token|Bearer)\b"),
 )
 
@@ -35,13 +35,13 @@ def main() -> int:
     args = _args()
     load_local_env()
 
-    db_path = args.db_path or os.environ.get("DATASENTINEL_DB_PATH")
+    db_path = args.db_path or os.environ.get("LAWDIT_DB_PATH")
     if not db_path:
-        raise SystemExit("DATASENTINEL_DB_PATH or --db-path is required.")
+        raise SystemExit("LAWDIT_DB_PATH or --db-path is required.")
 
-    user_id = args.user_id or os.environ.get("DATASENTINEL_LIVE_DRIVE_USER_ID")
+    user_id = args.user_id or os.environ.get("LAWDIT_LIVE_DRIVE_USER_ID")
     if not user_id:
-        raise SystemExit("--user-id or DATASENTINEL_LIVE_DRIVE_USER_ID is required.")
+        raise SystemExit("--user-id or LAWDIT_LIVE_DRIVE_USER_ID is required.")
 
     report = generate_report(
         db_path=db_path,
@@ -67,7 +67,7 @@ def generate_report(
 ) -> dict[str, Any]:
     app = build_sqlite_app(db_path, [])
     session_id = app.auth_service.store.create_session(user_id, int(time.time()) + max(timeout_seconds, 900))
-    headers = {"Cookie": f"datasentinel_session={session_id}", "Content-Type": "application/json"}
+    headers = {"Cookie": f"lawdit_session={session_id}", "Content-Type": "application/json"}
     source_id = f"source_drive_live_gdpr_samples_{int(time.time())}"
     trace_id = "trace_live_drive_report"
 
@@ -129,7 +129,7 @@ def generate_report(
 
 def _args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--db-path", default=None, help="SQLite DB path. Defaults to DATASENTINEL_DB_PATH.")
+    parser.add_argument("--db-path", default=None, help="SQLite DB path. Defaults to LAWDIT_DB_PATH.")
     parser.add_argument("--user-id", default=None, help="Account user ID with a connected Google Drive binding.")
     parser.add_argument("--folder-id", default=DEFAULT_FOLDER_ID)
     parser.add_argument("--folder-name", default=DEFAULT_FOLDER_NAME)

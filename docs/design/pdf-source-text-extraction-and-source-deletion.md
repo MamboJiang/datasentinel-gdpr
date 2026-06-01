@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-Prelaunch source scans must handle real user documents that arrive as PDF tickets, reports, and exports. The prior document reader accepted only text-like files, so PDFs with embedded text were skipped even when deterministic rules could identify GDPR-relevant signals. Users also need to remove incorrect source registrations from DataSentinel without deleting files in Google Drive, direct-link locations, or host-mounted folders.
+Prelaunch source scans must handle real user documents that arrive as PDF tickets, reports, and exports. The prior document reader accepted only text-like files, so PDFs with embedded text were skipped even when deterministic rules could identify GDPR-relevant signals. Users also need to remove incorrect source registrations from lawdit without deleting files in Google Drive, direct-link locations, or host-mounted folders.
 
 ## Research Basis
 
@@ -22,13 +22,13 @@ Prelaunch source scans must handle real user documents that arrive as PDF ticket
 | Bounded OCR for blank pages inside text-layer PDFs | Keep extracted text-layer pages and OCR only blank/scanned pages within the existing OCR page budget. | Accepted because real PDFs can mix generated text pages with scanned appendices, and returning after the first text-layer match can hide sensitive image-page evidence. |
 | Bounded OCR for image-bearing text-layer pages | OCR a bounded number of pages that have extractable text plus embedded images, then merge OCR text with the text layer. | Accepted because real PDFs can place sensitive labels in image overlays while keeping unrelated text in the text layer. |
 | Delete source files | Use provider APIs or filesystem deletion when a user deletes a Source. | Rejected because automatic deletion is outside the approved prototype boundary. |
-| Delete source registration only | Remove the DataSentinel source metadata row, clear DataSentinel workflow state derived from that registration, and leave external files untouched. | Accepted because it corrects wrong setup state without mutating user files. |
+| Delete source registration only | Remove the lawdit source metadata row, clear lawdit workflow state derived from that registration, and leave external files untouched. | Accepted because it corrects wrong setup state without mutating user files. |
 
 ## Selected Approach
 
-The prelaunch document reader treats `application/pdf` and `.pdf` as supported when the PDF has an extractable text layer or can use bounded host-local PDF OCR fallback. The reader loads bytes in memory, extracts page text with pypdf when possible, and then reuses the existing deterministic signal detection, redaction, finding, metric, and audit flow. Text-layer extraction can attach estimated PDF user-space page regions from scan-time text matrices so authorized review surfaces can later focus a redacted finding on the page. When a PDF has blank/scanned pages or text-layer pages that also contain embedded images, the scanner keeps the text-layer page records and OCRs the bounded target pages within the existing OCR page budget, returning `pdf_mixed` and `pdf_text_layer_with_page_ocr` when OCR adds text. If mixed-page OCR cannot run, the scanner preserves the usable text-layer result, marks the document hard, and reports a recoverable OCR-deferred warning instead of silently treating the visual layer as scanned. Text-layer-missing PDFs may be rasterized in a temporary directory and OCRed locally with Tesseract TSV output when `DATASENTINEL_OCR_MODE=local`, `pdftoppm`, and Tesseract are available; OCR word boxes can attach pixel page regions to redacted anchors. Local image OCR may run bounded color-overlay preprocessing variants and bounded multilingual language profiles to improve recall for high-contrast text over busy images. Raw source bytes, page images, raw OCR text, and raw extracted text remain transient.
+The prelaunch document reader treats `application/pdf` and `.pdf` as supported when the PDF has an extractable text layer or can use bounded host-local PDF OCR fallback. The reader loads bytes in memory, extracts page text with pypdf when possible, and then reuses the existing deterministic signal detection, redaction, finding, metric, and audit flow. Text-layer extraction can attach estimated PDF user-space page regions from scan-time text matrices so authorized review surfaces can later focus a redacted finding on the page. When a PDF has blank/scanned pages or text-layer pages that also contain embedded images, the scanner keeps the text-layer page records and OCRs the bounded target pages within the existing OCR page budget, returning `pdf_mixed` and `pdf_text_layer_with_page_ocr` when OCR adds text. If mixed-page OCR cannot run, the scanner preserves the usable text-layer result, marks the document hard, and reports a recoverable OCR-deferred warning instead of silently treating the visual layer as scanned. Text-layer-missing PDFs may be rasterized in a temporary directory and OCRed locally with Tesseract TSV output when `LAWDIT_OCR_MODE=local`, `pdftoppm`, and Tesseract are available; OCR word boxes can attach pixel page regions to redacted anchors. Local image OCR may run bounded color-overlay preprocessing variants and bounded multilingual language profiles to improve recall for high-contrast text over busy images. Raw source bytes, page images, raw OCR text, and raw extracted text remain transient.
 
-The source API exposes `DELETE /api/sources/{sourceId}`. The route deletes the DataSentinel source registration from the active store, clears scan/finding state derived from that source registration, and returns the deleted source envelope. Missing source ids return `application/problem+json` with `404`.
+The source API exposes `DELETE /api/sources/{sourceId}`. The route deletes the lawdit source registration from the active store, clears scan/finding state derived from that source registration, and returns the deleted source envelope. Missing source ids return `application/problem+json` with `404`.
 
 ## State Machine
 
@@ -65,7 +65,7 @@ Side effects:
 - PDF text-layer and PDF OCR region metadata may be attached to redacted evidence anchors, but raw text, raw OCR text, and page images are not persisted.
 - Mixed PDF page OCR may attach text-layer and OCR page metadata in the same extracted document, with per-page formats preserved in redacted anchors.
 - Findings persist redacted evidence and metadata only.
-- Source deletion removes the source registration row from DataSentinel state and clears derived scan/finding workflow state for that source.
+- Source deletion removes the source registration row from lawdit state and clears derived scan/finding workflow state for that source.
 
 Failure paths:
 
@@ -99,6 +99,6 @@ Rollback path:
 - PDF OCR findings can include OCR pixel page-region coordinates from Tesseract TSV word boxes without exposing raw OCR text or page images.
 - Public API and UI payloads do not expose raw PDF text, raw PDF bytes, provider tokens, or source credentials.
 - An image-only, unreadable, or OCR-tooling-missing PDF is reported as unsupported/OCR-deferred rather than silently succeeding.
-- A source registration can be deleted from DataSentinel, is absent from the next source list, and no stale scan/finding state remains for that deleted registration.
+- A source registration can be deleted from lawdit, is absent from the next source list, and no stale scan/finding state remains for that deleted registration.
 - Deleting a source registration does not delete or mutate Google Drive files, direct-link files, or host-mounted files.
 - Repeating deletion for the same source id returns a not-found problem response.

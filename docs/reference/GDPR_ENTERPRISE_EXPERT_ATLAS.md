@@ -39,7 +39,7 @@ The Atlas is a product and engineering reference for a prototype. It is not lega
 | Owner attribution | Findings must route to a direct owner, Master of Data fallback, or escalation path. They must not become silent unowned work. |
 | Permission boundary | Reviewers must see allowed actions, denied actions, denial reasons, checklist requirements, transfer options, and escalation options before acting. |
 | Auditability | AuditEvent is a first-class object. Events must preserve actor, timestamp, action, object, previous/resulting state, reason, evidence references, policy context, and safety boundaries. |
-| Delta governance | Full scans create a baseline; delta scans compare fingerprints and modified times and treat missing files as source inventory changes, not DataSentinel deletion. |
+| Delta governance | Full scans create a baseline; delta scans compare fingerprints and modified times and treat missing files as source inventory changes, not lawdit deletion. |
 | Evaluation | Precision, recall, F1, reproducibility, throughput, resource intensity, scenario quality, review throughput, and risk-progress context are product features. |
 | Privacy engineering | Public payloads must not expose raw extracted text, full file bodies, page images, credentials, unredacted personal data, hidden permission data, legal conclusions, or deletion execution. |
 
@@ -56,7 +56,7 @@ The Atlas is a product and engineering reference for a prototype. It is not lega
 | 7. Review support and permission boundary | Use current user, finding status, owner, policy pack, and organization rules. Output allowed actions, denied actions, checklist, required reason fields, and transfer/escalation options. |
 | 8. Human review decision | Require actor, finding ID, decision, reason, idempotency key, and policy version. Output updated finding status, review record, audit event, and no-real-deletion boundary. |
 | 9. Audit event recording | Record scan, assignment, view, review, escalation, and related lifecycle events with actor, timestamp, event type, reason, resulting status, and policy context. |
-| 10. Incremental scan | Require full-scan baseline, file fingerprints, modified time, and current inventory. Output new, changed, modified, unchanged, and missing file results; missing does not mean deleted by DataSentinel. |
+| 10. Incremental scan | Require full-scan baseline, file fingerprints, modified time, and current inventory. Output new, changed, modified, unchanged, and missing file results; missing does not mean deleted by lawdit. |
 | 11. Admin metrics | Aggregate scan state, finding state, risk, backlog, retention, and duration into scanned files, flagged files, volume, progress, scan time, backlog, high-risk count, and overdue count. |
 | 12. Evaluation metrics | Use dataset hash, scanner version, rules hash, config hash, policy version, and finding fingerprints. Output precision, recall, F1, reproducibility, throughput, and resource intensity. |
 

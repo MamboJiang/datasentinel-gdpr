@@ -6,9 +6,9 @@ import re
 import unittest
 from pathlib import Path
 
-from backend.datasentinel.deterministic_signals import detect_signals
-from backend.datasentinel.signal_evidence_anchors import apply_source_locations
-from backend.datasentinel.source_format_recognition import DocumentExtractionIssue, extract_document_content
+from backend.lawdit.deterministic_signals import detect_signals
+from backend.lawdit.signal_evidence_anchors import apply_source_locations
+from backend.lawdit.source_format_recognition import DocumentExtractionIssue, extract_document_content
 
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "gdpr_data_samples_main"

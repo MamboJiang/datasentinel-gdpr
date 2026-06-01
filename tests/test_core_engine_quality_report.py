@@ -13,7 +13,7 @@ REPORT_SCRIPT = Path(__file__).with_name("core_engine_quality_report.py")
 RAW_VALUE_PATTERNS = (
     re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
     re.compile(r"/Users/[^\"\\s]+"),
-    re.compile(r"/srv/datasentinel/(?:sources|data)/[^\"\\s]+"),
+    re.compile(r"/srv/lawdit/(?:sources|data)/[^\"\\s]+"),
 )
 
 

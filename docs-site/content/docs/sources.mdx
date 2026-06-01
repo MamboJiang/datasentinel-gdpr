@@ -1,19 +1,19 @@
 ---
 title: Sources
-description: Register supported sources, understand scan readiness, and remove DataSentinel registrations without deleting external files.
+description: Register supported sources, understand scan readiness, and remove lawdit registrations without deleting external files.
 ---
 
-Sources are the places DataSentinel can inspect during a scan. A source registration stores metadata that lets the product describe the source and decide whether scanning is allowed.
+Sources are the places lawdit can inspect during a scan. A source registration stores metadata that lets the product describe the source and decide whether scanning is allowed.
 
 <DocsScreenshot
   src="/docs/media/sources-list.png"
   alt="Sources page showing configured sources, readiness status, source type, root label, owner, and scan actions."
-  caption="The Sources table should make readiness and allowed actions obvious before a scan starts. Removing a source removes the DataSentinel registration, not the external file."
+  caption="The Sources table should make readiness and allowed actions obvious before a scan starts. Removing a source removes the lawdit registration, not the external file."
 />
 
 ## Supported prelaunch source types
 
-Depending on deployment setup, DataSentinel can work with:
+Depending on deployment setup, lawdit can work with:
 
 | Source type | What it means | Important boundary |
 | --- | --- | --- |
@@ -39,7 +39,7 @@ Image-only or unreadable PDFs, unsupported files, private addresses, credential-
 
 | Field | What it tells you | Safe next action |
 | --- | --- | --- |
-| Source type | Which input path DataSentinel will use. | Confirm it matches the source you intended to register. |
+| Source type | Which input path lawdit will use. | Confirm it matches the source you intended to register. |
 | Status | Whether the source is ready, mocked, denied, warning, or incomplete. | Start a scan only when the row is ready and your permission boundary allows it. |
 | Root label | Human-readable source scope. | Use it to identify the source without exposing raw URLs or host paths. |
 | Owner or steward | Who receives review work when routing succeeds. | Confirm the owner or escalation route before relying on review metrics. |
@@ -53,7 +53,7 @@ Image-only or unreadable PDFs, unsupported files, private addresses, credential-
 4. Submit the source registration.
 5. Review the readiness status and any visible rejection reason.
 
-DataSentinel should store source metadata and redacted workflow output, not raw source bodies.
+lawdit should store source metadata and redacted workflow output, not raw source bodies.
 
 ## Select Google Drive files
 
@@ -69,13 +69,13 @@ Picker intermediate callbacks should not close the source setup flow. Picked fil
 
 The source row can start a full scan when the source is ready and your permission boundary allows the action. The scan targets the selected source ID, not a hidden default.
 
-If the source is not ready, DataSentinel should reject the scan without creating scan, finding, audit, metric, or evaluation state.
+If the source is not ready, lawdit should reject the scan without creating scan, finding, audit, metric, or evaluation state.
 
 ## Remove a source registration
 
-Deleting a source from the Sources page removes the DataSentinel registration and clears DataSentinel workflow state derived from that registration.
+Deleting a source from the Sources page removes the lawdit registration and clears lawdit workflow state derived from that registration.
 
-It does not delete external files. It does not revoke Google or GitHub provider access outside DataSentinel. Provider access remains managed by the provider and the deployment environment.
+It does not delete external files. It does not revoke Google or GitHub provider access outside lawdit. Provider access remains managed by the provider and the deployment environment.
 
 ## What to verify after source setup
 

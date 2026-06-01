@@ -11,7 +11,7 @@ RAW_VALUE_PATTERNS = (
     re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"),
     re.compile(r"https?://"),
     re.compile(r"/Users/[^\"\\s]+"),
-    re.compile(r"/srv/datasentinel/(?:sources|data)/[^\"\\s]+"),
+    re.compile(r"/srv/lawdit/(?:sources|data)/[^\"\\s]+"),
     re.compile(r"\b(?:access_token|refresh_token|Bearer)\b"),
 )
 

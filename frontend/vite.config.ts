@@ -8,7 +8,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         changeOrigin: true,
-        target: process.env.DATASENTINEL_API_TARGET ?? 'http://127.0.0.1:8000',
+        target: process.env.LAWDIT_API_TARGET ?? 'http://127.0.0.1:8000',
       },
     },
   },

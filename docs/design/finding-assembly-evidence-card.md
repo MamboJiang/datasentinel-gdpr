@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-After owner routing, DataSentinel needs a visible assembly stage that turns redacted detector signals, context/risk output, owner assignment, policy context, and audit history into contract-compatible finding rows and evidence-card detail views. The stage must prove continuity from earlier workflow steps without becoming a production scanner, legal-advice engine, or deletion mechanism.
+After owner routing, lawdit needs a visible assembly stage that turns redacted detector signals, context/risk output, owner assignment, policy context, and audit history into contract-compatible finding rows and evidence-card detail views. The stage must prove continuity from earlier workflow steps without becoming a production scanner, legal-advice engine, or deletion mechanism.
 
 This design applies the repository Atlas reference in `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md`, deterministic signal-detection continuity from `docs/design/deterministic-signal-detection.md`, and the governance contract.
 

@@ -283,7 +283,7 @@ class SafeRedirectHandler(HTTPRedirectHandler):
 
 
 def _download_url(url: str) -> tuple[bytes, str, str]:
-    request = Request(url, headers={"Accept": DOWNLOAD_ACCEPT_HEADER, "User-Agent": "DataSentinelPrelaunch/0.1"})
+    request = Request(url, headers={"Accept": DOWNLOAD_ACCEPT_HEADER, "User-Agent": "lawditPrelaunch/0.1"})
     try:
         with build_opener(SafeRedirectHandler()).open(request, timeout=15) as response:
             final_url = response.geturl()

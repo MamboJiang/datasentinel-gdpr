@@ -6,9 +6,9 @@ from io import BytesIO
 from xml.sax.saxutils import escape
 from zipfile import ZipFile
 
-from backend.datasentinel.deterministic_signals import detect_signals
-from backend.datasentinel.signal_evidence_anchors import apply_source_locations
-from backend.datasentinel.source_format_recognition import extract_document_content
+from backend.lawdit.deterministic_signals import detect_signals
+from backend.lawdit.signal_evidence_anchors import apply_source_locations
+from backend.lawdit.source_format_recognition import extract_document_content
 
 
 class StructurePathAnchorTests(unittest.TestCase):

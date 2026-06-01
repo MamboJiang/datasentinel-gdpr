@@ -5,15 +5,15 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from backend.datasentinel.source_http import build_sqlite_app
+from backend.lawdit.source_http import build_sqlite_app
 
 
 class PrelaunchSourceDeletionTests(unittest.TestCase):
     def test_empty_prelaunch_metrics_do_not_emit_partial_aggregation(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path)
                 metrics = app.handle("GET", "/api/admin/metrics", "trace_empty_metrics")
 
@@ -26,9 +26,9 @@ class PrelaunchSourceDeletionTests(unittest.TestCase):
             root = Path(directory) / "source"
             root.mkdir()
             (root / "contacts.txt").write_text("Contact privacy.reviewer@example.org for this record.", encoding="utf-8")
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path, [root])
                 created = app.handle(
                     "POST",

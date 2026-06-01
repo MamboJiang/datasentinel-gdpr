@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This document defines the functional and content contract for the public DataSentinel project homepage. It describes what the homepage must communicate and what user paths it must support without prescribing visual design, art direction, page composition, component structure, animation style, or final marketing copy.
+This document defines the functional and content contract for the public lawdit project homepage. It describes what the homepage must communicate and what user paths it must support without prescribing visual design, art direction, page composition, component structure, animation style, or final marketing copy.
 
-The homepage exists to explain DataSentinel before a user enters the internal product console. It must make the prototype understandable to evaluators, teammates, and reviewers while staying inside the project's safety and scope boundaries.
+The homepage exists to explain lawdit before a user enters the internal product console. It must make the prototype understandable to evaluators, teammates, and reviewers while staying inside the project's safety and scope boundaries.
 
 ## Contract Sources
 
@@ -22,6 +22,7 @@ The homepage must stay aligned with:
 - `docs/GOVERNANCE_CONFIG.md`
 - `docs/GDPR_SAMPLE_REFERENCES.md`
 - `docs/design/project-homepage-parallax.md`
+- `docs/design/public-upload-analysis-preview.md`
 - `docs/FRONTEND_CONSOLE_CONTRACT.md`
 
 ## Scope
@@ -36,6 +37,7 @@ In scope:
 - Safety, privacy, review, audit, governance, and evaluation positioning.
 - Link into the internal console at `/dashboard`.
 - Reduced-motion and responsive content requirements.
+- A prominent single-file public analysis entry with real capacity data and redacted short results.
 
 Out of scope:
 
@@ -44,6 +46,7 @@ Out of scope:
 - Exact layout, typography, color, imagery, illustrations, animation choreography, or interaction microcopy.
 - SEO growth strategy, analytics, lead capture, billing, procurement, or customer onboarding.
 - Production login or tenant connection.
+- Durable public upload queues, retained public analysis history, multi-file upload, production tenant connection, or public deletion workflows.
 
 ## Non-Negotiable Homepage Boundaries
 
@@ -73,7 +76,7 @@ The homepage must be understandable to:
 Required path:
 
 1. User lands on `/`.
-2. User understands what DataSentinel is.
+2. User understands what lawdit is.
 3. User understands that it is an accountable GDPR-relevant data discovery and review workflow, not a generic PII scanner.
 4. User understands the main loop: source connection, full scan, evidence, context/risk, owner routing, human review, audit, delta scan, evaluation.
 5. User sees the prototype's safety boundaries.
@@ -101,11 +104,11 @@ Required homepage navigation:
 
 The homepage must communicate this product thesis:
 
-DataSentinel turns GDPR-relevant data discovery from manual file auditing into a measurable, evidence-backed, owner-routed, human-reviewed, audit-ready workflow.
+lawdit turns GDPR-relevant data discovery from manual file auditing into a measurable, evidence-backed, owner-routed, human-reviewed, audit-ready workflow.
 
 The homepage must make these points clear:
 
-- DataSentinel is not a generic PII scanner.
+- lawdit is not a generic PII scanner.
 - Detection is the beginning of a governed workflow, not the final answer.
 - Every finding needs evidence.
 - Sensitive evidence is redacted by default.
@@ -142,7 +145,7 @@ The homepage may choose any visual order, but it must cover these content respon
 
 Must include:
 
-- Product name: DataSentinel.
+- Product name: lawdit.
 - Plain statement of the category or offer.
 - One concise explanation of the governed workflow.
 - Primary call to action into `/dashboard`.
@@ -266,7 +269,7 @@ Must state or clearly communicate:
 - The prototype does not provide legal advice.
 - The prototype does not claim full GDPR compliance.
 - Raw sensitive content is minimized and redacted in UI-facing payloads.
-- AI, OCR, parser, database, queue, production authorization, and real deletion choices are deferred unless separately approved.
+- Production AI, durable queue, production authorization, database-backed public analysis history, and real deletion choices are deferred unless separately approved.
 
 ## Required Calls to Action
 
@@ -275,6 +278,24 @@ The homepage must provide:
 - Primary CTA to open the console at `/dashboard`.
 - A secondary CTA or link to learn how the workflow works, when page sections are long enough to justify it.
 - Optional link to the controlled sample source reference, if presented safely and without embedding sample files.
+
+## Public Analysis Entry
+
+The homepage must include a public "try analysis" entrypoint backed by `/api/public-analysis/capacity` and `/api/public-analysis/analyze`. The design contract is `docs/design/public-upload-analysis-preview.md`.
+
+Constraints:
+
+- The entry accepts one uploaded file per user/session at a time.
+- Each file must be 10 MB or smaller.
+- The system may process at most 10 active public analyses globally at the same time in the API process.
+- Capacity data must show real active analyses, available slots, waiting-at-intake count, and the file-size limit.
+- The result is a short redacted analysis summary, not the full Workspace review console.
+- The entry must state its website analysis boundary in production-quality copy rather than using prelaunch placeholder language.
+- The entry must explain that governed source setup, owners, review decisions, audit trails, and evaluation live in the Workspace.
+- The entry must render optional backend-provided processing stages, next steps, Workspace handoff readiness, and boundary notes when present.
+- The entry section must link to `/dashboard` for users who want the governed Workspace path.
+- The entry must not claim legal advice, full GDPR compliance, automatic deletion, production tenant access, or production Microsoft Graph integration.
+- The OpenAPI contract, mock payloads, backend intake boundary, validation tests, and deployment controls must stay aligned with the implemented UI.
 
 Calls to action must not imply:
 
@@ -371,7 +392,7 @@ Homepage copy must avoid:
 
 The homepage satisfies this contract when:
 
-- `/` shows a public DataSentinel homepage instead of the internal console shell.
+- `/` shows a public lawdit homepage instead of the internal console shell.
 - The page explains the product thesis, workflow, safety boundaries, controlled sample source, governance layer, audit trail, and evaluation metrics.
 - The page links to `/dashboard`.
 - The page does not expose raw sensitive values.
@@ -381,6 +402,8 @@ The homepage satisfies this contract when:
 - The page remains usable on mobile and desktop.
 - Any animation is optional and cleaned up on route changes.
 - Homepage content stays consistent with the internal console contract and current acceptance criteria.
+- The public upload-analysis entry shows live capacity data and a real redacted analysis result while remaining separate from the Workspace console.
+- The public upload-analysis entry explains its website analysis boundary and provides a nearby link into the governed Workspace.
 
 ## Deferred
 

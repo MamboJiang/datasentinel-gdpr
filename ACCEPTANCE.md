@@ -42,17 +42,21 @@ Frontend surface work is ready for final implementation and QA planning when:
 - Both frontend surface contracts remain compatible with `docs/API_CONTRACT.md`, `contracts/openapi.yaml`, `contracts/mocks/`, `docs/DesignSpec.md`, and the current P0 acceptance criteria.
 - Both frontend surface contracts keep developer-facing documentation and engineering instructions English-only, allow user-facing interface copy to be localized through reviewed frontend dictionaries, keep deletion simulated, avoid legal-advice or full-compliance claims, and avoid production Microsoft Graph, OAuth, tenant, AI, parser, OCR, database, queue, or deletion commitments.
 
-## Public Upload Analysis Planning Readiness
+## Public Upload Analysis Entry Acceptance
 
-The future website upload-analysis trial is ready for a later scoped implementation task only when:
+The public website upload-analysis entry is accepted when:
 
-- `docs/design/public-upload-analysis-preview.md` defines the problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
-- `docs/WEBSITE_HOMEPAGE_CONTRACT.md`, `docs/PRD.md`, `docs/TRD.md`, `docs/DesignSpec.md`, and `docs/TestCase.md` describe the planned trial as future work rather than implemented behavior.
-- The planned trial states one active uploaded file per user/session, a 10 MB maximum file size, and at most 10 active user analyses globally.
-- Oversized, duplicate-active, capacity-full, unsupported, failed, completed, and start-over states are documented before implementation.
-- The trial result is defined as a concise redacted analysis summary, separate from the full Workspace console.
-- The planning keeps raw sensitive values out of public output and prohibits legal advice, full GDPR-compliance claims, automatic deletion, production tenant access, and production Microsoft Graph integration.
-- A future implementation must update `contracts/openapi.yaml`, `docs/API_CONTRACT.md`, mock payloads, validation tests, security notes, deployment controls, and this acceptance section before code is added.
+- `docs/design/public-upload-analysis-preview.md` defines the implemented problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
+- `contracts/openapi.yaml`, `docs/API_CONTRACT.md`, `contracts/schemas/public-analysis.yaml`, and `contracts/mocks/publicAnalysisCapacity.json` / `contracts/mocks/publicAnalysisResult.json` define the same public-analysis fields and states.
+- The root homepage presents a prominent single-file analysis entry before requiring the full Workspace console, and the entry clearly explains its website boundary without sounding like prelaunch placeholder copy.
+- The entry explains that owner assignment, Workspace cases, audit trails, and evaluation history live in the governed Workspace and links users to `/dashboard` from the analysis section.
+- The entry displays real capacity data from `/api/public-analysis/capacity`, including active analyses, available slots, waiting-at-intake count, and the file-size limit.
+- The entry accepts exactly one uploaded file per browser analysis session at a time, rejects files larger than 10 MB, and allows at most 10 active public analyses globally in the API process.
+- Oversized, duplicate-active, capacity-full, unsupported, failed, completed, and start-over states are visible and non-destructive.
+- Accepted analyses return a concise redacted summary with detected categories, risk level, redacted evidence snippets, warnings, review guidance, and accountable next steps.
+- The frontend can render optional backend-provided processing stages, Workspace handoff readiness, next steps, and boundary notes without requiring a contract version bump.
+- Entry output does not expose raw sensitive values, provide legal advice, claim full GDPR compliance, execute deletion, or imply production tenant or Microsoft Graph integration.
+- The public entry remains separate from the full Workspace console and does not create Workspace sources, findings, audit events, or deletion actions.
 
 ## Fumadocs User Documentation Acceptance
 
@@ -68,8 +72,8 @@ The user-facing documentation surface is accepted when:
 - The Quick Start page presents the first review loop as a scannable step path with readiness checks and next-page links.
 - Key user-guide pages include cropped, non-sensitive product screenshots plus tables that explain visible fields, metrics, and next actions.
 - Screenshot assets are served from the docs prefix and do not require a root-level static route that could collide with the product frontend.
-- User-facing docs explain DataSentinel's source registration, full-scan, findings review, audit, evaluation, governance, Workspace, and permission-boundary workflows without requiring readers to understand API contracts.
-- User-facing docs state that DataSentinel does not provide legal advice or claim full GDPR compliance.
+- User-facing docs explain lawdit's source registration, full-scan, findings review, audit, evaluation, governance, Workspace, and permission-boundary workflows without requiring readers to understand API contracts.
+- User-facing docs state that lawdit does not provide legal advice or claim full GDPR compliance.
 - User-facing docs state that deletion is simulated in P0 and source-registration deletion does not delete external files.
 - User-facing docs explain redacted evidence, no raw-content exposure, visible allowed and denied actions, account versus Workspace authorization, and optional AI boundaries.
 - User-facing docs do not invent API fields, endpoints, production Microsoft Graph or tenant integrations, real deletion behavior, provider-token persistence, legal conclusions, or hidden permission powers.
@@ -94,7 +98,7 @@ Backend work after sample source connection is ready to break into scoped tasks 
 
 The first implementation milestone is accepted when:
 
-- The root route `/` shows a public project homepage that introduces DataSentinel and links to the internal dashboard route at `/dashboard`.
+- The root route `/` shows a public project homepage that introduces lawdit and links to the internal dashboard route at `/dashboard`.
 - The frontend app shell shows the current page title or route hierarchy plus notifications in the top bar, lets intermediate title levels show a hover underline and navigate back to their route, keeps workspace switching in the top-left sidebar control, exposes logged-in account controls from the bottom-left sidebar account menu, and lets users collapse or expand the sidebar.
 - Light and dark themes keep the Workspace switcher, Workspace creation dialog, sidebar navigation and subnavigation, Workspace Admin controls, and account-menu language selector readable without light-only backgrounds or low-contrast text.
 - The top-right notification button opens a session notification center; operation feedback is timestamped, newest-first, dismissible, and does not render as a bottom toast.
@@ -133,8 +137,8 @@ The Google/GitHub account system is accepted when:
 - The design notes `docs/design/prelaunch-account-system.md` and `docs/design/account-scoped-prelaunch-state.md` define problem, research basis, options, state machine, impact surface, rollback path, and primitive acceptance criteria.
 - `contracts/openapi.yaml`, `contracts/schemas/common.yaml`, and `docs/API_CONTRACT.md` document provider list, login redirect, callback, session read, and logout endpoints.
 - Runtime configuration uses ignored environment variables for Google client ID/secret, GitHub client ID/secret, redirect base URL, session secret, cookie security, and auth-required mode.
-- Prelaunch deployments can set `DATASENTINEL_ENABLE_DEMO_FIXTURES=false` so the signed-in console starts from empty state and configured local sources instead of seeded demo findings.
-- When a persistent SQLite host switches to `DATASENTINEL_ENABLE_DEMO_FIXTURES=false`, historical seeded demo source rows and demo workflow documents are removed while real registered local sources and account/session records remain.
+- Prelaunch deployments can set `LAWDIT_ENABLE_DEMO_FIXTURES=false` so the signed-in console starts from empty state and configured local sources instead of seeded demo findings.
+- When a persistent SQLite host switches to `LAWDIT_ENABLE_DEMO_FIXTURES=false`, historical seeded demo source rows and demo workflow documents are removed while real registered local sources and account/session records remain.
 - `GET /api/auth/providers` lists Google and GitHub setup state without exposing secrets.
 - Google and GitHub login are initiated only from the backend and provider secrets never reach the frontend.
 - GitHub login uses state plus PKCE challenge/verifier; callback state mismatch creates no session.
@@ -144,7 +148,7 @@ The Google/GitHub account system is accepted when:
 - SQLite-backed prelaunch Sources, scans, findings, audit events, metrics, and evaluation state are scoped to the current session user.
 - A different signed-in account cannot list, delete, scan, connect-test, review, or open another account's Source or Finding.
 - Legacy global SQLite source and workflow rows are quarantined outside authenticated account scopes instead of being exposed to every signed-in user.
-- The unauthenticated console shows a minimal, centered sign-in page with DataSentinel branding and only Google and GitHub branded provider buttons instead of seeded demo findings or explanatory onboarding copy.
+- The unauthenticated console shows a minimal, centered sign-in page with lawdit branding and only Google and GitHub branded provider buttons instead of seeded demo findings or explanatory onboarding copy.
 - The authenticated console account menu uses the current session profile instead of a hard-coded demo actor.
 - Authentication does not grant real deletion, Microsoft Graph access, tenant access, legal conclusions, or hidden permission powers.
 - Automated backend tests cover provider setup, unconfigured rejection, state mismatch rejection, session read, logout, auth-required workflow protection, account-scoped Sources, and account-scoped findings.
@@ -215,13 +219,13 @@ Google Drive and direct-link source input are accepted when:
 - PDF files with an extractable text layer can be scanned from local, direct-link, or Google Drive selected sources without storing raw PDF bodies or raw extracted text.
 - XML, JSON/JSONL/NDJSON, HTML/HTM, RTF, EML, ZIP archives with supported members, DOCX, XLSX, PPTX, ODT, ODS, and ODP files can be scanned deterministically from local, direct-link, or Google Drive selected sources without storing raw structured source bodies, rich-text/email/archive source bodies, or raw extracted text.
 - Bounded legacy `.doc`, `.xls`, and `.ppt` files can be scanned from local, direct-link, or Google Drive selected sources through host-local LibreOffice headless conversion without storing raw binary Office bodies or converted raw text.
-- PNG, JPG/JPEG, TIFF, BMP, and WEBP image files can be scanned through host-local Tesseract OCR when `DATASENTINEL_OCR_MODE=local` and the host binary is available, without storing raw images or raw OCR text.
+- PNG, JPG/JPEG, TIFF, BMP, and WEBP image files can be scanned through host-local Tesseract OCR when `LAWDIT_OCR_MODE=local` and the host binary is available, without storing raw images or raw OCR text.
 - VTT and SRT transcript files can be scanned as video transcript text, while bounded MP4, MOV, M4V, MKV, WEBM, and AVI media can be scanned through host-local FFmpeg frame extraction plus local Tesseract OCR. Missing FFmpeg, missing Tesseract, disabled local OCR, extraction failure, over-limit video, or empty frame OCR are counted as hard/OCR-deferred.
 - Missing LibreOffice, conversion timeout, failed conversion, missing conversion output, empty converted text, or over-limit legacy Office files are counted as hard unsupported warnings rather than silent successes.
 - Scan payloads expose recognition difficulty counts and per-format extraction counts while normal deterministic scans keep `aiAssistanceUsed = false` and `modelCalls = 0`.
-- Image-only and mixed-layer PDFs use bounded local PDF OCR when `DATASENTINEL_OCR_MODE=local`, Tesseract, `pdftoppm`, and required language packs are available; missing tooling, empty OCR, OCR timeout, OCR failure, or unreadable PDFs are recoverable hard/OCR-deferred warnings rather than silent successes or fake findings.
+- Image-only and mixed-layer PDFs use bounded local PDF OCR when `LAWDIT_OCR_MODE=local`, Tesseract, `pdftoppm`, and required language packs are available; missing tooling, empty OCR, OCR timeout, OCR failure, or unreadable PDFs are recoverable hard/OCR-deferred warnings rather than silent successes or fake findings.
 - Local OCR can run bounded color-overlay preprocessing variants for difficult image/PDF pages with high-contrast text over images; public payloads still expose only redacted evidence, not raw OCR text or page images.
-- The Sources page can delete a DataSentinel source registration, clears DataSentinel scan/finding state derived from that deleted registration, and the backend `DELETE /api/sources/{sourceId}` route does not delete external source files.
+- The Sources page can delete a lawdit source registration, clears lawdit scan/finding state derived from that deleted registration, and the backend `DELETE /api/sources/{sourceId}` route does not delete external source files.
 - Findings produced from an assigned Source are visible to the assigned owner or explicit fallback route, not every Workspace member.
 - Finding review transfer options for an assigned Workspace finding come from active Workspace members exposed by current review support and must not fall back to static demo delegation targets.
 - Source scanning reads file content only during scan execution and persists metadata, redacted evidence, findings, metrics, and audit events rather than raw source bodies.
@@ -253,11 +257,11 @@ The core business engine hardening slice is accepted when:
 - Google Drive scans export Google Docs, Google Sheets, and Google Slides through explicit export profiles that preserve distinct format/method counts and redacted anchors; unsupported Google Workspace MIME types are warning-counted rather than mislabeled as generic text.
 - PDF files with text layers still prefer deterministic text-layer extraction.
 - The preserved PDF corpus can be scanned through the real PDF text-layer extraction path, and completed example PDFs produce redacted findings without leaking detected raw values.
-- PDF files without extractable text layers can fall back to bounded host-local PDF OCR when `DATASENTINEL_OCR_MODE=local`, `pdftoppm`, and Tesseract are available.
+- PDF files without extractable text layers can fall back to bounded host-local PDF OCR when `LAWDIT_OCR_MODE=local`, `pdftoppm`, and Tesseract are available.
 - Mixed PDFs that contain extractable text-layer pages plus blank/scanned pages or image text overlays keep the text-layer pages and can OCR the bounded target pages through the host-local PDF OCR path, returning `pdf_mixed`/`pdf_text_layer_with_page_ocr` with redacted page anchors when tooling is available.
 - Mixed PDFs whose target-page OCR cannot run still preserve text-layer findings, mark the document hard, increment OCR-deferred warning metadata, and do not silently claim the visual layer was scanned.
 - PDF and other complex document formats use a bounded document byte budget separate from the 1 MB text-stream budget, so realistic multi-megabyte PDFs can enter extraction and signal detection.
-- Local OCR can select installed Tesseract language packs through `DATASENTINEL_OCR_LANGS` for multilingual image and PDF OCR, and large configured language lists are split into bounded profiles so one slow/noisy all-language OCR invocation cannot suppress later candidates.
+- Local OCR can select installed Tesseract language packs through `LAWDIT_OCR_LANGS` for multilingual image and PDF OCR, and large configured language lists are split into bounded profiles so one slow/noisy all-language OCR invocation cannot suppress later candidates.
 - If one OCR preprocessing candidate or language profile times out, later bounded candidates can still run; only total OCR failure is reported as OCR-deferred.
 - Image OCR normalizes Tesseract TSV word joins for CJK/Kana/Hangul character-level output so labels split into single-character OCR words can still produce redacted findings and pixel `pageRegion` anchors without storing raw OCR text.
 - Missing PDF OCR tooling, empty OCR, OCR timeout, or OCR failure is reported as a recoverable hard/OCR-deferred warning rather than a silent success or fake finding.
@@ -297,9 +301,9 @@ The lightweight local database boundary is accepted when:
 
 - The design note `docs/design/local-sqlite-persistence.md` defines problem, research basis, options, state transitions, impact surface, rollback path, and primitive acceptance criteria.
 - The API server starts in the existing in-memory mode when no database path is configured.
-- The API server starts in local SQLite mode when `--db-path` or `DATASENTINEL_DB_PATH` points to a writable file.
-- `python3 -m backend.datasentinel.db_tool init --db-path <file>` creates the schema and seeds contract-compatible demo state without adding runtime dependencies.
-- `python3 -m backend.datasentinel.db_tool status --db-path <file>` reports schema version, source count, workflow-document count, and database path.
+- The API server starts in local SQLite mode when `--db-path` or `LAWDIT_DB_PATH` points to a writable file.
+- `python3 -m backend.lawdit.db_tool init --db-path <file>` creates the schema and seeds contract-compatible demo state without adding runtime dependencies.
+- `python3 -m backend.lawdit.db_tool status --db-path <file>` reports schema version, source count, workflow-document count, and database path.
 - Source registrations survive API restart when the same SQLite file is reused.
 - Accepted scan/review mutations survive API restart when the same SQLite file is reused.
 - The local SQLite store does not introduce production Microsoft Graph, OAuth, tenant, production database, queue, production source connector, raw source-content storage, credential storage, legal conclusions, or deletion execution.
@@ -447,7 +451,7 @@ The incremental delta-scan stage is accepted when:
 - The design note `docs/design/incremental-delta-scan-workflow.md` defines scope, state transitions, failure paths, rollback path, Atlas-derived requirements, research basis, and primitive acceptance criteria.
 - A delta scan can start only for a selected scan-ready source with a completed baseline; missing, running, not-ready, or mismatched baselines reject without scan, audit, finding, metric, or evaluation state changes.
 - Running delta scans expose `comparing_delta_baseline`, baseline identity, changed/new/modified/unchanged/missing counts, partial warnings, and `rawContentExposed = false`, `legalConclusionProvided = false`, and `deletionExecuted = false`.
-- Completed delta scans process only changed files, carry unchanged baseline files forward, and represent missing files as source inventory changes rather than DataSentinel deletion.
+- Completed delta scans process only changed files, carry unchanged baseline files forward, and represent missing files as source inventory changes rather than lawdit deletion.
 - Completed delta findings use the delta scan ID and pass through context/risk, owner routing, finding assembly, review support, audit recording, metrics, and evaluation instead of using disconnected static rows.
 - Dashboard and Sources expose delta readiness from the selected source and show baseline/change counts when available.
 - Evaluation preserves a delta rules hash, deterministic reproducibility, throughput, zero model calls, and zero estimated paid-service cost.
@@ -500,9 +504,9 @@ The remote preview deployment is accepted when:
 - `docs/design/agent-us-api-server-integration.md` defines the P0 API server integration, state machine, impact surface, rollback path, and primitive acceptance criteria.
 - `docs/DEPLOYMENT.md` records the `agent-us` frontend layout, API route, Caddy route, validation commands, and rollback steps.
 - `npm run test` and `npm run build` pass before deployment.
-- The remote host serves the frontend through Caddy on port 80 from `/srv/datasentinel/frontend/current`.
+- The remote host serves the frontend through Caddy on port 80 from `/srv/lawdit/frontend/current`.
 - The remote host proxies `/api/*` through Caddy to a loopback P0 API server.
-- Direct requests for `https://founder-force.uk/` and `https://founder-force.uk/dashboard` return DataSentinel frontend HTML after DNS points to `agent-us`.
+- Direct requests for `https://founder-force.uk/` and `https://founder-force.uk/dashboard` return lawdit frontend HTML after DNS points to `agent-us`.
 - Direct requests for `https://founder-force.uk/docs` return the Fumadocs user guide after DNS points to `agent-us` and the docs service is running.
 - Direct requests for `https://founder-force.uk/api/health` return a contract health envelope after DNS points to `agent-us` and the API service is running.
 - The preview remains mock-compatible, in-memory, or local-SQLite-backed and adds no production Microsoft Graph, OAuth, tenant, production database, queue, production source connector, or deletion service.

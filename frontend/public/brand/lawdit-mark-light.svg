@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title">
+  <title id="title">lawdit mark</title>
+  <defs>
+    <linearGradient id="lawdit-mark-light-bars" x1="24" x2="112" y1="130" y2="26" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#050505"/>
+      <stop offset=".62" stop-color="#111"/>
+      <stop offset="1" stop-color="#6b6b6b"/>
+    </linearGradient>
+    <linearGradient id="lawdit-mark-light-ring" x1="67" x2="144" y1="122" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#050505"/>
+      <stop offset=".72" stop-color="#101010"/>
+      <stop offset="1" stop-color="#4e4e4e"/>
+    </linearGradient>
+  </defs>
+  <g fill="url(#lawdit-mark-light-bars)">
+    <path d="M18 66 45 48v73L18 139Z"/>
+    <path d="M55 42 84 22v86L55 126Z"/>
+    <path d="M94 18 124 0v76L94 94Z"/>
+  </g>
+  <path d="M94 52a54 54 0 1 1-39 92" fill="none" stroke="url(#lawdit-mark-light-ring)" stroke-width="30"/>
+  <circle cx="93" cy="102" r="16" fill="#080808"/>
+</svg>

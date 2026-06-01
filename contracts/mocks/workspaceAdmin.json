@@ -1,9 +1,9 @@
 {
   "data": {
     "workspace": {
-      "workspaceId": "ws_datasentinel_gdpr",
-      "name": "DataSentinel GDPR",
-      "slug": "datasentinel-gdpr",
+      "workspaceId": "ws_lawdit_gdpr",
+      "name": "lawdit GDPR",
+      "slug": "lawdit-gdpr",
       "status": "active",
       "plan": "Prelaunch",
       "headerLabel": "Prelaunch",
@@ -14,7 +14,7 @@
     },
     "currentMembership": {
       "membershipId": "mem_demo_admin",
-      "workspaceId": "ws_datasentinel_gdpr",
+      "workspaceId": "ws_lawdit_gdpr",
       "accountId": "user_demo_admin",
       "displayName": "Demo Workspace Admin",
       "email": "demo.admin@example.invalid",
@@ -26,7 +26,7 @@
     },
     "permissionBoundary": {
       "actorId": "user_demo_admin",
-      "workspaceId": "ws_datasentinel_gdpr",
+      "workspaceId": "ws_lawdit_gdpr",
       "roles": ["workspace_owner", "workspace_admin"],
       "allowedActions": [
         "manage_workspace_ownership",
@@ -52,7 +52,7 @@
           "reason": "Production directory and tenant sync are out of scope for P0."
         }
       ],
-      "visibleScopes": ["workspace:ws_datasentinel_gdpr"],
+      "visibleScopes": ["workspace:ws_lawdit_gdpr"],
       "boundaryFingerprint": "sha256:workspace_owner_admin_demo_boundary",
       "evaluatedAt": "2026-05-30T12:00:00Z"
     },
@@ -125,7 +125,7 @@
     ],
     "groups": [
       {
-        "workspaceId": "ws_datasentinel_gdpr",
+        "workspaceId": "ws_lawdit_gdpr",
         "groupId": "workspace_owner",
         "name": "Workspace owners",
         "description": "Highest Workspace authority for owner transfer and Workspace deletion.",
@@ -146,7 +146,7 @@
         "memberCount": 1
       },
       {
-        "workspaceId": "ws_datasentinel_gdpr",
+        "workspaceId": "ws_lawdit_gdpr",
         "groupId": "workspace_admin",
         "name": "Workspace admins",
         "description": "Can manage Workspace members, groups, invitations, audit, governance, and metrics.",
@@ -164,7 +164,7 @@
         "memberCount": 1
       },
       {
-        "workspaceId": "ws_datasentinel_gdpr",
+        "workspaceId": "ws_lawdit_gdpr",
         "groupId": "privacy_reviewer",
         "name": "Privacy reviewers",
         "description": "Can review assigned findings with visible permission boundaries.",
@@ -172,7 +172,7 @@
         "memberCount": 1
       },
       {
-        "workspaceId": "ws_datasentinel_gdpr",
+        "workspaceId": "ws_lawdit_gdpr",
         "groupId": "data_steward",
         "name": "Data stewards",
         "description": "Can steward owned sources and delegated findings.",
@@ -180,7 +180,7 @@
         "memberCount": 1
       },
       {
-        "workspaceId": "ws_datasentinel_gdpr",
+        "workspaceId": "ws_lawdit_gdpr",
         "groupId": "auditor",
         "name": "Auditors",
         "description": "Can inspect governance, audit, and evaluation evidence without mutating workflow state.",
@@ -191,7 +191,7 @@
     "members": [
       {
         "membershipId": "mem_demo_admin",
-        "workspaceId": "ws_datasentinel_gdpr",
+        "workspaceId": "ws_lawdit_gdpr",
         "accountId": "user_demo_admin",
         "displayName": "Demo Workspace Admin",
         "email": "demo.admin@example.invalid",
@@ -203,7 +203,7 @@
       },
       {
         "membershipId": "mem_anna_reviewer",
-        "workspaceId": "ws_datasentinel_gdpr",
+        "workspaceId": "ws_lawdit_gdpr",
         "accountId": "user_anna",
         "displayName": "Anna Privacy Reviewer",
         "email": "anna.reviewer@example.invalid",
@@ -215,7 +215,7 @@
       },
       {
         "membershipId": "mem_marta_steward",
-        "workspaceId": "ws_datasentinel_gdpr",
+        "workspaceId": "ws_lawdit_gdpr",
         "accountId": "user_marta",
         "displayName": "Marta Data Steward",
         "email": "marta.steward@example.invalid",
@@ -227,7 +227,7 @@
       },
       {
         "membershipId": "mem_lee_auditor",
-        "workspaceId": "ws_datasentinel_gdpr",
+        "workspaceId": "ws_lawdit_gdpr",
         "accountId": "user_lee",
         "displayName": "Lee Audit Observer",
         "email": "lee.audit@example.invalid",
@@ -241,7 +241,7 @@
     "invitations": [
       {
         "invitationId": "invite_priya_reviewer",
-        "workspaceId": "ws_datasentinel_gdpr",
+        "workspaceId": "ws_lawdit_gdpr",
         "invitePath": "/workspace/invitations/invite_priya_reviewer",
         "groupIds": ["privacy_reviewer"],
         "status": "pending",
@@ -253,7 +253,7 @@
       },
       {
         "invitationId": "invite_dpo_auditor",
-        "workspaceId": "ws_datasentinel_gdpr",
+        "workspaceId": "ws_lawdit_gdpr",
         "invitePath": "/workspace/invitations/invite_dpo_auditor",
         "groupIds": ["auditor"],
         "status": "pending",

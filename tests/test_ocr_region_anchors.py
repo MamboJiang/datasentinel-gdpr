@@ -6,10 +6,10 @@ from io import BytesIO
 from pathlib import Path
 from unittest import mock
 
-from backend.datasentinel.deterministic_signals import detect_signals
-from backend.datasentinel.signal_evidence_anchors import apply_source_locations
-from backend.datasentinel.source_format_recognition import extract_document_content
-from backend.datasentinel.source_image_ocr import ImageOcrResult
+from backend.lawdit.deterministic_signals import detect_signals
+from backend.lawdit.signal_evidence_anchors import apply_source_locations
+from backend.lawdit.source_format_recognition import extract_document_content
+from backend.lawdit.source_image_ocr import ImageOcrResult
 
 try:
     from PIL import Image
@@ -29,12 +29,12 @@ class OcrRegionAnchorTests(unittest.TestCase):
 
         with mock.patch.dict(
             "os.environ",
-            {"DATASENTINEL_OCR_MODE": "local", "DATASENTINEL_OCR_LANGS": "eng+deu"},
+            {"LAWDIT_OCR_MODE": "local", "LAWDIT_OCR_LANGS": "eng+deu"},
         ), mock.patch(
-            "backend.datasentinel.ocr_capabilities.shutil.which",
+            "backend.lawdit.ocr_capabilities.shutil.which",
             return_value="/usr/bin/tesseract",
         ), mock.patch(
-            "backend.datasentinel.source_image_ocr.subprocess.run",
+            "backend.lawdit.source_image_ocr.subprocess.run",
             return_value=completed,
         ) as run:
             extracted = extract_document_content(body=b"image", content_type="image/png", name="badge.png")
@@ -78,12 +78,12 @@ class OcrRegionAnchorTests(unittest.TestCase):
 
         with mock.patch.dict(
             "os.environ",
-            {"DATASENTINEL_OCR_MODE": "local", "DATASENTINEL_OCR_LANGS": "eng+chi_sim"},
+            {"LAWDIT_OCR_MODE": "local", "LAWDIT_OCR_LANGS": "eng+chi_sim"},
         ), mock.patch(
-            "backend.datasentinel.ocr_capabilities.shutil.which",
+            "backend.lawdit.ocr_capabilities.shutil.which",
             return_value="/usr/bin/tesseract",
         ), mock.patch(
-            "backend.datasentinel.source_image_ocr.subprocess.run",
+            "backend.lawdit.source_image_ocr.subprocess.run",
             return_value=completed,
         ):
             extracted = extract_document_content(body=b"image", content_type="image/png", name="cjk-badge.png")
@@ -131,12 +131,12 @@ class OcrRegionAnchorTests(unittest.TestCase):
 
         with mock.patch.dict(
             "os.environ",
-            {"DATASENTINEL_OCR_MODE": "local", "DATASENTINEL_OCR_LANGS": "eng+chi_sim"},
+            {"LAWDIT_OCR_MODE": "local", "LAWDIT_OCR_LANGS": "eng+chi_sim"},
         ), mock.patch(
-            "backend.datasentinel.ocr_capabilities.shutil.which",
+            "backend.lawdit.ocr_capabilities.shutil.which",
             return_value="/usr/bin/tesseract",
         ), mock.patch(
-            "backend.datasentinel.source_image_ocr.subprocess.run",
+            "backend.lawdit.source_image_ocr.subprocess.run",
             side_effect=fake_tesseract,
         ) as run:
             extracted = extract_document_content(body=buffer.getvalue(), content_type="image/png", name="overlay.png")
@@ -192,14 +192,14 @@ class OcrRegionAnchorTests(unittest.TestCase):
             },),
         )
 
-        with mock.patch.dict("os.environ", {"DATASENTINEL_OCR_MODE": "local"}), mock.patch(
-            "backend.datasentinel.source_pdf_text.pdftoppm_path",
+        with mock.patch.dict("os.environ", {"LAWDIT_OCR_MODE": "local"}), mock.patch(
+            "backend.lawdit.source_pdf_text.pdftoppm_path",
             return_value="/usr/bin/pdftoppm",
         ), mock.patch(
-            "backend.datasentinel.source_pdf_text.subprocess.run",
+            "backend.lawdit.source_pdf_text.subprocess.run",
             side_effect=fake_rasterize,
         ), mock.patch(
-            "backend.datasentinel.source_pdf_text.extract_image_content",
+            "backend.lawdit.source_pdf_text.extract_image_content",
             return_value=image_result,
         ):
             extracted = extract_document_content(

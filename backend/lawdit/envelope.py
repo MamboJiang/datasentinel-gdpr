@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 CONTRACT_VERSION = "0.1.0"
-PROBLEM_BASE = "https://datasentinel.local/problems"
+PROBLEM_BASE = "https://lawdit.local/problems"
 
 
 def utc_now() -> str:
@@ -82,7 +82,7 @@ def response(
             "X-Trace-Id": trace_id,
             "X-Contract-Version": CONTRACT_VERSION,
             "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Accept, Content-Type, X-Actor-Id, X-Contract-Version, Idempotency-Key, X-Trace-Id",
+            "Access-Control-Allow-Headers": "Accept, Content-Type, X-Actor-Id, X-Contract-Version, X-Lawdit-Trial-Session, Idempotency-Key, X-Trace-Id",
             "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
         },
         "body": body,

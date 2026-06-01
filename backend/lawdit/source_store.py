@@ -29,7 +29,7 @@ def demo_source_ids() -> set[str]:
 
 
 def demo_fixtures_enabled() -> bool:
-    return os.environ.get("DATASENTINEL_ENABLE_DEMO_FIXTURES", "true").lower() not in {"0", "false", "no", "off"}
+    return os.environ.get("LAWDIT_ENABLE_DEMO_FIXTURES", "true").lower() not in {"0", "false", "no", "off"}
 
 
 class SourceStore:

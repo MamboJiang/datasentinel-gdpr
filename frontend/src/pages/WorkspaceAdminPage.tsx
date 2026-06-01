@@ -135,7 +135,7 @@ export function WorkspaceAdminPage() {
         <p className="eyebrow">Workspace required</p>
         <h2>No Workspace membership yet</h2>
         <p>
-          This account can sign in, but it cannot enter DataSentinel operations until it opens and accepts a Workspace invite link.
+          This account can sign in, but it cannot enter lawdit operations until it opens and accepts a Workspace invite link.
         </p>
         <PendingInvitations />
       </section>
@@ -448,7 +448,7 @@ function WorkspaceProfileSettings({
             <input
               maxLength={80}
               onChange={(event) => setWorkspaceName(event.target.value)}
-              placeholder="DataSentinel GDPR"
+              placeholder="lawdit GDPR"
               value={workspaceName}
             />
           </label>

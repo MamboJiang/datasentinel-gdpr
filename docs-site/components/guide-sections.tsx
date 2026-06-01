@@ -109,7 +109,7 @@ type DocsScreenshotProps = {
 
 export function DocsScreenshot({ alt, caption, src }: DocsScreenshotProps) {
   return (
-    <figure className="ds-screenshot">
+    <figure className="ld-screenshot">
       <a href={src} target="_blank" rel="noreferrer">
         <img alt={alt} src={src} />
       </a>
@@ -123,9 +123,9 @@ export function DocsScreenshot({ alt, caption, src }: DocsScreenshotProps) {
 
 export function HomeTopBar() {
   return (
-    <header className="ds-home-nav">
-      <a className="ds-home-brand" href="/docs">
-        <span>DataSentinel</span>
+    <header className="ld-home-nav">
+      <a className="ld-home-brand" href="/docs">
+        <span>lawdit</span>
         <strong>User Guide</strong>
       </a>
       <nav aria-label="Documentation home links">
@@ -133,39 +133,39 @@ export function HomeTopBar() {
         <a href="/docs/safety-and-boundaries">Safety</a>
         <a href="/docs/faq">FAQ</a>
       </nav>
-      <a className="ds-home-console" href="/dashboard">Open console</a>
+      <a className="ld-home-console" href="/dashboard">Open console</a>
     </header>
   )
 }
 
 export function GuideHero() {
   return (
-    <section className="ds-hero">
-      <div className="ds-hero-copy">
-        <span className="ds-eyebrow">User guide</span>
+    <section className="ld-hero">
+      <div className="ld-hero-copy">
+        <span className="ld-eyebrow">User guide</span>
         <h1>Run accountable data discovery without guessing the next step.</h1>
         <p>
           Start from a source, run a scan, review redacted evidence, record a human decision,
           and prove the workflow through audit and evaluation surfaces.
         </p>
-        <div className="ds-actions">
-          <a className="ds-button ds-button-primary" href="/docs/quick-start">Start quick guide</a>
-          <a className="ds-button ds-button-secondary" href="/dashboard">Open console</a>
+        <div className="ld-actions">
+          <a className="ld-button ld-button-primary" href="/docs/quick-start">Start quick guide</a>
+          <a className="ld-button ld-button-secondary" href="/dashboard">Open console</a>
         </div>
-        <div className="ds-proof-row" aria-label="Documentation boundaries">
+        <div className="ld-proof-row" aria-label="Documentation boundaries">
           <span>No legal advice</span>
           <span>Deletion simulated</span>
           <span>Redacted evidence</span>
         </div>
       </div>
-      <div className="ds-hero-panel" aria-label="DataSentinel workflow preview">
-        <div className="ds-panel-top">
+      <div className="ld-hero-panel" aria-label="lawdit workflow preview">
+        <div className="ld-panel-top">
           <span>First review path</span>
           <strong>8 steps</strong>
         </div>
-        <div className="ds-flow-list">
+        <div className="ld-flow-list">
           {['Workspace', 'Source', 'Full scan', 'Finding', 'Decision', 'Audit', 'Evaluation'].map((item, index) => (
-            <div className="ds-flow-item" key={item}>
+            <div className="ld-flow-item" key={item}>
               <span>{index + 1}</span>
               <strong>{item}</strong>
             </div>
@@ -178,14 +178,14 @@ export function GuideHero() {
 
 export function FastTrack() {
   return (
-    <section className="ds-section">
-      <div className="ds-section-heading">
-        <span className="ds-eyebrow">Fast track</span>
+    <section className="ld-section">
+      <div className="ld-section-heading">
+        <span className="ld-eyebrow">Fast track</span>
         <h2>Get oriented in under five minutes</h2>
       </div>
-      <div className="ds-step-grid">
+      <div className="ld-step-grid">
         {workflowSteps.map((step) => (
-          <a className="ds-step-card" href={step.href} key={step.label}>
+          <a className="ld-step-card" href={step.href} key={step.label}>
             <span>{step.label}</span>
             <strong>{step.title}</strong>
             <p>{step.body}</p>
@@ -198,14 +198,14 @@ export function FastTrack() {
 
 export function SurfaceCards() {
   return (
-    <section className="ds-section">
-      <div className="ds-section-heading">
-        <span className="ds-eyebrow">Core surfaces</span>
+    <section className="ld-section">
+      <div className="ld-section-heading">
+        <span className="ld-eyebrow">Core surfaces</span>
         <h2>Jump to the page that matches your task</h2>
       </div>
-      <div className="ds-card-grid">
+      <div className="ld-card-grid">
         {surfaceCards.map((card) => (
-          <a className={`ds-surface-card ds-accent-${card.accent}`} href={card.href} key={card.title}>
+          <a className={`ld-surface-card ld-accent-${card.accent}`} href={card.href} key={card.title}>
             <span>{card.eyebrow}</span>
             <strong>{card.title}</strong>
             <p>{card.body}</p>
@@ -218,14 +218,14 @@ export function SurfaceCards() {
 
 export function VisualTour() {
   return (
-    <section className="ds-section">
-      <div className="ds-section-heading">
-        <span className="ds-eyebrow">Visual tour</span>
+    <section className="ld-section">
+      <div className="ld-section-heading">
+        <span className="ld-eyebrow">Visual tour</span>
         <h2>Recognize the main product surfaces</h2>
       </div>
-      <div className="ds-visual-grid">
+      <div className="ld-visual-grid">
         {visualTourCards.map((card) => (
-          <a className="ds-visual-card" href={card.href} key={card.title}>
+          <a className="ld-visual-card" href={card.href} key={card.title}>
             <img alt={`${card.title} surface screenshot`} src={card.image} />
             <strong>{card.title}</strong>
             <p>{card.body}</p>
@@ -238,14 +238,14 @@ export function VisualTour() {
 
 export function UserTracks() {
   return (
-    <section className="ds-section ds-track-section">
+    <section className="ld-section ld-track-section">
       <div>
-        <span className="ds-eyebrow">Choose a path</span>
+        <span className="ld-eyebrow">Choose a path</span>
         <h2>Different users need different first pages</h2>
       </div>
-      <div className="ds-track-list">
+      <div className="ld-track-list">
         {userTracks.map(([title, body]) => (
-          <article className="ds-track" key={title}>
+          <article className="ld-track" key={title}>
             <strong>{title}</strong>
             <p>{body}</p>
           </article>
@@ -257,28 +257,28 @@ export function UserTracks() {
 
 export function QuickStartHero() {
   return (
-    <section className="ds-quick-hero">
+    <section className="ld-quick-hero">
       <div>
-        <span className="ds-eyebrow">Quick start</span>
+        <span className="ld-eyebrow">Quick start</span>
         <h1>Complete the first review loop with confidence.</h1>
         <p>
           Follow this path when you want to validate the product workflow end to end:
           sign in, select a Workspace, scan a source, review a finding, and verify audit and evaluation output.
         </p>
       </div>
-      <a className="ds-button ds-button-primary" href="/dashboard">Open console</a>
+      <a className="ld-button ld-button-primary" href="/dashboard">Open console</a>
     </section>
   )
 }
 
 export function QuickStartPath() {
   return (
-    <section className="ds-section">
-      <div className="ds-section-heading">
-        <span className="ds-eyebrow">Step-by-step</span>
-        <h2>The shortest safe path through DataSentinel</h2>
+    <section className="ld-section">
+      <div className="ld-section-heading">
+        <span className="ld-eyebrow">Step-by-step</span>
+        <h2>The shortest safe path through lawdit</h2>
       </div>
-      <ol className="ds-timeline">
+      <ol className="ld-timeline">
         {quickStartSteps.map(([title, body], index) => (
           <li key={title}>
             <span>{String(index + 1).padStart(2, '0')}</span>
@@ -295,9 +295,9 @@ export function QuickStartPath() {
 
 export function ReadinessChecklist() {
   return (
-    <section className="ds-check-panel">
+    <section className="ld-check-panel">
       <div>
-        <span className="ds-eyebrow">Before you decide</span>
+        <span className="ld-eyebrow">Before you decide</span>
         <h2>Four checks keep the workflow accountable</h2>
       </div>
       <ul>
@@ -314,13 +314,13 @@ export function ReadinessChecklist() {
 
 export function SafetyBand() {
   return (
-    <section className="ds-safety-band">
+    <section className="ld-safety-band">
       <div>
-        <span className="ds-eyebrow">Prototype boundary</span>
+        <span className="ld-eyebrow">Prototype boundary</span>
         <h2>Evidence supports humans. It does not replace them.</h2>
       </div>
       <p>
-        DataSentinel does not provide legal advice, does not claim full GDPR compliance,
+        lawdit does not provide legal advice, does not claim full GDPR compliance,
         and does not delete external files in P0.
       </p>
       <a href="/docs/safety-and-boundaries">Review safety boundaries</a>

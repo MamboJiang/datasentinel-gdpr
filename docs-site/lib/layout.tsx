@@ -3,7 +3,7 @@ import { source } from './source'
 
 export const baseOptions: BaseLayoutProps = {
   nav: {
-    title: 'DataSentinel User Guide',
+    title: 'lawdit User Guide',
   },
 }
 

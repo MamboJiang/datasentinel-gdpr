@@ -42,14 +42,14 @@ GOOGLE_PICKER_API_KEY=<restricted google picker api key>
 GOOGLE_CLOUD_PROJECT_NUMBER=<numeric google cloud project number>
 ```
 
-`GOOGLE_CLIENT_SECRET` is server-only. `/api/integrations/google-drive/picker-config` and `/api/integrations/google-drive/binding` must never return it. Binding, disconnect, and scan routes must never return provider access tokens or refresh tokens. In prelaunch, Picker config requires the first-party session cookie when `DATASENTINEL_AUTH_REQUIRED=true`; Drive binding routes always require a first-party session.
+`GOOGLE_CLIENT_SECRET` is server-only. `/api/integrations/google-drive/picker-config` and `/api/integrations/google-drive/binding` must never return it. Binding, disconnect, and scan routes must never return provider access tokens or refresh tokens. In prelaunch, Picker config requires the first-party session cookie when `LAWDIT_AUTH_REQUIRED=true`; Drive binding routes always require a first-party session.
 
 ## Validation
 
-After restarting the API server, sign in to the app and open the Add Source dialog. The Google Drive option should show as configured. For a direct API check, call the route with a valid `datasentinel_session` cookie:
+After restarting the API server, sign in to the app and open the Add Source dialog. The Google Drive option should show as configured. For a direct API check, call the route with a valid `lawdit_session` cookie:
 
 ```bash
-curl -s --cookie "datasentinel_session=<session id>" \
+curl -s --cookie "lawdit_session=<session id>" \
   https://founder-force.uk/api/integrations/google-drive/picker-config
 ```
 
@@ -72,7 +72,7 @@ The response must not include `GOOGLE_CLIENT_SECRET`, GitHub credentials, provid
 To validate the personal binding route, open Account settings and connect Google Drive. Then call:
 
 ```bash
-curl -s --cookie "datasentinel_session=<session id>" \
+curl -s --cookie "lawdit_session=<session id>" \
   https://founder-force.uk/api/integrations/google-drive/binding
 ```
 
@@ -81,8 +81,8 @@ The response should show `connected: true`, safe Google profile fields, scopes, 
 ## Operational Boundary
 
 - `drive.file` supports files selected through the Picker.
-- `drive.readonly` is required when the user selects a folder and DataSentinel recursively lists descendant files.
+- `drive.readonly` is required when the user selects a folder and lawdit recursively lists descendant files.
 - One-off Picker access tokens are requested in the browser and sent only with the scan-start request.
 - Account settings Drive binding requests offline access through the backend; refresh tokens are stored server-side in the local account binding store and used only to mint short-lived scan access tokens.
-- Disconnecting the binding removes the local binding and attempts provider-token revocation. It does not delete DataSentinel source registrations or Google Drive files.
+- Disconnecting the binding removes the local binding and attempts provider-token revocation. It does not delete lawdit source registrations or Google Drive files.
 - Raw source content is read during scan execution only; public payloads expose redacted evidence, findings, metrics, warnings, and audit events.

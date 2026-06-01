@@ -1,1 +1,1 @@
-"""DataSentinel backend package."""
+"""lawdit backend package."""

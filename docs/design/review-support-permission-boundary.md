@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-After finding assembly, DataSentinel needs to tell a human reviewer what they can do, what they cannot do, what evidence must be checked, and which policy-pack version governs the decision. This stage must connect the assembled finding, owner routing, active governance model, and actor permission boundary before any review command is submitted.
+After finding assembly, lawdit needs to tell a human reviewer what they can do, what they cannot do, what evidence must be checked, and which policy-pack version governs the decision. This stage must connect the assembled finding, owner routing, active governance model, and actor permission boundary before any review command is submitted.
 
 This design applies the repository Atlas reference in `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md`, deterministic signal-detection continuity from `docs/design/deterministic-signal-detection.md`, and the adaptive governance contract.
 

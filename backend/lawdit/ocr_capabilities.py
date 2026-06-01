@@ -8,11 +8,11 @@ from typing import Any
 
 
 def ocr_mode() -> str:
-    return os.environ.get("DATASENTINEL_OCR_MODE", "local").strip().lower() or "local"
+    return os.environ.get("LAWDIT_OCR_MODE", "local").strip().lower() or "local"
 
 
 def configured_ocr_languages() -> tuple[str, ...]:
-    value = os.environ.get("DATASENTINEL_OCR_LANGS", "").strip()
+    value = os.environ.get("LAWDIT_OCR_LANGS", "").strip()
     if not value:
         return ()
     return tuple(part.strip() for part in value.replace(",", "+").split("+") if part.strip())

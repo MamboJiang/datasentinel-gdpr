@@ -1,6 +1,6 @@
 {
   "data": {
-    "workspaceId": "ws_datasentinel_gdpr",
+    "workspaceId": "ws_lawdit_gdpr",
     "groupId": "custom_legal-reviewers",
     "name": "Legal reviewers",
     "description": "Review legal escalation evidence.",

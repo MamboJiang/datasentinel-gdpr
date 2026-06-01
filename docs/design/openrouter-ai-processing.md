@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-DataSentinel needs an AI-assisted review boundary for cases where deterministic extraction, OCR, grep-style rules, and policy-pack context find evidence but cannot confidently describe operational context. The boundary must use OpenRouter, respect a 25 EUR project budget, avoid raw personal data leaving the system, and preserve the 12-stage GDPR Enterprise Expert Atlas control-tower workflow.
+lawdit needs an AI-assisted review boundary for cases where deterministic extraction, OCR, grep-style rules, and policy-pack context find evidence but cannot confidently describe operational context. The boundary must use OpenRouter, respect a 25 EUR project budget, avoid raw personal data leaving the system, and preserve the 12-stage GDPR Enterprise Expert Atlas control-tower workflow.
 
 This is not a replacement for deterministic signal detection, policy packs, owner routing, human review, or legal judgment.
 
@@ -18,7 +18,7 @@ This is not a replacement for deterministic signal detection, policy packs, owne
 
 | ID | Requirement |
 | --- | --- |
-| AI-REQ-001 | AI calls must be disabled unless `DATASENTINEL_AI_MODE=assistive` and `OPENROUTER_API_KEY` are present. |
+| AI-REQ-001 | AI calls must be disabled unless `LAWDIT_AI_MODE=assistive` and `OPENROUTER_API_KEY` are present. |
 | AI-REQ-002 | The application budget cap is 25 EUR and a conservative 25 USD OpenRouter credit cap by default. |
 | AI-REQ-003 | Usage must be checked against OpenRouter key usage and `OPENROUTER_USAGE_BASELINE_USD` before calls when a baseline is configured. |
 | AI-REQ-004 | If usage cannot be checked and fail-closed mode is enabled, no AI call may leave the process. |
@@ -42,7 +42,7 @@ This is not a replacement for deterministic signal detection, policy packs, owne
 
 | State | Event | Guard | Next State | Side Effect |
 | --- | --- | --- | --- | --- |
-| AI disabled | Runtime starts | `DATASENTINEL_AI_MODE != assistive` | Deterministic only | Report `ai.status = disabled` |
+| AI disabled | Runtime starts | `LAWDIT_AI_MODE != assistive` | Deterministic only | Report `ai.status = disabled` |
 | Missing key | Runtime starts | Assistive mode enabled but no key exists | Deterministic only | Report `ai.status = missing_api_key` |
 | Configured | Runtime starts | Assistive mode and key exist | Ready for preflight | Report provider, model, budget, and tier plan without exposing the key |
 | Ready for preflight | Evidence candidate arrives | Candidate is redacted, deterministically anchored, policy-pack contextualized, and ambiguous | Usage checking | Estimate cost and request OpenRouter key usage |
@@ -56,10 +56,10 @@ This is not a replacement for deterministic signal detection, policy packs, owne
 
 ## Impact Surface
 
-- `backend/datasentinel/ai_config.py` loads ignored local AI runtime configuration.
-- `backend/datasentinel/ai_gateway.py` owns OpenRouter HTTP calls and budget preflight.
-- `backend/datasentinel/processing_pipeline.py` owns OCR/grep/AI tier planning and redacted AI classification entrypoints.
-- `backend/datasentinel/demo_state.py` exposes AI runtime metadata in health, scan, metrics, and evaluation responses.
+- `backend/lawdit/ai_config.py` loads ignored local AI runtime configuration.
+- `backend/lawdit/ai_gateway.py` owns OpenRouter HTTP calls and budget preflight.
+- `backend/lawdit/processing_pipeline.py` owns OCR/grep/AI tier planning and redacted AI classification entrypoints.
+- `backend/lawdit/demo_state.py` exposes AI runtime metadata in health, scan, metrics, and evaluation responses.
 - `contracts/schemas/` documents optional `aiProcessing` metadata.
 - `.env.example` documents safe local secret and budget variables.
 
@@ -67,7 +67,7 @@ No public endpoint is added. No production Microsoft Graph, OAuth, tenant, datab
 
 ## Rollback Path
 
-1. Set `DATASENTINEL_AI_MODE=off` or remove `OPENROUTER_API_KEY`.
+1. Set `LAWDIT_AI_MODE=off` or remove `OPENROUTER_API_KEY`.
 2. Remove optional `aiProcessing` metadata from backend responses if the UI no longer needs visibility.
 3. Remove `ai_config.py`, `ai_gateway.py`, `processing_pipeline.py`, and their tests.
 4. Revert `.env.example` and documentation additions.

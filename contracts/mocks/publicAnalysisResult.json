@@ -1,0 +1,108 @@
+{
+  "data": {
+    "analysisId": "analysis_mock_public_entry",
+    "status": "completed",
+    "file": {
+      "name": "employee-note.txt",
+      "sizeBytes": 94,
+      "fileFormat": "txt",
+      "extractionMethod": "utf8_text",
+      "recognitionDifficulty": "easy"
+    },
+    "summary": {
+      "detectedSignalCount": 2,
+      "detectedTypes": [
+        {
+          "type": "email",
+          "count": 1,
+          "highestConfidence": 0.91
+        },
+        {
+          "type": "national_identifier",
+          "count": 1,
+          "highestConfidence": 0.88
+        }
+      ],
+      "riskLevel": "high",
+      "reviewRecommendation": "Treat this as a priority review candidate and verify the redacted evidence in a governed Workspace before deciding next actions.",
+      "nextSteps": [
+        "Verify each redacted evidence snippet with an accountable reviewer.",
+        "Route the case to the file owner or DPO escalation path before deciding retention or cleanup.",
+        "Open the Workspace when owner assignment, audit history, or evaluation tracking is needed."
+      ],
+      "workflowReadiness": [
+        "Redacted evidence is ready for human review.",
+        "Raw source content is not returned in the public response.",
+        "Detected signal categories can be handed to owner routing in the Workspace."
+      ],
+      "boundaryNotes": [
+        "No Workspace source, finding, audit event, or deletion action is created from this upload.",
+        "The response is not legal advice and does not claim GDPR compliance."
+      ],
+      "rawContentExposed": false,
+      "legalConclusionProvided": false,
+      "deletionAvailable": false
+    },
+    "analysisStages": [
+      {
+        "name": "File intake",
+        "status": "completed",
+        "description": "txt input accepted inside the one-file, 10 MB boundary."
+      },
+      {
+        "name": "Readable content extraction",
+        "status": "completed",
+        "description": "Content was handled through utf8_text with easy recognition difficulty."
+      },
+      {
+        "name": "Signal detection",
+        "status": "completed",
+        "description": "2 redacted signal candidates produced a high review priority."
+      },
+      {
+        "name": "Workspace handoff",
+        "status": "ready",
+        "description": "Use the governed Workspace when this file needs owner routing, audit history, or evaluation tracking."
+      }
+    ],
+    "governanceBoundaries": [
+      "One uploaded file per browser session at a time.",
+      "Ten active public analyses across the API process.",
+      "No automatic deletion, raw-content exposure, legal conclusion, or tenant integration."
+    ],
+    "evidence": [
+      {
+        "type": "email",
+        "detector": "email_pattern",
+        "confidence": 0.91,
+        "snippet": "Email: [REDACTED_EMAIL]",
+        "locationLabel": "Line 1"
+      },
+      {
+        "type": "national_identifier",
+        "detector": "ssn_pattern",
+        "confidence": 0.88,
+        "snippet": "National Identifier: [REDACTED_NATIONAL_ID]",
+        "locationLabel": "Line 2"
+      }
+    ],
+    "warnings": [],
+    "capacity": {
+      "maxActive": 10,
+      "activeAnalyses": 0,
+      "availableSlots": 10,
+      "waitingUsers": 0,
+      "queueMode": "capacity_guard",
+      "userHasActiveAnalysis": false,
+      "userQueuePosition": null,
+      "fileSizeLimitBytes": 10485760
+    }
+  },
+  "meta": {
+    "contractVersion": "0.1.0",
+    "generatedAt": "2026-06-01T00:00:00Z",
+    "traceId": "trace_public_analysis_result_mock",
+    "partial": false,
+    "warnings": []
+  }
+}

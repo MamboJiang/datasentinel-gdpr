@@ -10,16 +10,18 @@ from unittest import mock
 from http.server import ThreadingHTTPServer
 from tempfile import TemporaryDirectory
 
-from backend.datasentinel.auth import AUTH_TX_COOKIE, SESSION_COOKIE, AuthService, InMemoryAuthStore
-from backend.datasentinel.auth_support import cookie_value, unsign
-from backend.datasentinel import build_default_app, make_handler
-from backend.datasentinel.google_drive_binding import DRIVE_BIND_TX_COOKIE, GoogleDriveBindingService
-from backend.datasentinel.source_http import SourceHttpApp, SourceHttpOptions, build_sqlite_app
-from backend.datasentinel.source_documents import SourceDocument, SourceDocumentBatch
-from backend.datasentinel.deterministic_signals import detect_signals
-from backend.datasentinel.persistent_demo_state import PersistentPrelaunchState
-from backend.datasentinel.sqlite_store import SQLiteAuthStore, SQLiteDocumentStore, SQLiteDriveBindingStore
-from backend.datasentinel.source_store import SourceStore
+from backend.lawdit.auth import AUTH_TX_COOKIE, SESSION_COOKIE, AuthService, InMemoryAuthStore
+from backend.lawdit.auth_support import cookie_value, unsign
+from backend.lawdit import build_default_app, make_handler
+from backend.lawdit.google_drive_binding import DRIVE_BIND_TX_COOKIE, GoogleDriveBindingService
+from backend.lawdit.public_analysis import MAX_UPLOAD_BYTES, PublicAnalysisService
+from backend.lawdit.public_analysis_capacity import PublicAnalysisCapacity
+from backend.lawdit.source_http import SourceHttpApp, SourceHttpOptions, build_sqlite_app
+from backend.lawdit.source_documents import SourceDocument, SourceDocumentBatch
+from backend.lawdit.deterministic_signals import detect_signals
+from backend.lawdit.persistent_demo_state import PersistentPrelaunchState
+from backend.lawdit.sqlite_store import SQLiteAuthStore, SQLiteDocumentStore, SQLiteDriveBindingStore
+from backend.lawdit.source_store import SourceStore
 
 
 class FakeOAuthTransport:
@@ -130,6 +132,17 @@ def create_sqlite_session(db_path: Path, user_id: str, subject: str) -> str:
     return f"{SESSION_COOKIE}={session_id}"
 
 
+def multipart_file(filename: str, content: bytes, content_type: str = "text/plain") -> tuple[bytes, str]:
+    boundary = "----lawdit-test-boundary"
+    body = (
+        f"--{boundary}\r\n"
+        f"Content-Disposition: form-data; name=\"file\"; filename=\"{filename}\"\r\n"
+        f"Content-Type: {content_type}\r\n"
+        "\r\n"
+    ).encode("utf-8") + content + f"\r\n--{boundary}--\r\n".encode("utf-8")
+    return body, f"multipart/form-data; boundary={boundary}"
+
+
 class BackendApiServerTests(unittest.TestCase):
     def test_health_and_sources_use_contract_envelopes(self) -> None:
         app = build_default_app()
@@ -143,6 +156,104 @@ class BackendApiServerTests(unittest.TestCase):
         self.assertEqual(sources["status"], 200)
         self.assertGreaterEqual(len(sources["body"]["data"]), 1)
         self.assertEqual(sources["body"]["meta"]["contractVersion"], "0.1.0")
+
+    def test_public_analysis_capacity_is_public_and_bounded(self) -> None:
+        app = build_default_app()
+
+        capacity = app.handle("GET", "/api/public-analysis/capacity", "trace_public_capacity")
+
+        self.assertEqual(capacity["status"], 200)
+        self.assertEqual(capacity["body"]["data"]["maxActive"], 10)
+        self.assertEqual(capacity["body"]["data"]["activeAnalyses"], 0)
+        self.assertEqual(capacity["body"]["data"]["fileSizeLimitBytes"], MAX_UPLOAD_BYTES)
+
+    def test_public_analysis_upload_returns_redacted_summary(self) -> None:
+        app = build_default_app()
+        body, content_type = multipart_file(
+            "employee-note.txt",
+            b"Employee email: privacy.reviewer@example.org\nSSN: 123-45-6789\n",
+        )
+
+        analyzed = app.handle(
+            "POST",
+            "/api/public-analysis/analyze",
+            "trace_public_analyze",
+            body,
+            content_type,
+            {"X-Lawdit-Trial-Session": "trial-session-a"},
+        )
+        serialized = json.dumps(analyzed["body"])
+
+        self.assertEqual(analyzed["status"], 200)
+        self.assertEqual(analyzed["body"]["data"]["status"], "completed")
+        self.assertEqual(analyzed["body"]["data"]["summary"]["riskLevel"], "high")
+        self.assertGreaterEqual(analyzed["body"]["data"]["summary"]["detectedSignalCount"], 2)
+        self.assertIn("nextSteps", analyzed["body"]["data"]["summary"])
+        self.assertIn("analysisStages", analyzed["body"]["data"])
+        self.assertIn("governanceBoundaries", analyzed["body"]["data"])
+        self.assertIn("[REDACTED", serialized)
+        self.assertNotIn("privacy.reviewer@example.org", serialized)
+        self.assertNotIn("123-45-6789", serialized)
+
+    def test_public_analysis_rejects_oversized_file_before_analysis(self) -> None:
+        app = build_default_app()
+        body, content_type = multipart_file("large.txt", b"x" * (MAX_UPLOAD_BYTES + 1))
+
+        rejected = app.handle(
+            "POST",
+            "/api/public-analysis/analyze",
+            "trace_public_large",
+            body,
+            content_type,
+            {"X-Lawdit-Trial-Session": "trial-session-large"},
+        )
+
+        self.assertEqual(rejected["status"], 413)
+        self.assertEqual(rejected["contentType"], "application/problem+json")
+        self.assertEqual(rejected["body"]["capacity"]["activeAnalyses"], 0)
+
+    def test_public_analysis_rejects_second_active_file_for_session(self) -> None:
+        capacity = PublicAnalysisCapacity(max_active=1)
+        reservation, _status, error = capacity.try_begin("trial-session-a")
+        self.assertIsNone(error)
+        assert reservation is not None
+        app = SourceHttpApp(options=SourceHttpOptions(public_analysis=PublicAnalysisService(capacity)))
+        body, content_type = multipart_file("second.txt", b"Email: privacy@example.org")
+
+        rejected = app.handle(
+            "POST",
+            "/api/public-analysis/analyze",
+            "trace_public_duplicate",
+            body,
+            content_type,
+            {"X-Lawdit-Trial-Session": "trial-session-a"},
+        )
+
+        capacity.finish(reservation)
+        self.assertEqual(rejected["status"], 409)
+        self.assertTrue(rejected["body"]["capacity"]["userHasActiveAnalysis"])
+
+    def test_public_analysis_reports_waiting_users_when_capacity_is_full(self) -> None:
+        capacity = PublicAnalysisCapacity(max_active=1)
+        reservation, _status, error = capacity.try_begin("trial-session-a")
+        self.assertIsNone(error)
+        assert reservation is not None
+        app = SourceHttpApp(options=SourceHttpOptions(public_analysis=PublicAnalysisService(capacity)))
+        body, content_type = multipart_file("queued.txt", b"Email: waiting@example.org")
+
+        rejected = app.handle(
+            "POST",
+            "/api/public-analysis/analyze",
+            "trace_public_full",
+            body,
+            content_type,
+            {"X-Lawdit-Trial-Session": "trial-session-b"},
+        )
+
+        capacity.finish(reservation)
+        self.assertEqual(rejected["status"], 429)
+        self.assertEqual(rejected["body"]["capacity"]["waitingUsers"], 1)
+        self.assertEqual(rejected["body"]["capacity"]["userQueuePosition"], 1)
 
     def test_auth_provider_list_does_not_expose_secrets(self) -> None:
         app = auth_app()
@@ -250,10 +361,10 @@ class BackendApiServerTests(unittest.TestCase):
 
     def test_sqlite_auth_required_sources_are_scoped_to_session_user(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             cookie_a = create_sqlite_session(db_path, "user_account_a", "account-a")
             cookie_b = create_sqlite_session(db_path, "user_account_b", "account-b")
-            with mock.patch.dict("os.environ", {"DATASENTINEL_AUTH_REQUIRED": "true", "DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_AUTH_REQUIRED": "true", "LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path)
                 created = app.handle(
                     "POST",
@@ -283,10 +394,10 @@ class BackendApiServerTests(unittest.TestCase):
             root = Path(directory) / "source"
             root.mkdir()
             (root / "account-a.txt").write_text("Contact privacy.user@example.org for ticket 491711234567.", encoding="utf-8")
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             cookie_a = create_sqlite_session(db_path, "user_findings_a", "findings-a")
             cookie_b = create_sqlite_session(db_path, "user_findings_b", "findings-b")
-            with mock.patch.dict("os.environ", {"DATASENTINEL_AUTH_REQUIRED": "true", "DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_AUTH_REQUIRED": "true", "LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path, [root])
                 created = app.handle(
                     "POST",
@@ -370,7 +481,7 @@ class BackendApiServerTests(unittest.TestCase):
 
     def test_sqlite_source_store_persists_created_sources(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             app = build_sqlite_app(db_path)
             created = app.handle(
                 "POST",
@@ -381,7 +492,7 @@ class BackendApiServerTests(unittest.TestCase):
                     "name": "SQLite Local Source",
                     "sourceType": "local_repo",
                     "status": "registered",
-                    "config": {"rootPath": "/tmp/datasentinel-sample"},
+                    "config": {"rootPath": "/tmp/lawdit-sample"},
                 }),
                 "application/json",
             )
@@ -395,7 +506,7 @@ class BackendApiServerTests(unittest.TestCase):
 
     def test_sqlite_workflow_state_persists_review_after_restart(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             app = build_sqlite_app(db_path)
             support = app.handle("GET", "/api/findings/finding_001/review-support", "trace_sqlite_support")
             checklist_ids = [item["itemId"] for item in support["body"]["data"]["checklist"]]
@@ -426,7 +537,7 @@ class BackendApiServerTests(unittest.TestCase):
             root = Path(directory) / "source"
             root.mkdir()
             (root / "placeholder.txt").write_text("placeholder", encoding="utf-8")
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             seeded = build_sqlite_app(db_path)
             created = seeded.handle(
                 "POST",
@@ -445,7 +556,7 @@ class BackendApiServerTests(unittest.TestCase):
             )
             seeded_findings = seeded.handle("GET", "/api/findings", "trace_seed_findings")
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 prelaunch = build_sqlite_app(db_path, [root])
                 sources = prelaunch.handle("GET", "/api/sources", "trace_prelaunch_sources")
                 findings = prelaunch.handle("GET", "/api/findings", "trace_prelaunch_findings")
@@ -461,9 +572,9 @@ class BackendApiServerTests(unittest.TestCase):
 
     def test_prelaunch_empty_findings_pagination_uses_real_total(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path)
                 findings = app.handle("GET", "/api/findings", "trace_empty_pagination")
 
@@ -530,7 +641,7 @@ class BackendApiServerTests(unittest.TestCase):
 
     def test_prelaunch_mode_scans_remote_file_link_without_storing_raw_file(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
 
             def fake_reader(source: dict[str, object], payload: dict[str, object]) -> SourceDocumentBatch:
                 self.assertEqual(source["sourceType"], "remote_file_link")
@@ -544,9 +655,9 @@ class BackendApiServerTests(unittest.TestCase):
                     extraction_method="remote_https_text",
                 )
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path)
-                with mock.patch("backend.datasentinel.source_api.validate_remote_source_url", lambda url: None):
+                with mock.patch("backend.lawdit.source_api.validate_remote_source_url", lambda url: None):
                     created = app.handle(
                         "POST",
                         "/api/sources",
@@ -561,7 +672,7 @@ class BackendApiServerTests(unittest.TestCase):
                         }),
                         "application/json",
                     )
-                with mock.patch("backend.datasentinel.prelaunch_state.read_source_documents", fake_reader):
+                with mock.patch("backend.lawdit.prelaunch_state.read_source_documents", fake_reader):
                     started = app.handle(
                         "POST",
                         "/api/scans/full",
@@ -583,8 +694,8 @@ class BackendApiServerTests(unittest.TestCase):
 
     def test_remote_file_link_rejects_google_drive_share_pages(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            db_path = Path(directory) / "lawdit.sqlite3"
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path)
                 rejected = app.handle(
                     "POST",
@@ -612,8 +723,8 @@ class BackendApiServerTests(unittest.TestCase):
             root = Path(directory) / "source"
             root.mkdir()
             (root / "ticket.pdf").write_bytes(b"%PDF-1.6\nplaceholder")
-            db_path = Path(directory) / "datasentinel.sqlite3"
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            db_path = Path(directory) / "lawdit.sqlite3"
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path, [root])
                 created = app.handle(
                     "POST",
@@ -629,7 +740,7 @@ class BackendApiServerTests(unittest.TestCase):
                     "application/json",
                 )
                 connected = app.handle("POST", "/api/sources/source_pdf_text/connect-test", "trace_pdf_source_connect", "{}", "application/json")
-                with mock.patch("backend.datasentinel.source_documents.PdfReader", FakePdfReader):
+                with mock.patch("backend.lawdit.source_documents.PdfReader", FakePdfReader):
                     started = app.handle(
                         "POST",
                         "/api/scans/full",
@@ -654,7 +765,7 @@ class BackendApiServerTests(unittest.TestCase):
             root = Path(directory) / "source"
             root.mkdir()
             (root / "placeholder.txt").write_text("placeholder", encoding="utf-8")
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
 
             def fake_reader(source: dict[str, object], payload: dict[str, object]) -> SourceDocumentBatch:
                 return SourceDocumentBatch(
@@ -673,7 +784,7 @@ class BackendApiServerTests(unittest.TestCase):
                     extraction_method="google_drive_text",
                 )
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path, [root])
                 app.handle(
                     "POST",
@@ -689,7 +800,7 @@ class BackendApiServerTests(unittest.TestCase):
                     "application/json",
                 )
                 app.handle("POST", "/api/sources/source_form_fields/connect-test", "trace_form_connect")
-                with mock.patch("backend.datasentinel.prelaunch_state.read_source_documents", fake_reader):
+                with mock.patch("backend.lawdit.prelaunch_state.read_source_documents", fake_reader):
                     started = app.handle(
                         "POST",
                         "/api/scans/full",
@@ -821,12 +932,12 @@ class BackendApiServerTests(unittest.TestCase):
 
     def test_google_drive_scan_requires_per_scan_access_token(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             local_root = Path(directory) / "local"
             local_root.mkdir()
             (local_root / "contacts.txt").write_text("Contact Email: stale@example.org", encoding="utf-8")
             with mock.patch.dict("os.environ", {
-                "DATASENTINEL_ENABLE_DEMO_FIXTURES": "false",
+                "LAWDIT_ENABLE_DEMO_FIXTURES": "false",
                 "GOOGLE_CLIENT_ID": "google-client-id",
                 "GOOGLE_PICKER_API_KEY": "picker-public-key",
                 "GOOGLE_CLOUD_PROJECT_NUMBER": "1234567890",
@@ -890,7 +1001,7 @@ class BackendApiServerTests(unittest.TestCase):
 
     def test_google_drive_scan_uses_persisted_account_binding_after_refresh(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             documents = SQLiteDocumentStore(db_path)
             auth_service = AuthService(SQLiteAuthStore(documents), auth_settings(), FakeOAuthTransport())
             drive_transport = FakeDriveBindingTransport()
@@ -924,7 +1035,7 @@ class BackendApiServerTests(unittest.TestCase):
                 )
 
             with mock.patch.dict("os.environ", {
-                "DATASENTINEL_ENABLE_DEMO_FIXTURES": "false",
+                "LAWDIT_ENABLE_DEMO_FIXTURES": "false",
                 "GOOGLE_CLIENT_ID": "google-client-id",
                 "GOOGLE_CLIENT_SECRET": "google-secret",
                 "GOOGLE_PICKER_API_KEY": "picker-public-key",
@@ -949,7 +1060,7 @@ class BackendApiServerTests(unittest.TestCase):
                     "application/json",
                     {"Cookie": cookie},
                 )
-                with mock.patch("backend.datasentinel.prelaunch_state.read_source_documents", fake_reader):
+                with mock.patch("backend.lawdit.prelaunch_state.read_source_documents", fake_reader):
                     started = app.handle(
                         "POST",
                         "/api/scans/full",
@@ -967,9 +1078,9 @@ class BackendApiServerTests(unittest.TestCase):
 
     def test_source_registration_strips_runtime_tokens_from_config(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             with mock.patch.dict("os.environ", {
-                "DATASENTINEL_ENABLE_DEMO_FIXTURES": "false",
+                "LAWDIT_ENABLE_DEMO_FIXTURES": "false",
                 "GOOGLE_CLIENT_ID": "google-client-id",
                 "GOOGLE_PICKER_API_KEY": "picker-public-key",
                 "GOOGLE_CLOUD_PROJECT_NUMBER": "1234567890",
@@ -1017,8 +1128,8 @@ class BackendApiServerTests(unittest.TestCase):
 
     def test_source_delete_removes_registration_from_sqlite_store(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            db_path = Path(directory) / "lawdit.sqlite3"
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path)
                 created = app.handle(
                     "POST",
@@ -1047,8 +1158,8 @@ class BackendApiServerTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             root = Path(directory) / "source"
             root.mkdir()
-            db_path = Path(directory) / "datasentinel.sqlite3"
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            db_path = Path(directory) / "lawdit.sqlite3"
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path, [root])
                 created = app.handle(
                     "POST",
@@ -1124,6 +1235,29 @@ class BackendApiServerTests(unittest.TestCase):
         self.assertFalse(detail["body"]["data"]["auditTimeline"][0]["rawContentExposed"])
         self.assertNotIn("markus.keller@example.org", serialized)
 
+    def test_partial_cached_non_primary_demo_finding_detail_is_repaired(self) -> None:
+        app = build_default_app()
+        app.demo_state.finding_details["finding_002"] = {
+            "auditTimeline": [],
+            "evidenceSignalCount": 2,
+            "fileName": "old_it_access_request_2020.pdf",
+            "findingId": "finding_002",
+            "riskLevel": "high",
+            "riskScore": 84,
+            "status": "open",
+        }
+
+        detail = app.handle("GET", "/api/findings/finding_002", "trace_repaired_non_primary_finding")
+        serialized = json.dumps(detail["body"])
+
+        self.assertEqual(detail["status"], 200)
+        self.assertEqual(detail["body"]["data"]["findingId"], "finding_002")
+        self.assertGreater(len(detail["body"]["data"]["signals"]), 0)
+        self.assertIn("[REDACTED_EMAIL]", serialized)
+        self.assertEqual(detail["body"]["data"]["policyContext"]["policyPackVersion"], "2026.05-demo")
+        self.assertFalse(detail["body"]["data"]["signals"][0]["evidenceAnchor"]["rawContentExposed"])
+        self.assertNotIn("markus.keller@example.org", serialized)
+
     def test_review_records_audit_event_without_real_deletion(self) -> None:
         app = build_default_app()
         support = app.handle("GET", "/api/findings/finding_001/review-support", "trace_support")
@@ -1178,7 +1312,7 @@ class BackendApiServerTests(unittest.TestCase):
 
     def test_sqlite_app_serves_health_over_real_http(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
             server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(build_sqlite_app(db_path)))
             thread = threading.Thread(target=server.serve_forever, daemon=True)
             thread.start()
@@ -1200,8 +1334,8 @@ class BackendApiServerTests(unittest.TestCase):
 
     def test_server_deletes_source_over_real_http(self) -> None:
         with TemporaryDirectory() as directory:
-            db_path = Path(directory) / "datasentinel.sqlite3"
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            db_path = Path(directory) / "lawdit.sqlite3"
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(build_sqlite_app(db_path)))
             thread = threading.Thread(target=server.serve_forever, daemon=True)
             thread.start()
@@ -1267,9 +1401,9 @@ class BackendApiServerTests(unittest.TestCase):
             root = Path(directory) / "source"
             root.mkdir()
             (root / "contacts.txt").write_text("Contact privacy.reviewer@example.org for this record.", encoding="utf-8")
-            db_path = Path(directory) / "datasentinel.sqlite3"
+            db_path = Path(directory) / "lawdit.sqlite3"
 
-            with mock.patch.dict("os.environ", {"DATASENTINEL_ENABLE_DEMO_FIXTURES": "false"}):
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
                 app = build_sqlite_app(db_path, [root])
                 initial_sources = app.handle("GET", "/api/sources", "trace_pre_sources")
                 initial_findings = app.handle("GET", "/api/findings", "trace_pre_findings")

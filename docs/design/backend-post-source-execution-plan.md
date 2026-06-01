@@ -125,7 +125,7 @@ These mappings are planning assumptions for controlled demo scenarios. They are 
 | Reviewer lacks permission | Return denied action before submit where possible; reject denied submit with problem details. |
 | Duplicate review request | Use idempotency key to avoid conflicting audit events. |
 | Policy pack changes after review | Preserve historical policy context; represent affected decisions as reopen candidates only if the contract supports it. |
-| Delta scan sees missing file | Treat as source inventory change, not DataSentinel deletion. |
+| Delta scan sees missing file | Treat as source inventory change, not lawdit deletion. |
 | Evaluation inputs incomplete | Return partial evaluation with warnings or deterministic mock values for P0. |
 
 ## Rollback Path

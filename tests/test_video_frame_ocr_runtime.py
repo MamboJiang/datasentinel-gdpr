@@ -8,9 +8,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import mock
 
-from backend.datasentinel.deterministic_signals import detect_signals
-from backend.datasentinel.source_video_ocr import extract_video_frame_content, ffmpeg_path
-from backend.datasentinel.ocr_capabilities import tesseract_path
+from backend.lawdit.deterministic_signals import detect_signals
+from backend.lawdit.source_video_ocr import extract_video_frame_content, ffmpeg_path
+from backend.lawdit.ocr_capabilities import tesseract_path
 
 try:
     from PIL import Image, ImageDraw, ImageFont
@@ -49,7 +49,7 @@ class VideoFrameOcrRuntimeTests(unittest.TestCase):
                 check=True,
                 timeout=15,
             )
-            with mock.patch.dict(os.environ, {"DATASENTINEL_OCR_MODE": "local", "DATASENTINEL_OCR_LANGS": "eng"}):
+            with mock.patch.dict(os.environ, {"LAWDIT_OCR_MODE": "local", "LAWDIT_OCR_LANGS": "eng"}):
                 extracted = extract_video_frame_content(video_path.read_bytes(), "screen.mp4")
 
         signal_types = {signal["type"] for signal in detect_signals(extracted.text)}

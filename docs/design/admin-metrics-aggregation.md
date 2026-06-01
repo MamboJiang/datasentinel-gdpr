@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-DataSentinel needs a management metrics stage that turns the prior workflow stages into accountable operational evidence. The repository Atlas reference in `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md` positions the product as a responsible deletion control tower, where management cares about source coverage, risk reduction, owner backlog, review throughput, outcomes, cost, and evidence rather than raw PII counts alone.
+lawdit needs a management metrics stage that turns the prior workflow stages into accountable operational evidence. The repository Atlas reference in `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md` positions the product as a responsible deletion control tower, where management cares about source coverage, risk reduction, owner backlog, review throughput, outcomes, cost, and evidence rather than raw PII counts alone.
 
 This P0 slice implements deterministic, fixture-backed aggregation for the existing mock workflow. It does not add production connectors, Microsoft Graph/OAuth, a database, AI/OCR services, legal advice, or deletion execution.
 

@@ -14,7 +14,7 @@ from .auth_support import cookie_value, sign, unsign
 from .envelope import envelope, problem, response, utc_now
 from .google_drive_config import DRIVE_READONLY_SCOPE
 
-DRIVE_BIND_TX_COOKIE = "datasentinel_drive_bind_tx"
+DRIVE_BIND_TX_COOKIE = "lawdit_drive_bind_tx"
 DRIVE_BINDING_SCOPES = ("openid", "email", "profile", DRIVE_READONLY_SCOPE)
 DRIVE_BINDING_TX_TTL_SECONDS = 10 * 60
 

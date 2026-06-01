@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-Google Drive sources currently depend on a browser-memory Picker access token. A page refresh drops that token, so imported Drive sources become `authorization_required` even when the same signed-in user intentionally granted Drive access minutes earlier. Users need a personal binding in Account settings that survives refresh, can be changed to another Google account, and can be disconnected without deleting DataSentinel source registrations or Google Drive files.
+Google Drive sources currently depend on a browser-memory Picker access token. A page refresh drops that token, so imported Drive sources become `authorization_required` even when the same signed-in user intentionally granted Drive access minutes earlier. Users need a personal binding in Account settings that survives refresh, can be changed to another Google account, and can be disconnected without deleting lawdit source registrations or Google Drive files.
 
 ## Research Basis
 

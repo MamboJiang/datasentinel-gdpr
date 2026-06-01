@@ -139,7 +139,11 @@
   }
 
   .landing-brand {
-    font-size: 1rem;
+    flex: 0 0 auto;
+  }
+
+  .landing-brand-logo {
+    height: 32px;
   }
 
   .landing-nav-cta {

@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-DataSentinel must not depend on one fixed snapshot of legal rules, organization charts, or ownership structures. Enterprises face policy changes, reorganizations, task transfers, temporary reviewer coverage, legal exceptions, and source migration. Reviewers also need a friendly workflow that makes responsibilities, choices, evidence, and permission boundaries obvious.
+lawdit must not depend on one fixed snapshot of legal rules, organization charts, or ownership structures. Enterprises face policy changes, reorganizations, task transfers, temporary reviewer coverage, legal exceptions, and source migration. Reviewers also need a friendly workflow that makes responsibilities, choices, evidence, and permission boundaries obvious.
 
 ## Design Requirements
 

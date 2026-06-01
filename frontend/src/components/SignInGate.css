@@ -25,9 +25,8 @@
 }
 
 .signin-brand-mark {
-  color: #202124;
-  fill: currentColor;
   height: 34px;
+  object-fit: contain;
   width: 34px;
 }
 

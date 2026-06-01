@@ -159,7 +159,7 @@ describe('review support and permission boundary workflow', () => {
         lastActiveAt: completedAt,
         membershipId: 'mem_anna',
         status: 'active',
-        workspaceId: 'ws_datasentinel_gdpr',
+        workspaceId: 'ws_lawdit_gdpr',
       },
       {
         accountId: 'user_marta',
@@ -171,7 +171,7 @@ describe('review support and permission boundary workflow', () => {
         lastActiveAt: completedAt,
         membershipId: 'mem_marta',
         status: 'active',
-        workspaceId: 'ws_datasentinel_gdpr',
+        workspaceId: 'ws_lawdit_gdpr',
       },
     ]
 

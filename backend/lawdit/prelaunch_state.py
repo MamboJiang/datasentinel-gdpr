@@ -72,7 +72,7 @@ class PrelaunchState(DemoState):
             target=self._run_scan_worker,
             args=(scan_id, source_for_worker, governance_for_worker, scan_type, payload_for_worker, worker_finished),
             daemon=True,
-            name=f"datasentinel-scan-{scan_id}",
+            name=f"lawdit-scan-{scan_id}",
         )
         thread.start()
         return worker_finished

@@ -15,7 +15,7 @@ export function SignInGate({ children }: { children: ReactNode }) {
         <section className="signin-panel" aria-labelledby="signin-title">
           <h1 className="signin-brand" id="signin-title">
             <BrandMark />
-            <span>DataSentinel</span>
+            <span>lawdit</span>
           </h1>
           <div className="signin-notice" role="status">
             Checking session.
@@ -33,7 +33,7 @@ export function SignInGate({ children }: { children: ReactNode }) {
       <section className="signin-panel" aria-labelledby="signin-title">
         <h1 className="signin-brand" id="signin-title">
           <BrandMark />
-          <span>DataSentinel</span>
+          <span>lawdit</span>
         </h1>
 
         <div className="signin-actions" aria-label="Sign in providers">
@@ -69,17 +69,7 @@ export function SignInGate({ children }: { children: ReactNode }) {
 
 function BrandMark() {
   return (
-    <svg aria-hidden="true" className="signin-brand-mark" viewBox="0 0 36 36">
-      <circle cx="6" cy="6" r="3.4" />
-      <circle cx="18" cy="6" r="3.4" />
-      <circle cx="30" cy="6" r="3.4" />
-      <circle cx="6" cy="18" r="3.4" />
-      <circle cx="18" cy="18" r="3.4" />
-      <circle cx="30" cy="18" r="3.4" />
-      <circle cx="6" cy="30" r="3.4" />
-      <circle cx="18" cy="30" r="3.4" />
-      <circle cx="30" cy="30" r="3.4" />
-    </svg>
+    <img alt="" aria-hidden="true" className="signin-brand-mark" src="/brand/lawdit-mark-light.svg" />
   )
 }
 

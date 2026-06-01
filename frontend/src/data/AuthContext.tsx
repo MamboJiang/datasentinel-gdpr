@@ -22,7 +22,7 @@ type AuthContextValue = {
 
 const anonymousSession: AuthSession = { authenticated: false, user: null, expiresAt: null }
 const AuthContext = createContext<AuthContextValue | null>(null)
-const authGateEnabled = import.meta.env.VITE_DATASENTINEL_AUTH_GATE !== 'false'
+const authGateEnabled = import.meta.env.VITE_LAWDIT_AUTH_GATE !== 'false'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [providers, setProviders] = useState<AuthProviderOption[]>([])

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Evaluation is a product feature. DataSentinel must show that scanning quality is measurable, reproducible, fast enough for a prototype, and transparent about resource intensity.
+Evaluation is a product feature. lawdit must show that scanning quality is measurable, reproducible, fast enough for a prototype, and transparent about resource intensity.
 
 ## P0 Metrics
 

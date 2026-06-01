@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Governance configuration lets DataSentinel adapt to policy changes, organization changes, task transfers, source changes, and reviewer permissions without hard-coding one legal snapshot into the system.
+Governance configuration lets lawdit adapt to policy changes, organization changes, task transfers, source changes, and reviewer permissions without hard-coding one legal snapshot into the system.
 
 Related contract files:
 

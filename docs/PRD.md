@@ -30,6 +30,25 @@ Provide a prototype workflow that shows how an organization can discover GDPR-re
 - Prelaunch account concept for Google and GitHub login through backend-owned OAuth, first-party sessions, visible user profile, and logout.
 - Workspace administration concept for Workspace-scoped admins, user groups, invitation-based membership, visible permission boundaries, and operational charts.
 - Prelaunch source-input concept for Google Drive selected files or folders, direct HTTPS file links, RFC 5322/MIME email extraction, bounded ZIP archive member extraction, host-local legacy Office conversion, PDF text-layer extraction with bounded local OCR fallback, and source-registration deletion without long-term raw source-file storage or source-file deletion.
+- Public upload-analysis trial for the website: one uploaded file per browser trial session, 10 MB maximum file size, at most 5 active public analyses globally in the API process, live capacity data, short redacted result summary, and no automatic deletion or legal advice.
+
+## Public Upload Analysis Trial
+
+The public website includes a simple trial entrypoint that lets a visitor upload one file and receive a short lawdit analysis summary before entering the full Workspace console.
+
+Product constraints:
+
+- One active uploaded file per browser trial session.
+- 10 MB maximum file size.
+- 5 active public analyses globally at the same time in the API process.
+- Live capacity data must show active analyses, available slots, waiting-at-intake count, and the file-size limit.
+- The upload experience must be labeled as a public preview, not the full product.
+- The experience must educate users that governed source setup, owners, review decisions, audit trails, and evaluation live in the Workspace, with a direct link to `/dashboard`.
+- Capacity-full, oversized, duplicate-active, unsupported, failed, and completed states must be visible and non-destructive.
+- Trial results must be concise, redacted, and separate from the full Workspace console.
+- The trial must not claim full GDPR compliance, provide legal advice, execute deletion, or imply production tenant integration.
+
+The detailed design note is `docs/design/public-upload-analysis-preview.md`. The trial contract is defined in `contracts/openapi.yaml`, `docs/API_CONTRACT.md`, `contracts/schemas/public-analysis.yaml`, and the public-analysis mock payloads.
 
 ## Backend Planning Sequence After Sample Source Connection
 
@@ -132,7 +151,7 @@ The detailed design note is `docs/design/workspace-admin-permission-system.md`.
 
 ## Prelaunch Source Input Slice
 
-The source-input slice lets signed-in users scan real files without uploading raw file copies into DataSentinel. It must:
+The source-input slice lets signed-in users scan real files without uploading raw file copies into lawdit. It must:
 
 - Let a user register a direct HTTPS file link or select Google Drive files/folders through Google Picker.
 - Store only source metadata and selected Drive item metadata during registration.
@@ -140,7 +159,7 @@ The source-input slice lets signed-in users scan real files without uploading ra
 - Let a user connect, change, or disconnect the personal Google Drive binding in Account settings without deleting source registrations or Drive files.
 - Extract text-layer PDFs, Office Open XML files, legacy DOC/XLS/PPT files through host-local LibreOffice conversion, OpenDocument files, EML email messages, bounded ZIP archive members, supported images through host-local OCR, bounded image-only PDF OCR when host tooling is available, VTT/SRT transcripts, and bounded raw video media through host-local FFmpeg frame OCR during scan execution when selected/local/linked files have usable text; keep image-only PDFs, nested archives, raw video media, and legacy Office inputs hard-deferred or unsupported when the required processor is unavailable.
 - Show recognition difficulty for easy text, moderate structured documents, hard OCR-deferred inputs, and unsupported formats.
-- Let users remove DataSentinel source registrations without deleting external source files.
+- Let users remove lawdit source registrations without deleting external source files.
 - Read file content only inside the scan process and persist redacted evidence, findings, metrics, and audit events instead of raw file bodies.
 - Reject unsafe direct links, unsupported files, missing Drive tokens, and over-limit inputs before mutating workflow state.
 - Keep legal conclusions, full-compliance claims, provider secrets, frontend token exposure, source-file deletion, and production tenant connectors out of this slice.
@@ -256,7 +275,7 @@ The next implementation slice connects the completed full-scan baseline to ongoi
 - Reject missing, running, not-ready, or mismatched baselines without changing scan, audit, finding, metric, or evaluation state.
 - Represent changed, new, modified, unchanged, and missing source files separately.
 - Carry unchanged baseline files forward instead of treating them as newly scanned findings.
-- Treat missing source files as inventory changes, not DataSentinel deletion or proof of erasure.
+- Treat missing source files as inventory changes, not lawdit deletion or proof of erasure.
 - Pass changed findings through context/risk, owner routing, finding assembly, review support, audit recording, metrics, and evaluation.
 - Preserve no raw-content, no legal-conclusion, no deletion-execution, zero model call, and zero estimated paid-service cost boundaries.
 
@@ -284,7 +303,7 @@ The next implementation slice connects prior workflow outputs to measurable eval
 - Keep every metric traceable to dataset hash, scanner version, detector rules, config hash, policy-pack version, upstream stage fingerprints, admin-metrics fingerprint, and finding fingerprint.
 - Show false positives, false negatives, unsupported files, and OCR-deferred files as measurable quality context instead of hiding scanner limitations.
 - Refresh review-throughput and risk-progress fields when accepted human-review decisions are recorded, while rejected or duplicate commands leave evaluation unchanged.
-- Generate changed-file evaluation for delta scans without implying missing files were deleted by DataSentinel.
+- Generate changed-file evaluation for delta scans without implying missing files were deleted by lawdit.
 - Keep raw source content, unredacted personal data, legal conclusions, production evaluation infrastructure, real deletion, model calls, and paid-service cost out of P0.
 
 The detailed design note is `docs/design/evaluation-metrics-generation.md`.

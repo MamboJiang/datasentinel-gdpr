@@ -2,11 +2,11 @@
 
 ## One-Liner
 
-DataSentinel is a Bosch-grade GDPR discovery and responsible cleanup workflow for distributed enterprise drives.
+lawdit is a Bosch-grade GDPR discovery and responsible cleanup workflow for distributed enterprise drives.
 
 ## Product Thesis
 
-DataSentinel turns GDPR file cleanup from manual auditing into a measurable, owner-routed, human-reviewed, audit-ready workflow.
+lawdit turns GDPR file cleanup from manual auditing into a measurable, owner-routed, human-reviewed, audit-ready workflow.
 
 ## Core Loop
 

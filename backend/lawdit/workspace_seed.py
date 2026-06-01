@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-DEFAULT_WORKSPACE_ID = "ws_datasentinel_gdpr"
+DEFAULT_WORKSPACE_ID = "ws_lawdit_gdpr"
 WORKSPACE_STATE_VERSION = "workspace-state-v1"
 WORKSPACE_PERMISSION_OPTIONS = [
     {
@@ -83,8 +83,8 @@ def seed_state() -> dict[str, Any]:
         "stateStoreVersion": WORKSPACE_STATE_VERSION,
         "workspaces": [{
             "workspaceId": DEFAULT_WORKSPACE_ID,
-            "name": "DataSentinel GDPR",
-            "slug": "datasentinel-gdpr",
+            "name": "lawdit GDPR",
+            "slug": "lawdit-gdpr",
             "status": "active",
             "plan": "Prelaunch",
             "headerLabel": "Prelaunch",

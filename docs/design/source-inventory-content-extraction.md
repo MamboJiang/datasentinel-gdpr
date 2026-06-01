@@ -2,7 +2,7 @@
 
 ## Problem Definition
 
-After a controlled source starts a full scan, DataSentinel needs an observable step that turns source metadata into file candidates and content extraction outcomes. The step must be useful for GDPR discovery without becoming a second repository of raw sensitive content.
+After a controlled source starts a full scan, lawdit needs an observable step that turns source metadata into file candidates and content extraction outcomes. The step must be useful for GDPR discovery without becoming a second repository of raw sensitive content.
 
 This document defines the P0 implementation slice for source inventory and content extraction. It follows the existing source -> scan -> finding -> review -> audit -> delta -> evaluation loop and the repository Atlas reference in `docs/reference/GDPR_ENTERPRISE_EXPERT_ATLAS.md`.
 

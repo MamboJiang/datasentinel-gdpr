@@ -1,7 +1,7 @@
 {
   "data": {
     "invitationId": "invite_priya_reviewer",
-    "workspaceId": "ws_datasentinel_gdpr",
+    "workspaceId": "ws_lawdit_gdpr",
     "invitePath": "/workspace/invitations/invite_priya_reviewer",
     "groupIds": ["privacy_reviewer"],
     "status": "pending",
