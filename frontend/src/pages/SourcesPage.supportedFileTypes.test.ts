@@ -10,6 +10,7 @@ describe('Sources supported file types', () => {
     expect(SUPPORTED_FILE_TYPES).toEqual([
       'TXT',
       'UTF-16 text',
+      'Suffixless text/config',
       'CSV',
       'TSV',
       'JSON',
@@ -33,7 +34,7 @@ describe('Sources supported file types', () => {
       'PNG/JPG image OCR',
       'TIFF/BMP/WEBP image OCR',
       'VTT/SRT video transcripts',
-      'MP4/MOV/WEBM video frame OCR',
+      'MP4/MOV/M4V/MKV/WEBM/AVI video frame OCR',
       'Google Docs export',
       'Google Sheets export',
       'Google Slides export',

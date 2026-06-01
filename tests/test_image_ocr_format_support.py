@@ -9,7 +9,7 @@ from unittest import mock
 from backend.lawdit.deterministic_signals import detect_signals
 from backend.lawdit.signal_evidence_anchors import apply_source_locations
 from backend.lawdit.source_format_recognition import DOWNLOAD_ACCEPT_HEADER, extract_document_content
-from backend.lawdit.source_media_recognition import is_image
+from backend.lawdit.source_media_recognition import is_image, is_video_media
 
 try:
     from PIL import Image
@@ -21,9 +21,16 @@ class ImageOcrFormatSupportTests(unittest.TestCase):
     def test_drive_download_accept_header_includes_declared_image_ocr_formats(self) -> None:
         self.assertIn("image/bmp", DOWNLOAD_ACCEPT_HEADER)
         self.assertIn("image/webp", DOWNLOAD_ACCEPT_HEADER)
+        self.assertIn("video/x-m4v", DOWNLOAD_ACCEPT_HEADER)
+        self.assertIn("video/x-matroska", DOWNLOAD_ACCEPT_HEADER)
+        self.assertIn("video/x-msvideo", DOWNLOAD_ACCEPT_HEADER)
         self.assertTrue(is_image("image/x-ms-bmp", ""))
         self.assertTrue(is_image("image/x-tiff", ""))
         self.assertTrue(is_image("", ".webp"))
+        self.assertTrue(is_video_media("video/x-m4v", ""))
+        self.assertTrue(is_video_media("video/x-matroska", ""))
+        self.assertTrue(is_video_media("video/x-msvideo", ""))
+        self.assertTrue(is_video_media("", ".avi"))
 
     @unittest.skipUnless(Image is not None, "Pillow is unavailable for OCR format fixture generation.")
     def test_non_png_image_formats_use_png_normalization_fallback_without_raw_values(self) -> None:
