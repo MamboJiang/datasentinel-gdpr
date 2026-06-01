@@ -1,15 +1,16 @@
 # Acceptance Criteria
 
-## Repository Initialization
+## Submission Repository Readiness
 
-The initialization is complete when:
+The public submission repository is ready when:
 
-- The GitHub repository is public.
-- The local repository has a clean `main` branch after the initial commit is pushed.
-- The repository contains English-language planning documents for BRD, MRD, PRD, TRD, DesignSpec, TestCase, and acceptance criteria.
-- The repository does not contain implementation code, runtime dependencies, secrets, generated build artifacts, or copied source data from the challenge PDF.
-- The project README clearly states the project thesis, current scope, and non-goals.
-- The listed teammates are invited as GitHub collaborators.
+- The GitHub repository is public and keeps the team's contributor history.
+- The GitHub repository homepage links to `https://founder-force.uk/`.
+- The README presents the product thesis, live demo URL, user guide URL, demo walkthrough, local development steps, validation commands, and explicit safety boundaries.
+- The public tree does not contain AI-agent operating instructions, internal AI delivery workflow notes, semifinal script drafts, QR scratch assets, secrets, generated build artifacts, runtime data, or local environment files.
+- Developer-facing documentation, engineering instructions, code comments, contracts, mocks, fixtures, issues, pull requests, and commit messages are written in English. Multilingual source strings may appear only as product test fixtures or redacted-detection examples.
+- The product boundaries remain visible: no automatic deletion, no legal advice, no full GDPR-compliance claim, no production tenant-wide Microsoft Graph integration, and no production deletion connector in P0.
+- The listed teammates are invited as GitHub collaborators or already have their contributions preserved in repository history.
 
 ## Project Readiness
 
@@ -19,16 +20,13 @@ The project is ready for implementation only when:
 - The first implementation task has a narrow, testable scope.
 - Any new workflow, external API integration, permission model, or deletion mechanism has a design note with state transitions, failure paths, rollback paths, and primitive acceptance criteria.
 
-## Parallel Delivery Contract Readiness
+## Contract Readiness
 
-Frontend-backend parallel development may start when:
+The shared product contract is ready when:
 
 - `docs/API_CONTRACT.md` defines the P0 endpoints, envelope, tolerance rules, error format, and state machines.
 - `contracts/openapi.yaml` and `contracts/schemas/` define the machine-readable contract.
 - `contracts/mocks/` contains payloads for sources, scan status, findings list, finding detail, audit events, admin metrics, and latest evaluation.
-- `docs/DELIVERY_WORKFLOW.md` defines frontend, backend, contract, and QA responsibilities.
-- `AGENTS.md` and `.github/copilot-instructions.md` tell teammate AI tools how to follow the contract.
-- No frontend or backend implementation code is introduced before the first scoped implementation task.
 - `docs/GOVERNANCE_CONFIG.md` defines policy packs, organization model, permission boundaries, review support, and enterprise change scenarios.
 - `docs/GDPR_SAMPLE_REFERENCES.md` records how the organizer sample repository is used without vendoring PDFs.
 

@@ -1,69 +1,91 @@
 # lawdit GDPR
 
-lawdit GDPR is a hackathon project concept for GDPR-relevant data discovery and accountable cleanup workflows.
+**Turn scattered personal-data evidence into accountable GDPR review work.**
 
-The project goal is to help an organization identify, classify, route, review, and audit personal-data findings across distributed file sources such as OneDrive, SharePoint, shared drives, and local sample repositories.
+lawdit is a contract-first prototype for GDPR-relevant data discovery. It scans selected sources, explains redacted evidence, routes findings to accountable owners, supports human review, records audit events, and reports measurable evaluation metrics. It is built to show the governance loop around sensitive data, not just another one-time PII scan.
 
-This repository now contains a local prelaunch prototype: a Vite frontend, a stdlib Python API server, local SQLite state, optional OpenRouter AI metadata, backend-owned Google/GitHub sign-in, account-level Google Drive binding for selected-source scans, PDF text-layer extraction, and prelaunch source input for Google Drive selections or direct HTTPS file links. It is not a production GDPR compliance system.
+- Live demo: https://founder-force.uk/
+- User guide: https://founder-force.uk/docs
+- API contract: [contracts/openapi.yaml](contracts/openapi.yaml)
+- Product docs: [docs](docs)
 
-## Product Thesis
+## Why It Matters
 
-Find risky personal-data records, explain why they matter, route them to the accountable human, and prove what happened.
+Organizations often know personal data is spread across documents, exports, shared drives, and ad hoc review folders. The hard part is proving what was found, who owns the decision, what action was allowed, and whether the workflow improved. lawdit makes that chain visible.
 
-## Current Scope
+## What The Prototype Does
 
-- Maintain English-language project documentation.
-- Keep acceptance criteria explicit and reviewable.
-- Prepare the repository for collaborative implementation.
-- Define a tolerant frontend-backend contract for parallel delivery.
-- Avoid speculative architecture, dependencies, or product features before they are accepted.
+- Detects GDPR-relevant evidence across PDFs, Office-style documents, text, tables, archives, email exports, images, and selected Google Drive sources.
+- Keeps sensitive source values redacted while preserving reviewable evidence locations such as page, table cell, structure path, OCR region, or text offset.
+- Routes findings to responsible owners and exposes permission boundaries instead of hiding denied actions.
+- Lets humans record keep, delete-candidate, false-positive, reassign, or escalation decisions with reasons.
+- Records audit events for scan and review activity.
+- Shows evaluation metrics including precision, recall, F1, reproducibility, throughput, and resource intensity.
+- Uses governance policy-pack concepts so review rules can change without hard-coding one legal snapshot into the scanner.
 
-## Non-Goals
+## Demo Walkthrough
 
-- No automatic deletion of user data without human review.
-- No legal advice.
-- No production integration with Microsoft 365 or tenant source systems yet.
-- No production deletion, enterprise SSO, SCIM, or production RBAC.
+1. Open the live demo at https://founder-force.uk/.
+2. Start with the public analysis entry for a single-file redacted preview, or open `/dashboard` for the governed Workspace flow.
+3. Check source readiness, then start a full scan against the controlled demo source or an approved selected source.
+4. Open a high-risk finding and inspect redacted evidence, signal labels, owner routing, retention status, and review support.
+5. Record a human decision with a reason.
+6. Confirm the matching audit event and review the evaluation dashboard.
+7. Open https://founder-force.uk/docs for the task-oriented guide.
 
-## Documents
+Deletion is simulated in this prototype. lawdit does not provide legal advice, does not claim full GDPR compliance, and does not implement production tenant-wide Microsoft Graph or deletion integrations.
 
-- [Project Context](docs/PROJECT_CONTEXT.md)
-- [Business Requirements](docs/BRD.md)
-- [Market Requirements](docs/MRD.md)
-- [Product Requirements](docs/PRD.md)
-- [Technical Requirements](docs/TRD.md)
-- [Design Specification](docs/DesignSpec.md)
-- [Test Cases](docs/TestCase.md)
-- [API Contract](docs/API_CONTRACT.md)
-- [Parallel Delivery Workflow](docs/DELIVERY_WORKFLOW.md)
-- [Evaluation Harness](docs/EVALUATION.md)
-- [Security Notes](docs/SECURITY_NOTES.md)
-- [Google Drive Setup](docs/GOOGLE_DRIVE_SETUP.md)
-- [Demo Script](docs/DEMO_SCRIPT.md)
-- [Governance Configuration](docs/GOVERNANCE_CONFIG.md)
-- [Organizer Sample References](docs/GDPR_SAMPLE_REFERENCES.md)
-- [Deployment](docs/DEPLOYMENT.md)
-- [Acceptance Criteria](ACCEPTANCE.md)
+## Local Development
 
-## User Documentation
-
-The Fumadocs-powered user guide lives in [docs-site](docs-site/README.md). Run it locally with:
+### Backend API
 
 ```bash
-cd docs-site
-npm install
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m backend.lawdit.db_tool init --db-path .lawdit.sqlite3
+python -m backend.lawdit.source_server --host 127.0.0.1 --port 8000 --db-path .lawdit.sqlite3
+```
+
+### Frontend Console
+
+```bash
+cd frontend
+npm ci
 npm run dev
 ```
 
-The docs site is user-facing product guidance for the prelaunch prototype. It must not claim legal advice, full GDPR compliance, production tenant access, or real deletion.
+### User Documentation
 
-## Frontend-Backend Contract
+```bash
+cd docs-site
+npm ci
+npm run dev
+```
 
-- Machine-readable API contract: [contracts/openapi.yaml](contracts/openapi.yaml)
-- Contract schemas: [contracts/schemas](contracts/schemas)
-- Mock payloads: [contracts/mocks](contracts/mocks)
-- AI agent instructions: [AGENTS.md](AGENTS.md)
+## Repository Map
 
-## Collaboration
+- `backend/lawdit/` - Python API server, scanner pipeline, persistence, evidence assembly, audit, and evaluation support.
+- `frontend/` - Vite/React product console and public homepage.
+- `docs-site/` - Fumadocs user guide served at `/docs`.
+- `contracts/` - OpenAPI contract, schemas, and mock payloads shared by frontend and backend.
+- `docs/` - product, technical, deployment, governance, security, demo, and test documentation.
+- `tests/` - backend and contract behavior tests plus GDPR sample fixtures.
 
-All repository content, issues, pull requests, commit messages, and documentation should be written in English.
+## Validation
+
+```bash
+python -m pytest
+cd frontend && npm run test && npm run build
+cd ../docs-site && npm run typecheck && npm run build
+```
+
+## Project Boundaries
+
+- No automatic deletion.
+- No legal advice or full-compliance claim.
+- No production Microsoft 365 tenant inventory, production OAuth tenant access, or production deletion connector in P0.
+- No raw sensitive values in public analysis output, audit events, or review payloads.
+- Clients must tolerate optional fields and unknown enum-like values according to the API contract.
+
+All repository documentation, issues, pull requests, commit messages, contracts, mocks, and developer-facing comments should be written in English. User-facing interface copy may be localized through reviewed frontend dictionaries.

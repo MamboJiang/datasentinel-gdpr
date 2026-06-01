@@ -36,7 +36,7 @@ The agent-us API preview currently keeps source registrations, scan state, revie
 - API server startup options and local environment variable handling.
 - Agent-us deployment commands and service-manager guidance.
 - Backend behavior tests for restart persistence.
-- `ACCEPTANCE.md`, `docs/TRD.md`, `docs/DEPLOYMENT.md`, `docs/DELIVERY_WORKFLOW.md`, and `docs/TestCase.md`.
+- `ACCEPTANCE.md`, `docs/TRD.md`, `docs/DEPLOYMENT.md`, and `docs/TestCase.md`.
 
 The OpenAPI contract, mock payload shape, frontend API client, production connector boundary, OAuth/Graph boundary, and deletion boundary are unchanged.
 
