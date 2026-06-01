@@ -289,10 +289,10 @@ Constraints:
 - Each file must be 10 MB or smaller.
 - The system may process at most 10 active public analyses globally at the same time in the API process.
 - Capacity data must show real active analyses, available slots, waiting-at-intake count, and the file-size limit.
-- The result is a short redacted analysis summary, not the full Workspace review console.
+- The result is a short redacted analysis summary, not the full Workspace review console, and should lead with a plain-language explanation generated from the actual detected categories, counts, risk level, file format, and redacted evidence locations.
 - The entry must state its website analysis boundary in production-quality copy rather than using prelaunch placeholder language.
 - The entry must explain that governed source setup, owners, review decisions, audit trails, and evaluation live in the Workspace.
-- The entry must render optional backend-provided processing stages, next steps, Workspace handoff readiness, and boundary notes when present.
+- The entry must render optional backend-provided plain-language summary, processing stages, next steps, Workspace handoff readiness, and boundary notes when present.
 - The entry section must link to `/dashboard` for users who want the governed Workspace path.
 - The entry must not claim legal advice, full GDPR compliance, automatic deletion, production tenant access, or production Microsoft Graph integration.
 - The OpenAPI contract, mock payloads, backend intake boundary, validation tests, and deployment controls must stay aligned with the implemented UI.

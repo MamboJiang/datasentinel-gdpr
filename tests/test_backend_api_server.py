@@ -189,12 +189,79 @@ class BackendApiServerTests(unittest.TestCase):
         self.assertEqual(analyzed["body"]["data"]["status"], "completed")
         self.assertEqual(analyzed["body"]["data"]["summary"]["riskLevel"], "high")
         self.assertGreaterEqual(analyzed["body"]["data"]["summary"]["detectedSignalCount"], 2)
+        plain_summary = analyzed["body"]["data"]["summary"]["plainLanguageSummary"]
+        self.assertIn("email address", plain_summary["headline"])
+        self.assertIn("national identifier", plain_summary["headline"])
+        self.assertIn("GDPR relevance", plain_summary["gdprRelevance"])
+        self.assertIn("Line 1", plain_summary["reviewFocus"])
         self.assertIn("nextSteps", analyzed["body"]["data"]["summary"])
         self.assertIn("analysisStages", analyzed["body"]["data"])
         self.assertIn("governanceBoundaries", analyzed["body"]["data"])
+        email_evidence = next(item for item in analyzed["body"]["data"]["evidence"] if item["type"] == "email")
+        self.assertEqual(email_evidence["location"]["format"], "txt")
+        self.assertEqual(email_evidence["location"]["label"], "Line 1")
+        self.assertFalse(email_evidence["location"]["rawContentExposed"])
+        self.assertEqual(email_evidence["location"]["selector"]["type"], "textPosition")
+        self.assertEqual(email_evidence["location"]["selector"]["lineNumber"], 1)
+        self.assertIn("sourceStart", email_evidence["location"]["selector"])
         self.assertIn("[REDACTED", serialized)
         self.assertNotIn("privacy.reviewer@example.org", serialized)
         self.assertNotIn("123-45-6789", serialized)
+
+    def test_public_analysis_evidence_location_omits_user_authored_sheet_names(self) -> None:
+        app = build_default_app()
+        raw_email = "privacy.reviewer@example.org"
+        extracted_text = f"Email: {raw_email}\n"
+        body, content_type = multipart_file(
+            "sheet.xlsx",
+            b"not-a-real-workbook-for-mocked-extractor",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+        with mock.patch(
+            "backend.lawdit.public_analysis_result.extract_document_content",
+            return_value=ExtractedDocumentContent(
+                text=extracted_text,
+                file_format="xlsx",
+                extraction_method="ooxml_xlsx_text",
+                recognition_difficulty="moderate",
+                text_locations=({
+                    "format": "xlsx",
+                    "label": f"{raw_email} row 2 column B",
+                    "start": 0,
+                    "end": len(extracted_text),
+                    "selector": {
+                        "type": "tableCell",
+                        "row": 2,
+                        "column": 2,
+                        "columnLabel": "B",
+                        "sheetName": raw_email,
+                    },
+                },),
+            ),
+        ):
+            analyzed = app.handle(
+                "POST",
+                "/api/public-analysis/analyze",
+                "trace_public_location_privacy",
+                body,
+                content_type,
+                {"X-Lawdit-Trial-Session": "trial-session-location-privacy"},
+            )
+
+        serialized = json.dumps(analyzed["body"], ensure_ascii=False)
+        evidence = next(item for item in analyzed["body"]["data"]["evidence"] if item["type"] == "email")
+        selector = evidence["location"]["selector"]
+
+        self.assertEqual(analyzed["status"], 200)
+        self.assertEqual(evidence["locationLabel"], "row 2 column B")
+        self.assertEqual(evidence["location"]["label"], "row 2 column B")
+        self.assertEqual(selector["type"], "tableCell")
+        self.assertEqual(selector["row"], 2)
+        self.assertEqual(selector["columnLabel"], "B")
+        self.assertNotIn("sheetName", selector)
+        self.assertFalse(evidence["location"]["rawContentExposed"])
+        self.assertNotIn(raw_email, serialized)
 
     def test_public_analysis_accepts_suffixless_octet_stream_text(self) -> None:
         app = build_default_app()
@@ -229,7 +296,7 @@ class BackendApiServerTests(unittest.TestCase):
         body, content_type = multipart_file("travel-plan", b"%PDF-1.4\n...", "application/pdf")
 
         with mock.patch(
-            "backend.lawdit.public_analysis.extract_document_content",
+            "backend.lawdit.public_analysis_result.extract_document_content",
             return_value=ExtractedDocumentContent(
                 text="姓名: 陈元昊\n地址: Paulinestr. 13 Heilbronn 74076\nPassport: EN3457864\n",
                 file_format="pdf_mixed",

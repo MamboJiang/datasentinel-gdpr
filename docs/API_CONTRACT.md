@@ -203,7 +203,9 @@ Failure paths:
 - `uploading -> rejected_capacity_full` when 10 active analyses are already running in the API process.
 - `analyzing -> failed_unsupported` when extraction cannot safely read the file.
 
-Successful results include `analysisId`, `status`, `file`, `summary`, `evidence`, `warnings`, and fresh `capacity`. They may also include optional `summary.nextSteps`, `summary.workflowReadiness`, `summary.boundaryNotes`, `analysisStages`, and `governanceBoundaries` for richer frontend presentation. `summary.rawContentExposed`, `summary.legalConclusionProvided`, and `summary.deletionAvailable` must be `false`. Evidence snippets must remain redacted.
+Successful results include `analysisId`, `status`, `file`, `summary`, `evidence`, `warnings`, and fresh `capacity`. They may also include optional `summary.plainLanguageSummary`, `summary.nextSteps`, `summary.workflowReadiness`, `summary.boundaryNotes`, `analysisStages`, and `governanceBoundaries` for richer frontend presentation. `summary.plainLanguageSummary` is generated from actual detected categories, counts, risk level, file format, and redacted evidence locations; it must not include raw source values, claim legal compliance, or provide legal advice. `summary.rawContentExposed`, `summary.legalConclusionProvided`, and `summary.deletionAvailable` must be `false`. Evidence snippets must remain redacted.
+
+Each public evidence item keeps the legacy `locationLabel` and may include a structured `location` object with `format`, `anchorId`, `label`, `selector`, and `rawContentExposed = false`. The selector contains only source-data-derived file-internal coordinates such as text offsets, line/column numbers, page numbers, table row/column coordinates, structure ordinals, frame ordinals, and OCR/PDF page regions. Public analysis selectors omit user-authored sheet names, archive member names, host paths, raw extracted text, raw file bytes, page images, and uploaded-source values.
 
 `summary.riskLevel` uses the same high-risk signal taxonomy as Workspace finding assembly for identity documents, credentials, financial identifiers, special-category data, and other high-priority evidence.
 

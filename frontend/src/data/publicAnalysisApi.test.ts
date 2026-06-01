@@ -61,6 +61,14 @@ describe('public analysis API', () => {
           detectedSignalCount: 1,
           detectedTypes: [{ type: 'email', count: 1, highestConfidence: 0.91 }],
           riskLevel: 'medium',
+          plainLanguageSummary: {
+            headline: 'This txt file contains 1 email address signal.',
+            explanation: 'lawdit found 1 redacted signal candidate that can identify, contact, or profile a person and should be checked by an accountable owner.',
+            gdprRelevance: 'GDPR relevance: email address can identify or contact a person.',
+            reviewFocus: 'Start with Line 1. Ask the source owner whether these signals are expected for this file.',
+            detectedCategoryLabels: ['Email Address'],
+            evidenceLocations: ['Line 1'],
+          },
           reviewRecommendation: 'Review the matched evidence before deciding whether the file needs governed follow-up.',
           nextSteps: ['Assign an accountable owner to confirm whether the detected signal is expected.'],
           workflowReadiness: ['Redacted evidence is ready for human review.'],
@@ -71,7 +79,26 @@ describe('public analysis API', () => {
         },
         analysisStages: [{ name: 'Signal detection', status: 'completed', description: '1 redacted signal candidate produced a medium review priority.' }],
         governanceBoundaries: ['Ten active public analyses across the API process.'],
-        evidence: [{ type: 'email', detector: 'email_pattern', confidence: 0.91, snippet: 'Email: [REDACTED_EMAIL]', locationLabel: 'Line 1' }],
+        evidence: [{
+          type: 'email',
+          detector: 'email_pattern',
+          confidence: 0.91,
+          snippet: 'Email: [REDACTED_EMAIL]',
+          locationLabel: 'Line 1',
+          location: {
+            format: 'text',
+            anchorId: 'anchor_test_email',
+            label: 'Line 1',
+            rawContentExposed: false,
+            selector: {
+              type: 'textPosition',
+              sourceStart: 7,
+              sourceEnd: 23,
+              lineNumber: 1,
+              columnNumber: 8,
+            },
+          },
+        }],
         warnings: [],
         capacity: {
           maxActive: 10,
@@ -90,6 +117,10 @@ describe('public analysis API', () => {
     const result = await analyzePublicFile(file, 'trial-session-b')
 
     expect(result.data.summary.rawContentExposed).toBe(false)
+    expect(result.data.summary.plainLanguageSummary?.headline).toContain('email address')
+    expect(result.data.summary.plainLanguageSummary?.gdprRelevance).toContain('can identify or contact a person')
+    expect(result.data.evidence[0].location?.rawContentExposed).toBe(false)
+    expect(result.data.evidence[0].location?.selector?.lineNumber).toBe(1)
     expect(result.data.summary.nextSteps).toContain('Assign an accountable owner to confirm whether the detected signal is expected.')
     expect(result.data.analysisStages?.[0].name).toBe('Signal detection')
     expect(result.data.governanceBoundaries).toContain('Ten active public analyses across the API process.')

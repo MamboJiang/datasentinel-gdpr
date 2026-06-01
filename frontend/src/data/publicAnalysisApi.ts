@@ -17,12 +17,71 @@ export type PublicAnalysisDetectedType = {
   highestConfidence: number
 }
 
+export type PublicAnalysisPlainLanguageSummary = {
+  headline: string
+  explanation: string
+  gdprRelevance: string
+  reviewFocus: string
+  detectedCategoryLabels?: string[]
+  evidenceLocations?: string[]
+}
+
+export type PublicAnalysisEvidencePageRegion = {
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+  pageWidth?: number
+  pageHeight?: number
+  unit?: string
+  origin?: string
+  confidence?: string
+  ocrConfidence?: number
+}
+
+export type PublicAnalysisEvidenceSelector = {
+  type?: string
+  start?: number
+  end?: number
+  sourceStart?: number
+  sourceEnd?: number
+  page?: number
+  row?: number
+  column?: number
+  columnLabel?: string
+  path?: string
+  partName?: string
+  paragraphIndex?: number
+  slideNumber?: number
+  shapeIndex?: number
+  tagName?: string
+  nodeIndex?: number
+  recordIndex?: number
+  lineNumber?: number
+  columnNumber?: number
+  fieldIndex?: number
+  elementIndex?: number
+  attributeIndex?: number
+  blockLabel?: string
+  frameIndex?: number
+  pageRegion?: PublicAnalysisEvidencePageRegion
+}
+
+export type PublicAnalysisEvidenceLocation = {
+  format: string
+  anchorId?: string
+  label: string
+  rawContentExposed: boolean
+  selector?: PublicAnalysisEvidenceSelector
+}
+
 export type PublicAnalysisEvidence = {
   type: string
   detector: string
   confidence: number
   snippet: string
   locationLabel: string
+  location?: PublicAnalysisEvidenceLocation
 }
 
 export type PublicAnalysisStage = {
@@ -45,6 +104,7 @@ export type PublicAnalysisResult = {
     detectedSignalCount: number
     detectedTypes: PublicAnalysisDetectedType[]
     riskLevel: string
+    plainLanguageSummary?: PublicAnalysisPlainLanguageSummary
     reviewRecommendation: string
     nextSteps?: string[]
     workflowReadiness?: string[]

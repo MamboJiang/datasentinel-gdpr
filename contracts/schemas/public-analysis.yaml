@@ -49,6 +49,7 @@ PublicAnalysisSummary:
       type: array
       items: { $ref: "#/PublicAnalysisDetectedType" }
     riskLevel: { type: string, examples: ["none", "low", "medium", "high"] }
+    plainLanguageSummary: { $ref: "#/PublicAnalysisPlainLanguageSummary" }
     reviewRecommendation: { type: string }
     nextSteps:
       type: array
@@ -65,6 +66,22 @@ PublicAnalysisSummary:
     rawContentExposed: { type: boolean }
     legalConclusionProvided: { type: boolean }
     deletionAvailable: { type: boolean }
+PublicAnalysisPlainLanguageSummary:
+  type: object
+  required: [headline, explanation, gdprRelevance, reviewFocus]
+  additionalProperties: true
+  description: Optional human-readable explanation generated from detected signal categories, counts, risk level, file format, and redacted evidence locations. It must not include raw source values or claim legal compliance.
+  properties:
+    headline: { type: string }
+    explanation: { type: string }
+    gdprRelevance: { type: string }
+    reviewFocus: { type: string }
+    detectedCategoryLabels:
+      type: array
+      items: { type: string }
+    evidenceLocations:
+      type: array
+      items: { type: string }
 PublicAnalysisEvidence:
   type: object
   required: [type, detector, confidence, snippet, locationLabel]
@@ -75,6 +92,61 @@ PublicAnalysisEvidence:
     confidence: { type: number, minimum: 0, maximum: 1 }
     snippet: { type: string }
     locationLabel: { type: string }
+    location: { $ref: "#/PublicAnalysisEvidenceLocation" }
+PublicAnalysisEvidenceLocation:
+  type: object
+  required: [format, label, rawContentExposed]
+  additionalProperties: true
+  description: Redacted, source-data-derived location metadata for review focus. It must not contain raw extracted text, raw file bytes, private host paths, page images, or uploaded-source values.
+  properties:
+    format: { type: string }
+    anchorId: { type: string }
+    label: { type: string }
+    rawContentExposed: { type: boolean, enum: [false] }
+    selector: { $ref: "#/PublicAnalysisEvidenceSelector" }
+PublicAnalysisEvidenceSelector:
+  type: object
+  additionalProperties: true
+  description: Public-safe file-internal coordinates. User-authored names such as archive member names and sheet names are omitted from the public payload.
+  properties:
+    type: { type: string, examples: ["textPosition", "tableCell", "structurePath"] }
+    start: { type: integer, minimum: 0 }
+    end: { type: integer, minimum: 0 }
+    sourceStart: { type: integer, minimum: 0 }
+    sourceEnd: { type: integer, minimum: 0 }
+    page: { type: integer, minimum: 1 }
+    row: { type: integer, minimum: 1 }
+    column: { type: integer, minimum: 1 }
+    columnLabel: { type: string }
+    path: { type: string }
+    partName: { type: string }
+    paragraphIndex: { type: integer, minimum: 1 }
+    slideNumber: { type: integer, minimum: 1 }
+    shapeIndex: { type: integer, minimum: 1 }
+    tagName: { type: string }
+    nodeIndex: { type: integer, minimum: 0 }
+    recordIndex: { type: integer, minimum: 1 }
+    lineNumber: { type: integer, minimum: 1 }
+    columnNumber: { type: integer, minimum: 1 }
+    fieldIndex: { type: integer, minimum: 1 }
+    elementIndex: { type: integer, minimum: 1 }
+    attributeIndex: { type: integer, minimum: 1 }
+    blockLabel: { type: string }
+    frameIndex: { type: integer, minimum: 1 }
+    pageRegion:
+      type: object
+      additionalProperties: true
+      properties:
+        x: { type: number }
+        y: { type: number }
+        width: { type: number }
+        height: { type: number }
+        pageWidth: { type: number }
+        pageHeight: { type: number }
+        unit: { type: string }
+        origin: { type: string }
+        confidence: { type: string }
+        ocrConfidence: { type: number }
 PublicAnalysisStage:
   type: object
   required: [name]

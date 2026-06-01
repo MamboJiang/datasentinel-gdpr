@@ -16,7 +16,7 @@ This implementation is intentionally narrow. It is not a durable queue, customer
 ## Goals
 
 - Let a visitor experience lawdit's discover -> explain -> review-next-step loop with one uploaded file.
-- Return concise categories, risk level, redacted evidence snippets, a review recommendation, accountable next steps, and optional processing-stage detail.
+- Return concise categories, risk level, a plain-language explanation based on the actual detected signals, redacted evidence snippets, a review recommendation, accountable next steps, and optional processing-stage detail.
 - Show live server capacity data instead of fake queue numbers.
 - Keep raw uploaded content transient inside the request/analysis boundary.
 - Preserve lawdit safety boundaries: no legal advice, no full GDPR-compliance claim, no automatic deletion, no raw sensitive values in public output.
@@ -50,7 +50,7 @@ Selected direction: capacity guard with transient waiting-at-intake counts. The 
 | Upload shape | One `multipart/form-data` field named `file` | Missing, malformed, empty, or multi-file uploads are rejected. |
 | Format gate | Core-supported suffix or MIME, plus suffixless text sniff candidates | Supported MIME types such as `application/pdf` can reach extraction even when the filename has no extension; suffixless octet-stream files must pass bounded Unicode text sniffing before producing findings. |
 | Risk priority | Shared deterministic signal-risk taxonomy | Identity documents, credentials, financial identifiers, special-category data, and other Workspace high-risk signal types are high priority in public summaries as well. |
-| Result depth | Short summary plus optional stages | The result returns categories, risk level, redacted evidence snippets, warnings, review guidance, accountable next steps, and optional handoff detail, not a full evidence workspace. |
+| Result depth | Human-readable short summary plus optional stages | The result returns categories, risk level, a plain-language explanation generated from actual detected categories/counts/location labels, redacted evidence snippets, warnings, review guidance, accountable next steps, and optional handoff detail, not a full evidence workspace. |
 | Deletion | Not available | Trial output cannot request, schedule, or imply deletion execution. |
 
 ## State Machine
@@ -63,7 +63,7 @@ Selected direction: capacity guard with transient waiting-at-intake counts. The 
 | File selected | User submits | Client checks pass | Uploading | Submit exactly one `multipart/form-data` file field with the browser analysis session header. |
 | Uploading | Server validates | Body is malformed, empty, unsupported, or over 10 MB | Rejected | Return `application/problem+json`; no slot is reserved for analysis. |
 | Uploading | Server validates | Session already has active analysis | Rejected: one file active | Return 409 with live capacity state. |
-| Uploading | Server validates | Active analyses >= 5 | Rejected: capacity full | Return 429 with live capacity state and transient waiting position. |
+| Uploading | Server validates | Active analyses >= 10 | Rejected: capacity full | Return 429 with live capacity state and transient waiting position. |
 | Uploading | Slot reserved | Capacity slot available | Analyzing | Reserve one active slot for the session. |
 | Analyzing | Extraction or detection completes | Redacted summary available | Result ready | Release slot; return result and fresh capacity state. |
 | Analyzing | Extraction fails | Unsupported or unreadable content | Analysis failed | Release slot; return safe problem details and fresh capacity state. |
@@ -86,8 +86,9 @@ Selected direction: capacity guard with transient waiting-at-intake counts. The 
 
 - The API keeps transient in-memory capacity state: active session tokens and short-TTL waiting sessions.
 - Raw uploaded bytes are processed in-memory for the request and are not written to a public analysis store.
-- The response contains only metadata, counts, risk level, warnings, review recommendation, optional accountable next steps/stages, and redacted snippets.
+- The response contains only metadata, counts, risk level, generated plain-language explanation, warnings, review recommendation, optional accountable next steps/stages, redacted snippets, and public-safe file-internal location coordinates.
 - Public payloads must not contain raw extracted text, raw file body, provider tokens, legal conclusions, or deletion instructions.
+- Public location selectors must omit user-authored source labels such as sheet names or archive member names while preserving source-derived offsets, page numbers, row/column coordinates, structure ordinals, frame ordinals, and PDF/OCR page regions.
 
 ## Failure Paths
 
@@ -124,6 +125,7 @@ Selected direction: capacity guard with transient waiting-at-intake counts. The 
 - The system never runs more than 10 active public analyses in the API process at the same time.
 - Capacity-full users see a clear non-destructive state with live waiting-at-intake data and no analysis slot is consumed.
 - Every accepted analysis reaches a terminal state that releases its active slot.
-- Results show redacted, concise facts, accountable next steps, and optional handoff detail without raw sensitive values, legal advice, full GDPR-compliance claims, or deletion execution.
+- Results show a plain-language summary generated from actual detected categories, counts, file format, risk level, and redacted evidence locations, plus redacted facts, accountable next steps, and optional handoff detail without raw sensitive values, legal advice, full GDPR-compliance claims, or deletion execution.
+- Evidence items keep `locationLabel` for compatibility and may include structured `location` metadata with `rawContentExposed = false` and no raw source labels.
 - The frontend renders optional backend-provided processing stages, Workspace handoff readiness, next steps, and boundary notes while remaining compatible with shorter responses.
 - The full Workspace console remains separate from the public analysis entry.

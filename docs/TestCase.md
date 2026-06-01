@@ -51,10 +51,12 @@
 | UPLOAD-005 | Submit when all 10 active slots are occupied | The backend returns `429 application/problem+json`, reports live waiting-at-intake data, and does not reserve an analysis slot. |
 | UPLOAD-006 | Review safety boundaries | Trial output keeps raw sensitive values out of public output and prohibits legal advice, full GDPR-compliance claims, automatic deletion, and production tenant integration. |
 | UPLOAD-007 | Use the homepage trial UI | The root homepage shows a prominent upload entry, live capacity data, one-file/10 MB limits, start-over behavior, and redacted results separate from the full Workspace console. |
-| UPLOAD-008 | Review trial education copy | The trial is labeled as a public preview, states that the full product workflow lives in the Workspace, and links to `/dashboard` for governed source setup, owner routing, review decisions, audit trails, and evaluation. |
+| UPLOAD-008 | Review website analysis education copy | The entry is labeled as a website analysis boundary, states that the full governed product workflow lives in the Workspace, and links to `/dashboard` for source setup, owner routing, review decisions, audit trails, and evaluation. |
 | UPLOAD-009 | Submit a no-extension file with a supported MIME type | The backend routes core-supported MIME types such as `application/pdf` to extraction instead of rejecting them solely because the filename has no extension. |
 | UPLOAD-010 | Submit suffixless octet-stream text and binary samples | Unicode text candidates can complete with redacted findings through bounded sniffing, while binary candidates return a safe unsupported problem response and create no findings. |
 | UPLOAD-011 | Submit a public analysis file with passport or driver-license evidence | The result uses the shared signal-risk taxonomy and returns a high-risk review priority without exposing the raw identifier. |
+| UPLOAD-012 | Review public evidence location metadata | Evidence keeps `locationLabel` and can include `location.selector` coordinates for text, table, structure, page, frame, or OCR/PDF regions while omitting raw source labels such as user-authored sheet names. |
+| UPLOAD-013 | Review the public analysis plain-language result | The result begins with a human-readable explanation generated from the actual detected categories, counts, risk level, file format, and redacted evidence locations; it does not expose raw values or claim legal compliance. |
 
 ## Backend Planning Checks
 

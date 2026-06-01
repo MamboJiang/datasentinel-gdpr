@@ -24,6 +24,20 @@
         }
       ],
       "riskLevel": "high",
+      "plainLanguageSummary": {
+        "headline": "This txt file contains 1 email address signal and 1 national identifier signal.",
+        "explanation": "lawdit found 2 redacted signal candidates, including at least one category that should be treated as priority personal-data evidence before retention, sharing, or cleanup decisions.",
+        "gdprRelevance": "GDPR relevance: email address can identify or contact a person and national identifier can directly identify a person through a state or employment identifier.",
+        "reviewFocus": "Start with Line 1 and Line 2. Confirm the file owner and route the review before making any retention, sharing, or cleanup decision.",
+        "detectedCategoryLabels": [
+          "Email Address",
+          "National Identifier"
+        ],
+        "evidenceLocations": [
+          "Line 1",
+          "Line 2"
+        ]
+      },
       "reviewRecommendation": "Treat this as a priority review candidate and verify the redacted evidence in a governed Workspace before deciding next actions.",
       "nextSteps": [
         "Verify each redacted evidence snippet with an accountable reviewer.",
@@ -76,14 +90,44 @@
         "detector": "email_pattern",
         "confidence": 0.91,
         "snippet": "Email: [REDACTED_EMAIL]",
-        "locationLabel": "Line 1"
+        "locationLabel": "Line 1",
+        "location": {
+          "format": "text",
+          "anchorId": "anchor_mock_email",
+          "label": "Line 1",
+          "rawContentExposed": false,
+          "selector": {
+            "type": "textPosition",
+            "start": 16,
+            "end": 40,
+            "sourceStart": 16,
+            "sourceEnd": 40,
+            "lineNumber": 1,
+            "columnNumber": 17
+          }
+        }
       },
       {
         "type": "national_identifier",
         "detector": "ssn_pattern",
         "confidence": 0.88,
         "snippet": "National Identifier: [REDACTED_NATIONAL_ID]",
-        "locationLabel": "Line 2"
+        "locationLabel": "Line 2",
+        "location": {
+          "format": "text",
+          "anchorId": "anchor_mock_national_id",
+          "label": "Line 2",
+          "rawContentExposed": false,
+          "selector": {
+            "type": "textPosition",
+            "start": 62,
+            "end": 73,
+            "sourceStart": 62,
+            "sourceEnd": 73,
+            "lineNumber": 2,
+            "columnNumber": 22
+          }
+        }
       }
     ],
     "warnings": [],

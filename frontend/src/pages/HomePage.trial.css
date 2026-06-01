@@ -271,6 +271,24 @@
   gap: 14px;
 }
 
+.landing-trial-human-summary {
+  background: rgba(236, 246, 242, .9);
+  border-radius: 8px;
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+}
+
+.landing-trial-human-summary strong {
+  color: var(--landing-ink);
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.landing-trial-human-summary p {
+  margin-top: 0;
+}
+
 .landing-trial-file-summary {
   background: rgba(245, 248, 247, .86);
   border-radius: 8px;

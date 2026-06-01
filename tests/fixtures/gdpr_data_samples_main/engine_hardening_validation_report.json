@@ -1,6 +1,6 @@
 {
   "reportId": "engine_hardening_2026-05-31_final_acceptance",
-  "generatedAt": "2026-06-01T06:50:39Z",
+  "generatedAt": "2026-06-01T07:30:57Z",
   "privacyRule": "This report records commands, counts, capabilities, redacted signal types, and release identifiers only. It must not include raw extracted text, raw detected values, provider tokens, refresh tokens, source bodies, or private absolute source paths.",
   "scope": {
     "goal": "Core multilingual GDPR discovery engine hardening for Drive corpus fixtures, supported file formats, OCR-backed PDF/image/video-frame extraction, legacy Office conversion, evidence anchors, local validation, and agent-us deployment proof.",
@@ -52,7 +52,7 @@
     "backendTests": {
       "command": "python3 -m pytest -q",
       "result": "passed",
-      "testCount": 170,
+      "testCount": 171,
       "skippedCount": 2,
       "skipReason": "Local workstation lacks Tesseract and LibreOffice, so video OCR and legacy Office runtime smoke tests are skipped locally and executed on agent-us."
     },
@@ -64,7 +64,7 @@
       "testCount": 82
     },
     "backendCompile": {
-      "command": "python3 -m py_compile backend/lawdit/source_image_ocr.py",
+      "command": "python3 -m py_compile backend/lawdit/public_analysis.py backend/lawdit/public_analysis_result.py backend/lawdit/public_analysis_plain_language.py",
       "result": "passed"
     },
     "frontendBuild": {
@@ -91,8 +91,8 @@
     }
   },
   "agentUsDeployment": {
-    "appRelease": "/srv/lawdit/app/releases/20260601065039-ocr-profile-stale-route",
-    "frontendRelease": "/srv/lawdit/frontend/releases/20260601065039-ocr-profile-stale-route",
+    "appRelease": "/srv/lawdit/app/releases/20260601092808-public-evidence-location",
+    "frontendRelease": "/srv/lawdit/frontend/releases/20260601092808-public-evidence-location",
     "apiService": "lawdit-api.service",
     "apiServiceState": "active",
     "publicHealthUrl": "https://founder-force.uk/api/health",
@@ -117,13 +117,37 @@
       "containsLegacyOfficeLabel": true,
       "containsLibreOfficeNote": true,
       "containsFrameIndexRuntime": true,
-      "jsAsset": "assets/index-D56QGUEM.js",
-      "cssAsset": "assets/index-qrcyP7Au.css"
+      "jsAsset": "assets/index-PEeREgcB.js",
+      "cssAsset": "assets/index-ByG-bFIj.css"
     },
     "remoteBackendTests": {
       "command": "cd /srv/lawdit/app/current && python3 -m unittest discover -s tests",
       "result": "passed",
-      "testCount": 172
+      "testCount": 173
+    },
+    "remotePublicAnalysisLocationSmoke": {
+      "command": "POST a temporary synthetic text file to https://founder-force.uk/api/public-analysis/analyze and assert redacted evidence location metadata is returned.",
+      "result": "passed",
+      "httpCode": 200,
+      "status": "completed",
+      "riskLevel": "medium",
+      "plainHeadlineContainsEmailAddress": true,
+      "signalTypes": [
+        "email"
+      ],
+      "locationLabel": "Line 1",
+      "locationFormat": "txt",
+      "locationRawContentExposed": false,
+      "selectorKeys": [
+        "columnNumber",
+        "end",
+        "lineNumber",
+        "sourceEnd",
+        "sourceStart",
+        "start",
+        "type"
+      ],
+      "rawValueExposed": false
     },
     "remoteRiskTaxonomyTests": {
       "command": "cd /srv/lawdit/app/current && python3 -m unittest tests.test_signal_risk tests.test_backend_api_server.BackendApiServerTests.test_public_analysis_routes_suffixless_pdf_mime_to_extractor",
@@ -507,8 +531,8 @@
   "remainingBoundaries": [
     {
       "id": "BND-004",
-      "status": "redacted_preview_verified",
-      "reason": "Finding details now include sourceReviewPreview packages assembled from redacted evidence anchors only, and the file review surface consumes them for consistent page-region focus. A raw full-source viewer remains a separate security and source-byte access decision outside the current public payload boundary."
+      "status": "redacted_preview_and_public_location_verified",
+      "reason": "Finding details include sourceReviewPreview packages assembled from redacted evidence anchors only, and the public single-file analysis path now returns compatible redacted location.selector metadata. Public selectors preserve source-derived coordinates while omitting user-authored sheet names and raw values. A raw full-source viewer remains a separate security and source-byte access decision outside the current public payload boundary."
     }
   ]
 }

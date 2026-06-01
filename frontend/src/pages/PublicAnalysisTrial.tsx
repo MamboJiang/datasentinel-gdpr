@@ -182,6 +182,7 @@ function PublicAnalysisResultView({ result }: { result: PublicAnalysisResult }) 
   const nextSteps = result.summary.nextSteps?.length ? result.summary.nextSteps : [result.summary.reviewRecommendation]
   const readiness = result.summary.workflowReadiness ?? []
   const boundaryNotes = mergeNotes(result.summary.boundaryNotes, result.governanceBoundaries)
+  const plainSummary = result.summary.plainLanguageSummary
 
   return (
     <div className="landing-trial-result" aria-live="polite">
@@ -189,7 +190,16 @@ function PublicAnalysisResultView({ result }: { result: PublicAnalysisResult }) 
         <span>{result.summary.riskLevel} priority</span>
         <strong>{result.summary.detectedSignalCount} redacted signals</strong>
       </div>
-      <p>{result.summary.reviewRecommendation}</p>
+      {plainSummary ? (
+        <section className="landing-trial-human-summary" aria-label="Plain-language result summary">
+          <strong>{plainSummary.headline}</strong>
+          <p>{plainSummary.explanation}</p>
+          <p>{plainSummary.gdprRelevance}</p>
+          <p>{plainSummary.reviewFocus}</p>
+        </section>
+      ) : (
+        <p>{result.summary.reviewRecommendation}</p>
+      )}
       <dl className="landing-trial-file-summary" aria-label="Analyzed file handling">
         <div>
           <dt>Format</dt>

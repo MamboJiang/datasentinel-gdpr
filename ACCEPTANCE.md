@@ -53,7 +53,8 @@ The public website upload-analysis entry is accepted when:
 - The entry displays real capacity data from `/api/public-analysis/capacity`, including active analyses, available slots, waiting-at-intake count, and the file-size limit.
 - The entry accepts exactly one uploaded file per browser analysis session at a time, rejects files larger than 10 MB, and allows at most 10 active public analyses globally in the API process.
 - Oversized, duplicate-active, capacity-full, unsupported, failed, completed, and start-over states are visible and non-destructive.
-- Accepted analyses return a concise redacted summary with detected categories, risk level, redacted evidence snippets, warnings, review guidance, and accountable next steps.
+- Accepted analyses return a concise redacted summary with detected categories, risk level, redacted evidence snippets, warnings, review guidance, accountable next steps, and a plain-language explanation generated from actual detected categories, counts, file format, risk level, and redacted evidence locations.
+- Accepted evidence can include structured public-safe location metadata that preserves file-internal offsets, page, table, structure, frame, or region coordinates while keeping `rawContentExposed = false` and omitting raw uploaded-source labels.
 - Public upload intake routes core-supported MIME types such as `application/pdf` to extraction even when filenames have no extension, accepts suffixless octet-stream text only through bounded Unicode sniffing, and rejects suffixless binary content without creating findings.
 - Public upload risk summaries use the same high-risk signal taxonomy as Workspace finding assembly for identity documents, credentials, financial identifiers, special-category data, and other high-priority GDPR evidence.
 - The frontend can render optional backend-provided processing stages, Workspace handoff readiness, next steps, and boundary notes without requiring a contract version bump.
