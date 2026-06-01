@@ -26,14 +26,21 @@ class LiveDriveScanReportTests(unittest.TestCase):
         self.assertEqual(report["scanStartStatusCode"], 202)
         self.assertEqual(report["scanStatus"], "completed")
         self.assertGreaterEqual(report["contentExtraction"]["processedFiles"], 18)
-        self.assertGreaterEqual(report["contentExtraction"]["successfulFiles"], 17)
-        self.assertLessEqual(report["contentExtraction"]["unsupportedFiles"], 1)
+        self.assertEqual(report["contentExtraction"]["successfulFiles"], report["contentExtraction"]["processedFiles"])
+        self.assertEqual(report["contentExtraction"]["unsupportedFiles"], 0)
         self.assertEqual(report["contentExtraction"]["ocrDeferredFiles"], 0)
         self.assertEqual(report["contentExtraction"]["rawContentExposed"], False)
         self.assertEqual(report["contentExtraction"]["modelCalls"], 0)
         self.assertNotIn("1 MB text extraction limit", serialized)
         self.assertIn(
             ("pdf_mixed", "pdf_text_layer_with_page_ocr"),
+            {
+                (item["format"], item["method"])
+                for item in report["contentExtraction"]["formatCounts"]
+            },
+        )
+        self.assertIn(
+            ("text", "sniffed_unicode_text"),
             {
                 (item["format"], item["method"])
                 for item in report["contentExtraction"]["formatCounts"]

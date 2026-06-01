@@ -3,7 +3,7 @@
   "bindingStatusCode": 200,
   "contentExtraction": {
     "aiAssistanceUsed": false,
-    "extractionFingerprint": "sha256:scan_1780291158876_google_drive_export",
+    "extractionFingerprint": "sha256:scan_1780292671015_google_drive_export",
     "formatCounts": [
       {
         "difficulty": "hard",
@@ -24,10 +24,10 @@
         "method": "pdf_text_layer"
       },
       {
-        "difficulty": "unsupported",
+        "difficulty": "easy",
         "files": 1,
-        "format": "unsupported",
-        "method": "unsupported"
+        "format": "text",
+        "method": "sniffed_unicode_text"
       }
     ],
     "methods": [
@@ -43,13 +43,13 @@
       },
       {
         "files": 1,
-        "method": "tesseract_image_ocr",
+        "method": "sniffed_unicode_text",
         "status": "completed"
       },
       {
         "files": 1,
-        "method": "unsupported",
-        "status": "warning"
+        "method": "tesseract_image_ocr",
+        "status": "completed"
       }
     ],
     "modelCalls": 0,
@@ -57,44 +57,41 @@
     "processedFiles": 18,
     "rawContentExposed": false,
     "recognitionDifficulty": {
-      "easy": 0,
+      "easy": 1,
       "hard": 2,
       "moderate": 15,
-      "unsupported": 1
+      "unsupported": 0
     },
     "redactedEvidenceCandidates": 74,
     "status": "completed",
-    "successfulFiles": 17,
-    "unsupportedFiles": 1,
-    "warningFiles": 1,
-    "warnings": [
-      ".gitignore is not a supported text-like file.",
-      "1 unsupported files skipped by the prelaunch scanner."
-    ]
+    "successfulFiles": 18,
+    "unsupportedFiles": 0,
+    "warningFiles": 0,
+    "warnings": []
   },
   "fileInventory": {
     "fingerprintedFiles": 18,
-    "inventoryFingerprint": "sha256:scan_1780291158876_inventory",
+    "inventoryFingerprint": "sha256:scan_1780292671015_inventory",
     "permissionSnapshots": 18,
     "sampleFamilies": [
       {
-        "bytes": 6415159,
+        "bytes": 6415169,
         "candidateFiles": 18,
         "family": "Google_Drive",
         "flaggedFiles": 12,
-        "processedFiles": 17
+        "processedFiles": 18
       }
     ],
     "skippedFiles": 0,
-    "sourceSnapshotId": "snapshot_source_drive_live_gdpr_samples_1780291158_scan_1780291158876",
+    "sourceSnapshotId": "snapshot_source_drive_live_gdpr_samples_1780292670_scan_1780292671015",
     "status": "completed",
-    "totalBytes": 6415159,
+    "totalBytes": 6415169,
     "totalCandidateFiles": 18,
     "warnings": []
   },
   "findingAssembly": {
     "assembledFindings": 12,
-    "assemblyRulesFingerprint": "sha256:scan_1780291158876_assembly",
+    "assemblyRulesFingerprint": "sha256:scan_1780292671015_assembly",
     "deniedActionCount": 12,
     "evidenceCards": 12,
     "evidenceSignals": 74,
@@ -103,14 +100,14 @@
     "policyPackVersion": "2026.05-demo",
     "rawContentExposed": false,
     "redactedEvidenceSnippets": 74,
-    "sourceSnapshotId": "snapshot_source_drive_live_gdpr_samples_1780291158_scan_1780291158876",
+    "sourceSnapshotId": "snapshot_source_drive_live_gdpr_samples_1780292670_scan_1780292671015",
     "status": "completed",
     "warnings": []
   },
   "findingsListStatusCode": 200,
   "findingsVisibleCount": 12,
   "folderId": "1AmTxh7RhEyvgo400SAZHI8s_CawvAdQn",
-  "generatedAt": "2026-06-01T05:20:46Z",
+  "generatedAt": "2026-06-01T05:45:58Z",
   "mixedPdfPreviewSample": {
     "anchorCount": 9,
     "anchorFormats": [
@@ -141,13 +138,13 @@
     "refreshTokensPersistedInReport": false,
     "sourceBodiesPersisted": false
   },
-  "scanId": "scan_1780291158876",
+  "scanId": "scan_1780292671015",
   "scanStage": "completed",
   "scanStartStatusCode": 202,
   "scanStatus": "completed",
   "signalDetection": {
     "detectedSignals": 74,
-    "detectorRulesHash": "sha256:scan_1780291158876_signals",
+    "detectorRulesHash": "sha256:scan_1780292671015_signals",
     "detectorRulesVersion": "prelaunch-local-v2",
     "evaluatedEvidenceCandidates": 74,
     "evidenceRequirements": [
@@ -235,7 +232,7 @@
     "warnings": []
   },
   "sourceCreateStatusCode": 201,
-  "sourceId": "source_drive_live_gdpr_samples_1780291158",
+  "sourceId": "source_drive_live_gdpr_samples_1780292670",
   "sourceReviewPreviewSample": {
     "anchorCount": 3,
     "anchorFormats": [

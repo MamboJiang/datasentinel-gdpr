@@ -218,6 +218,57 @@ class FormatRecognitionTests(unittest.TestCase):
         self.assertNotIn("privacidad.structured@example.org", serialized)
         self.assertNotIn("+33123456789", serialized)
 
+    def test_extensionless_unicode_text_scans_without_reclassifying_binary_files(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory) / "source"
+            root.mkdir()
+            (root / ".env").write_text("Contact=privacy.config@example.org\n", encoding="utf-8")
+            (root / "binary").write_bytes(b"\x00\x01\x02\x03\x04\x05")
+            db_path = Path(directory) / "lawdit.sqlite3"
+
+            with mock.patch.dict("os.environ", {"LAWDIT_ENABLE_DEMO_FIXTURES": "false"}):
+                app = build_sqlite_app(db_path, [root])
+                app.handle(
+                    "POST",
+                    "/api/sources",
+                    "trace_extensionless_text_create",
+                    json.dumps({
+                        "sourceId": "source_extensionless_text",
+                        "name": "Extensionless text source",
+                        "sourceType": "local_repo",
+                        "rootLabel": str(root),
+                        "config": {"rootPath": str(root)},
+                    }),
+                    "application/json",
+                )
+                app.handle("POST", "/api/sources/source_extensionless_text/connect-test", "trace_extensionless_text_connect")
+                started = app.handle(
+                    "POST",
+                    "/api/scans/full",
+                    "trace_extensionless_text_scan",
+                    json.dumps({"sourceId": "source_extensionless_text"}),
+                    "application/json",
+                )
+                scan = _wait_for_scan(app, started["body"]["data"]["scanId"], "trace_extensionless_text_done")
+                findings = app.handle("GET", "/api/findings", "trace_extensionless_text_findings")
+                detail = app.handle("GET", f"/api/findings/{findings['body']['data'][0]['findingId']}", "trace_extensionless_text_detail")
+                serialized = json.dumps({"scan": scan["body"], "detail": detail["body"]})
+
+        extraction = scan["body"]["data"]["contentExtraction"]
+        formats = {item["format"]: item for item in extraction["formatCounts"]}
+        methods = {item["method"]: item for item in extraction["methods"]}
+
+        self.assertEqual(len(findings["body"]["data"]), 1)
+        self.assertEqual(extraction["successfulFiles"], 1)
+        self.assertEqual(extraction["unsupportedFiles"], 1)
+        self.assertEqual(extraction["recognitionDifficulty"]["easy"], 1)
+        self.assertEqual(extraction["recognitionDifficulty"]["unsupported"], 1)
+        self.assertIn("text", formats)
+        self.assertIn("unsupported", formats)
+        self.assertIn("sniffed_unicode_text", methods)
+        self.assertIn("[REDACTED_EMAIL]", serialized)
+        self.assertNotIn("privacy.config@example.org", serialized)
+
     def test_image_ocr_scan_counts_hard_difficulty_without_raw_text(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory) / "source"

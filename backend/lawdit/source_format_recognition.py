@@ -63,6 +63,7 @@ SUPPORTED_SUFFIXES = (
     | SUPPORTED_MEDIA_SUFFIXES
 )
 TEXT_CONTENT_TYPES = {"text/", "application/json", "application/xml", "application/x-ndjson", "application/rtf"}
+SNIFFABLE_TEXT_CONTENT_TYPES = {"", "application/octet-stream", "binary/octet-stream"}
 PDF_CONTENT_TYPES = {"application/pdf"}
 EMAIL_CONTENT_TYPES = {"message/rfc822", "application/eml"}
 OFFICE_CONTENT_TYPES = {
@@ -380,6 +381,16 @@ def extract_document_content(
             text_locations=text_stream_location(text, file_format, "Text content"),
         )
 
+    sniffed_text = _sniff_extensionless_text(body, normalized_type, suffix)
+    if sniffed_text is not None:
+        return ExtractedDocumentContent(
+            text=sniffed_text,
+            file_format="text",
+            extraction_method="sniffed_unicode_text",
+            recognition_difficulty="easy",
+            text_locations=text_stream_location(sniffed_text, "text", "Detected text content"),
+        )
+
     raise DocumentExtractionIssue(f"{name} is not a supported text-like file.")
 
 
@@ -389,6 +400,28 @@ def _is_pdf(content_type: str, suffix: str) -> bool:
 
 def _is_text_like(content_type: str, suffix: str) -> bool:
     return suffix in SUPPORTED_TEXT_SUFFIXES or any(content_type.startswith(prefix) for prefix in TEXT_CONTENT_TYPES)
+
+
+def _sniff_extensionless_text(body: bytes, content_type: str, suffix: str) -> str | None:
+    if suffix or content_type not in SNIFFABLE_TEXT_CONTENT_TYPES or not body:
+        return None
+    text = decode_text_body(body, content_type)
+    if not _looks_like_text(text):
+        return None
+    return text
+
+
+def _looks_like_text(text: str) -> bool:
+    if not text.strip():
+        return False
+    replacement_ratio = text.count("\ufffd") / max(len(text), 1)
+    if replacement_ratio > 0.01:
+        return False
+    allowed_controls = {"\t", "\n", "\r", "\f"}
+    control_count = sum(1 for char in text if ord(char) < 32 and char not in allowed_controls)
+    if control_count / max(len(text), 1) > 0.01:
+        return False
+    return any(char.isalnum() for char in text)
 
 
 def _is_json_like(content_type: str, suffix: str) -> bool:

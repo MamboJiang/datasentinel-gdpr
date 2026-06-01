@@ -85,7 +85,7 @@ def _read_local_source(source: dict[str, Any]) -> SourceDocumentBatch:
     for file_path in files[:MAX_SOURCE_FILES]:
         size = file_path.stat().st_size
         total_bytes += size
-        if file_path.suffix.lower() not in SUPPORTED_SUFFIXES:
+        if file_path.suffix.lower() not in SUPPORTED_SUFFIXES and file_path.suffix:
             unsupported += 1
             failure_difficulties.append("unsupported")
             continue
@@ -98,7 +98,7 @@ def _read_local_source(source: dict[str, Any]) -> SourceDocumentBatch:
         try:
             documents.append(_document_from_bytes(
                 body=file_path.read_bytes(),
-                content_type="application/pdf" if file_path.suffix.lower() in SUPPORTED_PDF_SUFFIXES else "text/plain",
+                content_type=_local_content_type(file_path),
                 family="Local_Source",
                 name=file_path.name,
                 source_path=str(file_path),
@@ -416,6 +416,15 @@ def _unsupported_warnings(count: int) -> list[str]:
 
 def _max_bytes_for_file(content_type: str, name: str) -> int:
     return max_bytes_for_file(content_type, name)
+
+
+def _local_content_type(file_path: Path) -> str:
+    suffix = file_path.suffix.lower()
+    if suffix in SUPPORTED_PDF_SUFFIXES:
+        return "application/pdf"
+    if not suffix:
+        return ""
+    return "text/plain"
 
 
 def _declared_size(metadata: dict[str, Any]) -> int | None:

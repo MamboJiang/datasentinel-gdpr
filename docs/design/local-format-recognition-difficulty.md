@@ -27,13 +27,14 @@ Prelaunch scans need to recognize more real business documents without turning n
 | Deterministic OpenDocument extraction | Read bounded `content.xml` text, spreadsheet cells, and presentation paragraphs from ODT/ODS/ODP packages in memory. | Accepted because common Drive/business exports use ODF and the selector model can reuse `structurePath` and `tableCell`. |
 | Deterministic RFC 5322/MIME email extraction | Read selected headers and text/plain or text/html body parts from EML files while skipping attachments. | Accepted because emails are common business records and can reuse public-safe `structurePath` anchors without raw body persistence. |
 | BOM/charset-aware Unicode text decoding | Decode text-like byte streams with an explicit charset or UTF BOM before deterministic detection. | Accepted because real exports often use UTF-16 and multilingual labels must not be lost before detection. |
+| Bounded suffixless Unicode text sniffing | Decode no-extension files only when the MIME type is empty or octet-stream-like and the decoded stream has a text-like replacement/control-character profile. | Accepted because Drive and enterprise sources often include `.env`, `.gitignore`, and extensionless config or log files, while binary no-extension files must remain unsupported. |
 | Header-aware delimited and Markdown table extraction | Treat standard CSV/TSV/Markdown header rows as label context for each data cell and sniff common CSV delimiters. | Accepted because common business exports and Markdown docs store names, birth dates, addresses, and phone numbers in columns rather than `Label,Value` rows, and those values need source-cell anchors. |
 
 ## Selected Approach
 
 The prelaunch document reader recognizes:
 
-- Easy: BOM/charset-aware Unicode text-like formats such as TXT, CSV, TSV, JSON, Markdown, LOG, XML, and HTML/HTM.
+- Easy: BOM/charset-aware Unicode text-like formats such as TXT, CSV, TSV, JSON, Markdown, LOG, XML, HTML/HTM, and bounded suffixless Unicode text.
 - Moderate: PDF text layers, RFC 5322/MIME email messages (`.eml`), bounded ZIP archive containers (`.zip`), Office Open XML packages (`.docx`, `.xlsx`, `.pptx`), and OpenDocument packages (`.odt`, `.ods`, `.odp`) because they need structured parsing but not OCR or AI.
 - Hard: files that need OCR or richer parsing, such as bounded PDF OCR fallback, image OCR, bounded raw video frame OCR, and OCR-deferred media.
 - Unsupported: unsafe, unknown, over-limit, unreadable, encrypted, or missing required host-converter/tooling formats.
@@ -98,9 +99,10 @@ Remove BOM/charset-aware decoding from the text decoder, remove `.docx`, `.xlsx`
 - Deterministic detectors can find email, phone, IBAN-like patterns, and multilingual labels in extracted Office/OpenDocument/email/archive member text and return only redacted snippets.
 - Public scan payloads include difficulty counts and per-format counts without raw source content.
 - UTF-16 text-like files with a BOM or declared charset can produce multilingual redacted findings and source-local anchors without leaking raw values.
+- Suffixless Unicode text files can produce redacted text-position findings, while suffixless binary files remain unsupported.
 - Standard header-row CSV files and semicolon-delimited CSV files can produce label-context detections with redacted table-cell anchors.
 - Standard Markdown table files can produce multilingual label-context detections with redacted table-cell anchors while non-table Markdown content keeps text-position anchors.
 - Image-only PDFs use bounded local OCR when tooling is available; otherwise they are counted as hard/OCR-deferred warnings.
 - Normal full and delta scans report zero model calls and do not use OpenRouter for local extraction.
 - The Sources page lists the newly supported Office Open XML, OpenDocument, EML, and ZIP formats.
-- Automated tests cover deterministic UTF-16 text-like decoding, DOCX/XLSX/PPTX, DOC/XLS/PPT, ODT/ODS/ODP, EML, and ZIP extraction, redaction, difficulty counts, and zero AI usage.
+- Automated tests cover deterministic UTF-16 text-like decoding, suffixless text sniffing with binary rejection, DOCX/XLSX/PPTX, DOC/XLS/PPT, ODT/ODS/ODP, EML, and ZIP extraction, redaction, difficulty counts, and zero AI usage.
