@@ -51,7 +51,7 @@ Selected direction: capacity guard with transient waiting-at-intake counts. The 
 | Format gate | Core-supported suffix or MIME, plus suffixless text sniff candidates | Supported MIME types such as `application/pdf` can reach extraction even when the filename has no extension; suffixless octet-stream files must pass bounded Unicode text sniffing before producing findings. |
 | Risk priority | Shared deterministic signal-risk taxonomy | Identity documents, credentials, financial identifiers, special-category data, and other Workspace high-risk signal types are high priority in public summaries as well. |
 | Result depth | Human-readable short summary plus optional stages | The result returns categories, risk level, a plain-language explanation generated from actual detected categories/counts/location labels, redacted evidence snippets, warnings, review guidance, accountable next steps, and optional handoff detail, not a full evidence workspace. |
-| Deletion | Not available | Trial output cannot request, schedule, or imply deletion execution. |
+| Deletion | Not available | Website analysis output cannot request, schedule, or imply deletion execution. |
 
 ## State Machine
 
